@@ -1,6 +1,6 @@
 # S-W02: Brettspiele mit Spielgefühl, Stufen, Zug zurück und Tipp (B1, B2, B3)
 
-**Status:** freigegeben am 31.10.2026, 20:20
+**Status:** gebaut, freigegeben am 31.10.2026, 20:20
 <!-- Freigabe durch den Betreiber im Projekt-Thread: "B1, b2, b3, l1, l2, a1". -->
 
 ## Ziel
@@ -102,4 +102,7 @@ Vier gewinnt Tiefe 6 und Reversi Tiefe 4: Rechenzeit im Worker am Handy messen (
 WebAudio braucht ein erstes Tippen (Browserregel).
 
 ## Ergebnis
-Offen.
+- Vorher (Stand 1460d4e): alle 15 Tests rot (Methoden und Knöpfe fehlen).
+- Nachher: 15 von 15 Tests grün (`werkstatt/tests/brett_test.js`), 7 von 7 Gegenproben erkannt (`gegenproben_brett.py`), Handyformat grün.
+- Rechenzeit der KI auf Stark (Container, Desktop-CPU, Worker): Vier gewinnt 157 ms, Reversi 21 ms, Mangala 18 ms, Tic Tac Toe 18 ms je Zug. Am Handy offen (Ziel unter 1,5 s).
+- Gerätetest am Handy offen: Abnahmeliste `docs/notizen/abnahme-spieleseite-S-W02-bis-W04.md` im Projektordner.

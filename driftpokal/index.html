@@ -586,6 +586,7 @@ body.pad :focus{ outline:3px solid #ffd23f !important; outline-offset:3px; box-s
         <button class="btn" id="resRetry">Nochmal fahren</button>
         <button class="btn ghost" id="resMenu">Zum Menü</button>
         <button class="btn ghost" id="resReplay" hidden>Wiederholung</button>
+        <button class="btn ghost" id="resShare">Teilen</button>
       </div>
     </div>
   </section>
@@ -19052,6 +19053,26 @@ class SoundUI {
   else start();
 })();
 
+</script>
+<script src="../teilen.js"></script>
+<script>
+// S-W04: Ergebnis teilen (Titel und Untertitel des Ergebnisbilds, im Zeitfahren mit Gesamtzeit). Spielkern unverändert.
+(function () {
+  const knopf = document.getElementById('resShare');
+  if (!knopf) return;
+  if (!window.Teilen) { knopf.hidden = true; return; }
+  function teilenText() {
+    const titel = document.getElementById('resTitle').textContent.trim(), sub = document.getElementById('resSub').textContent.trim();
+    let gesamt = '';
+    for (const tr of document.querySelectorAll('#resTable tr')) {
+      const nm = tr.querySelector('.nm'), tm = tr.querySelector('.tm');
+      if (nm && tm && nm.textContent.trim() === 'Gesamt') gesamt = tm.textContent.trim();
+    }
+    return window.Teilen.text(['Driftpokal', titel, sub, gesamt && gesamt !== titel ? 'Gesamt ' + gesamt : '']);
+  }
+  knopf.addEventListener('click', () => window.Teilen.teilen({ titel: 'Driftpokal', text: teilenText() }));
+  window.__teilenDriftpokal = teilenText;
+})();
 </script>
 </body>
 </html>

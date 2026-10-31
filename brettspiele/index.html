@@ -17,6 +17,7 @@
 <!-- chess.js übernimmt die Schachregeln (Zuggenerierung/-validierung,
      Schach/Matt/Patt-Erkennung) — siehe ChessEntity: die Boundary
      wrappt die Bibliothek, Control/UI merken nichts davon. -->
+<script src="../teilen.js"></script>
 <script src="lib/chess.js"></script>
 <style>
   :root {
@@ -1245,6 +1246,10 @@ class GameUI {
     }
     this.tippBtn = knopf('tipp-knopf', 'Tipp');
     this.tippBtn.addEventListener('click', () => this.handleTipp());
+    // S-W04: Ergebnis teilen, nur solange die Partie beendet ist
+    this.teilenBtn = knopf('teilen-knopf', 'Teilen');
+    this.teilenBtn.hidden = true;
+    this.teilenBtn.addEventListener('click', () => { const t = this.teilenText(); if (t && window.Teilen) window.Teilen.teilen({ titel: 'Brettspiele', text: t }); });
     // Stufenwahl: Schach hat sie schon (#chdiff), die anderen bekommen sie hier.
     this.stufenEl = this.viewEl.querySelector('#chdiff');
     if (!this.stufenEl) {
@@ -1281,6 +1286,18 @@ class GameUI {
     if (this.undoBtn) this.undoBtn.disabled = aus || !this.control.canUndo();
     if (this.tippBtn) this.tippBtn.disabled = aus;
     if (this.stufenEl) this.stufenEl.classList.toggle('active', this.control.vsAI);
+    if (this.teilenBtn) this.teilenBtn.hidden = !(this._ergebnis && this.control.isGameOver() && window.Teilen);
+  }
+
+  // Text zum Teilen: Spiel, Ausgang, Stufe. Keine Namen.
+  teilenText() {
+    const r = this._ergebnis;
+    if (!r || !this.control.isGameOver() || !window.Teilen) return null;
+    const name = GameUI.NAMEN[this.spiel] || this.spiel, stufe = GameUI.STUFEN_TEXT[this.control.getDifficulty()] || 'Mittel';
+    let ausgang;
+    if (this.control.vsAI) ausgang = (r.winner === 'Draw' ? 'Unentschieden' : this._menschGewinnt(r) ? 'Sieg' : 'Niederlage') + ` gegen die KI (${stufe})`;
+    else ausgang = r.winner === 'Draw' ? 'Unentschieden zu zweit' : 'Partie zu zweit beendet';
+    return window.Teilen.text(['Brettspiele', name, ausgang]);
   }
 
   handleUndo() {
@@ -1394,9 +1411,11 @@ class GameUI {
     const bewegt = !this._basis || JSON.stringify(this.control.getBoardState()) !== JSON.stringify(this._basis);
     this._rueckmeldung(result, bewegt);
     this._animieren = true;
+    this._ergebnis = result || null;
     try {
       if (result) {
         this.renderGameOver(result);
+        this._knoepfeAktualisieren();
         this.renderStats();
         if (this._menschGewinnt(result)) konfetti();
         return;
@@ -3993,6 +4012,8 @@ const aiStrategy = new AIStrategy();
 const speicher = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 GameUI.einst = new EinstellungenControl(new EinstellungenBoundary(speicher));
 GameUI.klang = new Klang();
+GameUI.NAMEN = { tictactoe: 'Tic Tac Toe', connect4: 'Vier gewinnt', othello: 'Reversi', muehle: 'Mühle', chess: 'Schach', mangala: 'Mangala' };
+GameUI.STUFEN_TEXT = { leicht: 'Leicht', mittel: 'Mittel', stark: 'Stark' };
 (function tonSchalter() {
   const b = document.querySelector('.ton-schalter');
   const zeige = () => { const an = GameUI.einst.istTonAn(); b.textContent = an ? '🔊' : '🔇'; b.setAttribute('aria-pressed', String(an)); };

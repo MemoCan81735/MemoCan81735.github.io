@@ -56,7 +56,7 @@ body { margin: 0; background: var(--himmel); color: var(--papier); font-family: 
 #schlupf { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); width: 110px; height: 70px; pointer-events: none; }
 #schub { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: 120px; height: 6px; border-radius: 3px; background: rgba(22,32,43,0.4); overflow: hidden; pointer-events: none; }
 #schub i { display: block; height: 100%; width: 0; background: var(--gut); }
-#menue { position: fixed; inset: 0; display: grid; place-items: center; background: linear-gradient(rgba(22,32,43,0.15), rgba(22,32,43,0.75)); padding: 0 max(16px, env(safe-area-inset-left, 0px)); }
+#menue { position: fixed; inset: 0; display: grid; place-items: center; overflow-y: auto; background: linear-gradient(rgba(22,32,43,0.15), rgba(22,32,43,0.75)); padding: 0 max(16px, env(safe-area-inset-left, 0px)); }
 #menue .karte { width: min(360px, 100%); display: grid; gap: 10px; }
 .ng-zurueck { justify-self: start; display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px; background: rgba(22,32,43,0.55); border: 1px solid rgba(246,241,230,0.45); color: var(--papier); font: 600 14px var(--schrift); text-decoration: none; }
 #menue h1 { margin: 0; font: 900 44px/1 var(--schrift); letter-spacing: -0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
@@ -65,6 +65,9 @@ body { margin: 0; background: var(--himmel); color: var(--papier); font-family: 
 .modus small { grid-column: 1; font: 400 12px var(--schrift); opacity: 0.75; }
 .modus .sterne { grid-column: 2; grid-row: 1 / 3; font-size: 18px; color: var(--signal); letter-spacing: 0.04em; }
 .modus .wert { font-size: 13px; }
+#strecken { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+#strecken button { background: rgba(22,32,43,0.55); color: var(--papier); border: 1px solid rgba(246,241,230,0.45); border-radius: 10px; padding: 8px 4px; font: 600 14px var(--schrift); }
+#strecken button.an { background: var(--papier); color: var(--tinte); border-color: var(--papier); }
 #einstellungen { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
 #einstellungen button { background: rgba(22,32,43,0.55); color: var(--papier); border: 1px solid rgba(246,241,230,0.45); border-radius: 10px; padding: 9px 10px; font: 500 13px var(--schrift); }
 #einstellungen button.an { background: var(--signal); color: var(--tinte); border-color: var(--signal); }
@@ -125,8 +128,13 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   <div class="karte">
     <a class="ng-zurueck" href="../">← Alle Spiele</a>
     <h1>Luftdrift<small>Flugrennen durch Ringe</small></h1>
+    <div id="strecken" role="group" aria-label="Strecke">
+      <button type="button" data-strecke="dorf">Dorf</button>
+      <button type="button" data-strecke="kueste">Küste</button>
+      <button type="button" data-strecke="berge">Berge</button>
+    </div>
     <button class="modus" type="button" data-modus="drift"><span>Drift-Runde</span><small>60 s driften, Türme, Ringe und Gegner streifen</small><span class="sterne" id="st_drift">☆☆☆</span><span class="wert" id="bw_drift"></span></button>
-    <button class="modus" type="button" data-modus="ringe"><span>Ringjagd</span><small>Alle 9 Ringe der Reihe nach gegen die Uhr</small><span class="sterne" id="st_ringe">☆☆☆</span><span class="wert" id="bw_ringe"></span></button>
+    <button class="modus" type="button" data-modus="ringe"><span>Ringjagd</span><small>Alle 9 Ringe gegen die Uhr, dein Geist fliegt mit</small><span class="sterne" id="st_ringe">☆☆☆</span><span class="wert" id="bw_ringe"></span></button>
     <button class="modus" type="button" data-modus="rennen"><span>Rennen</span><small>Eine Runde durch alle Ringe gegen drei Gegner</small><span class="sterne" id="st_rennen">☆☆☆</span><span class="wert" id="bw_rennen"></span></button>
     <div id="einstellungen">
       <button type="button" id="e_ton">Ton</button>
@@ -151,10 +159,12 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     <div class="gross" id="endePunkte">0</div>
     <p id="endeText"></p>
     <button class="knopf" type="button" id="nochmal">Nochmal</button>
+    <button class="knopf hell" type="button" id="teilenKnopf" hidden>Ergebnis teilen</button>
     <button class="knopf hell" type="button" id="endeMenue">Zum Startbild</button>
   </div>
 </div>
 
+<script src="../teilen.js"></script>
 <script src="three.min.js"></script>
 <script>
 (function () {
@@ -167,7 +177,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   let abst = Object.assign({}, STANDARD);
   try { Object.assign(abst, JSON.parse(localStorage.getItem('luftdrift3d.abst') || '{}')); } catch (e) {}
   let best = 0, tonAn = true;
-  const einst = { links: false, emp: 1, tutorial: true, hilfe: 2 };
+  const einst = { links: false, emp: 1, tutorial: true, hilfe: 2, strecke: 'dorf' };
   const bestwerte = { drift: 0, ringe: 0, rennen: 0 }, sterne = { drift: 0, ringe: 0, rennen: 0 };
   try {
     best = Number(localStorage.getItem('luftdrift3d.best')) || 0; tonAn = localStorage.getItem('luftdrift3d.ton') !== 'aus';
@@ -179,24 +189,110 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   const speichern = () => { try { localStorage.setItem('luftdrift3d.einst', JSON.stringify(einst)); localStorage.setItem('luftdrift3d.bestwerte', JSON.stringify(bestwerte)); localStorage.setItem('luftdrift3d.sterne', JSON.stringify(sterne)); } catch (e) {} };
 
   const RUNDE = 60, WELT = 1400, TURM_HOEHE = 130;
-  const PYLONEN = [
-    { x: 0, z: 0 }, { x: 520, z: 300 }, { x: -480, z: 360 }, { x: 380, z: -520 }, { x: -600, z: -420 }, { x: 60, z: 760 }, { x: -120, z: -840 }, { x: 900, z: -100 }, { x: -950, z: 50 },
-  ];
-  const SEE = { x: -760, z: 760, r: 300 };
-  const DORF = { x: 640, z: -320 };
   let seed = 4242;
   const zufall = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
   const glatt = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
 
-  // Gelände: innen flach mit sanften Wellen, außen Hügel, eine Senke für den See. Dieselbe Formel für Bild und Aufsetzen.
-  function gelaende(x, z) {
-    const r = Math.hypot(x, z), t = glatt((r - 1250) / 900);
-    const a = Math.sin(x * 0.0041 + 1.3) * Math.cos(z * 0.0036 - 0.7);
-    const b = Math.sin(x * 0.013 + z * 0.009) * 0.5;
-    const c = Math.sin(x * 0.0021 - z * 0.0025) * Math.cos(z * 0.0019 + 0.4);
-    let h = 5 * (a + b) + t * (150 * (0.55 + 0.45 * c) + 70 * Math.max(0, a));
-    const see = glatt(1 - Math.hypot(x - SEE.x, z - SEE.z) / (SEE.r + 60));
-    return h - see * 14 - (Math.hypot(x - DORF.x, z - DORF.z) < 220 ? h * 0.9 : 0);
+  // ---------- Strecken (S-W03): alles, was eine Strecke ausmacht, als Daten ----------
+  const kuestenLinie = (z) => -250 - 60 * Math.sin(z * 0.004);   // Meer links davon
+  const bergTal = (z) => 120 * Math.sin(z * 0.0022);              // Mitte des Tals
+  const ellipse = (cx, rx, rz, n) => Array.from({ length: n }, (_, i) => ({ x: Math.round(cx + rx * Math.cos(i * 2 * Math.PI / n)), z: Math.round(rz * Math.sin(i * 2 * Math.PI / n)) }));
+  const STRECKEN = {
+    dorf: {
+      id: 'dorf', name: 'Dorf', seed: 4242, start: { x: 180, z: -420 }, blick: { x: 0, y: 70, z: 0 }, sterne: [95, 125], reihenfolge: 'kreis',
+      pylonen: [{ x: 0, z: 0 }, { x: 520, z: 300 }, { x: -480, z: 360 }, { x: 380, z: -520 }, { x: -600, z: -420 }, { x: 60, z: 760 }, { x: -120, z: -840 }, { x: 900, z: -100 }, { x: -950, z: 50 }],
+      see: { x: -760, z: 760, r: 300 }, ort: { x: 640, z: -320 }, haeuser: 70, wahrzeichen: 'kirche', baumGrenze: 150,
+      gelaende(x, z) {
+        const r = Math.hypot(x, z), t = glatt((r - 1250) / 900);
+        const a = Math.sin(x * 0.0041 + 1.3) * Math.cos(z * 0.0036 - 0.7);
+        const b = Math.sin(x * 0.013 + z * 0.009) * 0.5;
+        const c = Math.sin(x * 0.0021 - z * 0.0025) * Math.cos(z * 0.0019 + 0.4);
+        let h = 5 * (a + b) + t * (150 * (0.55 + 0.45 * c) + 70 * Math.max(0, a));
+        const see = glatt(1 - Math.hypot(x - this.see.x, z - this.see.z) / (this.see.r + 60));
+        return h - see * 14 - (Math.hypot(x - this.ort.x, z - this.ort.z) < 220 ? h * 0.9 : 0);
+      },
+    },
+    kueste: {
+      id: 'kueste', name: 'Küste', seed: 777, start: { x: 330, z: -1080 }, blick: { x: -150, y: 90, z: 120 }, sterne: null, reihenfolge: 'kreis',
+      pylonen: ellipse(350, 480, 950, 9), meer: true, see: null, ort: { x: 520, z: -280 }, haeuser: 36, wahrzeichen: 'leuchtturm', baumGrenze: 150,
+      gelaende(x, z) {
+        const k = x - kuestenLinie(z);
+        if (k < -60) return -20;
+        const klippe = glatt((k + 30) / 45);
+        const hoehe = 48 + 14 * Math.sin(z * 0.006) + 6 * Math.sin(x * 0.011 + z * 0.007);
+        const wellen = 4 * Math.sin(x * 0.0041 + 1.3) * Math.cos(z * 0.0036 - 0.7);
+        const huegel = glatt((k - 400) / 500) * 40 * (0.6 + 0.4 * Math.sin(x * 0.003 - z * 0.002));
+        const r = Math.hypot(x, z), aussen = glatt((r - 1250) / 900) * glatt(k / 300);
+        let h = -20 + klippe * (20 + hoehe + wellen + huegel) + aussen * 120;
+        const d = Math.hypot(x - this.ort.x, z - this.ort.z);
+        if (d < 240) h += (52 - h) * glatt((240 - d) / 60);
+        return h;
+      },
+    },
+    berge: {
+      id: 'berge', name: 'Berge', seed: 9001, start: { x: Math.round(bergTal(-1250)), z: -1250 }, blick: { x: Math.round(bergTal(0)), y: 90, z: 0 }, sterne: null, reihenfolge: 'z',
+      pylonen: Array.from({ length: 9 }, (_, i) => { const z = -1050 + i * 262; return { x: Math.round(bergTal(z) + (i % 2 ? 70 : -70)), z }; }),
+      see: { x: Math.round(bergTal(-650)), z: -650, r: 110 }, ort: { x: Math.round(bergTal(1230)), z: 1230 }, haeuser: 30, wahrzeichen: 'bruecke', baumGrenze: 200,
+      bruecke: { z: 130, y: 132, halb: 300 }, eigeneFarben: true,
+      gelaende(x, z) {
+        const d = Math.abs(x - bergTal(z));
+        const sohle = 8 + 4 * Math.sin(z * 0.01) + 3 * Math.sin(x * 0.013 + z * 0.009);
+        const hang = glatt((d - 170) / 380);
+        const gipfel = 230 + 70 * Math.sin(z * 0.0031 + x * 0.0017) + 40 * Math.sin(x * 0.009) * Math.cos(z * 0.007);
+        let h = sohle + hang * gipfel;
+        h -= glatt(1 - Math.hypot(x - this.see.x, z - this.see.z) / (this.see.r + 50)) * 14;
+        const o = Math.hypot(x - this.ort.x, z - this.ort.z);
+        if (o < 200) h += (10 - h) * glatt((200 - o) / 60);
+        return h;
+      },
+    },
+  };
+  // Sternzeiten der Ringjagd: gemessen mit dem Testspieler "perfekt" (werkstatt/tests), 3 Sterne bis ×1,15, 2 bis ×1,5
+  STRECKEN.kueste.sterne = [65, 85];   // Messung perfekt 58,2 s (S-W03)
+  STRECKEN.berge.sterne = [50, 65];    // Messung perfekt 42,7 s (S-W03)
+  // Bestwerte und Sterne je Strecke: Dorf behält die alten Schlüssel, sonst "modus@strecke"
+  const sk = (m) => strecke.id === 'dorf' ? m : m + '@' + strecke.id;
+
+  // ---------- Geist der Bestzeit (S-W03, L1): reine Funktionen, Speicher mit Formatversion ----------
+  const GEIST_TAKT = 0.1, GEIST_MAX = 2400, GEIST_FORMAT = 1, GEIST_SCHLUESSEL = 'luftdrift3d.geist';
+  const zahl = (v) => typeof v === 'number' && isFinite(v);
+  function geistGueltig(e) {
+    return !!e && zahl(e.zeit) && e.zeit > 0 && Array.isArray(e.ringe) && e.ringe.every(zahl) && Array.isArray(e.punkte)
+      && e.punkte.length >= 1 && e.punkte.length <= GEIST_MAX && e.punkte.every((q) => Array.isArray(q) && q.length === 5 && q.every(zahl));
+  }
+  function geistLesen(text) {
+    let d; try { d = JSON.parse(text); } catch (e) { return {}; }
+    if (!d || d.formatversion !== GEIST_FORMAT || !d.strecken || typeof d.strecken !== 'object') return {};
+    const aus = {};
+    for (const id of Object.keys(STRECKEN)) if (geistGueltig(d.strecken[id])) aus[id] = d.strecken[id];
+    return aus;
+  }
+  const geistSchreiben = (geister) => JSON.stringify({ formatversion: GEIST_FORMAT, strecken: geister });
+  const geistErsetzt = (alt, neu) => geistGueltig(neu) && (!alt || neu.zeit < alt.zeit);
+  function geistPosition(punkte, t) {
+    if (!punkte || !punkte.length || !zahl(t)) return null;
+    if (t <= 0) return punkte[0].slice();
+    const i = Math.floor(t / GEIST_TAKT);
+    if (i >= punkte.length - 1) return (i === punkte.length - 1 && t - i * GEIST_TAKT < 1e-9) ? punkte[i].slice() : null;
+    const a = punkte[i], b = punkte[i + 1], f = t / GEIST_TAKT - i;
+    let dh = b[3] - a[3]; while (dh > Math.PI) dh -= 2 * Math.PI; while (dh < -Math.PI) dh += 2 * Math.PI;
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + dh * f, a[4] + (b[4] - a[4]) * f];
+  }
+  function geistAbstand(eigen, geist) {
+    if (!zahl(eigen) || !zahl(geist)) return '';
+    const d = eigen - geist, betrag = Math.round(Math.abs(d) * 10 + 1e-9) / 10;   // kaufmännisch gerundet, Vorzeichen getrennt
+    return (betrag === 0 ? '±' : d < 0 ? '−' : '+') + betrag.toFixed(1).replace('.', ',') + ' s';
+  }
+  let geister = {};
+  try { geister = geistLesen(localStorage.getItem(GEIST_SCHLUESSEL)); } catch (e) { geister = {}; }
+  const aufnahme = { punkte: [], ringe: [] };
+  let strecke = STRECKEN.dorf, PYLONEN = [], SEE = null, DORF = null;
+  // Gelände und Wasser der aktuellen Strecke. Dieselbe Formel für Bild und Aufsetzen.
+  function gelaende(x, z) { return strecke.gelaende(x, z); }
+  function wasserHoehe(x, z) {
+    if (strecke.meer && gelaende(x, z) < -2) return -2;
+    if (SEE && Math.hypot(x - SEE.x, z - SEE.z) < SEE.r) return -3;
+    return -999;
   }
 
   // ---------- 3D-Welt ----------
@@ -231,6 +327,14 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   const sonnenScheibe = new THREE.Sprite(new THREE.SpriteMaterial({ map: scheibenTextur('rgba(255,250,230,1)', 'rgba(255,220,150,0)'), blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   sonnenScheibe.scale.set(900, 900, 1); szene.add(sonnenScheibe);
 
+  // Wasser: glänzende Fläche mit wandernder Welle (für alle Strecken dieselbe Textur)
+  const wasserTextur = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+    g.fillStyle = '#4a86b8'; g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 400; i++) { g.strokeStyle = `rgba(200,230,255,${0.08 + zufall() * 0.18})`; g.lineWidth = 1 + zufall() * 2; const x = zufall() * 256, y = zufall() * 256; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 10 + zufall() * 30, y + (zufall() - 0.5) * 4); g.stroke(); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(8, 8); t.encoding = THREE.sRGBEncoding; return t;
+  })();
+
   // Boden: Felder als Textur, Höhe und Farbe je Eckpunkt aus dem Gelände
   function bodenTextur() {
     const c = document.createElement('canvas'); c.width = c.height = 1024; const g = c.getContext('2d');
@@ -243,40 +347,51 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     for (let k = 0; k < 120; k++) { g.beginPath(); g.arc(zufall() * 1024, zufall() * 1024, 4 + zufall() * 9, 0, Math.PI * 2); g.fill(); }
     const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(40, 40); t.anisotropy = 4; t.encoding = THREE.sRGBEncoding; return t;
   }
-  {
+  function baueBoden(welt) {
     const geo = new THREE.PlaneGeometry(7200, 7200, 150, 150);
     const pos = geo.attributes.position, farbe = new Float32Array(pos.count * 3);
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), zWelt = -pos.getY(i), h = gelaende(x, zWelt);
       pos.setZ(i, h);
-      const k = glatt(h / 110), g = glatt((h - 160) / 60), sand = glatt((4 - Math.abs(h)) / 4) * glatt(1 - Math.hypot(x - SEE.x, zWelt - SEE.z) / (SEE.r + 80)) * 0.5;
+      if (strecke.eigeneFarben) {
+        // Berge: Wiese, darüber Fels, oben Schnee (ohne Feldertextur)
+        const fels = glatt((h - 110) / 70), schnee = glatt((h - 225) / 35), n = 0.06 * Math.sin(x * 0.05) * Math.cos(zWelt * 0.04);
+        const wr = 0.34 + n, wg = 0.5 + n, wb = 0.24, fr = 0.47, fg = 0.45, fb = 0.42;
+        let rr = wr + (fr - wr) * fels, gg = wg + (fg - wg) * fels, bb = wb + (fb - wb) * fels;
+        rr += (0.95 - rr) * schnee; gg += (0.96 - gg) * schnee; bb += (1.0 - bb) * schnee;
+        farbe[i * 3] = rr; farbe[i * 3 + 1] = gg; farbe[i * 3 + 2] = bb;
+        continue;
+      }
+      const amWasser = SEE ? glatt(1 - Math.hypot(x - SEE.x, zWelt - SEE.z) / (SEE.r + 80)) : strecke.meer ? glatt(1 - (x - kuestenLinie(zWelt)) / 90) : 0;
+      const k = glatt(h / 110), g = glatt((h - 160) / 60), sand = (strecke.meer ? glatt((14 - Math.abs(h)) / 14) : glatt((4 - Math.abs(h)) / 4)) * amWasser * (strecke.meer ? 0.8 : 0.5);
       farbe[i * 3] = 1 - k * 0.25 + g * 0.2 + sand * 0.3; farbe[i * 3 + 1] = 1 - k * 0.3 + g * 0.2 + sand * 0.2; farbe[i * 3 + 2] = 1 - k * 0.4 + g * 0.3;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(farbe, 3)); geo.computeVertexNormals();
-    const boden = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: bodenTextur(), vertexColors: true }));
-    boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true; szene.add(boden);
+    const mat = strecke.eigeneFarben ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshLambertMaterial({ map: bodenTextur(), vertexColors: true });
+    const boden = new THREE.Mesh(geo, mat);
+    boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true; welt.add(boden);
+    const rand = new THREE.Mesh(new THREE.RingGeometry(WELT - 4, WELT + 4, 96), new THREE.MeshBasicMaterial({ color: 0xf6f1e6, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
+    rand.rotation.x = -Math.PI / 2; rand.position.y = 1.2; welt.add(rand);
+    const wasserMat = () => new THREE.MeshPhongMaterial({ map: wasserTextur, color: 0xffffff, specular: 0xffffff, shininess: 120, transparent: true, opacity: 0.92 });
+    if (SEE) {
+      const see = new THREE.Mesh(new THREE.CircleGeometry(SEE.r, 48), wasserMat());
+      see.rotation.x = -Math.PI / 2; see.position.set(SEE.x, -3, SEE.z); see.receiveShadow = true; welt.add(see);
+      const steg = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 60), new THREE.MeshLambertMaterial({ color: 0x8a6a45 })); steg.position.set(SEE.x + SEE.r - 20, -1.5, SEE.z + 40); steg.rotation.y = 0.4; steg.castShadow = true; welt.add(steg);
+    }
+    if (strecke.meer) {
+      const meer = new THREE.Mesh(new THREE.PlaneGeometry(7200, 7200), wasserMat());
+      meer.rotation.x = -Math.PI / 2; meer.position.y = -2; meer.receiveShadow = true; welt.add(meer);
+    }
   }
-  const rand = new THREE.Mesh(new THREE.RingGeometry(WELT - 4, WELT + 4, 96), new THREE.MeshBasicMaterial({ color: 0xf6f1e6, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-  rand.rotation.x = -Math.PI / 2; rand.position.y = 1.2; szene.add(rand);
 
-  // See: glänzende Fläche mit wandernder Welle
-  const wasserTextur = (() => {
-    const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
-    g.fillStyle = '#4a86b8'; g.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 400; i++) { g.strokeStyle = `rgba(200,230,255,${0.08 + zufall() * 0.18})`; g.lineWidth = 1 + zufall() * 2; const x = zufall() * 256, y = zufall() * 256; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 10 + zufall() * 30, y + (zufall() - 0.5) * 4); g.stroke(); }
-    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(8, 8); t.encoding = THREE.sRGBEncoding; return t;
-  })();
-  const see = new THREE.Mesh(new THREE.CircleGeometry(SEE.r, 48), new THREE.MeshPhongMaterial({ map: wasserTextur, color: 0xffffff, specular: 0xffffff, shininess: 120, transparent: true, opacity: 0.92 }));
-  see.rotation.x = -Math.PI / 2; see.position.set(SEE.x, -3, SEE.z); see.receiveShadow = true; szene.add(see);
-  const steg = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 60), new THREE.MeshLambertMaterial({ color: 0x8a6a45 })); steg.position.set(SEE.x + SEE.r - 20, -1.5, SEE.z + 40); steg.rotation.y = 0.4; steg.castShadow = true; szene.add(steg);
-
-  // Dorf: Häuser mit Dächern, Straßen, Kirchturm
-  {
-    const wand = new THREE.MeshLambertMaterial({ color: 0xf1e8d6 }), dach = new THREE.MeshLambertMaterial({ color: 0xb5503a }), strasse = new THREE.MeshLambertMaterial({ color: 0x6b6762 });
-    const N = 70, haus = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), wand, N), daecher = new THREE.InstancedMesh(new THREE.ConeGeometry(0.78, 0.6, 4), dach, N);
+  // Ort: Häuser mit Dächern, Straßen, im Dorf ein Kirchturm
+  function baueOrt(welt) {
+    const wand = new THREE.MeshLambertMaterial({ color: 0xf1e8d6 }), dach = new THREE.MeshLambertMaterial({ color: strecke.id === 'berge' ? 0x6b4a3a : 0xb5503a }), strasse = new THREE.MeshLambertMaterial({ color: 0x6b6762 });
+    const N = strecke.haeuser, haus = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), wand, N), daecher = new THREE.InstancedMesh(new THREE.ConeGeometry(0.78, 0.6, 4), dach, N);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(), achse = new THREE.Vector3(0, 1, 0);
+    const weite = N >= 60 ? 4 : 3;
     let i = 0;
-    for (let gx = -4; gx <= 4 && i < N; gx++) for (let gz = -4; gz <= 4 && i < N; gz++) {
+    for (let gx = -weite; gx <= weite && i < N; gx++) for (let gz = -weite; gz <= weite && i < N; gz++) {
       if ((gx === 0) || (gz === 0) || zufall() < 0.2) continue;
       const x = DORF.x + gx * 42 + (zufall() - 0.5) * 10, z = DORF.z + gz * 42 + (zufall() - 0.5) * 10, b = 12 + zufall() * 10, t = 10 + zufall() * 8, h = 6 + zufall() * 5;
       const y = gelaende(x, z), w = (zufall() < 0.5 ? 0 : Math.PI / 2) + (zufall() - 0.5) * 0.2;
@@ -284,32 +399,61 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
       q.setFromAxisAngle(achse, w + Math.PI / 4); sc.set(Math.max(b, t) * 1.02, h * 0.9, Math.max(b, t) * 1.02); p.set(x, y + h + h * 0.27, z); m.compose(p, q, sc); daecher.setMatrixAt(i, m);
       i++;
     }
-    haus.count = daecher.count = i; haus.castShadow = daecher.castShadow = true; haus.receiveShadow = true; szene.add(haus); szene.add(daecher);
-    for (const w of [0, Math.PI / 2]) { const st = new THREE.Mesh(new THREE.PlaneGeometry(16, 420), strasse); st.rotation.x = -Math.PI / 2; st.rotation.z = w; st.position.set(DORF.x, gelaende(DORF.x, DORF.z) + 0.5, DORF.z); szene.add(st); }
-    const turm = new THREE.Mesh(new THREE.BoxGeometry(10, 34, 10), wand); turm.position.set(DORF.x + 24, gelaende(DORF.x, DORF.z) + 17, DORF.z + 24); turm.castShadow = true; szene.add(turm);
-    const helm = new THREE.Mesh(new THREE.ConeGeometry(8, 16, 4), dach); helm.position.set(DORF.x + 24, gelaende(DORF.x, DORF.z) + 42, DORF.z + 24); helm.rotation.y = Math.PI / 4; szene.add(helm);
+    haus.count = daecher.count = i; haus.castShadow = daecher.castShadow = true; haus.receiveShadow = true; welt.add(haus); welt.add(daecher);
+    for (const w of [0, Math.PI / 2]) { const st = new THREE.Mesh(new THREE.PlaneGeometry(16, weite * 105), strasse); st.rotation.x = -Math.PI / 2; st.rotation.z = w; st.position.set(DORF.x, gelaende(DORF.x, DORF.z) + 0.5, DORF.z); welt.add(st); }
+    if (strecke.wahrzeichen === 'kirche') {
+      const turm = new THREE.Mesh(new THREE.BoxGeometry(10, 34, 10), wand); turm.position.set(DORF.x + 24, gelaende(DORF.x, DORF.z) + 17, DORF.z + 24); turm.castShadow = true; welt.add(turm);
+      const helm = new THREE.Mesh(new THREE.ConeGeometry(8, 16, 4), dach); helm.position.set(DORF.x + 24, gelaende(DORF.x, DORF.z) + 42, DORF.z + 24); helm.rotation.y = Math.PI / 4; welt.add(helm);
+    }
+  }
+
+  // Wahrzeichen: Leuchtturm auf der Klippe, Brücke über das Tal
+  const HINDERNISSE = [];   // senkrechte Säulen { x, z, r, oben } und die Brückenplatte, für Zusammenstöße
+  function baueWahrzeichen(welt) {
+    HINDERNISSE.length = 0;
+    if (strecke.wahrzeichen === 'leuchtturm') {
+      const x = -150, z = 120, g = gelaende(x, z), weiss = new THREE.MeshLambertMaterial({ color: 0xf6f1e6 }), rot = new THREE.MeshLambertMaterial({ color: 0xd8432f });
+      for (let k = 0; k < 6; k++) { const s = new THREE.Mesh(new THREE.CylinderGeometry(4.2 - k * 0.3, 4.5 - k * 0.3, 8, 16), k % 2 ? rot : weiss); s.position.set(x, g + 4 + k * 8, z); s.castShadow = true; welt.add(s); }
+      const laterne = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 4, 12), new THREE.MeshBasicMaterial({ color: 0xffe9a8 })); laterne.position.set(x, g + 50, z); welt.add(laterne);
+      const kappe = new THREE.Mesh(new THREE.ConeGeometry(3.6, 4, 12), rot); kappe.position.set(x, g + 54, z); welt.add(kappe);
+      const licht = new THREE.Sprite(new THREE.SpriteMaterial({ map: scheibenTextur('rgba(255,240,190,1)', 'rgba(255,220,150,0)'), blending: THREE.AdditiveBlending, depthWrite: false }));
+      licht.position.set(x, g + 50, z); licht.scale.set(40, 40, 1); welt.add(licht);
+      HINDERNISSE.push({ x, z, r: 6, oben: g + 56 });
+    }
+    if (strecke.wahrzeichen === 'bruecke') {
+      const b = strecke.bruecke, mitte = bergTal(b.z), holz = new THREE.MeshLambertMaterial({ color: 0x8a6a45 }), stein = new THREE.MeshLambertMaterial({ color: 0x9a948a });
+      const platte = new THREE.Mesh(new THREE.BoxGeometry(b.halb * 2, 3, 12), holz); platte.position.set(mitte, b.y, b.z); platte.castShadow = true; welt.add(platte);
+      for (const sx of [-1, 1]) { const gel = new THREE.Mesh(new THREE.BoxGeometry(b.halb * 2, 1.2, 0.6), holz); gel.position.set(mitte, b.y + 2.4, b.z + sx * 5.6); welt.add(gel); }
+      for (const dx of [-240, -120, 120, 240]) {
+        const x = mitte + dx, g = gelaende(x, b.z), hoch = b.y - g;
+        if (hoch < 4) continue;
+        const pfeiler = new THREE.Mesh(new THREE.BoxGeometry(6, hoch, 8), stein); pfeiler.position.set(x, g + hoch / 2, b.z); pfeiler.castShadow = true; welt.add(pfeiler);
+        HINDERNISSE.push({ x, z: b.z, r: 5, oben: b.y });
+      }
+      HINDERNISSE.push({ platte: true, x: mitte, z: b.z, halb: b.halb, y: b.y });
+    }
   }
 
   // Bäume als Instanzen: Stamm und Krone
-  {
+  function baueBaeume(welt) {
     const N = 1500, stamm = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.5, 0.8, 5, 6), new THREE.MeshLambertMaterial({ color: 0x6b4a2e }), N);
     const krone = new THREE.InstancedMesh(new THREE.ConeGeometry(5, 14, 7), new THREE.MeshLambertMaterial({ color: 0xffffff }), N);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(), c = new THREE.Color(), achse = new THREE.Vector3(0, 1, 0);
     let i = 0, versuche = 0;
     while (i < N && versuche++ < N * 4) {
       const x = (zufall() * 2 - 1) * 2600, z = (zufall() * 2 - 1) * 2600;
-      if (Math.hypot(x - 180, z + 420) < 160) continue;
-      if (Math.hypot(x - SEE.x, z - SEE.z) < SEE.r + 30 || Math.hypot(x - DORF.x, z - DORF.z) < 230) continue;
+      if (Math.hypot(x - strecke.start.x, z - strecke.start.z) < 160) continue;
+      if (wasserHoehe(x, z) > -999 || (SEE && Math.hypot(x - SEE.x, z - SEE.z) < SEE.r + 30) || Math.hypot(x - DORF.x, z - DORF.z) < 230) continue;
       if (PYLONEN.some((t) => Math.hypot(t.x - x, t.z - z) < 70)) continue;
-      const h = gelaende(x, z); if (h > 150) continue;
+      const h = gelaende(x, z); if (h > strecke.baumGrenze || h < 1) continue;
       const g = 0.7 + zufall() * 0.8;
       sc.set(g, g, g); q.setFromAxisAngle(achse, zufall() * 6.28);
       p.set(x, h + 2.5 * g, z); m.compose(p, q, sc); stamm.setMatrixAt(i, m);
       p.set(x, h + 5 * g + 7 * g, z); m.compose(p, q, sc); krone.setMatrixAt(i, m);
-      c.setHSL(0.26 + zufall() * 0.08, 0.45 + zufall() * 0.2, 0.26 + zufall() * 0.12); krone.setColorAt(i, c);
+      c.setHSL(0.26 + zufall() * 0.08, 0.45 + zufall() * 0.2, (strecke.id === 'berge' ? 0.2 : 0.26) + zufall() * 0.12); krone.setColorAt(i, c);
       i++;
     }
-    stamm.count = krone.count = i; krone.castShadow = true; krone.receiveShadow = true; szene.add(stamm); szene.add(krone);
+    stamm.count = krone.count = i; krone.castShadow = true; krone.receiveShadow = true; welt.add(stamm); welt.add(krone);
   }
 
   // Wolken: flache Kugelhaufen, ziehen langsam
@@ -345,22 +489,52 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   const ringNah = new THREE.MeshBasicMaterial({ color: 0xff9f2e, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
   const ringFern = new THREE.MeshBasicMaterial({ color: 0xff9f2e, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
   const RINGE = [], RING_RADIUS = 28;
+  const ringGeo = new THREE.TorusGeometry(RING_RADIUS, 2.2, 10, 40), spitzeGeo = new THREE.SphereGeometry(7, 12, 10), markeGeo = new THREE.ConeGeometry(5, 10, 4);
+  const GETEILT = new Set([segGeo, ringNah, ringFern, matOrange, matWeiss, ringGeo, spitzeGeo, markeGeo, wasserTextur]);
+  function baueTuermeUndRinge(welt) {
+  RINGE.length = 0;
   for (const p of PYLONEN) {
     const g = gelaende(p.x, p.z); p.boden = g; p.knappZeit = 0;
-    for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(segGeo, i % 2 ? matWeiss : matOrange); m.position.set(p.x, g + (i + 0.5) * TURM_HOEHE / 6, p.z); m.castShadow = true; szene.add(m); }
-    const spitze = new THREE.Mesh(new THREE.SphereGeometry(7, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff3b1f })); spitze.position.set(p.x, g + TURM_HOEHE + 4, p.z); szene.add(spitze);
-    const r1 = new THREE.Mesh(new THREE.RingGeometry(43, 47, 48), ringNah); r1.rotation.x = -Math.PI / 2; r1.position.set(p.x, g + 1.0, p.z); szene.add(r1);
-    const r2 = new THREE.Mesh(new THREE.RingGeometry(88, 91, 64), ringFern); r2.rotation.x = -Math.PI / 2; r2.position.set(p.x, g + 0.9, p.z); szene.add(r2);
+    for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(segGeo, i % 2 ? matWeiss : matOrange); m.position.set(p.x, g + (i + 0.5) * TURM_HOEHE / 6, p.z); m.castShadow = true; welt.add(m); }
+    const spitze = new THREE.Mesh(spitzeGeo, new THREE.MeshBasicMaterial({ color: 0xff3b1f })); spitze.position.set(p.x, g + TURM_HOEHE + 4, p.z); welt.add(spitze);
+    const r1 = new THREE.Mesh(new THREE.RingGeometry(43, 47, 48), ringNah); r1.rotation.x = -Math.PI / 2; r1.position.set(p.x, g + 1.0, p.z); welt.add(r1);
+    const r2 = new THREE.Mesh(new THREE.RingGeometry(88, 91, 64), ringFern); r2.rotation.x = -Math.PI / 2; r2.position.set(p.x, g + 0.9, p.z); welt.add(r2);
     const w = zufall() * 6.28, d = 110 + zufall() * 60;
     const ring = { x: p.x + Math.sin(w) * d, z: p.z + Math.cos(w) * d, y: 40 + zufall() * 40, gruen: 0, seite: 0, turm: p };
+    // Mindestens Ringradius + 12 m über dem Gelände, auch an den Rändern des Rings (S-W03)
+    ring.y = Math.max(ring.y, ...[[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].map(([a, b]) => gelaende(ring.x + a * RING_RADIUS, ring.z + b * RING_RADIUS) + RING_RADIUS + 12), wasserHoehe(ring.x, ring.z) + RING_RADIUS + 12);
     // Der Ring steht tangential zum Kreis um den Turm: wer den Turm umrundet, fliegt hindurch und nicht in den Turm
     ring.gier = Math.atan2(p.x - ring.x, p.z - ring.z) + Math.PI / 2;
-    ring.mesh = new THREE.Mesh(new THREE.TorusGeometry(RING_RADIUS, 2.2, 10, 40), new THREE.MeshLambertMaterial({ color: 0x5ed68a, emissive: 0x1d6b3a }));
-    ring.mesh.position.set(ring.x, ring.y, ring.z); ring.mesh.rotation.y = ring.gier; szene.add(ring.mesh);
+    ring.mesh = new THREE.Mesh(ringGeo, new THREE.MeshLambertMaterial({ color: 0x5ed68a, emissive: 0x1d6b3a }));
+    ring.mesh.position.set(ring.x, ring.y, ring.z); ring.mesh.rotation.y = ring.gier; welt.add(ring.mesh);
     const saeule = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, ring.y - g, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0x5ed68a, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide }));
-    saeule.position.set(ring.x, g + (ring.y - g) / 2, ring.z); szene.add(saeule); ring.saeule = saeule;
-    const marke = new THREE.Mesh(new THREE.ConeGeometry(5, 10, 4), new THREE.MeshBasicMaterial({ color: 0xffe066 })); marke.rotation.x = Math.PI; marke.position.set(ring.x, ring.y + RING_RADIUS + 14, ring.z); marke.visible = false; szene.add(marke); ring.marke = marke;
+    saeule.position.set(ring.x, g + (ring.y - g) / 2, ring.z); welt.add(saeule); ring.saeule = saeule;
+    const marke = new THREE.Mesh(markeGeo, new THREE.MeshBasicMaterial({ color: 0xffe066 })); marke.rotation.x = Math.PI; marke.position.set(ring.x, ring.y + RING_RADIUS + 14, ring.z); marke.visible = false; welt.add(marke); ring.marke = marke;
     RINGE.push(ring);
+  }
+  // Reihenfolge für Ringjagd und Rennen: im Kreis um die Mitte (Dorf, Küste) oder das Tal entlang (Berge), beginnend beim Ring nächst dem Start
+  if (strecke.reihenfolge === 'z') RINGE.sort((a, b) => a.z - b.z);
+  else RINGE.sort((a, b) => Math.atan2(a.x, a.z) - Math.atan2(b.x, b.z));
+  const sx = strecke.start.x, sz = strecke.start.z;
+  const erster = RINGE.reduce((b, r, i) => Math.hypot(r.x - sx, r.z - sz) < Math.hypot(RINGE[b].x - sx, RINGE[b].z - sz) ? i : b, 0); RINGE.push(...RINGE.splice(0, erster));
+  }
+
+  // Welt bauen und beim Streckenwechsel die alte freigeben
+  let welt = null;
+  function baueWelt(id) {
+    strecke = STRECKEN[id] || STRECKEN.dorf;
+    seed = strecke.seed;
+    PYLONEN = strecke.pylonen.map((q) => ({ x: q.x, z: q.z })); SEE = strecke.see; DORF = strecke.ort;
+    if (welt) {
+      szene.remove(welt);
+      welt.traverse((o) => {
+        if (o.geometry && !GETEILT.has(o.geometry)) o.geometry.dispose();
+        for (const m of [].concat(o.material || [])) { if (GETEILT.has(m)) continue; if (m.map && !GETEILT.has(m.map)) m.map.dispose(); m.dispose(); }
+      });
+    }
+    welt = new THREE.Group(); szene.add(welt);
+    baueBoden(welt); baueOrt(welt); baueWahrzeichen(welt); baueBaeume(welt); baueTuermeUndRinge(welt);
+    for (const [k, g] of GEGNER.entries ? GEGNER.entries() : []) { g.x = strecke.start.x + (k - 1) * 60; g.z = strecke.start.z + 120; g.y = gelaende(g.x, g.z) + 60; g.ziel = (k * 3 + 1) % PYLONEN.length; }
   }
 
   // Flugzeug: Tiefdecker mit V-Stellung, Nase zeigt nach +z. Eigene Farben und Startnummer je Maschine.
@@ -394,6 +568,9 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     szene.add(gruppe); return gruppe;
   }
   const flieger = baueFlugzeug(0xf6f1e6, 0xff8a1f, 7);
+  const geistFlieger = baueFlugzeug(0xbfe6ff, 0x7fc8ff, 0);
+  geistFlieger.traverse((o) => { if (o.material) { o.material.transparent = true; o.material.opacity = 0.35; o.material.depthWrite = false; o.castShadow = false; } });
+  geistFlieger.visible = false;
 
   // Wirbelschleppen: ein Band je Flügelspitze mit eigener Deckkraft je Punkt
   const SPUR_N = 80;
@@ -438,6 +615,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     { hell: 0xf2d35b, akzent: 0x16202b, nummer: 21, ziel: 6, x: 0, z: 500, y: 55, h: -1.5, tempo: 47 },
   ];
   for (const g of GEGNER) { g.mesh = baueFlugzeug(g.hell, g.akzent, g.nummer); g.spuren = [spur(0xffffff), spur(0xffffff)]; g.schlupf = 0; g.knappZeit = 0; g.roll = 0; }
+  baueWelt(einst.strecke); einst.strecke = strecke.id;
   const _gp = new THREE.Vector3();
   function gegnerSchritt(g, dt) {
     let ziel, zx, zz, d, zielY, tempo = g.tempo;
@@ -541,21 +719,19 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
 
   // ---------- Zustand ----------
   const s = { modus: 'drift', phase: 'menue', ringIndex: 0, x: 180, y: 60, z: -420, zielY: 60, h: 0, vx: 0, vz: 0, punkte: 0, combo: 0, zeit: 0, schlupf: 0, lenkSicht: 0, tempoAnteil: 0, tempoKmh: 0, schub: 0, schubMax: 1, zeitlupe: 0, platz: 1, ringAbstand: Infinity, driftZeit: 0, mult: 1 };
-  const RUNDEN_RENNEN = 1, RING_ZAHL = RINGE.length;
-  // Reihenfolge für Ringjagd und Rennen: einmal im Kreis um die Mitte, beginnend beim Ring, der dem Start am nächsten liegt
-  RINGE.sort((a, b) => Math.atan2(a.x, a.z) - Math.atan2(b.x, b.z));
-  { const start = RINGE.reduce((b, r, i) => Math.hypot(r.x - 180, r.z + 420) < Math.hypot(RINGE[b].x - 180, RINGE[b].z + 420) ? i : b, 0); RINGE.push(...RINGE.splice(0, start)); }
+  const RUNDEN_RENNEN = 1, RING_ZAHL = 9;
   function neustart(modus) {
     s.modus = modus || s.modus; s.phase = 'spiel';
-    s.x = 180; s.z = -420; s.y = 60; s.zielY = 60; s.h = 0; s.vf = 40; s.vs = 0; s.schlupf = 0; s.lenkSicht = 0; s.vx = 0; s.vz = 40;
+    s.x = strecke.start.x; s.z = strecke.start.z; s.y = Math.max(60, gelaende(s.x, s.z) + 45); s.zielY = s.y; s.h = 0; s.vf = 40; s.vs = 0; s.schlupf = 0; s.lenkSicht = 0; s.vx = 0; s.vz = 40;
     s.punkte = 0; s.combo = 0; s.mult = 1; s.driftZeit = 0; s.zeit = s.modus === 'drift' ? RUNDE : 0; s.vorbei = false; s.treffer = 0; s.langsterDrift = 0; s.ringe = 0; s.knapp = 0;
     s.schub = 0; s.schubMax = 1; s.kick = 0; s.warDrift = false; s.kamPos = null; s.meldungZeit = 0; s.tempoAnteil = 0; s.zeitlupe = 0; s.ringIndex = 0; s.platz = 1;
     s.tutSchritt = (s.modus === 'drift' && einst.tutorial) ? 0 : -1; s.tutZeit = 0;
+    aufnahme.punkte = []; aufnahme.ringe = []; s.geist = s.modus === 'ringe' ? (geister[strecke.id] || null) : null; best = bestwerte[sk('drift')] || 0;
     for (const sp of spuren) sp.punkte.length = 0;
     for (const r of RINGE) { r.gruen = 0; r.seite = 0; }
     GEGNER.forEach((g, i) => {
       g.ringIndex = 0; g.schub = 0;
-      if (s.modus === 'rennen') { g.x = 180 + (i - 1) * 30; g.z = -470 - i * 25; g.y = 60; g.h = 0; }
+      if (s.modus === 'rennen') { g.x = strecke.start.x + (i - 1) * 30; g.z = strecke.start.z - 50 - i * 25; g.y = s.y; g.h = 0; }
     });
     // Erster Ring im Rennen: der nächste in Flugrichtung vom Start
     if (s.modus === 'rennen' || s.modus === 'ringe') { s.h = Math.atan2(RINGE[0].x - s.x, RINGE[0].z - s.z); GEGNER.forEach((g) => { g.h = s.h; }); }
@@ -564,15 +740,18 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     flieger.visible = true; document.body.classList.remove('menue');
   }
   function zumMenue() {
+    geistFlieger.visible = false; s.combo = 0;
     s.phase = 'menue'; s.vorbei = true; $('ende').hidden = true; $('pause').hidden = true; $('pauseKnopf').hidden = true; $('platz').hidden = true; $('tutorial').hidden = true; $('hinweis').hidden = true;
     $('menue').hidden = false; flieger.visible = false; document.body.classList.add('menue'); menueZeigen();
   }
   function menueZeigen() {
     const st = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
-    for (const m of ['drift', 'ringe', 'rennen']) $('st_' + m).textContent = st(sterne[m]);
-    $('bw_drift').textContent = bestwerte.drift ? 'Best ' + bestwerte.drift.toLocaleString('de-DE') : 'noch kein Wert';
-    $('bw_ringe').textContent = bestwerte.ringe ? 'Best ' + bestwerte.ringe.toFixed(1) + ' s' : 'noch kein Wert';
-    $('bw_rennen').textContent = bestwerte.rennen ? 'Best Platz ' + bestwerte.rennen : 'noch kein Wert';
+    for (const m of ['drift', 'ringe', 'rennen']) $('st_' + m).textContent = st(sterne[sk(m)] || 0);
+    const bw = (m) => bestwerte[sk(m)] || 0;
+    $('bw_drift').textContent = bw('drift') ? 'Best ' + bw('drift').toLocaleString('de-DE') : 'noch kein Wert';
+    $('bw_ringe').textContent = bw('ringe') ? 'Best ' + bw('ringe').toFixed(1) + ' s' + (geister[strecke.id] ? ' · Geist bereit' : '') : 'noch kein Wert';
+    $('bw_rennen').textContent = bw('rennen') ? 'Best Platz ' + bw('rennen') : 'noch kein Wert';
+    for (const b of document.querySelectorAll('#strecken button')) { const an = b.dataset.strecke === strecke.id; b.classList.toggle('an', an); b.setAttribute('aria-pressed', an ? 'true' : 'false'); }
     $('e_ton').textContent = tonAn ? 'Ton an' : 'Ton aus'; $('e_ton').classList.toggle('an', tonAn);
     $('e_links').classList.toggle('an', einst.links); $('e_emp').textContent = 'Lenkung: ' + (einst.emp < 1 ? 'ruhig' : einst.emp > 1 ? 'scharf' : 'normal');
     $('e_hilfe').textContent = 'Flughilfe: ' + ['aus', 'mittel', 'stark'][einst.hilfe]; $('e_hilfe').classList.toggle('an', einst.hilfe > 0);
@@ -584,30 +763,40 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   }
   function beenden() {
     s.vorbei = true; s.phase = 'ende'; s.punkte += Math.round(s.combo); s.combo = 0;
-    let titel = 'Runde vorbei', gross = '', stil = '', text = '', st = 0;
+    let titel = 'Runde vorbei', gross = '', stil = '', text = '', st = 0, teilen = null;
+    const komma = (z) => z.toFixed(1).replace('.', ','), sternText = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
     if (s.modus === 'drift') {
-      if (s.punkte > bestwerte.drift) bestwerte.drift = s.punkte; best = bestwerte.drift;
+      if (s.punkte > (bestwerte[sk('drift')] || 0)) bestwerte[sk('drift')] = s.punkte; best = bestwerte[sk('drift')];
       st = s.punkte >= 8000 ? 3 : s.punkte >= 4500 ? 2 : s.punkte >= 2000 ? 1 : 0;
       stil = 'Stil ' + (s.punkte >= 12000 ? 'S' : s.punkte >= 8000 ? 'A' : s.punkte >= 4500 ? 'B' : s.punkte >= 2000 ? 'C' : 'D');
       gross = s.punkte.toLocaleString('de-DE');
-      text = `Längster Drift ${s.langsterDrift.toFixed(1)} s · Ringe ${s.ringe} · Knapp vorbei ${s.knapp} · Treffer ${s.treffer} · Best ${bestwerte.drift.toLocaleString('de-DE')}`;
+      teilen = [`Drift-Runde (${strecke.name})`, gross + ' Punkte', sternText(st)];
+      text = `Längster Drift ${s.langsterDrift.toFixed(1)} s · Ringe ${s.ringe} · Knapp vorbei ${s.knapp} · Treffer ${s.treffer} · Best ${best.toLocaleString('de-DE')}`;
     } else if (s.modus === 'ringe') {
       titel = 'Ringjagd'; const fertig = s.ringIndex >= RING_ZAHL;
-      if (fertig && (!bestwerte.ringe || s.zeit < bestwerte.ringe)) bestwerte.ringe = s.zeit;
-      st = !fertig ? 0 : s.zeit <= 95 ? 3 : s.zeit <= 125 ? 2 : 1;
+      const [s3, s2] = strecke.sterne, k = sk('ringe');
+      if (fertig && (!bestwerte[k] || s.zeit < bestwerte[k])) bestwerte[k] = s.zeit;
+      st = !fertig ? 0 : s.zeit <= s3 ? 3 : s.zeit <= s2 ? 2 : 1;
+      const neu = { zeit: Math.round(s.zeit * 100) / 100, ringe: aufnahme.ringe.slice(), punkte: aufnahme.punkte.slice(0, GEIST_MAX) };
+      let neuerGeist = false;
+      if (fertig && geistErsetzt(geister[strecke.id], neu)) { geister[strecke.id] = neu; try { localStorage.setItem(GEIST_SCHLUESSEL, geistSchreiben(geister)); neuerGeist = true; } catch (e) {} }
       stil = fertig ? '★'.repeat(st) + '☆'.repeat(3 - st) : 'Abgebrochen'; gross = s.zeit.toFixed(1) + ' s';
-      text = fertig ? `Alle ${RING_ZAHL} Ringe · Treffer ${s.treffer} · Best ${bestwerte.ringe.toFixed(1)} s · 3 Sterne unter 95 s, 2 unter 125 s` : `${s.ringIndex} von ${RING_ZAHL} Ringen`;
+      if (fertig) teilen = [`Ringjagd (${strecke.name})`, komma(s.zeit) + ' s', sternText(st)];
+      text = fertig ? `${strecke.name}: alle ${RING_ZAHL} Ringe · Treffer ${s.treffer} · Best ${bestwerte[k].toFixed(1)} s · 3 Sterne unter ${s3} s, 2 unter ${s2} s` + (neuerGeist ? ' · Neuer Geist gespeichert' : s.geist ? ' · Geist ' + geistAbstand(s.zeit, s.geist.zeit) : '') : `${s.ringIndex} von ${RING_ZAHL} Ringen`;
     } else {
       titel = 'Rennen'; const fertig = s.ringIndex >= RING_ZAHL * RUNDEN_RENNEN;
-      if (fertig && (!bestwerte.rennen || s.platz < bestwerte.rennen)) bestwerte.rennen = s.platz;
+      const k = sk('rennen'); if (fertig && (!bestwerte[k] || s.platz < bestwerte[k])) bestwerte[k] = s.platz;
       st = !fertig ? 0 : s.platz === 1 ? 3 : s.platz === 2 ? 2 : 1;
       stil = fertig ? s.platz + '. Platz' : 'Abgebrochen'; gross = s.zeit.toFixed(1) + ' s';
-      text = fertig ? `${RING_ZAHL} Ringe in ${s.zeit.toFixed(1)} s · Treffer ${s.treffer} · Best Platz ${bestwerte.rennen}` : `${s.ringIndex} von ${RING_ZAHL * RUNDEN_RENNEN} Ringen`;
+      if (fertig) teilen = [`Rennen (${strecke.name})`, 'Platz ' + s.platz, komma(s.zeit) + ' s'];
+      text = fertig ? `${RING_ZAHL} Ringe in ${s.zeit.toFixed(1)} s · Treffer ${s.treffer} · Best Platz ${bestwerte[k]}` : `${s.ringIndex} von ${RING_ZAHL * RUNDEN_RENNEN} Ringen`;
     }
-    if (st > sterne[s.modus]) sterne[s.modus] = st;
+    if (st > (sterne[sk(s.modus)] || 0)) sterne[sk(s.modus)] = st;
     speichern(); try { localStorage.setItem('luftdrift3d.best', String(bestwerte.drift)); } catch (e) {}
+    geistFlieger.visible = false;
     $('endeTitel').textContent = titel; $('endeStil').textContent = stil; $('endePunkte').textContent = gross; $('endeText').textContent = text;
     $('ende').hidden = false; $('pauseKnopf').hidden = true; $('tutorial').hidden = true;
+    s.teilen = teilen ? ['Luftdrift'].concat(teilen) : null; $('teilenKnopf').hidden = !s.teilen || !window.Teilen;
   }
   // Tutorial in der Drift-Runde: vier Schritte, jeder endet mit der passenden Handlung
   const TUT = ['Zieh den Finger seitlich: so lenkst du.', 'Zieh deutlich hoch oder runter: so änderst du die Höhe. Sonst hält die Flughilfe die Höhe der Ringe.', 'Halte DRIFT und lenke: das Heck bricht aus.', 'Lass den Drift los: du bekommst Schub. Jetzt zu den Ringen!'];
@@ -658,6 +847,9 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   $('pauseKnopf').addEventListener('click', () => pausieren(true)); $('weiter').addEventListener('click', () => pausieren(false)); $('pauseMenue').addEventListener('click', zumMenue);
   for (const b of document.querySelectorAll('.modus')) b.addEventListener('click', () => { tonStart(); neustart(b.dataset.modus); });
   $('e_ton').addEventListener('click', () => { tonAn = !tonAn; tonZeigen(); try { localStorage.setItem('luftdrift3d.ton', tonAn ? 'an' : 'aus'); } catch (e) {} tonStart(); menueZeigen(); });
+  $('teilenKnopf').addEventListener('click', () => { if (s.teilen && window.Teilen) window.Teilen.teilen({ titel: 'Luftdrift', text: window.Teilen.text(s.teilen) }); });
+  for (const b of document.querySelectorAll('#strecken button')) b.addEventListener('click', () => streckeWaehlen(b.dataset.strecke));
+  function streckeWaehlen(id) { baueWelt(id); einst.strecke = strecke.id; speichern(); menueZeigen(); }
   $('e_links').addEventListener('click', () => { einst.links = !einst.links; speichern(); menueZeigen(); });
   $('e_hilfe').addEventListener('click', () => { einst.hilfe = (einst.hilfe + 2) % 3; speichern(); menueZeigen(); });
   $('e_emp').addEventListener('click', () => { einst.emp = einst.emp < 1 ? 1 : einst.emp > 1 ? 0.7 : 1.4; speichern(); menueZeigen(); });
@@ -756,11 +948,21 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     s.y += (s.zielY - s.y) * Math.min(1, dt * 2.5);
     const grenze = WELT - 40, abstandMitte = Math.hypot(s.x, s.z);
     if (abstandMitte > grenze) { const f = grenze / abstandMitte; s.x *= f; s.z *= f; s.h = Math.atan2(-s.x, -s.z); s.vs *= 0.5; s.combo = 0; s.schlupf = 0; melden('Spielfeldrand'); }
-    const boden = Math.max(gelaende(s.x, s.z), Math.hypot(s.x - SEE.x, s.z - SEE.z) < SEE.r ? -3 : -999);
+    const boden = Math.max(gelaende(s.x, s.z), wasserHoehe(s.x, s.z));
     if (s.y < boden + 4) { s.y = boden + 6; s.zielY = Math.max(s.zielY, boden + 30); s.vf *= 0.6; s.combo = 0; s.treffer++; brumm(80); klang(120, 50, 0.3, 'sawtooth'); melden(boden <= -2.9 ? 'Wasser!' : 'Bodenberührung'); }
     s.schlupf = Math.atan2(s.vs, s.vf);
     const grad = Math.abs(s.schlupf) * 180 / Math.PI;
     let naechste = Infinity;
+    for (const hd of HINDERNISSE) {
+      // Leuchtturm, Brückenpfeiler und Brückenplatte: Zusammenstoß bremst und drückt zurück
+      const trifft = hd.platte ? Math.abs(s.z - hd.z) < 7 && Math.abs(s.x - hd.x) < hd.halb && Math.abs(s.y - hd.y) < 4
+        : Math.hypot(s.x - hd.x, s.z - hd.z) < hd.r + 3 && s.y < hd.oben;
+      if (trifft && !(hd.zeit > 0)) {
+        hd.zeit = 1.5; s.vf *= 0.5; s.combo = 0; s.treffer++; brumm(80); klang(140, 60, 0.3, 'sawtooth');
+        if (hd.platte) { s.y = hd.y + (s.y > hd.y ? 6 : -6); s.zielY = s.y; melden('Brücke gestreift'); } else { s.x += (s.x - hd.x) * 0.8; s.z += (s.z - hd.z) * 0.8; melden(strecke.wahrzeichen === 'leuchtturm' ? 'Leuchtturm gerammt' : 'Pfeiler gerammt'); }
+      }
+      hd.zeit = Math.max(0, (hd.zeit || 0) - dt);
+    }
     for (const p of PYLONEN) {
       const d = Math.hypot(p.x - s.x, p.z - s.z), unterSpitze = s.y < p.boden + TURM_HOEHE + 6;
       naechste = Math.min(naechste, d);
@@ -796,7 +998,9 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
       if (r.seite !== 0 && seite !== 0 && seite !== r.seite && Math.abs(d) < 40 && quer < RING_RADIUS + 6 && (s.modus === 'drift' ? r.gruen <= 0 : r === naechsterRing)) {
         r.gruen = s.modus === 'drift' ? 3 : 1.2; s.punkte += 300; s.ringe++; s.ringIndex++; s.schub = Math.max(s.schub, 1.0); s.schubMax = Math.max(s.schubMax, 1.0);
         const gesamt = RING_ZAHL * (s.modus === 'rennen' ? RUNDEN_RENNEN : 1);
-        melden(s.modus === 'drift' ? 'Ring +300' : `Ring ${Math.min(s.ringIndex, gesamt)} von ${gesamt}`); klang(660, 1320, 0.3); brumm(25);
+        let abstand = '';
+        if (s.modus === 'ringe') { aufnahme.ringe.push(Math.round(s.zeit * 100) / 100); if (s.geist) abstand = geistAbstand(s.zeit, s.geist.ringe[s.ringIndex - 1]); }
+        melden(s.modus === 'drift' ? 'Ring +300' : `Ring ${Math.min(s.ringIndex, gesamt)} von ${gesamt}` + (abstand ? ' · ' + abstand : '')); klang(660, 1320, 0.3); brumm(25);
         if (s.modus !== 'drift' && s.ringIndex >= gesamt) { beenden(); return; }
       }
       r.seite = seite; r.gruen = Math.max(0, r.gruen - dt);
@@ -823,6 +1027,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     }
     for (const g of GEGNER) gegnerSchritt(g, dt);
     if (s.phase !== 'spiel') return;
+    if (s.modus === 'ringe') while (aufnahme.punkte.length < GEIST_MAX && aufnahme.punkte.length * GEIST_TAKT <= s.zeit + 1e-9) aufnahme.punkte.push([s.x, s.y, s.z, s.h, s.lenkSicht * 0.8 + s.schlupf * 0.2].map((v) => Math.round(v * 10) / 10));
     s.meldungZeit -= dt; if (s.meldungZeit <= 0) $('meldung').classList.remove('an');
     if (s.modus === 'drift') { s.zeit -= dt; if (s.zeit <= 0) { s.zeit = 0; beenden(); } }
     else {
@@ -857,9 +1062,12 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
       v.mesh.position.set(v.mitte.x + Math.cos(v.t) * v.r, v.h + Math.sin(v.t * 2.3) * 4, v.mitte.z + Math.sin(v.t) * v.r);
       v.mesh.rotation.y = -v.t; v.mesh.scale.y = 0.2 + Math.abs(Math.sin(v.w)) * 2.5;
     }
+    const gp = (s.phase === 'spiel' || s.phase === 'pause') && s.geist ? geistPosition(s.geist.punkte, s.zeit) : null;
+    geistFlieger.visible = !!gp;
+    if (gp) { geistFlieger.position.set(gp[0], gp[1], gp[2]); geistFlieger.rotation.y = gp[3]; geistFlieger.rotation.z = gp[4]; geistFlieger.userData.prop.rotation.z += dt * 40; }
     if (s.phase === 'menue') {
       // Startbild: Kamera kreist langsam um den mittleren Turm, die Gegner fliegen weiter
-      const w = zeitGesamt * 0.12; kamera.position.set(Math.sin(w) * 260, 95 + Math.sin(w * 0.7) * 15, Math.cos(w) * 260); kamera.lookAt(0, 70, 0);
+      const w = zeitGesamt * 0.12, b = strecke.blick, gy = gelaende(b.x, b.z); kamera.position.set(b.x + Math.sin(w) * 260, gy + b.y + 25 + Math.sin(w * 0.7) * 15, b.z + Math.cos(w) * 260); kamera.lookAt(b.x, gy + b.y, b.z);
       kamera.fov = 60; kamera.updateProjectionMatrix(); renderer.render(szene, kamera); karteZeichnen();
       tonSchritt(0.3, 0, 0, false); musikSchritt(false, 0); return;
     }
@@ -898,7 +1106,10 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     kctx.setTransform(2, 0, 0, 2, 0, 0); kctx.clearRect(0, 0, 84, 84);
     const m = 40 / WELT, cx = 42, cy = 42;
     const px = (x) => cx + x * m, pz = (z) => cy - z * m;
-    kctx.fillStyle = 'rgba(74,134,184,0.6)'; kctx.beginPath(); kctx.arc(px(SEE.x), pz(SEE.z), SEE.r * m, 0, 6.3); kctx.fill();
+    kctx.fillStyle = 'rgba(74,134,184,0.6)';
+    if (SEE) { kctx.beginPath(); kctx.arc(px(SEE.x), pz(SEE.z), SEE.r * m, 0, 6.3); kctx.fill(); }
+    if (strecke.meer) { kctx.beginPath(); kctx.moveTo(0, 0); for (let z = WELT; z >= -WELT; z -= 100) kctx.lineTo(px(kuestenLinie(z)), pz(z)); kctx.lineTo(0, 84); kctx.closePath(); kctx.fill(); }
+    if (strecke.id === 'berge') { kctx.strokeStyle = 'rgba(246,241,230,0.35)'; kctx.lineWidth = 10 * 40 / WELT * 30; kctx.beginPath(); for (let z = -WELT; z <= WELT; z += 100) kctx.lineTo(px(bergTal(z)), pz(z)); kctx.stroke(); }
     kctx.fillStyle = '#ff9f2e'; for (const p of PYLONEN) { kctx.beginPath(); kctx.arc(px(p.x), pz(p.z), 2, 0, 6.3); kctx.fill(); }
     for (const r of RINGE) { kctx.strokeStyle = r.gruen > 0 ? '#ffffff' : '#5ed68a'; kctx.lineWidth = 1; kctx.beginPath(); kctx.arc(px(r.x), pz(r.z), 2, 0, 6.3); kctx.stroke(); }
     for (const g of GEGNER) { kctx.fillStyle = '#' + new THREE.Color(g.hell).getHexString(); kctx.beginPath(); kctx.arc(px(g.x), pz(g.z), 2, 0, 6.3); kctx.fill(); }
@@ -939,7 +1150,11 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     zeichne(dt, echtDt); hud();
     requestAnimationFrame(bild);
   }
-  window.__proto = { s, RINGE, abst, PYLONEN, neustart, zumMenue, GEGNER, einst };
+  window.__proto = {
+    s, RINGE, abst, neustart, zumMenue, GEGNER, einst, STRECKEN, gelaende, wasserHoehe, szene, renderer, streckeWaehlen, bestwerte, sterne, beenden,
+    get PYLONEN() { return PYLONEN; }, get strecke() { return strecke; }, get HINDERNISSE() { return HINDERNISSE; }, RING_RADIUS,
+    Geist: { lesen: geistLesen, schreiben: geistSchreiben, gueltig: geistGueltig, ersetzt: geistErsetzt, position: geistPosition, abstand: geistAbstand, aufnahme, get geister() { return geister; }, flieger: geistFlieger, TAKT: GEIST_TAKT, MAX: GEIST_MAX },
+  };
   zumMenue();
   requestAnimationFrame(bild);
 })();
