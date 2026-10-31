@@ -1,0 +1,906 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Luftdrift 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: eine Bildschirmseite, 3D-Bild füllt alles, HUD liegt darüber. Einzige Stimmung: Spätnachmittag über Hügelland mit See. */
+:root {
+  --himmel: #cfe3f3;
+  --papier: #f6f1e6;
+  --tinte: #16202b;
+  --signal: #ff9f2e;
+  --gut: #5ed68a;
+  --anzeige: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --schrift: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--himmel); color: var(--papier); font-family: var(--schrift); overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+#spiel { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+#vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(10,20,40,0.35) 100%); opacity: 0; transition: opacity 0.3s; }
+#vignette.an { opacity: 1; }
+.hud { position: fixed; left: 0; right: 0; top: 0; padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; pointer-events: none; }
+.block { display: flex; flex-direction: column; gap: 2px; min-width: 0; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+.wert { font-family: var(--anzeige); font-variant-numeric: tabular-nums; font-size: 30px; line-height: 1; }
+.label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9; }
+.rechts { text-align: right; align-items: flex-end; }
+#karte { position: fixed; left: 50%; transform: translateX(-50%); top: calc(8px + env(safe-area-inset-top, 0px)); width: 84px; height: 84px; border-radius: 50%; background: rgba(22,32,43,0.4); border: 1px solid rgba(246,241,230,0.45); pointer-events: none; }
+#combo { position: fixed; left: 50%; top: 18%; transform: translateX(-50%); font-family: var(--anzeige); font-variant-numeric: tabular-nums; font-size: 44px; color: var(--signal); text-shadow: 0 2px 8px rgba(0,0,0,0.6); pointer-events: none; opacity: 0; transition: opacity 0.15s; white-space: nowrap; }
+#combo.an { opacity: 1; }
+#combo small { display: block; font-size: 14px; font-family: var(--schrift); color: var(--papier); text-align: center; letter-spacing: 0.06em; }
+#meldung { position: fixed; left: 50%; top: 30%; transform: translateX(-50%) scale(1); font: 700 24px var(--schrift); color: var(--gut); text-shadow: 0 2px 8px rgba(0,0,0,0.6); pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s; white-space: nowrap; }
+#meldung.an { opacity: 1; transform: translateX(-50%) scale(1.15); }
+#hinweis { position: fixed; left: 50%; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); font-size: 13px; text-shadow: 0 1px 3px rgba(0,0,0,0.7); pointer-events: none; text-align: center; max-width: 72vw; }
+#taste { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 84px; height: 84px; border-radius: 50%; border: 2px solid var(--papier); background: rgba(22,32,43,0.45); color: var(--papier); font: 700 15px var(--schrift); letter-spacing: 0.06em; touch-action: none; }
+#taste.an { background: var(--signal); color: var(--tinte); border-color: var(--signal); }
+.rund { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(246,241,230,0.6); background: rgba(22,32,43,0.45); color: var(--papier); font-size: 18px; }
+#zahnrad { top: calc(64px + env(safe-area-inset-top, 0px)); }
+#ton { top: calc(112px + env(safe-area-inset-top, 0px)); }
+#panel { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(160px + env(safe-area-inset-top, 0px)); width: min(300px, calc(100vw - 32px)); background: rgba(22,32,43,0.92); border: 1px solid rgba(246,241,230,0.25); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; font-size: 13px; }
+#panel label { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
+#panel input[type=range] { grid-column: 1 / -1; width: 100%; }
+#panel output { font-family: var(--anzeige); font-variant-numeric: tabular-nums; }
+#panel button { justify-self: start; background: none; border: 1px solid var(--papier); color: var(--papier); border-radius: 6px; padding: 5px 10px; font-size: 13px; }
+#ende { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(22,32,43,0.55); text-align: center; padding: 0 max(16px, env(safe-area-inset-left, 0px)); }
+#ende .karte { background: var(--papier); color: var(--tinte); border-radius: 12px; padding: 24px 28px; max-width: 320px; }
+#ende h2 { margin: 0 0 6px; font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; }
+#ende .gross { font-family: var(--anzeige); font-size: 48px; font-variant-numeric: tabular-nums; }
+#ende .stil { font: 900 64px var(--schrift); color: var(--signal); line-height: 1; }
+#ende p { margin: 8px 0 0; font-size: 14px; }
+#schlupf { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); width: 110px; height: 70px; pointer-events: none; }
+#schub { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: 120px; height: 6px; border-radius: 3px; background: rgba(22,32,43,0.4); overflow: hidden; pointer-events: none; }
+#schub i { display: block; height: 100%; width: 0; background: var(--gut); }
+#menue { position: fixed; inset: 0; display: grid; place-items: center; background: linear-gradient(rgba(22,32,43,0.15), rgba(22,32,43,0.75)); padding: 0 max(16px, env(safe-area-inset-left, 0px)); }
+#menue .karte { width: min(360px, 100%); display: grid; gap: 10px; }
+#menue h1 { margin: 0; font: 900 44px/1 var(--schrift); letter-spacing: -0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+#menue h1 small { display: block; font: 500 13px var(--schrift); letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; margin-top: 6px; }
+.modus { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; text-align: left; background: rgba(246,241,230,0.94); color: var(--tinte); border: 0; border-radius: 12px; padding: 12px 16px; font: 600 17px var(--schrift); }
+.modus small { grid-column: 1; font: 400 12px var(--schrift); opacity: 0.75; }
+.modus .sterne { grid-column: 2; grid-row: 1 / 3; font-size: 18px; color: var(--signal); letter-spacing: 0.04em; }
+.modus .wert { font-size: 13px; }
+#einstellungen { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+#einstellungen button { background: rgba(22,32,43,0.55); color: var(--papier); border: 1px solid rgba(246,241,230,0.45); border-radius: 10px; padding: 9px 10px; font: 500 13px var(--schrift); }
+#einstellungen button.an { background: var(--signal); color: var(--tinte); border-color: var(--signal); }
+#pauseKnopf { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); top: calc(112px + env(safe-area-inset-top, 0px)); width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(246,241,230,0.6); background: rgba(22,32,43,0.45); color: var(--papier); font-size: 16px; }
+#pause { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(22,32,43,0.6); }
+#pause .karte, #ende .karte { display: grid; gap: 8px; }
+.knopf { background: var(--tinte); color: var(--papier); border: 0; border-radius: 10px; padding: 10px 16px; font: 600 15px var(--schrift); }
+.knopf.hell { background: none; color: var(--tinte); border: 1px solid var(--tinte); }
+#tutorial { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(116px + env(safe-area-inset-bottom, 0px)); background: rgba(22,32,43,0.75); color: var(--papier); border-radius: 10px; padding: 10px 14px; font-size: 14px; max-width: 78vw; text-align: center; pointer-events: none; }
+#platz { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); top: calc(160px + env(safe-area-inset-top, 0px)); font: 900 34px var(--schrift); text-shadow: 0 2px 8px rgba(0,0,0,0.6); pointer-events: none; }
+#platz small { display: block; font: 500 11px var(--schrift); letter-spacing: 0.08em; text-transform: uppercase; }
+body.menue .hud, body.menue #taste, body.menue #schlupf, body.menue #schub, body.menue #ringInfo { display: none; }
+body.links #taste { right: auto; left: max(16px, env(safe-area-inset-left, 0px)); }
+body.links #schlupf { left: auto; right: max(16px, env(safe-area-inset-right, 0px)); }
+button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { #combo, #meldung, #vignette { transition: none; } }
+</style>
+
+<canvas id="spiel"></canvas>
+<div id="vignette"></div>
+
+<div class="hud">
+  <div class="block">
+    <span class="label">Driftpunkte</span>
+    <span class="wert" id="punkte">0</span>
+    <span class="label">Best <span id="best">0</span></span>
+  </div>
+  <div class="block rechts">
+    <span class="label">Zeit</span>
+    <span class="wert" id="zeit">60</span>
+    <span class="label"><span id="tempo">0</span> km/h · <span id="hoehe">60</span> m</span>
+  </div>
+</div>
+<canvas id="karte" width="168" height="168"></canvas>
+<div id="ringInfo" class="label" style="position: fixed; left: 50%; transform: translateX(-50%); top: calc(96px + env(safe-area-inset-top, 0px)); pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.6); color: var(--gut);">Ring</div>
+<div id="combo"><span id="comboWert">0</span><small id="comboText">Drift</small></div>
+<div id="meldung"></div>
+<canvas id="schlupf" width="220" height="140"></canvas>
+<div id="schub"><i id="schubBalken"></i></div>
+<div id="hinweis">Seitlich ziehen = lenken, hoch oder runter = Höhe. Voll einschlagen oder DRIFT halten = Heck ausbrechen lassen, loslassen = Schub. Knapp an Türmen und Gegnern vorbei bringt Bonus.</div>
+<button id="taste" type="button" aria-pressed="false">DRIFT</button>
+<button id="zahnrad" class="rund" type="button" aria-label="Abstimmung">⚙</button>
+<button id="ton" class="rund" type="button" aria-label="Ton an oder aus">🔊</button>
+<div id="panel" hidden>
+  <strong>Abstimmung (wirkt sofort)</strong>
+  <label>Schub <output id="o_schub"></output><input id="r_schub" type="range" min="20" max="140" step="5"></label>
+  <label>Drehrate <output id="o_dreh"></output><input id="r_dreh" type="range" min="60" max="260" step="10"></label>
+  <label>Griff normal <output id="o_griff"></output><input id="r_griff" type="range" min="0.5" max="6" step="0.1"></label>
+  <label>Griff im Drift <output id="o_griffd"></output><input id="r_griffd" type="range" min="0.05" max="2" step="0.05"></label>
+  <label>Höchsttempo <output id="o_max"></output><input id="r_max" type="range" min="120" max="420" step="10"></label>
+  <label>Kameraabstand <output id="o_kam"></output><input id="r_kam" type="range" min="10" max="40" step="1"></label>
+  <button id="reset" type="button">Zurücksetzen</button>
+</div>
+<div id="platz" hidden><span id="platzWert">1.</span><small id="platzText">Platz</small></div>
+<div id="tutorial" hidden></div>
+<button id="pauseKnopf" type="button" aria-label="Pause" hidden>⏸</button>
+<div id="menue">
+  <div class="karte">
+    <h1>Luftdrift<small>Prototyp · Fassung 5</small></h1>
+    <button class="modus" type="button" data-modus="drift"><span>Drift-Runde</span><small>60 s driften, Türme, Ringe und Gegner streifen</small><span class="sterne" id="st_drift">☆☆☆</span><span class="wert" id="bw_drift"></span></button>
+    <button class="modus" type="button" data-modus="ringe"><span>Ringjagd</span><small>Alle 9 Ringe der Reihe nach gegen die Uhr</small><span class="sterne" id="st_ringe">☆☆☆</span><span class="wert" id="bw_ringe"></span></button>
+    <button class="modus" type="button" data-modus="rennen"><span>Rennen</span><small>Eine Runde durch alle Ringe gegen drei Gegner</small><span class="sterne" id="st_rennen">☆☆☆</span><span class="wert" id="bw_rennen"></span></button>
+    <div id="einstellungen">
+      <button type="button" id="e_ton">Ton</button>
+      <button type="button" id="e_links">Drift-Taste links</button>
+      <button type="button" id="e_emp">Lenkung: normal</button>
+      <button type="button" id="e_tut">Tutorial zeigen</button>
+    </div>
+  </div>
+</div>
+<div id="pause" hidden>
+  <div class="karte" style="background: var(--papier); color: var(--tinte); border-radius: 12px; padding: 24px 28px; text-align: center;">
+    <h2 style="margin:0; font-size:16px; letter-spacing:0.08em; text-transform:uppercase;">Pause</h2>
+    <button class="knopf" type="button" id="weiter">Weiter</button>
+    <button class="knopf hell" type="button" id="pauseMenue">Zum Startbild</button>
+  </div>
+</div>
+<div id="ende" hidden>
+  <div class="karte">
+    <h2 id="endeTitel">Runde vorbei</h2>
+    <div class="stil" id="endeStil">B</div>
+    <div class="gross" id="endePunkte">0</div>
+    <p id="endeText"></p>
+    <button class="knopf" type="button" id="nochmal">Nochmal</button>
+    <button class="knopf hell" type="button" id="endeMenue">Zum Startbild</button>
+  </div>
+</div>
+
+<script src="three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const canvas = $('spiel');
+
+  // Abstimmung: m/s², Grad/s, 1/s, km/h, m. Änderbar im Panel.
+  const STANDARD = { schub: 70, dreh: 150, griff: 2.6, griffd: 0.9, max: 260, kam: 20 };
+  let abst = Object.assign({}, STANDARD);
+  try { Object.assign(abst, JSON.parse(localStorage.getItem('luftdrift3d.abst') || '{}')); } catch (e) {}
+  let best = 0, tonAn = true;
+  const einst = { links: false, emp: 1, tutorial: true };
+  const bestwerte = { drift: 0, ringe: 0, rennen: 0 }, sterne = { drift: 0, ringe: 0, rennen: 0 };
+  try {
+    best = Number(localStorage.getItem('luftdrift3d.best')) || 0; tonAn = localStorage.getItem('luftdrift3d.ton') !== 'aus';
+    Object.assign(einst, JSON.parse(localStorage.getItem('luftdrift3d.einst') || '{}'));
+    Object.assign(bestwerte, JSON.parse(localStorage.getItem('luftdrift3d.bestwerte') || '{}'));
+    Object.assign(sterne, JSON.parse(localStorage.getItem('luftdrift3d.sterne') || '{}'));
+    bestwerte.drift = Math.max(bestwerte.drift, best);
+  } catch (e) {}
+  const speichern = () => { try { localStorage.setItem('luftdrift3d.einst', JSON.stringify(einst)); localStorage.setItem('luftdrift3d.bestwerte', JSON.stringify(bestwerte)); localStorage.setItem('luftdrift3d.sterne', JSON.stringify(sterne)); } catch (e) {} };
+
+  const RUNDE = 60, WELT = 1400, TURM_HOEHE = 130;
+  const PYLONEN = [
+    { x: 0, z: 0 }, { x: 520, z: 300 }, { x: -480, z: 360 }, { x: 380, z: -520 }, { x: -600, z: -420 }, { x: 60, z: 760 }, { x: -120, z: -840 }, { x: 900, z: -100 }, { x: -950, z: 50 },
+  ];
+  const SEE = { x: -760, z: 760, r: 300 };
+  const DORF = { x: 640, z: -320 };
+  let seed = 4242;
+  const zufall = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const glatt = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
+
+  // Gelände: innen flach mit sanften Wellen, außen Hügel, eine Senke für den See. Dieselbe Formel für Bild und Aufsetzen.
+  function gelaende(x, z) {
+    const r = Math.hypot(x, z), t = glatt((r - 1250) / 900);
+    const a = Math.sin(x * 0.0041 + 1.3) * Math.cos(z * 0.0036 - 0.7);
+    const b = Math.sin(x * 0.013 + z * 0.009) * 0.5;
+    const c = Math.sin(x * 0.0021 - z * 0.0025) * Math.cos(z * 0.0019 + 0.4);
+    let h = 5 * (a + b) + t * (150 * (0.55 + 0.45 * c) + 70 * Math.max(0, a));
+    const see = glatt(1 - Math.hypot(x - SEE.x, z - SEE.z) / (SEE.r + 60));
+    return h - see * 14 - (Math.hypot(x - DORF.x, z - DORF.z) < 220 ? h * 0.9 : 0);
+  }
+
+  // ---------- 3D-Welt ----------
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  const szene = new THREE.Scene();
+  szene.fog = new THREE.Fog(0xcfe3f3, 500, 3600);
+  const kamera = new THREE.PerspectiveCamera(62, 1, 0.5, 9000);
+  szene.add(new THREE.HemisphereLight(0xdbeaff, 0x5a6b3c, 0.75));
+  const sonne = new THREE.DirectionalLight(0xfff1d6, 1.1);
+  sonne.castShadow = true; sonne.shadow.mapSize.set(1024, 1024);
+  sonne.shadow.camera.left = -140; sonne.shadow.camera.right = 140; sonne.shadow.camera.top = 140; sonne.shadow.camera.bottom = -140;
+  sonne.shadow.camera.near = 1; sonne.shadow.camera.far = 900; sonne.shadow.bias = -0.0008;
+  szene.add(sonne); szene.add(sonne.target);
+  const SONNE_RICHTUNG = new THREE.Vector3(-0.55, 0.6, 0.35).normalize();
+
+  // Himmel: Kuppel mit Farbverlauf, dazu die Sonne als leuchtende Scheibe
+  const himmel = new THREE.Mesh(new THREE.SphereGeometry(6000, 24, 12), new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false,
+    uniforms: { oben: { value: new THREE.Color(0x3f86cf) }, horizont: { value: new THREE.Color(0xcfe3f3) } },
+    vertexShader: 'varying float vH; void main(){ vH = normalize(position).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform vec3 oben; uniform vec3 horizont; varying float vH; void main(){ float t = smoothstep(-0.02, 0.45, vH); gl_FragColor = vec4(mix(horizont, oben, t), 1.0); }',
+  }));
+  szene.add(himmel);
+  function scheibenTextur(innen, aussen) {
+    const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+    const v = g.createRadialGradient(64, 64, 4, 64, 64, 62); v.addColorStop(0, innen); v.addColorStop(0.35, innen); v.addColorStop(1, aussen);
+    g.fillStyle = v; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c);
+  }
+  const sonnenScheibe = new THREE.Sprite(new THREE.SpriteMaterial({ map: scheibenTextur('rgba(255,250,230,1)', 'rgba(255,220,150,0)'), blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  sonnenScheibe.scale.set(900, 900, 1); szene.add(sonnenScheibe);
+
+  // Boden: Felder als Textur, Höhe und Farbe je Eckpunkt aus dem Gelände
+  function bodenTextur() {
+    const c = document.createElement('canvas'); c.width = c.height = 1024; const g = c.getContext('2d');
+    const farben = ['#6f9a4f', '#86a85a', '#9bb06a', '#b7a85a', '#c9b273', '#7f8f4a', '#5f8a56', '#a99a63'];
+    const n = 12, s = 1024 / n;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { g.fillStyle = farben[Math.floor(zufall() * farben.length)]; g.fillRect(i * s, j * s, s, s); }
+    g.strokeStyle = 'rgba(80,70,50,0.5)'; g.lineWidth = 6;
+    for (let i = 0; i <= n; i += 3) { g.beginPath(); g.moveTo(i * s, 0); g.lineTo(i * s, 1024); g.stroke(); g.beginPath(); g.moveTo(0, i * s); g.lineTo(1024, i * s); g.stroke(); }
+    g.fillStyle = 'rgba(40,60,30,0.35)';
+    for (let k = 0; k < 120; k++) { g.beginPath(); g.arc(zufall() * 1024, zufall() * 1024, 4 + zufall() * 9, 0, Math.PI * 2); g.fill(); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(40, 40); t.anisotropy = 4; t.encoding = THREE.sRGBEncoding; return t;
+  }
+  {
+    const geo = new THREE.PlaneGeometry(7200, 7200, 150, 150);
+    const pos = geo.attributes.position, farbe = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), zWelt = -pos.getY(i), h = gelaende(x, zWelt);
+      pos.setZ(i, h);
+      const k = glatt(h / 110), g = glatt((h - 160) / 60), sand = glatt((4 - Math.abs(h)) / 4) * glatt(1 - Math.hypot(x - SEE.x, zWelt - SEE.z) / (SEE.r + 80)) * 0.5;
+      farbe[i * 3] = 1 - k * 0.25 + g * 0.2 + sand * 0.3; farbe[i * 3 + 1] = 1 - k * 0.3 + g * 0.2 + sand * 0.2; farbe[i * 3 + 2] = 1 - k * 0.4 + g * 0.3;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(farbe, 3)); geo.computeVertexNormals();
+    const boden = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: bodenTextur(), vertexColors: true }));
+    boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true; szene.add(boden);
+  }
+  const rand = new THREE.Mesh(new THREE.RingGeometry(WELT - 4, WELT + 4, 96), new THREE.MeshBasicMaterial({ color: 0xf6f1e6, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
+  rand.rotation.x = -Math.PI / 2; rand.position.y = 1.2; szene.add(rand);
+
+  // See: glänzende Fläche mit wandernder Welle
+  const wasserTextur = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+    g.fillStyle = '#4a86b8'; g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 400; i++) { g.strokeStyle = `rgba(200,230,255,${0.08 + zufall() * 0.18})`; g.lineWidth = 1 + zufall() * 2; const x = zufall() * 256, y = zufall() * 256; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 10 + zufall() * 30, y + (zufall() - 0.5) * 4); g.stroke(); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(8, 8); t.encoding = THREE.sRGBEncoding; return t;
+  })();
+  const see = new THREE.Mesh(new THREE.CircleGeometry(SEE.r, 48), new THREE.MeshPhongMaterial({ map: wasserTextur, color: 0xffffff, specular: 0xffffff, shininess: 120, transparent: true, opacity: 0.92 }));
+  see.rotation.x = -Math.PI / 2; see.position.set(SEE.x, -3, SEE.z); see.receiveShadow = true; szene.add(see);
+  const steg = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 60), new THREE.MeshLambertMaterial({ color: 0x8a6a45 })); steg.position.set(SEE.x + SEE.r - 20, -1.5, SEE.z + 40); steg.rotation.y = 0.4; steg.castShadow = true; szene.add(steg);
+
+  // Dorf: Häuser mit Dächern, Straßen, Kirchturm
+  {
+    const wand = new THREE.MeshLambertMaterial({ color: 0xf1e8d6 }), dach = new THREE.MeshLambertMaterial({ color: 0xb5503a }), strasse = new THREE.MeshLambertMaterial({ color: 0x6b6762 });
+    const N = 70, haus = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), wand, N), daecher = new THREE.InstancedMesh(new THREE.ConeGeometry(0.78, 0.6, 4), dach, N);
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(), achse = new THREE.Vector3(0, 1, 0);
+    let i = 0;
+    for (let gx = -4; gx <= 4 && i < N; gx++) for (let gz = -4; gz <= 4 && i < N; gz++) {
+      if ((gx === 0) || (gz === 0) || zufall() < 0.2) continue;
+      const x = DORF.x + gx * 42 + (zufall() - 0.5) * 10, z = DORF.z + gz * 42 + (zufall() - 0.5) * 10, b = 12 + zufall() * 10, t = 10 + zufall() * 8, h = 6 + zufall() * 5;
+      const y = gelaende(x, z), w = (zufall() < 0.5 ? 0 : Math.PI / 2) + (zufall() - 0.5) * 0.2;
+      q.setFromAxisAngle(achse, w); sc.set(b, h, t); p.set(x, y + h / 2, z); m.compose(p, q, sc); haus.setMatrixAt(i, m);
+      q.setFromAxisAngle(achse, w + Math.PI / 4); sc.set(Math.max(b, t) * 1.02, h * 0.9, Math.max(b, t) * 1.02); p.set(x, y + h + h * 0.27, z); m.compose(p, q, sc); daecher.setMatrixAt(i, m);
+      i++;
+    }
+    haus.count = daecher.count = i; haus.castShadow = daecher.castShadow = true; haus.receiveShadow = true; szene.add(haus); szene.add(daecher);
+    for (const w of [0, Math.PI / 2]) { const st = new THREE.Mesh(new THREE.PlaneGeometry(16, 420), strasse); st.rotation.x = -Math.PI / 2; st.rotation.z = w; st.position.set(DORF.x, gelaende(DORF.x, DORF.z) + 0.5, DORF.z); szene.add(st); }
+    const turm = new THREE.Mesh(new THREE.BoxGeometry(10, 34, 10), wand); turm.position.set(DORF.x + 24, gelaende(DORF.x, DORF.z) + 17, DORF.z + 24); turm.castShadow = true; szene.add(turm);
+    const helm = new THREE.Mesh(new THREE.ConeGeometry(8, 16, 4), dach); helm.position.set(DORF.x + 24, gelaende(DORF.x, DORF.z) + 42, DORF.z + 24); helm.rotation.y = Math.PI / 4; szene.add(helm);
+  }
+
+  // Bäume als Instanzen: Stamm und Krone
+  {
+    const N = 1500, stamm = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.5, 0.8, 5, 6), new THREE.MeshLambertMaterial({ color: 0x6b4a2e }), N);
+    const krone = new THREE.InstancedMesh(new THREE.ConeGeometry(5, 14, 7), new THREE.MeshLambertMaterial({ color: 0xffffff }), N);
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(), c = new THREE.Color(), achse = new THREE.Vector3(0, 1, 0);
+    let i = 0, versuche = 0;
+    while (i < N && versuche++ < N * 4) {
+      const x = (zufall() * 2 - 1) * 2600, z = (zufall() * 2 - 1) * 2600;
+      if (Math.hypot(x - 180, z + 420) < 160) continue;
+      if (Math.hypot(x - SEE.x, z - SEE.z) < SEE.r + 30 || Math.hypot(x - DORF.x, z - DORF.z) < 230) continue;
+      if (PYLONEN.some((t) => Math.hypot(t.x - x, t.z - z) < 70)) continue;
+      const h = gelaende(x, z); if (h > 150) continue;
+      const g = 0.7 + zufall() * 0.8;
+      sc.set(g, g, g); q.setFromAxisAngle(achse, zufall() * 6.28);
+      p.set(x, h + 2.5 * g, z); m.compose(p, q, sc); stamm.setMatrixAt(i, m);
+      p.set(x, h + 5 * g + 7 * g, z); m.compose(p, q, sc); krone.setMatrixAt(i, m);
+      c.setHSL(0.26 + zufall() * 0.08, 0.45 + zufall() * 0.2, 0.26 + zufall() * 0.12); krone.setColorAt(i, c);
+      i++;
+    }
+    stamm.count = krone.count = i; krone.castShadow = true; krone.receiveShadow = true; szene.add(stamm); szene.add(krone);
+  }
+
+  // Wolken: flache Kugelhaufen, ziehen langsam
+  const wolken = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.92 }), 260);
+  {
+    const m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(); let i = 0;
+    for (let k = 0; k < 52; k++) {
+      const cx = (zufall() * 2 - 1) * 3000, cz = (zufall() * 2 - 1) * 3000, cy = 330 + zufall() * 160, groesse = 60 + zufall() * 90;
+      for (let j = 0; j < 5 && i < 260; j++) {
+        p.set(cx + (zufall() - 0.5) * groesse * 1.4, cy + (zufall() - 0.5) * 18, cz + (zufall() - 0.5) * groesse * 0.9);
+        sc.set(groesse * (0.4 + zufall() * 0.4), groesse * 0.18, groesse * (0.3 + zufall() * 0.35)); m.compose(p, q, sc); wolken.setMatrixAt(i++, m);
+      }
+    }
+  }
+  szene.add(wolken);
+
+  // Vogelschwarm: kleine V-Formen, kreisen um einen Leitpunkt und schlagen mit den Flügeln
+  const VOEGEL = [];
+  {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0, 0, 0.6, -2.4, 0.3, -0.6, 0, 0, -0.3, 0, 0, 0.6, 0, 0, -0.3, 2.4, 0.3, -0.6]), 3));
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshBasicMaterial({ color: 0x1e2a36, side: THREE.DoubleSide });
+    for (let i = 0; i < 26; i++) {
+      const v = new THREE.Mesh(geo, mat); v.frustumCulled = false; szene.add(v);
+      VOEGEL.push({ mesh: v, w: zufall() * 6.28, r: 20 + zufall() * 50, h: 70 + zufall() * 40, t: zufall() * 6.28, mitte: { x: -300 + zufall() * 200, z: -150 + zufall() * 200 } });
+    }
+  }
+
+  // Türme mit Bonusringen am Boden, dazu schwebende Ringe zum Durchfliegen
+  const matOrange = new THREE.MeshLambertMaterial({ color: 0xff8a1f }), matWeiss = new THREE.MeshLambertMaterial({ color: 0xf6f1e6 });
+  const segGeo = new THREE.CylinderGeometry(5, 6.5, TURM_HOEHE / 6, 14);
+  const ringNah = new THREE.MeshBasicMaterial({ color: 0xff9f2e, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
+  const ringFern = new THREE.MeshBasicMaterial({ color: 0xff9f2e, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+  const RINGE = [], RING_RADIUS = 20;
+  for (const p of PYLONEN) {
+    const g = gelaende(p.x, p.z); p.boden = g; p.knappZeit = 0;
+    for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(segGeo, i % 2 ? matWeiss : matOrange); m.position.set(p.x, g + (i + 0.5) * TURM_HOEHE / 6, p.z); m.castShadow = true; szene.add(m); }
+    const spitze = new THREE.Mesh(new THREE.SphereGeometry(7, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff3b1f })); spitze.position.set(p.x, g + TURM_HOEHE + 4, p.z); szene.add(spitze);
+    const r1 = new THREE.Mesh(new THREE.RingGeometry(43, 47, 48), ringNah); r1.rotation.x = -Math.PI / 2; r1.position.set(p.x, g + 1.0, p.z); szene.add(r1);
+    const r2 = new THREE.Mesh(new THREE.RingGeometry(88, 91, 64), ringFern); r2.rotation.x = -Math.PI / 2; r2.position.set(p.x, g + 0.9, p.z); szene.add(r2);
+    const w = zufall() * 6.28, d = 110 + zufall() * 60;
+    const ring = { x: p.x + Math.sin(w) * d, z: p.z + Math.cos(w) * d, y: 40 + zufall() * 40, gruen: 0, seite: 0, turm: p };
+    // Der Ring steht tangential zum Kreis um den Turm: wer den Turm umrundet, fliegt hindurch und nicht in den Turm
+    ring.gier = Math.atan2(p.x - ring.x, p.z - ring.z) + Math.PI / 2;
+    ring.mesh = new THREE.Mesh(new THREE.TorusGeometry(RING_RADIUS, 2.2, 10, 40), new THREE.MeshLambertMaterial({ color: 0x5ed68a, emissive: 0x1d6b3a }));
+    ring.mesh.position.set(ring.x, ring.y, ring.z); ring.mesh.rotation.y = ring.gier; szene.add(ring.mesh);
+    const saeule = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, ring.y - g, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0x5ed68a, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide }));
+    saeule.position.set(ring.x, g + (ring.y - g) / 2, ring.z); szene.add(saeule); ring.saeule = saeule;
+    const marke = new THREE.Mesh(new THREE.ConeGeometry(5, 10, 4), new THREE.MeshBasicMaterial({ color: 0xffe066 })); marke.rotation.x = Math.PI; marke.position.set(ring.x, ring.y + RING_RADIUS + 14, ring.z); marke.visible = false; szene.add(marke); ring.marke = marke;
+    RINGE.push(ring);
+  }
+
+  // Flugzeug: Tiefdecker mit V-Stellung, Nase zeigt nach +z. Eigene Farben und Startnummer je Maschine.
+  function nummerTextur(nummer, farbe) {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d');
+    g.fillStyle = farbe; g.fillRect(0, 0, 128, 64); g.fillStyle = '#16202b'; g.font = '900 52px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(nummer), 64, 34);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+  }
+  function baueFlugzeug(hell, akzent, nummer) {
+    const gruppe = new THREE.Group(); gruppe.rotation.order = 'YXZ';
+    const creme = new THREE.MeshLambertMaterial({ color: hell }), dunkel = new THREE.MeshLambertMaterial({ color: new THREE.Color(hell).multiplyScalar(0.88) }), orange = new THREE.MeshLambertMaterial({ color: akzent }), glas = new THREE.MeshPhongMaterial({ color: 0x1b3350, shininess: 90, specular: 0x88aadd });
+    const profil = [[0.02, -4.9], [0.3, -4.5], [0.55, -3.2], [0.72, -1.5], [0.78, 0.4], [0.7, 2.0], [0.52, 3.6], [0.3, 4.5], [0.06, 4.9]].map((p) => new THREE.Vector2(p[0], p[1]));
+    const rumpf = new THREE.Mesh(new THREE.LatheGeometry(profil, 18), creme); rumpf.rotation.x = Math.PI / 2; rumpf.castShadow = true; gruppe.add(rumpf);
+    const streifen = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.18, 7), orange); streifen.position.set(0, 0.72, -0.2); gruppe.add(streifen);
+    const nase = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.6, 1.1, 14), orange); nase.rotation.x = Math.PI / 2; nase.position.z = 5.3; gruppe.add(nase);
+    const nummerMat = new THREE.MeshLambertMaterial({ map: nummerTextur(nummer, '#' + new THREE.Color(hell).getHexString()) });
+    for (const sx of [-1, 1]) {
+      const fl = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.16, 1.8), dunkel); fl.position.set(sx * 2.9, -0.35, 0.5); fl.rotation.z = sx * 0.09; fl.castShadow = true; gruppe.add(fl);
+      const sp = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.18, 1.8), orange); sp.position.set(sx * 5.2, -0.35 + 0.47, 0.5); sp.rotation.z = sx * 0.09; gruppe.add(sp);
+      const nr = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.1), nummerMat); nr.rotation.x = -Math.PI / 2; nr.position.set(sx * 3.2, -0.2, 0.5); gruppe.add(nr);
+      const hl = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.12, 1.1), dunkel); hl.position.set(sx * 1.1, 0.15, -4.6); gruppe.add(hl);
+    }
+    const sl = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.9, 1.5), orange); sl.position.set(0, 1.1, -4.5); sl.rotation.x = -0.25; sl.castShadow = true; gruppe.add(sl);
+    const kabine = new THREE.Mesh(new THREE.SphereGeometry(0.6, 14, 10), glas); kabine.scale.set(1, 0.85, 2.1); kabine.position.set(0, 0.62, 1.3); gruppe.add(kabine);
+    const pilot = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), new THREE.MeshLambertMaterial({ color: 0xd9a066 })); pilot.position.set(0, 0.75, 1.0); gruppe.add(pilot);
+    const helm = new THREE.Mesh(new THREE.SphereGeometry(0.33, 10, 8), orange); helm.scale.set(1, 0.8, 1); helm.position.set(0, 0.85, 1.0); gruppe.add(helm);
+    const prop = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.8, 0.08), new THREE.MeshBasicMaterial({ color: 0x16202b })); prop.position.z = 5.95; gruppe.add(prop); gruppe.userData.prop = prop;
+    const scheibe = new THREE.Mesh(new THREE.CircleGeometry(1.4, 24), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.16, side: THREE.DoubleSide })); scheibe.position.z = 5.97; gruppe.add(scheibe);
+    const flamme = new THREE.Sprite(new THREE.SpriteMaterial({ map: scheibenTextur('rgba(140,220,255,1)', 'rgba(60,140,255,0)'), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
+    flamme.position.set(0, -0.1, -5.6); flamme.scale.set(3, 3, 1); gruppe.add(flamme); gruppe.userData.flamme = flamme;
+    szene.add(gruppe); return gruppe;
+  }
+  const flieger = baueFlugzeug(0xf6f1e6, 0xff8a1f, 7);
+
+  // Wirbelschleppen: ein Band je Flügelspitze mit eigener Deckkraft je Punkt
+  const SPUR_N = 80;
+  function spur(farbe) {
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(SPUR_N * 2 * 3), alpha = new Float32Array(SPUR_N * 2), idx = [];
+    for (let i = 0; i < SPUR_N - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('alpha', new THREE.BufferAttribute(alpha, 1)); geo.setIndex(idx);
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      uniforms: { farbe: { value: new THREE.Color(farbe) } },
+      vertexShader: 'attribute float alpha; varying float vA; void main(){ vA = alpha; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform vec3 farbe; varying float vA; void main(){ gl_FragColor = vec4(farbe, vA); }',
+    });
+    const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; szene.add(mesh);
+    return { punkte: [], mesh, pos, alpha };
+  }
+  const _d = new THREE.Vector3(), _s = new THREE.Vector3(), _oben = new THREE.Vector3(0, 1, 0);
+  function spurSchreiben(sp, p, staerke, dt) {
+    sp.punkte.push({ p: p.clone(), a: staerke });
+    if (sp.punkte.length > SPUR_N) sp.punkte.shift();
+    for (const q of sp.punkte) q.a = Math.max(0, q.a - dt * 0.55);
+    const n = sp.punkte.length;
+    for (let i = 0; i < SPUR_N; i++) {
+      const j = Math.min(i, n - 1), q = sp.punkte[j];
+      if (!q) continue;
+      const nxt = sp.punkte[Math.min(j + 1, n - 1)].p, prv = sp.punkte[Math.max(j - 1, 0)].p;
+      _d.subVectors(nxt, prv); if (_d.lengthSq() < 1e-6) _d.set(0, 0, 1);
+      _s.crossVectors(_d, _oben).normalize().multiplyScalar(0.22 + (1 - q.a) * 0.9);
+      sp.pos[i * 6] = q.p.x + _s.x; sp.pos[i * 6 + 1] = q.p.y + _s.y; sp.pos[i * 6 + 2] = q.p.z + _s.z;
+      sp.pos[i * 6 + 3] = q.p.x - _s.x; sp.pos[i * 6 + 4] = q.p.y - _s.y; sp.pos[i * 6 + 5] = q.p.z - _s.z;
+      sp.alpha[i * 2] = sp.alpha[i * 2 + 1] = q.a * 0.55;
+    }
+    sp.mesh.geometry.attributes.position.needsUpdate = true; sp.mesh.geometry.attributes.alpha.needsUpdate = true;
+  }
+  const spuren = [spur(0xffffff), spur(0xffffff)];
+
+  // Gegner: drei Maschinen, die von Turm zu Turm fliegen und dort driften. Knapp vorbei = Bonus in Zeitlupe.
+  const GEGNER = [
+    { hell: 0x4f8fd6, akzent: 0xf6f1e6, nummer: 3, ziel: 1, x: 300, z: 100, y: 70, h: 1.0, tempo: 51 },
+    { hell: 0xe85d5d, akzent: 0xf6f1e6, nummer: 12, ziel: 4, x: -300, z: -100, y: 85, h: 3.0, tempo: 48 },
+    { hell: 0xf2d35b, akzent: 0x16202b, nummer: 21, ziel: 6, x: 0, z: 500, y: 55, h: -1.5, tempo: 54 },
+  ];
+  for (const g of GEGNER) { g.mesh = baueFlugzeug(g.hell, g.akzent, g.nummer); g.spuren = [spur(0xffffff), spur(0xffffff)]; g.schlupf = 0; g.knappZeit = 0; g.roll = 0; }
+  const _gp = new THREE.Vector3();
+  function gegnerSchritt(g, dt) {
+    let ziel, zx, zz, d, zielY, tempo = g.tempo;
+    if (s.modus === 'rennen') {
+      // Rennen: Ring für Ring, mit Gummiband (wer hinten liegt, fliegt etwas schneller)
+      const r = RINGE[g.ringIndex % RINGE.length];
+      zx = r.x; zz = r.z; d = Math.hypot(zx - g.x, zz - g.z); zielY = r.y;
+      const vorsprung = g.ringIndex - s.ringIndex;
+      tempo = g.tempo * (vorsprung > 1 ? 0.82 : vorsprung < -1 ? 1.18 : 1) * (g.schub > 0 ? 1.2 : 1);
+      if (d < RING_RADIUS + 8 && Math.abs(g.y - r.y) < RING_RADIUS + 8) { g.ringIndex = Math.min(g.ringIndex + 1, RING_ZAHL * RUNDEN_RENNEN); g.schub = 1; }
+      g.schub = Math.max(0, (g.schub || 0) - dt);
+    } else {
+      ziel = PYLONEN[g.ziel];
+      const dx = ziel.x - g.x, dz = ziel.z - g.z; d = Math.hypot(dx, dz);
+      // Zielpunkt liegt 60 m seitlich vom Turm, so dass der Gegner den Turm umrundet
+      const seite = (g.nummer % 2 ? 1 : -1); zx = ziel.x + (-dz / d) * 60 * seite; zz = ziel.z + (dx / d) * 60 * seite;
+      zielY = ziel.boden + 50 + (g.nummer % 3) * 18;
+    }
+    const soll = Math.atan2(zx - g.x, zz - g.z);
+    let diff = soll - g.h; while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
+    const rate = Math.max(-1.6, Math.min(1.6, diff * 2.2));
+    g.h += rate * dt;
+    const nah = s.modus !== 'rennen' && d < 160;
+    g.schlupf += ((nah ? -rate * 0.45 : 0) - g.schlupf) * Math.min(1, dt * 3);
+    const flug = g.h + g.schlupf * 0.6;
+    g.x += Math.sin(flug) * tempo * dt; g.z += Math.cos(flug) * tempo * dt;
+    g.y += (zielY - g.y) * Math.min(1, dt * (s.modus === 'rennen' ? 1.6 : 0.8));
+    g.roll += ((-rate * 0.45 - g.schlupf * 0.3) - g.roll) * Math.min(1, dt * 4);
+    if (s.modus !== 'rennen' && d < 75) g.ziel = (g.ziel + 2 + (g.nummer % 3)) % PYLONEN.length;
+    g.mesh.position.set(g.x, g.y, g.z); g.mesh.rotation.y = g.h; g.mesh.rotation.z = g.roll; g.mesh.rotation.x = 0;
+    g.mesh.userData.prop.rotation.z += dt * 40; g.mesh.userData.flamme.material.opacity = g.schub > 0 ? 0.6 : 0;
+    const fx = Math.sin(g.h), fz = Math.cos(g.h), rx = -Math.cos(g.h), rz = Math.sin(g.h);
+    for (let i = 0; i < 2; i++) { const sx = i ? 1 : -1; _gp.set(g.x + rx * sx * 5.4 - fx * 0.4, g.y - 0.4, g.z + rz * sx * 5.4 - fz * 0.4); spurSchreiben(g.spuren[i], _gp, Math.abs(g.schlupf) > 0.15 ? 0.7 : 0, dt); }
+    g.knappZeit = Math.max(0, g.knappZeit - dt);
+  }
+
+  // ---------- Ton (erst nach dem ersten Tipp), Musik und Vibration ----------
+  let ac = null, motor, motorG, motorF, wind, windG, windF, musikG, musikF, musikTakt = 0, musikNaechste = 0;
+  const TONLEITER = [0, 3, 5, 7, 10, 12, 15, 17];
+  function tonStart() {
+    if (ac) return;
+    try {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      motor = ac.createOscillator(); motor.type = 'sawtooth'; motor.frequency.value = 90;
+      motorF = ac.createBiquadFilter(); motorF.type = 'lowpass'; motorF.frequency.value = 500;
+      motorG = ac.createGain(); motorG.gain.value = 0;
+      motor.connect(motorF).connect(motorG).connect(ac.destination); motor.start();
+      const buf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      wind = ac.createBufferSource(); wind.buffer = buf; wind.loop = true;
+      windF = ac.createBiquadFilter(); windF.type = 'bandpass'; windF.frequency.value = 500; windF.Q.value = 0.7;
+      windG = ac.createGain(); windG.gain.value = 0;
+      wind.connect(windF).connect(windG).connect(ac.destination); wind.start();
+      musikF = ac.createBiquadFilter(); musikF.type = 'lowpass'; musikF.frequency.value = 900;
+      musikG = ac.createGain(); musikG.gain.value = 0; musikF.connect(musikG).connect(ac.destination);
+      musikNaechste = ac.currentTime + 0.1;
+    } catch (e) { ac = null; }
+  }
+  // Musik: Bass auf jedem Viertel, Arpeggio aus der Molltonleiter, im Drift eine Oktave höher und heller
+  function musikSchritt(drift, schub) {
+    if (!ac) return;
+    const schlag = 60 / 124 / 2;
+    while (musikNaechste < ac.currentTime + 0.25) {
+      const t = musikNaechste, akkord = Math.floor(musikTakt / 16) % 4, grund = [0, -4, -7, -2][akkord];
+      if (musikTakt % 2 === 0) note(55 * Math.pow(2, grund / 12), t, schlag * 1.8, 'triangle', 0.16);
+      const stufe = TONLEITER[(musikTakt * 3 + akkord) % TONLEITER.length] + (drift ? 12 : 0);
+      note(220 * Math.pow(2, (grund + stufe) / 12), t, schlag * 0.9, 'square', 0.045);
+      if (schub > 0 && musikTakt % 4 === 2) note(440 * Math.pow(2, (grund + 7) / 12), t, schlag * 0.5, 'sawtooth', 0.04);
+      musikTakt++; musikNaechste += schlag;
+    }
+    musikF.frequency.setTargetAtTime(drift ? 2600 : 900, ac.currentTime, 0.1);
+    musikG.gain.setTargetAtTime(tonAn ? 0.5 : 0, ac.currentTime, 0.2);
+  }
+  function note(f, t, dauer, art, laut) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = art; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(laut, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+    o.connect(g).connect(musikF); o.start(t); o.stop(t + dauer + 0.02);
+  }
+  function tonSchritt(tempoAnteil, schlupf, schub, zeitlupe) {
+    if (!ac) return;
+    const t = ac.currentTime, an = tonAn ? 1 : 0;
+    motor.frequency.setTargetAtTime((75 + tempoAnteil * 170 + schub * 50) * (zeitlupe ? 0.6 : 1), t, 0.1);
+    motorF.frequency.setTargetAtTime(400 + tempoAnteil * 900, t, 0.1);
+    motorG.gain.setTargetAtTime(0.05 * an, t, 0.2);
+    windG.gain.setTargetAtTime(Math.min(0.3, (schlupf * 0.4 + tempoAnteil * tempoAnteil * 0.06 + schub * 0.1)) * an, t, 0.08);
+    windF.frequency.setTargetAtTime((350 + tempoAnteil * 1200) * (zeitlupe ? 0.5 : 1), t, 0.1);
+  }
+  function klang(f0, f1, dauer, art) {
+    if (!ac || !tonAn) return;
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.type = art || 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dauer);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dauer + 0.05);
+  }
+  const brumm = (muster) => { try { if (navigator.vibrate) navigator.vibrate(muster); } catch (e) {} };
+  const tonKnopf = $('ton');
+  const tonZeigen = () => { tonKnopf.textContent = tonAn ? '🔊' : '🔇'; };
+  tonKnopf.addEventListener('click', () => { tonAn = !tonAn; tonZeigen(); try { localStorage.setItem('luftdrift3d.ton', tonAn ? 'an' : 'aus'); } catch (e) {} tonStart(); });
+  tonZeigen();
+
+  // ---------- Zustand ----------
+  const s = { modus: 'drift', phase: 'menue', ringIndex: 0, x: 180, y: 60, z: -420, zielY: 60, h: 0, vx: 0, vz: 0, punkte: 0, combo: 0, zeit: 0, schlupf: 0, lenkSicht: 0, tempoAnteil: 0, tempoKmh: 0, schub: 0, schubMax: 1, zeitlupe: 0, platz: 1, ringAbstand: Infinity, driftZeit: 0, mult: 1 };
+  const RUNDEN_RENNEN = 1, RING_ZAHL = RINGE.length;
+  // Reihenfolge für Ringjagd und Rennen: einmal im Kreis um die Mitte, beginnend beim Ring, der dem Start am nächsten liegt
+  RINGE.sort((a, b) => Math.atan2(a.x, a.z) - Math.atan2(b.x, b.z));
+  { const start = RINGE.reduce((b, r, i) => Math.hypot(r.x - 180, r.z + 420) < Math.hypot(RINGE[b].x - 180, RINGE[b].z + 420) ? i : b, 0); RINGE.push(...RINGE.splice(0, start)); }
+  function neustart(modus) {
+    s.modus = modus || s.modus; s.phase = 'spiel';
+    s.x = 180; s.z = -420; s.y = 60; s.zielY = 60; s.h = 0; s.vf = 40; s.vs = 0; s.schlupf = 0; s.lenkSicht = 0; s.vx = 0; s.vz = 40;
+    s.punkte = 0; s.combo = 0; s.mult = 1; s.driftZeit = 0; s.zeit = s.modus === 'drift' ? RUNDE : 0; s.vorbei = false; s.treffer = 0; s.langsterDrift = 0; s.ringe = 0; s.knapp = 0;
+    s.schub = 0; s.schubMax = 1; s.kick = 0; s.warDrift = false; s.kamPos = null; s.meldungZeit = 0; s.tempoAnteil = 0; s.zeitlupe = 0; s.ringIndex = 0; s.platz = 1;
+    s.tutSchritt = (s.modus === 'drift' && einst.tutorial) ? 0 : -1; s.tutZeit = 0;
+    for (const sp of spuren) sp.punkte.length = 0;
+    for (const r of RINGE) { r.gruen = 0; r.seite = 0; }
+    GEGNER.forEach((g, i) => {
+      g.ringIndex = 0; g.schub = 0;
+      if (s.modus === 'rennen') { g.x = 180 + (i - 1) * 30; g.z = -470 - i * 25; g.y = 60; g.h = 0; }
+    });
+    // Erster Ring im Rennen: der nächste in Flugrichtung vom Start
+    if (s.modus === 'rennen' || s.modus === 'ringe') { s.h = Math.atan2(RINGE[0].x - s.x, RINGE[0].z - s.z); GEGNER.forEach((g) => { g.h = s.h; }); }
+    $('ende').hidden = true; $('menue').hidden = true; $('pause').hidden = true; $('pauseKnopf').hidden = false; $('platz').hidden = s.modus !== 'rennen';
+    $('hinweis').hidden = s.tutSchritt >= 0 || s.modus !== 'drift';
+    flieger.visible = true; document.body.classList.remove('menue');
+  }
+  function zumMenue() {
+    s.phase = 'menue'; s.vorbei = true; $('ende').hidden = true; $('pause').hidden = true; $('pauseKnopf').hidden = true; $('platz').hidden = true; $('tutorial').hidden = true; $('hinweis').hidden = true;
+    $('menue').hidden = false; flieger.visible = false; document.body.classList.add('menue'); menueZeigen();
+  }
+  function menueZeigen() {
+    const st = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
+    for (const m of ['drift', 'ringe', 'rennen']) $('st_' + m).textContent = st(sterne[m]);
+    $('bw_drift').textContent = bestwerte.drift ? 'Best ' + bestwerte.drift.toLocaleString('de-DE') : 'noch kein Wert';
+    $('bw_ringe').textContent = bestwerte.ringe ? 'Best ' + bestwerte.ringe.toFixed(1) + ' s' : 'noch kein Wert';
+    $('bw_rennen').textContent = bestwerte.rennen ? 'Best Platz ' + bestwerte.rennen : 'noch kein Wert';
+    $('e_ton').textContent = tonAn ? 'Ton an' : 'Ton aus'; $('e_ton').classList.toggle('an', tonAn);
+    $('e_links').classList.toggle('an', einst.links); $('e_emp').textContent = 'Lenkung: ' + (einst.emp < 1 ? 'ruhig' : einst.emp > 1 ? 'scharf' : 'normal');
+    $('e_tut').classList.toggle('an', einst.tutorial); document.body.classList.toggle('links', einst.links);
+  }
+  function pausieren(an) {
+    if (s.phase !== 'spiel' && s.phase !== 'pause') return;
+    s.phase = an ? 'pause' : 'spiel'; $('pause').hidden = !an;
+  }
+  function beenden() {
+    s.vorbei = true; s.phase = 'ende'; s.punkte += Math.round(s.combo); s.combo = 0;
+    let titel = 'Runde vorbei', gross = '', stil = '', text = '', st = 0;
+    if (s.modus === 'drift') {
+      if (s.punkte > bestwerte.drift) bestwerte.drift = s.punkte; best = bestwerte.drift;
+      st = s.punkte >= 8000 ? 3 : s.punkte >= 4500 ? 2 : s.punkte >= 2000 ? 1 : 0;
+      stil = 'Stil ' + (s.punkte >= 12000 ? 'S' : s.punkte >= 8000 ? 'A' : s.punkte >= 4500 ? 'B' : s.punkte >= 2000 ? 'C' : 'D');
+      gross = s.punkte.toLocaleString('de-DE');
+      text = `Längster Drift ${s.langsterDrift.toFixed(1)} s · Ringe ${s.ringe} · Knapp vorbei ${s.knapp} · Treffer ${s.treffer} · Best ${bestwerte.drift.toLocaleString('de-DE')}`;
+    } else if (s.modus === 'ringe') {
+      titel = 'Ringjagd'; const fertig = s.ringIndex >= RING_ZAHL;
+      if (fertig && (!bestwerte.ringe || s.zeit < bestwerte.ringe)) bestwerte.ringe = s.zeit;
+      st = !fertig ? 0 : s.zeit <= 95 ? 3 : s.zeit <= 125 ? 2 : 1;
+      stil = fertig ? '★'.repeat(st) + '☆'.repeat(3 - st) : 'Abgebrochen'; gross = s.zeit.toFixed(1) + ' s';
+      text = fertig ? `Alle ${RING_ZAHL} Ringe · Treffer ${s.treffer} · Best ${bestwerte.ringe.toFixed(1)} s · 3 Sterne unter 95 s, 2 unter 125 s` : `${s.ringIndex} von ${RING_ZAHL} Ringen`;
+    } else {
+      titel = 'Rennen'; const fertig = s.ringIndex >= RING_ZAHL * RUNDEN_RENNEN;
+      if (fertig && (!bestwerte.rennen || s.platz < bestwerte.rennen)) bestwerte.rennen = s.platz;
+      st = !fertig ? 0 : s.platz === 1 ? 3 : s.platz === 2 ? 2 : 1;
+      stil = fertig ? s.platz + '. Platz' : 'Abgebrochen'; gross = s.zeit.toFixed(1) + ' s';
+      text = fertig ? `${RING_ZAHL} Ringe in ${s.zeit.toFixed(1)} s · Treffer ${s.treffer} · Best Platz ${bestwerte.rennen}` : `${s.ringIndex} von ${RING_ZAHL * RUNDEN_RENNEN} Ringen`;
+    }
+    if (st > sterne[s.modus]) sterne[s.modus] = st;
+    speichern(); try { localStorage.setItem('luftdrift3d.best', String(bestwerte.drift)); } catch (e) {}
+    $('endeTitel').textContent = titel; $('endeStil').textContent = stil; $('endePunkte').textContent = gross; $('endeText').textContent = text;
+    $('ende').hidden = false; $('pauseKnopf').hidden = true; $('tutorial').hidden = true;
+  }
+  // Tutorial in der Drift-Runde: vier Schritte, jeder endet mit der passenden Handlung
+  const TUT = ['Zieh den Finger seitlich: so lenkst du.', 'Zieh hoch oder runter: so änderst du die Höhe.', 'Halte DRIFT (oder voll einschlagen) und lenke: das Heck bricht aus.', 'Lass den Drift los: du bekommst Schub. Jetzt zu den Ringen!'];
+  function tutorialSchritt(dt, l, hv, drift) {
+    if (s.tutSchritt < 0) { $('tutorial').hidden = true; return; }
+    $('tutorial').hidden = false; $('tutorial').textContent = TUT[s.tutSchritt];
+    const getan = s.tutSchritt === 0 ? Math.abs(l) > 0.3 : s.tutSchritt === 1 ? Math.abs(hv) > 0.3 : s.tutSchritt === 2 ? (drift && Math.abs(s.schlupf) > 0.3) : s.schub > 0;
+    s.tutZeit = getan ? s.tutZeit + dt : 0;
+    if (s.tutZeit > (s.tutSchritt === 3 ? 0.05 : 0.8)) { s.tutSchritt++; s.tutZeit = 0; klang(520, 780, 0.2); if (s.tutSchritt >= TUT.length) { s.tutSchritt = -1; einst.tutorial = false; speichern(); } }
+  }
+  function melden(text) { $('meldung').textContent = text; $('meldung').classList.add('an'); s.meldungZeit = 1.4; }
+  function knappVorbei(was) {
+    s.knapp++; s.punkte += 250; s.zeitlupe = 0.7; s.combo += 60;
+    melden(was + ' knapp! +250'); klang(880, 440, 0.5, 'triangle'); brumm([15, 20, 35]);
+  }
+
+  // ---------- Eingabe ----------
+  let lenk = 0, hoch = 0, driftTaste = false, zeiger = null, zx0 = 0, zy0 = 0;
+  const tasten = {};
+  canvas.addEventListener('pointerdown', (e) => {
+    tonStart();
+    if (s.phase !== 'spiel') return;
+    if (zeiger !== null) return;
+    zeiger = e.pointerId; zx0 = e.clientX; zy0 = e.clientY; canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== zeiger) return;
+    lenk = Math.max(-1, Math.min(1, (e.clientX - zx0) / (70 / einst.emp)));
+    hoch = Math.max(-1, Math.min(1, -(e.clientY - zy0) / 90));
+  });
+  const los = (e) => { if (e.pointerId === zeiger) { zeiger = null; lenk = 0; hoch = 0; } };
+  canvas.addEventListener('pointerup', los); canvas.addEventListener('pointercancel', los);
+  const taste = $('taste');
+  const tasteAn = (an) => { driftTaste = an; taste.classList.toggle('an', an); taste.setAttribute('aria-pressed', String(an)); };
+  taste.addEventListener('pointerdown', (e) => { e.preventDefault(); tonStart(); taste.setPointerCapture(e.pointerId); tasteAn(true); });
+  taste.addEventListener('pointerup', () => tasteAn(false)); taste.addEventListener('pointercancel', () => tasteAn(false));
+  window.addEventListener('keydown', (e) => { tasten[e.key] = true; tonStart(); if (e.key === ' ') e.preventDefault(); if (s.phase === 'ende' && e.key === 'Enter') neustart(); if (e.key === 'Escape') pausieren(s.phase === 'spiel'); });
+  window.addEventListener('keyup', (e) => { tasten[e.key] = false; });
+  $('nochmal').addEventListener('click', () => neustart()); $('endeMenue').addEventListener('click', zumMenue);
+  $('pauseKnopf').addEventListener('click', () => pausieren(true)); $('weiter').addEventListener('click', () => pausieren(false)); $('pauseMenue').addEventListener('click', zumMenue);
+  for (const b of document.querySelectorAll('.modus')) b.addEventListener('click', () => { tonStart(); neustart(b.dataset.modus); });
+  $('e_ton').addEventListener('click', () => { tonAn = !tonAn; tonZeigen(); try { localStorage.setItem('luftdrift3d.ton', tonAn ? 'an' : 'aus'); } catch (e) {} tonStart(); menueZeigen(); });
+  $('e_links').addEventListener('click', () => { einst.links = !einst.links; speichern(); menueZeigen(); });
+  $('e_emp').addEventListener('click', () => { einst.emp = einst.emp < 1 ? 1 : einst.emp > 1 ? 0.7 : 1.4; speichern(); menueZeigen(); });
+  $('e_tut').addEventListener('click', () => { einst.tutorial = !einst.tutorial; speichern(); menueZeigen(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pausieren(true); });
+
+  const regler = ['schub', 'dreh', 'griff', 'griffd', 'max', 'kam'];
+  for (const k of regler) {
+    const r = $('r_' + k), o = $('o_' + k); r.value = abst[k]; o.value = abst[k];
+    r.addEventListener('input', () => { abst[k] = Number(r.value); o.value = r.value; try { localStorage.setItem('luftdrift3d.abst', JSON.stringify(abst)); } catch (e) {} });
+  }
+  $('reset').addEventListener('click', () => { abst = Object.assign({}, STANDARD); for (const k of regler) { $('r_' + k).value = abst[k]; $('o_' + k).value = abst[k]; } try { localStorage.removeItem('luftdrift3d.abst'); } catch (e) {} });
+  $('zahnrad').addEventListener('click', () => { $('panel').hidden = !$('panel').hidden; });
+
+  // ---------- Physik: Schub entlang der Nase, Seitenfahrt baut der Griff ab; wenig Griff = Drift ----------
+  const _p = new THREE.Vector3();
+  function schritt(dt) {
+    if (s.phase === 'menue') { for (const g of GEGNER) gegnerSchritt(g, dt); return; }
+    if (s.phase !== 'spiel') return;
+    let l = lenk, hv = hoch;
+    if (tasten.ArrowLeft || tasten.a) l = -1;
+    if (tasten.ArrowRight || tasten.d) l = 1;
+    if (tasten.ArrowUp || tasten.w) hv = 1;
+    if (tasten.ArrowDown || tasten.s) hv = -1;
+    // Testspieler (nur für die Prüfung): steuert auf den nächsten offenen Ring zu
+    if (window.__proto && window.__proto.auto) {
+      let bester = s.naechsterRing || null, bd = bester ? Math.hypot(bester.x - s.x, bester.z - s.z) : Infinity;
+      if (bester) {
+        const soll = Math.atan2(bester.x - s.x, bester.z - s.z); let diff = soll - s.h; while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
+        l = Math.max(-0.8, Math.min(0.8, -diff * 2.5)); hv = Math.max(-1, Math.min(1, (bester.y - s.zielY) / 8));
+        for (const t of PYLONEN) {
+          const dT = Math.hypot(t.x - s.x, t.z - s.z); let wT = Math.atan2(t.x - s.x, t.z - s.z) - s.h; while (wT > Math.PI) wT -= 2 * Math.PI; while (wT < -Math.PI) wT += 2 * Math.PI;
+          if (dT < 90 && Math.abs(wT) < 0.45) l = wT > 0 ? 0.8 : -0.8;   // Turm voraus: ausweichen (rechts im Bild = l > 0 dreht nach -x)
+        }
+        if (window.__proto.auto === 'mensch') {
+          // menschlicher Testspieler: 0,4 s Reaktion, grobe Höhenwahrnehmung (erst ab 12 m Unterschied), zittrige Hand
+          const pr = window.__proto; pr.verlauf = pr.verlauf || []; pr.verlauf.push({ l, hv: Math.abs(bester.y - s.y) > 12 ? Math.sign(bester.y - s.y) : 0 });
+          const alt = pr.verlauf.length > 24 ? pr.verlauf.shift() : { l: 0, hv: 0 };
+          l = Math.max(-1, Math.min(1, alt.l * 0.8 + (Math.random() - 0.5) * 0.3)); hv = alt.hv;
+        }
+        window.__proto.ziel = { d: bd, dy: bester.y - s.y, diff };
+      }
+    }
+    const drift = driftTaste || tasten[' '] || Math.abs(l) > 0.85;
+    tutorialSchritt(dt, l, hv, drift);
+    if (drift && !s.warDrift) { s.kick = 0.35; brumm(12); klang(220, 140, 0.18, 'triangle'); }
+    if (!drift && s.warDrift && s.driftZeit >= 1.0) {
+      // Drift-Schub: je länger der Drift, desto länger der Schub (bis 2,5 s)
+      s.schub = Math.min(2.5, 0.6 + s.driftZeit * 0.6); s.schubMax = s.schub;
+      melden('Drift-Schub ' + s.schub.toFixed(1) + ' s'); klang(240, 720, 0.45, 'square'); brumm([20, 30, 40]);
+    }
+    s.warDrift = drift;
+    s.kick = Math.max(0, s.kick - dt); s.schub = Math.max(0, s.schub - dt);
+    s.lenkSicht += (l - s.lenkSicht) * Math.min(1, dt * 8);
+    const tempo = Math.hypot(s.vf, s.vs), vmax = abst.max / 3.6 * (s.schub > 0 ? 1.18 : 1);
+    const wirksam = Math.min(1, tempo / 45);
+    const dreh = abst.dreh * Math.PI / 180 * Math.max(0.35, 1 - Math.abs(s.schlupf) / (Math.PI * 0.6)) * (1 + s.kick * 1.6);
+    const hAlt = s.h;
+    s.h -= l * dreh * wirksam * dt;
+    const dh = s.h - hAlt, c = Math.cos(dh), si = Math.sin(dh);
+    const vf = s.vf * c - s.vs * si, vs = s.vf * si + s.vs * c;
+    s.vf = vf; s.vs = vs;
+    s.vf += abst.schub * (drift ? 0.8 : 1) * (s.schub > 0 ? 2.4 : 1) * dt * Math.max(0, 1 - tempo / vmax);
+    const griff = drift ? abst.griffd : abst.griff;
+    s.vs *= Math.exp(-griff * dt);
+    if (drift) s.vf -= Math.abs(s.vs) * 0.3 * dt;
+    else s.vf += Math.abs(vs) * (1 - Math.exp(-griff * dt)) * 0.35;
+    s.vf = Math.max(12, s.vf);
+    const tn = Math.hypot(s.vf, s.vs); if (tn > vmax) { s.vf *= vmax / tn; s.vs *= vmax / tn; }
+    const fx = Math.sin(s.h), fz = Math.cos(s.h), rx = -Math.cos(s.h), rz = Math.sin(s.h);
+    const vx = fx * s.vf + rx * s.vs, vz = fz * s.vf + rz * s.vs;
+    s.x += vx * dt; s.z += vz * dt;
+    s.zielY = Math.max(15, Math.min(220, s.zielY + hv * 35 * dt));
+    s.y += (s.zielY - s.y) * Math.min(1, dt * 2.5);
+    const grenze = WELT - 40, abstandMitte = Math.hypot(s.x, s.z);
+    if (abstandMitte > grenze) { const f = grenze / abstandMitte; s.x *= f; s.z *= f; s.h = Math.atan2(-s.x, -s.z); s.vs *= 0.5; s.combo = 0; s.schlupf = 0; melden('Spielfeldrand'); }
+    const boden = Math.max(gelaende(s.x, s.z), Math.hypot(s.x - SEE.x, s.z - SEE.z) < SEE.r ? -3 : -999);
+    if (s.y < boden + 4) { s.y = boden + 6; s.zielY = Math.max(s.zielY, boden + 30); s.vf *= 0.6; s.combo = 0; s.treffer++; brumm(80); klang(120, 50, 0.3, 'sawtooth'); melden(boden <= -2.9 ? 'Wasser!' : 'Bodenberührung'); }
+    s.schlupf = Math.atan2(s.vs, s.vf);
+    const grad = Math.abs(s.schlupf) * 180 / Math.PI;
+    let naechste = Infinity;
+    for (const p of PYLONEN) {
+      const d = Math.hypot(p.x - s.x, p.z - s.z), unterSpitze = s.y < p.boden + TURM_HOEHE + 6;
+      naechste = Math.min(naechste, d);
+      if (d < 12 && unterSpitze) { s.vf *= 0.5; s.combo = 0; s.treffer++; s.x += (s.x - p.x) * 0.6; s.z += (s.z - p.z) * 0.6; p.knappZeit = 3; brumm(80); klang(140, 60, 0.3, 'sawtooth'); melden('Turm gerammt'); }
+      else if (d < 24 && unterSpitze && p.knappZeit <= 0 && tempo > 35) { p.knappZeit = 4; knappVorbei('Turm'); }
+      p.knappZeit = Math.max(0, p.knappZeit - dt);
+    }
+    for (const g of GEGNER) {
+      const d = Math.hypot(g.x - s.x, g.y - s.y, g.z - s.z);
+      if (d < 7) { if (g.knappZeit <= 0) { s.vf *= 0.6; s.combo = 0; s.treffer++; g.knappZeit = 3; brumm(80); klang(140, 60, 0.3, 'sawtooth'); melden('Kollision mit Nr. ' + g.nummer); } }
+      else if (d < 20 && g.knappZeit <= 0) { g.knappZeit = 3; knappVorbei('Nr. ' + g.nummer); }
+    }
+    // Nächster offener Ring: Markierung, Höhenhilfe (wenn der Daumen die Höhe nicht selbst führt) und Zielhilfe nahe am Ring
+    let naechsterRing = null, ringAbstand = Infinity;
+    for (const r of RINGE) r.marke.visible = false;
+    if (s.modus === 'drift') { for (const r of RINGE) { const d = Math.hypot(r.x - s.x, r.z - s.z); if (r.gruen <= 0 && d < ringAbstand) { ringAbstand = d; naechsterRing = r; } } }
+    else if (s.ringIndex < RING_ZAHL * (s.modus === 'rennen' ? RUNDEN_RENNEN : 1)) { naechsterRing = RINGE[s.ringIndex % RING_ZAHL]; ringAbstand = Math.hypot(naechsterRing.x - s.x, naechsterRing.z - s.z); }
+    s.ringAbstand = ringAbstand; s.naechsterRing = naechsterRing;
+    if (naechsterRing) {
+      const r = naechsterRing; r.marke.visible = true; r.marke.position.y = r.y + RING_RADIUS + 12 + Math.sin(s.zeit * 6) * 3;
+      let diff = Math.atan2(r.x - s.x, r.z - s.z) - s.h; while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
+      if (hv === 0 && ringAbstand < 260 && Math.abs(diff) < 0.7) s.zielY += (r.y - s.zielY) * Math.min(1, dt * 1.5);
+      const nx = Math.sin(r.gier), nz = Math.cos(r.gier), dx = s.x - r.x, dz = s.z - r.z, dEbene = dx * nx + dz * nz;
+      const querXZ = Math.hypot(dx - nx * dEbene, dz - nz * dEbene);
+      if (Math.abs(dEbene) < 70 && querXZ < RING_RADIUS + 14 && Math.abs(s.y - r.y) < RING_RADIUS + 14) {
+        const k = Math.min(1, dt * 3.0); s.x -= (dx - nx * dEbene) * k; s.z -= (dz - nz * dEbene) * k; s.y += (r.y - s.y) * k; s.zielY += (r.y - s.zielY) * k;
+      }
+    }
+    for (const r of RINGE) {
+      const nx = Math.sin(r.gier), nz = Math.cos(r.gier), dx = s.x - r.x, dz = s.z - r.z, dy = s.y - r.y;
+      const d = dx * nx + dz * nz, seite = Math.sign(d), quer = Math.hypot(dx - nx * d, dz - nz * d, dy);
+      if (r.seite !== 0 && seite !== 0 && seite !== r.seite && Math.abs(d) < 40 && quer < RING_RADIUS + 4 && (s.modus === 'drift' ? r.gruen <= 0 : r === naechsterRing)) {
+        r.gruen = s.modus === 'drift' ? 3 : 1.2; s.punkte += 300; s.ringe++; s.ringIndex++; s.schub = Math.max(s.schub, 1.0); s.schubMax = Math.max(s.schubMax, 1.0);
+        const gesamt = RING_ZAHL * (s.modus === 'rennen' ? RUNDEN_RENNEN : 1);
+        melden(s.modus === 'drift' ? 'Ring +300' : `Ring ${Math.min(s.ringIndex, gesamt)} von ${gesamt}`); klang(660, 1320, 0.3); brumm(25);
+        if (s.modus !== 'drift' && s.ringIndex >= gesamt) { beenden(); return; }
+      }
+      r.seite = seite; r.gruen = Math.max(0, r.gruen - dt);
+      r.mesh.material.emissive.setHex(r.gruen > 0 ? 0x5ed68a : (r === naechsterRing ? 0x3fa86a : 0x1d6b3a)); r.mesh.rotation.z += dt * (r.gruen > 0 ? 4 : 0.6);
+      r.saeule.visible = s.modus === 'drift' ? r.gruen <= 0 : r === naechsterRing;
+    }
+    s.mult = naechste < 45 ? 3 : naechste < 90 ? 2 : 1;
+    s.vx = vx; s.vz = vz; s.tempoKmh = tempo * 3.6; s.tempoAnteil = tempo / (abst.max / 3.6);
+    const imDrift = grad > 12 && tempo > 25;
+    s.imDrift = imDrift;
+    if (imDrift) {
+      s.driftZeit += dt;
+      s.combo += grad / 10 * (tempo / 40) * s.mult * dt * 10;
+      s.langsterDrift = Math.max(s.langsterDrift, s.driftZeit);
+      $('hinweis').hidden = true;
+    } else {
+      if (s.combo > 0) { s.punkte += Math.round(s.combo); s.combo = 0; }
+      s.driftZeit = 0;
+    }
+    for (let i = 0; i < 2; i++) {
+      const sx = i ? 1 : -1;
+      _p.set(s.x + rx * sx * 5.4 - fx * 0.4, s.y - 0.4, s.z + rz * sx * 5.4 - fz * 0.4);
+      spurSchreiben(spuren[i], _p, imDrift ? 0.85 : (s.schub > 0 ? 0.4 : 0), dt);
+    }
+    for (const g of GEGNER) gegnerSchritt(g, dt);
+    if (s.phase !== 'spiel') return;
+    s.meldungZeit -= dt; if (s.meldungZeit <= 0) $('meldung').classList.remove('an');
+    if (s.modus === 'drift') { s.zeit -= dt; if (s.zeit <= 0) { s.zeit = 0; beenden(); } }
+    else {
+      s.zeit += dt;
+      if (s.modus === 'rennen') {
+        // Platz: wer mehr Ringe hat liegt vorn, bei Gleichstand wer näher am nächsten Ring ist
+        const eigen = s.ringIndex - Math.min(1, ringAbstand / 2000);
+        s.platz = 1 + GEGNER.filter((g) => { const r = RINGE[g.ringIndex % RING_ZAHL]; return g.ringIndex - Math.min(1, Math.hypot(r.x - g.x, r.z - g.z) / 2000) > eigen; }).length;
+        if (GEGNER.some((g) => g.ringIndex >= RING_ZAHL * RUNDEN_RENNEN) && s.zeit > 0) { /* Gegner im Ziel: Rennen läuft weiter bis der Spieler ankommt */ }
+      }
+      if (s.zeit > 400) beenden();
+    }
+  }
+
+  // ---------- Bild ----------
+  const kamZiel = new THREE.Vector3(), blick = new THREE.Vector3();
+  let zeitGesamt = 0;
+  function zeichne(dt, echtDt) {
+    zeitGesamt += dt;
+    flieger.position.set(s.x, s.y, s.z);
+    flieger.rotation.y = s.h;
+    flieger.rotation.z = s.lenkSicht * 0.8 + s.schlupf * 0.2;
+    flieger.rotation.x = -(s.zielY - s.y) * 0.02;
+    flieger.userData.prop.rotation.z += dt * (30 + s.tempoAnteil * 30);
+    flieger.userData.flamme.material.opacity = s.schub > 0 ? 0.6 + Math.random() * 0.3 : 0;
+    sonne.position.copy(flieger.position).addScaledVector(SONNE_RICHTUNG, 400); sonne.target.position.copy(flieger.position);
+    himmel.position.copy(flieger.position); sonnenScheibe.position.copy(flieger.position).addScaledVector(SONNE_RICHTUNG, 5200);
+    wolken.position.x = zeitGesamt * 2.5;
+    wasserTextur.offset.x = zeitGesamt * 0.01; wasserTextur.offset.y = Math.sin(zeitGesamt * 0.3) * 0.02;
+    for (const v of VOEGEL) {
+      v.t += dt * 0.5; v.w += dt * 9;
+      v.mesh.position.set(v.mitte.x + Math.cos(v.t) * v.r, v.h + Math.sin(v.t * 2.3) * 4, v.mitte.z + Math.sin(v.t) * v.r);
+      v.mesh.rotation.y = -v.t; v.mesh.scale.y = 0.2 + Math.abs(Math.sin(v.w)) * 2.5;
+    }
+    if (s.phase === 'menue') {
+      // Startbild: Kamera kreist langsam um den mittleren Turm, die Gegner fliegen weiter
+      const w = zeitGesamt * 0.12; kamera.position.set(Math.sin(w) * 260, 95 + Math.sin(w * 0.7) * 15, Math.cos(w) * 260); kamera.lookAt(0, 70, 0);
+      kamera.fov = 60; kamera.updateProjectionMatrix(); renderer.render(szene, kamera); karteZeichnen();
+      tonSchritt(0.3, 0, 0, false); musikSchritt(false, 0); return;
+    }
+    // Kamera hinter der tatsächlichen Flugrichtung; Blickwinkel öffnet sich mit Tempo und Schub, leichtes Zittern im Drift
+    const sp = Math.hypot(s.vx, s.vz) || 1, dx = s.vx / sp, dz = s.vz / sp;
+    const schubAnteil = s.schub > 0 ? Math.min(1, s.schub / Math.max(0.5, s.schubMax)) : 0;
+    kamZiel.set(s.x - dx * abst.kam, s.y + abst.kam * 0.45, s.z - dz * abst.kam);
+    if (!s.kamPos) s.kamPos = kamZiel.clone();
+    s.kamPos.lerp(kamZiel, Math.min(1, echtDt * 3.5));
+    const zittern = Math.abs(s.schlupf) * 0.25 + schubAnteil * 0.15;
+    kamera.position.copy(s.kamPos); kamera.position.x += (Math.random() - 0.5) * zittern; kamera.position.y += (Math.random() - 0.5) * zittern;
+    blick.set(s.x + dx * 14, s.y + 1.5, s.z + dz * 14); kamera.lookAt(blick);
+    kamera.rotateZ(-s.lenkSicht * 0.1);
+    const fovZiel = 62 + s.tempoAnteil * 8 + schubAnteil * 14 - (s.zeitlupe > 0 ? 8 : 0);
+    kamera.fov += (fovZiel - kamera.fov) * Math.min(1, echtDt * 4); kamera.updateProjectionMatrix();
+    $('vignette').classList.toggle('an', s.zeitlupe > 0 || schubAnteil > 0);
+    renderer.render(szene, kamera);
+    schlupfAnzeige(); karteZeichnen();
+    tonSchritt(s.tempoAnteil || 0, Math.min(1, Math.abs(s.schlupf) / 0.8), schubAnteil, s.zeitlupe > 0);
+    musikSchritt(s.imDrift, s.schub);
+  }
+  const sctx = $('schlupf').getContext('2d');
+  function schlupfAnzeige() {
+    sctx.setTransform(2, 0, 0, 2, 0, 0); sctx.clearRect(0, 0, 110, 70);
+    const gx = 50, gy = 50, R = 34;
+    sctx.strokeStyle = 'rgba(246,241,230,0.4)'; sctx.lineWidth = 6; sctx.beginPath(); sctx.arc(gx, gy, R, Math.PI * 1.25, Math.PI * 1.75); sctx.stroke();
+    const grad = s.schlupf * 180 / Math.PI;
+    const a = Math.PI * 1.5 + Math.max(-1, Math.min(1, grad / 60)) * Math.PI * 0.25;
+    sctx.strokeStyle = Math.abs(grad) > 12 ? '#ff9f2e' : '#f6f1e6'; sctx.lineWidth = 3; sctx.beginPath(); sctx.moveTo(gx, gy); sctx.lineTo(gx + Math.cos(a) * R, gy + Math.sin(a) * R); sctx.stroke();
+    sctx.fillStyle = '#f6f1e6'; sctx.font = '12px system-ui, sans-serif'; sctx.textAlign = 'center'; sctx.shadowColor = 'rgba(0,0,0,0.7)'; sctx.shadowBlur = 3;
+    sctx.fillText(Math.round(Math.abs(grad)) + '° Schlupf', gx, gy + 16); sctx.shadowBlur = 0;
+  }
+  // Karte: Türme, Ringe, Gegner und eigene Maschine als Pfeil, Norden oben
+  const kctx = $('karte').getContext('2d');
+  function karteZeichnen() {
+    kctx.setTransform(2, 0, 0, 2, 0, 0); kctx.clearRect(0, 0, 84, 84);
+    const m = 40 / WELT, cx = 42, cy = 42;
+    const px = (x) => cx + x * m, pz = (z) => cy - z * m;
+    kctx.fillStyle = 'rgba(74,134,184,0.6)'; kctx.beginPath(); kctx.arc(px(SEE.x), pz(SEE.z), SEE.r * m, 0, 6.3); kctx.fill();
+    kctx.fillStyle = '#ff9f2e'; for (const p of PYLONEN) { kctx.beginPath(); kctx.arc(px(p.x), pz(p.z), 2, 0, 6.3); kctx.fill(); }
+    for (const r of RINGE) { kctx.strokeStyle = r.gruen > 0 ? '#ffffff' : '#5ed68a'; kctx.lineWidth = 1; kctx.beginPath(); kctx.arc(px(r.x), pz(r.z), 2, 0, 6.3); kctx.stroke(); }
+    for (const g of GEGNER) { kctx.fillStyle = '#' + new THREE.Color(g.hell).getHexString(); kctx.beginPath(); kctx.arc(px(g.x), pz(g.z), 2, 0, 6.3); kctx.fill(); }
+    kctx.save(); kctx.translate(px(s.x), pz(s.z)); kctx.rotate(s.h); kctx.fillStyle = '#f6f1e6'; kctx.beginPath(); kctx.moveTo(0, -4.5); kctx.lineTo(3, 3); kctx.lineTo(0, 1.5); kctx.lineTo(-3, 3); kctx.closePath(); kctx.fill(); kctx.restore();
+  }
+
+  function hud() {
+    $('punkte').textContent = s.punkte.toLocaleString('de-DE');
+    $('best').textContent = best.toLocaleString('de-DE');
+    $('zeit').textContent = s.modus === 'drift' ? Math.ceil(s.zeit) : s.zeit.toFixed(1);
+    $('platzWert').textContent = s.platz + '.';
+    $('tempo').textContent = Math.round(s.tempoKmh || 0);
+    $('hoehe').textContent = Math.round(s.y);
+    $('ringInfo').textContent = s.phase === 'menue' ? '' : isFinite(s.ringAbstand) ? (s.modus === 'drift' ? 'Ring ' : `Ring ${s.ringIndex + 1} · `) + Math.round(s.ringAbstand) + ' m' : (s.modus === 'drift' ? 'Alle Ringe' : 'Ziel');
+    $('schubBalken').style.width = (s.schub > 0 ? 100 * s.schub / Math.max(0.5, s.schubMax) : 0) + '%';
+    const c = $('combo');
+    if (s.combo > 0) {
+      c.classList.add('an');
+      $('comboWert').textContent = '+' + Math.round(s.combo).toLocaleString('de-DE');
+      $('comboText').textContent = s.mult > 1 ? `Turm ×${s.mult} · ${s.driftZeit.toFixed(1)} s` : `Drift · ${s.driftZeit.toFixed(1)} s`;
+    } else c.classList.remove('an');
+  }
+
+  function groesse() {
+    renderer.setSize(innerWidth, innerHeight, false);
+    kamera.aspect = innerWidth / innerHeight; kamera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', groesse); groesse();
+
+  let letzte = performance.now();
+  function bild(t) {
+    const echtDt = Math.min(0.05, (t - letzte) / 1000); letzte = t;
+    // Zeitlupe nach einem Beinahe-Treffer: die Welt läuft auf 35 %, die Kamera bleibt flüssig
+    s.zeitlupe = Math.max(0, (s.zeitlupe || 0) - echtDt);
+    const dt = s.phase === 'pause' ? 0 : echtDt * (s.zeitlupe > 0 ? 0.35 : 1);
+    const n = (window.__proto && window.__proto.turbo) || 1;
+    for (let i = 0; i < n; i++) schritt(dt);
+    zeichne(dt, echtDt); hud();
+    requestAnimationFrame(bild);
+  }
+  window.__proto = { s, RINGE, abst, PYLONEN, neustart, zumMenue, GEGNER, einst };
+  zumMenue();
+  requestAnimationFrame(bild);
+})();
+</script>

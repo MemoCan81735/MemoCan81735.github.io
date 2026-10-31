@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Garaj</title>
+<meta name="description" content="Spiele zum Anspielen direkt im Browser, ohne Anmeldung.">
+<style>
+  :root {
+    --bg: #0f1420; --karte: #1a2233; --rand: #2a3550; --text: #eef2f8; --leise: #9aa7bd;
+    --renn: #ffb020; --brett: #4fc3a1;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 28px 16px 48px; }
+  header h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: .5px; }
+  header p { margin: 0; color: var(--leise); }
+  nav { display: flex; gap: 8px; margin: 22px 0 8px; flex-wrap: wrap; }
+  nav a { text-decoration: none; color: var(--text); border: 1px solid var(--rand);
+    padding: 7px 14px; border-radius: 999px; font-size: 14px; }
+  nav a.renn { border-color: var(--renn); } nav a.brett { border-color: var(--brett); }
+  h2 { margin: 30px 0 12px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  h2::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--farbe); }
+  section { --farbe: var(--renn); } section.brett { --farbe: var(--brett); }
+  .raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  a.karte { display: block; text-decoration: none; color: inherit; background: var(--karte);
+    border: 1px solid var(--rand); border-radius: 14px; overflow: hidden; transition: transform .15s, border-color .15s; }
+  a.karte:hover, a.karte:focus-visible { transform: translateY(-2px); border-color: var(--farbe); }
+  a.karte img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #222; }
+  .inhalt { padding: 12px 14px 14px; }
+  .inhalt h3 { margin: 0 0 4px; font-size: 18px; }
+  .inhalt p { margin: 0 0 12px; color: var(--leise); font-size: 14px; }
+  .knopf { display: inline-block; background: var(--farbe); color: #111; font-weight: 700;
+    padding: 7px 16px; border-radius: 8px; font-size: 14px; }
+  footer { margin-top: 40px; color: var(--leise); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Neon Garaj</h1>
+    <p>Direkt im Browser spielen, am Handy oder am Rechner. Keine Anmeldung, kein Download.</p>
+  </header>
+  <nav>
+    <a class="renn" href="#rennspiele">Rennspiele</a>
+    <a class="brett" href="#brettspiele">Brettspiele</a>
+  </nav>
+
+  <section id="rennspiele">
+    <h2>Rennspiele</h2>
+    <div class="raster">
+      <a class="karte" href="driftpokal/">
+        <img src="bilder/driftpokal.jpg" alt="Startbildschirm von Driftpokal" loading="lazy">
+        <div class="inhalt">
+          <h3>Driftpokal</h3>
+          <p>Kart-Cup mit 14 Strecken, Zeitfahren gegen den Geist und Garage.</p>
+          <span class="knopf">Spielen</span>
+        </div>
+      </a>
+      <a class="karte" href="luftdrift/">
+        <img src="bilder/luftdrift.jpg" alt="Flug durch einen Ring in Luftdrift 3D" loading="lazy">
+        <div class="inhalt">
+          <h3>Luftdrift 3D</h3>
+          <p>Flugrennen durch Ringe: Drift-Runde, Ringjagd oder Rennen gegen drei Gegner.</p>
+          <span class="knopf">Spielen</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section id="brettspiele" class="brett">
+    <h2>Brettspiele</h2>
+    <div class="raster">
+      <a class="karte" href="brettspiele/">
+        <img src="bilder/brettspiele.jpg" alt="Schachbrett in Brettspiele" loading="lazy">
+        <div class="inhalt">
+          <h3>Brettspiele</h3>
+          <p>Tic Tac Toe, Vier gewinnt, Reversi, Mühle, Schach und Mangala. Zu zweit oder gegen den Computer.</p>
+          <span class="knopf">Spielen</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <footer>Spielstände bleiben nur auf deinem Gerät. Diese Seite nutzt keine Cookies und kein Tracking. Schach-Computer: Stockfish (GPL v3), <a href="brettspiele/lib/STOCKFISH-LICENSE-GPL.txt" style="color:inherit">Lizenz</a> und <a href="https://github.com/nmrugg/stockfish.js/tree/v10.0.2" style="color:inherit">Quelltext</a>.</footer>
+</main>
+</body>
+</html>

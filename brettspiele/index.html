@@ -1,0 +1,3585 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brettspiele (BCE-Architektur)</title>
+<!-- ============================================================
+     PWA-Integration ("Zum Startbildschirm hinzufügen")
+     Das Manifest ist als data:-URL eingebettet, damit die App eine
+     einzelne Datei bleibt. Das Icon ist ein Inline-SVG (data-URL).
+     Volle Offline-Fähigkeit (Service Worker) erfordert Hosting
+     über HTTPS + die separate sw.js — siehe Registrierung am
+     Skriptende: bei file:// passiert einfach nichts.
+     ============================================================ -->
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Brettspiele">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Brettspiele","short_name":"Brettspiele","display":"standalone","start_url":".","background_color":"%23f2f2f7","theme_color":"%23f2f2f7","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2722%27 fill=%27%23007aff%27/%3E%3Ctext x=%2750%27 y=%2768%27 font-size=%2752%27 text-anchor=%27middle%27%3E%E2%99%9F%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml"}]}'>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23007aff'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle'%3E%E2%99%9F%3C/text%3E%3C/svg%3E">
+<!-- chess.js übernimmt die Schachregeln (Zuggenerierung/-validierung,
+     Schach/Matt/Patt-Erkennung) — siehe ChessEntity: die Boundary
+     wrappt die Bibliothek, Control/UI merken nichts davon. -->
+<script src="lib/chess.js"></script>
+<style>
+  :root {
+    --ios-bg: #f2f2f7;
+    --ios-card: rgba(255,255,255,0.75);
+    --ios-blue: #007aff;
+    --ios-red: #ff3b30;
+    --ios-green: #34c759;
+    --ios-label: #1c1c1e;
+    --ios-secondary-label: #8e8e93;
+    --ios-separator: rgba(60,60,67,0.12);
+    --surface: #ffffff;              /* Zellen, aktive Segmente */
+    --surface-muted: #f2f2f7;        /* leere Slots/Punkte */
+    --segment-bg: rgba(118,118,128,0.12);
+    --border-muted: #c7c7cc;
+    --line-color: #b8b8bd;           /* Mühle-Brettlinien */
+    /* Responsive Zellgrößen: fester Wunschwert, aber nie breiter
+       als der Bildschirm hergibt (Brett + Padding + Body-Padding). */
+    --ttt-cell: min(92px, 24vw);
+    --c4-slot: min(42px, 10.8vw);
+    --ot-cell: min(38px, 10.3vw);
+    --ch-square: min(38px, 10.6vw);
+    --mu-board: min(260px, 76vw);
+    --ma-pit: min(42px, 9vw);
+    --ma-store: min(52px, 12vw);
+  }
+
+  /* --- Dunkelmodus: folgt der Systemeinstellung. Nur Variablen
+     und der Body-Hintergrund werden überschrieben — alle
+     Komponenten beziehen ihre Farben bereits aus :root. --- */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ios-bg: #000000;
+      --ios-card: rgba(28,28,30,0.78);
+      --ios-label: #f2f2f7;
+      --ios-secondary-label: #98989f;
+      --surface: #2c2c2e;
+      --surface-muted: #1c1c1e;
+      --segment-bg: rgba(118,118,128,0.24);
+      --border-muted: #48484a;
+      --line-color: #5a5a5e;
+    }
+    body {
+      background:
+        radial-gradient(circle at 20% 15%, #2a1a2e 0%, transparent 45%),
+        radial-gradient(circle at 85% 10%, #16233a 0%, transparent 40%),
+        var(--ios-bg);
+    }
+    .ch-square.light { background: #b8b09a; }
+    .ch-square.dark { background: #5c7649; }
+    #chpromo button { color: var(--ios-label); }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    background:
+      radial-gradient(circle at 20% 15%, #ffe1ec 0%, transparent 45%),
+      radial-gradient(circle at 85% 10%, #d9e8ff 0%, transparent 40%),
+      var(--ios-bg);
+    color: var(--ios-label);
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 2px;
+  }
+
+  #status {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    min-height: 20px;
+    color: var(--ios-secondary-label);
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(3, var(--ttt-cell));
+    grid-template-rows: repeat(3, var(--ttt-cell));
+    gap: 10px;
+    background: var(--ios-card);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    padding: 12px;
+    border-radius: 28px;
+    box-shadow:
+      0 1px 1px rgba(0,0,0,0.02),
+      0 8px 24px rgba(0,0,0,0.08),
+      inset 0 0 0 1px rgba(255,255,255,0.6);
+  }
+
+  .cell {
+    background: var(--surface);
+    border: none;
+    border-radius: 18px;
+    font-size: calc(var(--ttt-cell) * 0.55);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ios-label);
+    cursor: pointer;
+    transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s ease, box-shadow 0.2s ease;
+    touch-action: manipulation;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .cell:active { transform: scale(0.93); background: var(--surface-muted); }
+  .cell.x { color: var(--ios-blue); }
+  .cell.o { color: var(--ios-red); }
+  .cell.win {
+    background: var(--ios-green);
+    color: white;
+    box-shadow: 0 4px 14px rgba(52,199,89,0.4);
+  }
+
+  #controls { margin-top: 24px; display: flex; gap: 12px; }
+  button.action {
+    background: var(--ios-blue);
+    color: white;
+    border: none;
+    padding: 12px 26px;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+    box-shadow: 0 4px 12px rgba(0,122,255,0.3);
+  }
+  button.action:active { transform: scale(0.96); opacity: 0.85; }
+  button.action.secondary {
+    background: var(--segment-bg);
+    color: var(--ios-label);
+    box-shadow: none;
+  }
+  button.action:disabled { opacity: 0.4; cursor: default; }
+
+  /* iOS-Segmented-Control-Optik statt Radiobuttons */
+  #mode {
+    margin-top: 18px;
+    display: flex;
+    background: var(--segment-bg);
+    padding: 3px;
+    border-radius: 10px;
+    position: relative;
+    font-size: 0.85rem;
+  }
+  #mode label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--ios-label);
+    transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  }
+  #mode input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #mode label:has(input:checked),
+  #mode label.active {
+    background: var(--surface);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  #mode label:has(input:not(:checked)):not(.active) {
+    color: var(--ios-secondary-label);
+  }
+
+  #stats {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+  }
+  .stat {
+    background: var(--ios-card);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-radius: 14px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 68px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .stat-label {
+    font-size: 0.65rem;
+    color: var(--ios-secondary-label);
+    margin-top: 2px;
+    text-align: center;
+  }
+
+  .linkBtn {
+    margin-top: 14px;
+    background: none;
+    border: none;
+    color: var(--ios-blue);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .linkBtn:active { opacity: 0.6; }
+
+  /* Auf schmalen Screens Ränder verkleinern, damit die Bretter
+     (siehe --*-Variablen in :root) maximal Platz bekommen. */
+  @media (max-width: 420px) {
+    body { padding: 16px 8px; }
+    h1 { font-size: 1.4rem; }
+  }
+
+  #layerNote {
+    margin-top: 22px;
+    max-width: 300px;
+    font-size: 0.7rem;
+    color: var(--ios-secondary-label);
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  /* --- Tab-Leiste --- */
+  #tabs {
+    display: flex;
+    background: var(--segment-bg);
+    padding: 3px;
+    border-radius: 12px;
+    margin-bottom: 22px;
+    gap: 2px;
+    /* Auf schmalen Screens (5 Tabs!) horizontal scrollbar statt
+       abgeschnitten oder gequetscht. */
+    max-width: calc(100vw - 24px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #tabs::-webkit-scrollbar { display: none; }
+  .tabBtn {
+    border: none;
+    background: none;
+    padding: 8px 14px;
+    border-radius: 9px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ios-secondary-label);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tabBtn.active {
+    background: var(--surface);
+    color: var(--ios-label);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+
+  .tab-content { display: none; flex-direction: column; align-items: center; }
+  .tab-content.active { display: flex; }
+
+  /* --- Vier gewinnt Brett --- */
+  #c4board {
+    display: grid;
+    grid-template-columns: repeat(7, var(--c4-slot));
+    grid-template-rows: repeat(6, var(--c4-slot));
+    gap: 6px;
+    background: linear-gradient(160deg, #0a84ff, #0060df);
+    padding: 10px;
+    border-radius: 20px;
+    box-shadow:
+      0 8px 24px rgba(10,132,255,0.35),
+      inset 0 0 0 1px rgba(255,255,255,0.2);
+  }
+  .c4-slot {
+    width: var(--c4-slot);
+    height: var(--c4-slot);
+    border-radius: 50%;
+    background: var(--surface-muted);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.2s ease;
+  }
+  .c4-slot:active { transform: scale(0.9); }
+  .c4-slot.r { background: radial-gradient(circle at 35% 30%, #ff6961, #ff3b30); }
+  .c4-slot.y { background: radial-gradient(circle at 35% 30%, #ffe066, #ffcc00); }
+  .c4-slot.win { box-shadow: 0 0 0 3px #34c759, inset 0 2px 4px rgba(0,0,0,0.15); }
+
+  #c4status {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    min-height: 20px;
+    color: var(--ios-secondary-label);
+  }
+
+  /* --- Reversi/Othello Brett --- */
+  #otboard {
+    display: grid;
+    grid-template-columns: repeat(8, var(--ot-cell));
+    grid-template-rows: repeat(8, var(--ot-cell));
+    gap: 2px;
+    background: #0b6e2f;
+    padding: 10px;
+    border-radius: 18px;
+    box-shadow:
+      0 8px 24px rgba(11,110,47,0.35),
+      inset 0 0 0 1px rgba(255,255,255,0.15);
+  }
+  .ot-cell {
+    width: var(--ot-cell);
+    height: var(--ot-cell);
+    background: #1a8f42;
+    border: none;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .ot-cell.valid::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+  }
+  .ot-disc {
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    transition: width 0.15s ease, height 0.15s ease;
+  }
+  .ot-cell.b .ot-disc {
+    width: calc(var(--ot-cell) * 0.79); height: calc(var(--ot-cell) * 0.79);
+    background: radial-gradient(circle at 35% 30%, #5a5a5a, #0d0d0d);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+  .ot-cell.w .ot-disc {
+    width: calc(var(--ot-cell) * 0.79); height: calc(var(--ot-cell) * 0.79);
+    background: radial-gradient(circle at 35% 30%, #ffffff, #d5d5d5);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+
+  #otstatus {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    min-height: 20px;
+    color: var(--ios-secondary-label);
+  }
+
+  /* --- Mühle (Nine Men's Morris) --- */
+  #mustatus {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 16px;
+    min-height: 36px;
+    max-width: 280px;
+    text-align: center;
+    color: var(--ios-secondary-label);
+  }
+  #muboard {
+    background: var(--ios-card);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    padding: 16px;
+    border-radius: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(255,255,255,0.6);
+  }
+  .mu-board-wrap { position: relative; width: var(--mu-board); height: var(--mu-board); }
+  #mulines { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .mu-line { stroke: var(--line-color); stroke-width: 1.5; }
+  #mupoints { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .mu-point {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 2px solid var(--border-muted);
+    background: var(--surface-muted);
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    padding: 0;
+  }
+  .mu-point:active { transform: translate(-50%, -50%) scale(0.88); }
+  .mu-point.b { background: radial-gradient(circle at 35% 30%, #5a5a5a, #0d0d0d); border-color: #0d0d0d; }
+  .mu-point.w { background: radial-gradient(circle at 35% 30%, #ffffff, #d5d5d5); border-color: var(--border-muted); }
+  .mu-point.selected { box-shadow: 0 0 0 3px var(--ios-blue); }
+  .mu-point.valid-dest { box-shadow: 0 0 0 3px rgba(52,199,89,0.65); }
+  .mu-point.removable { box-shadow: 0 0 0 3px var(--ios-red); }
+
+  #mucounters {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+    font-size: 0.75rem;
+    color: var(--ios-secondary-label);
+  }
+
+  /* --- Schach --- */
+  #chstatus {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 16px;
+    min-height: 20px;
+    color: var(--ios-secondary-label);
+    text-align: center;
+  }
+  #chboard {
+    display: grid;
+    grid-template-columns: repeat(8, var(--ch-square));
+    grid-template-rows: repeat(8, var(--ch-square));
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+  .ch-square {
+    width: var(--ch-square);
+    height: var(--ch-square);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(var(--ch-square) * 0.72);
+    line-height: 1;
+    cursor: pointer;
+    position: relative;
+  }
+  .ch-square.light { background: #eeeed2; }
+  .ch-square.dark { background: #769656; }
+  .ch-square.selected { box-shadow: inset 0 0 0 3px var(--ios-blue); }
+  .ch-square.valid-dest::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.25);
+  }
+  .ch-square.valid-dest.has-piece::after {
+    width: calc(var(--ch-square) * 0.9);
+    height: calc(var(--ch-square) * 0.9);
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: inset 0 0 0 3px rgba(220,50,50,0.75);
+  }
+  .ch-square.in-check { box-shadow: inset 0 0 0 3px var(--ios-red); }
+  .ch-piece.w { color: #ffffff; text-shadow: 0 0 2px #000, 0 1px 1px rgba(0,0,0,0.6); }
+  .ch-piece.b { color: #1c1c1e; text-shadow: 0 1px 1px rgba(255,255,255,0.3); }
+
+  #chpromo {
+    display: none;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  #chpromo.active { display: flex; }
+  #chpromo button {
+    width: 44px; height: 44px;
+    font-size: 1.6rem;
+    border: none;
+    border-radius: 10px;
+    background: var(--ios-card);
+    cursor: pointer;
+  }
+  #chengine {
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: var(--ios-secondary-label);
+    min-height: 16px;
+  }
+
+  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie #mode,
+     aber nur sichtbar, wenn gegen den Computer gespielt wird. */
+  #chdiff {
+    display: none;
+    margin-top: 10px;
+    background: var(--segment-bg);
+    padding: 3px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+  }
+  #chdiff.active { display: flex; }
+  #chdiff label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--ios-secondary-label);
+    transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  }
+  #chdiff input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  #chdiff label:has(input:checked),
+  #chdiff label.active {
+    background: var(--surface);
+    color: var(--ios-label);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+
+  /* --- Mangala --- */
+  #mastatus {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    min-height: 20px;
+    color: var(--ios-secondary-label);
+  }
+  #maboard {
+    display: grid;
+    grid-template-columns: var(--ma-store) repeat(6, var(--ma-pit)) var(--ma-store);
+    grid-template-rows: repeat(2, var(--ma-pit));
+    gap: 5px;
+    background: linear-gradient(160deg, #8a5a34, #6b4423);
+    padding: 8px;
+    border-radius: 24px;
+    box-shadow: 0 8px 24px rgba(107,68,35,0.35), inset 0 0 0 1px rgba(255,255,255,0.15);
+  }
+  .ma-pit, .ma-store {
+    border: none;
+    border-radius: 50%;
+    background: #e8d4b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4a3018;
+    cursor: pointer;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+  }
+  .ma-pit:active { transform: scale(0.92); }
+  .ma-pit.valid { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 0 0 3px var(--ios-green); }
+  .ma-pit:disabled, .ma-pit.empty { opacity: 0.55; cursor: default; }
+  .ma-store {
+    grid-row: 1 / span 2;
+    border-radius: 20px;
+    font-size: 1.3rem;
+    background: #d9c19d;
+  }
+  #mastore-a { grid-column: 8; }
+  #mastore-b { grid-column: 1; }
+</style>
+</head>
+<body>
+
+<div id="tabs">
+  <button class="tabBtn active" data-tab="tictactoe">Tic Tac Toe</button>
+  <button class="tabBtn" data-tab="connect4">Vier gewinnt</button>
+  <button class="tabBtn" data-tab="othello">Reversi</button>
+  <button class="tabBtn" data-tab="muehle">Mühle</button>
+  <button class="tabBtn" data-tab="chess">Schach</button>
+  <button class="tabBtn" data-tab="mangala">Mangala</button>
+</div>
+
+<div id="tictactoe-view" class="tab-content active">
+  <h1>Tic Tac Toe</h1>
+  <div id="status">Spieler X ist dran</div>
+  <div id="board"></div>
+
+  <div id="controls">
+    <button class="action" id="resetBtn">Neu starten</button>
+  </div>
+
+  <div id="mode">
+    <label class="active"><input type="radio" name="mode" value="pvp" checked><span>2 Spieler</span></label>
+    <label><input type="radio" name="mode" value="ai"><span>Gegen Computer</span></label>
+  </div>
+
+  <div id="stats">
+    <div class="stat"><span class="stat-value" id="statX">0</span><span class="stat-label">Siege X</span></div>
+    <div class="stat"><span class="stat-value" id="statO">0</span><span class="stat-label">Siege O</span></div>
+    <div class="stat"><span class="stat-value" id="statDraw">0</span><span class="stat-label">Unentschieden</span></div>
+  </div>
+  <button class="linkBtn" id="resetStatsBtn">Statistik zurücksetzen</button>
+</div>
+
+<div id="connect4-view" class="tab-content">
+  <h1>Vier gewinnt</h1>
+  <div id="c4status">Spieler Rot ist dran</div>
+  <div id="c4board"></div>
+
+  <div id="c4controls">
+    <button class="action" id="c4resetBtn">Neu starten</button>
+  </div>
+
+  <div id="c4mode">
+    <label class="active"><input type="radio" name="c4mode" value="pvp" checked><span>2 Spieler</span></label>
+    <label><input type="radio" name="c4mode" value="ai"><span>Gegen Computer</span></label>
+  </div>
+
+  <div id="c4stats">
+    <div class="stat"><span class="stat-value" id="c4statR">0</span><span class="stat-label">Siege Rot</span></div>
+    <div class="stat"><span class="stat-value" id="c4statY">0</span><span class="stat-label">Siege Gelb</span></div>
+    <div class="stat"><span class="stat-value" id="c4statDraw">0</span><span class="stat-label">Unentschieden</span></div>
+  </div>
+  <button class="linkBtn" id="c4resetStatsBtn">Statistik zurücksetzen</button>
+</div>
+
+<div id="othello-view" class="tab-content">
+  <h1>Reversi</h1>
+  <div id="otstatus">Spieler Schwarz ist dran</div>
+  <div id="otboard"></div>
+
+  <div id="otcontrols">
+    <button class="action" id="otresetBtn">Neu starten</button>
+  </div>
+
+  <div id="otmode">
+    <label class="active"><input type="radio" name="otmode" value="pvp" checked><span>2 Spieler</span></label>
+    <label><input type="radio" name="otmode" value="ai"><span>Gegen Computer</span></label>
+  </div>
+
+  <div id="otstats">
+    <div class="stat"><span class="stat-value" id="otstatB">0</span><span class="stat-label">Siege Schwarz</span></div>
+    <div class="stat"><span class="stat-value" id="otstatW">0</span><span class="stat-label">Siege Weiß</span></div>
+    <div class="stat"><span class="stat-value" id="otstatDraw">0</span><span class="stat-label">Unentschieden</span></div>
+  </div>
+  <button class="linkBtn" id="otresetStatsBtn">Statistik zurücksetzen</button>
+</div>
+
+<div id="muehle-view" class="tab-content">
+  <h1>Mühle</h1>
+  <div id="mustatus">Schwarz ist dran – noch 9 Steine zu setzen</div>
+  <div id="muboard">
+    <div class="mu-board-wrap">
+      <svg id="mulines" viewBox="0 0 100 100"></svg>
+      <div id="mupoints"></div>
+    </div>
+  </div>
+  <div id="mucounters">
+    <span>Zu setzen: Schwarz <span id="muplaceB">9</span> · Weiß <span id="muplaceW">9</span></span>
+  </div>
+
+  <div id="mucontrols">
+    <button class="action" id="muresetBtn">Neu starten</button>
+  </div>
+
+  <div id="mumode">
+    <label class="active"><input type="radio" name="mumode" value="pvp" checked><span>2 Spieler</span></label>
+    <label><input type="radio" name="mumode" value="ai"><span>Gegen Computer</span></label>
+  </div>
+
+  <div id="mustats">
+    <div class="stat"><span class="stat-value" id="mustatB">0</span><span class="stat-label">Siege Schwarz</span></div>
+    <div class="stat"><span class="stat-value" id="mustatW">0</span><span class="stat-label">Siege Weiß</span></div>
+  </div>
+  <button class="linkBtn" id="muresetStatsBtn">Statistik zurücksetzen</button>
+</div>
+
+<div id="chess-view" class="tab-content">
+  <h1>Schach</h1>
+  <div id="chstatus">Weiß ist dran</div>
+  <div id="chboard"></div>
+
+  <div id="chpromo">
+    <button data-piece="q">♛</button>
+    <button data-piece="r">♜</button>
+    <button data-piece="b">♝</button>
+    <button data-piece="n">♞</button>
+  </div>
+
+  <div id="chcontrols">
+    <button class="action" id="chresetBtn">Neu starten</button>
+    <button class="action secondary" id="chundoBtn">Zug zurück</button>
+  </div>
+
+  <div id="chmode">
+    <label class="active"><input type="radio" name="chmode" value="pvp" checked><span>2 Spieler</span></label>
+    <label><input type="radio" name="chmode" value="ai"><span>Gegen Computer</span></label>
+  </div>
+  <div id="chdiff">
+    <label><input type="radio" name="chdiff" value="leicht"><span>Leicht</span></label>
+    <label class="active"><input type="radio" name="chdiff" value="mittel" checked><span>Mittel</span></label>
+    <label><input type="radio" name="chdiff" value="stark"><span>Stark</span></label>
+  </div>
+  <div id="chengine"></div>
+
+  <div id="chstats">
+    <div class="stat"><span class="stat-value" id="chstatW">0</span><span class="stat-label">Siege Weiß</span></div>
+    <div class="stat"><span class="stat-value" id="chstatB">0</span><span class="stat-label">Siege Schwarz</span></div>
+    <div class="stat"><span class="stat-value" id="chstatDraw">0</span><span class="stat-label">Remis</span></div>
+  </div>
+  <button class="linkBtn" id="chresetStatsBtn">Statistik zurücksetzen</button>
+</div>
+
+<div id="mangala-view" class="tab-content">
+  <h1>Mangala</h1>
+  <div id="mastatus">Spieler A ist dran</div>
+  <div id="maboard"></div>
+
+  <div id="macontrols">
+    <button class="action" id="maresetBtn">Neu starten</button>
+  </div>
+
+  <div id="mamode">
+    <label class="active"><input type="radio" name="mamode" value="pvp" checked><span>2 Spieler</span></label>
+    <label><input type="radio" name="mamode" value="ai"><span>Gegen Computer</span></label>
+  </div>
+
+  <div id="mastats">
+    <div class="stat"><span class="stat-value" id="mastatA">0</span><span class="stat-label">Siege A</span></div>
+    <div class="stat"><span class="stat-value" id="mastatB">0</span><span class="stat-label">Siege B</span></div>
+    <div class="stat"><span class="stat-value" id="mastatDraw">0</span><span class="stat-label">Unentschieden</span></div>
+  </div>
+  <button class="linkBtn" id="maresetStatsBtn">Statistik zurücksetzen</button>
+</div>
+
+<div id="layerNote">Architektur: Entity (Spielregeln) → Boundary (Zugriffsschicht) → Control (Ablauf) → UI (Anzeige)<br>Datenschicht: Statistik wird lokal in der Browser-Datenbank (IndexedDB, Fallback localStorage) gespeichert – kein Server, keine personenbezogenen Daten, keine Weitergabe an Dritte.</div>
+
+<script>
+/* ============================================================
+   ENTITY LAYER
+   Kennt nur die reinen Spielregeln und den Zustand.
+   Keine Ahnung von DOM, Buttons, Events oder KI-Strategie.
+   ============================================================ */
+class TicTacToeEntity {
+  static WIN_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.cells = Array(9).fill(null);
+    this.currentPlayer = 'X';
+    this.finished = false;
+  }
+
+  isValidMove(index) {
+    return !this.finished && index >= 0 && index < 9 && this.cells[index] === null;
+  }
+
+  applyMove(index) {
+    if (!this.isValidMove(index)) {
+      throw new Error(`Ungültiger Zug auf Feld ${index}`);
+    }
+    this.cells[index] = this.currentPlayer;
+    const result = this.evaluate();
+    if (result) {
+      this.finished = true;
+    } else {
+      this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
+    }
+    return result;
+  }
+
+  evaluate(board = this.cells) {
+    for (const line of TicTacToeEntity.WIN_LINES) {
+      const [a, b, c] = line;
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        return { winner: board[a], line };
+      }
+    }
+    if (board.every(cell => cell !== null)) {
+      return { winner: 'Draw', line: null };
+    }
+    return null;
+  }
+
+  toJSON() {
+    return { cells: [...this.cells], currentPlayer: this.currentPlayer, finished: this.finished };
+  }
+
+  loadFromJSON(data) {
+    this.cells = [...data.cells];
+    this.currentPlayer = data.currentPlayer;
+    this.finished = data.finished;
+  }
+}
+
+/* ============================================================
+   DATENSCHICHT (Persistenz)
+   ------------------------------------------------------------
+   StatsEntity: reiner Zustand der Spielstatistik (Siege/Draws).
+   Kennt kein Storage, keine API, keinen DOM.
+
+   StatsRepository: einzige Stelle, die tatsächlich mit der
+   Browser-Datenbank (IndexedDB, Fallback localStorage) spricht.
+   Speichert ausschließlich anonyme Zählerstände (keine Namen,
+   keine IDs, keine personenbezogenen Daten) rein lokal auf
+   diesem Gerät. Datenschutzrechtlich unkritisch, da keine
+   Identifizierbarkeit einer Person gegeben ist.
+   ============================================================ */
+class StatsEntity {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.wins = {};
+    this.draws = 0;
+  }
+
+  recordResult(winner) {
+    if (winner === 'Draw') {
+      this.draws += 1;
+    } else if (winner) {
+      this.wins[winner] = (this.wins[winner] ?? 0) + 1;
+    }
+  }
+
+  toJSON() {
+    return { wins: { ...this.wins }, draws: this.draws };
+  }
+
+  loadFromJSON(data) {
+    if (!data) return;
+    this.wins = { ...data.wins };
+    this.draws = data.draws ?? 0;
+  }
+}
+
+class StatsRepository {
+  constructor(dbName = 'ticTacToeDB', storeName = 'stats', key = 'summary') {
+    this.dbName = dbName;
+    this.storeName = storeName;
+    this.key = key;
+    this._dbPromise = null;
+  }
+
+  // Öffnet (und legt bei Bedarf an) die IndexedDB-Datenbank.
+  // Wird nur einmal ausgeführt, das Promise wird für alle weiteren
+  // Aufrufe wiederverwendet.
+  _openDB() {
+    if (this._dbPromise) return this._dbPromise;
+    this._dbPromise = new Promise((resolve) => {
+      if (!('indexedDB' in window)) { resolve(null); return; }
+      const req = indexedDB.open(this.dbName, 1);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(this.storeName)) {
+          req.result.createObjectStore(this.storeName);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null); // z.B. privater Modus / blockiert -> Fallback greift
+    });
+    return this._dbPromise;
+  }
+
+  async load() {
+    const db = await this._openDB();
+    if (db) {
+      try {
+        const data = await new Promise((resolve) => {
+          const tx = db.transaction(this.storeName, 'readonly');
+          const req = tx.objectStore(this.storeName).get(this.key);
+          req.onsuccess = () => resolve(req.result ?? null);
+          req.onerror = () => resolve(null);
+        });
+        if (data) return data;
+      } catch (err) { /* fällt durch auf localStorage-Fallback */ }
+    }
+    return this._loadFromLocalStorage();
+  }
+
+  async save(statsJSON) {
+    const db = await this._openDB();
+    if (db) {
+      try {
+        const ok = await new Promise((resolve) => {
+          const tx = db.transaction(this.storeName, 'readwrite');
+          tx.objectStore(this.storeName).put(statsJSON, this.key);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        });
+        if (ok) return true;
+      } catch (err) { /* fällt durch auf localStorage-Fallback */ }
+    }
+    return this._saveToLocalStorage(statsJSON);
+  }
+
+  async clear() {
+    const db = await this._openDB();
+    if (db) {
+      try {
+        await new Promise((resolve) => {
+          const tx = db.transaction(this.storeName, 'readwrite');
+          tx.objectStore(this.storeName).delete(this.key);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        });
+      } catch (err) { /* ignorieren, localStorage wird trotzdem geleert */ }
+    }
+    this._clearLocalStorage();
+    return true;
+  }
+
+  // --- localStorage-Fallback: greift, wenn IndexedDB nicht verfügbar
+  //     oder blockiert ist (z.B. manche privaten Browser-Modi) ---
+  _loadFromLocalStorage() {
+    try {
+      const raw = localStorage.getItem(this.key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  _saveToLocalStorage(statsJSON) {
+    try {
+      localStorage.setItem(this.key, JSON.stringify(statsJSON));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  _clearLocalStorage() {
+    try {
+      localStorage.removeItem(this.key);
+    } catch (err) { /* ignorieren */ }
+  }
+}
+
+/* ============================================================
+   GEMEINSAME BASISKLASSEN (Framework-Kern)
+   ------------------------------------------------------------
+   ENTITY-VERTRAG (per Konvention, da Vanilla-JS keine Interfaces
+   kennt): Jede Spiel-Entity MUSS bereitstellen:
+     - cells          : Array — der Brettzustand
+     - currentPlayer  : string — Kennung des Spielers am Zug
+     - finished       : boolean — Spiel beendet?
+     - reset()        : Zustand auf Startposition zurücksetzen
+   Zugmethoden geben bei Spielende ein Ergebnisobjekt
+     { winner: <Kennung|'Draw'>, line: <Indizes|null> }
+   zurück, sonst null. Ungültige Züge werfen einen Error —
+   die Prüfung VOR dem Zug erfolgt über can...-Methoden.
+   ============================================================ */
+
+/* GameBoundary: kapselt Entity + Statistik + Persistenz.
+   Spielspezifische Zug- und Simulationsmethoden ergänzen die
+   Unterklassen. */
+class GameBoundary {
+  constructor(entity, statsEntity, statsRepository, gameStateRepository = null) {
+    this._entity = entity;
+    this._stats = statsEntity;
+    this._repo = statsRepository;
+    this._gameRepo = gameStateRepository; // Persistenz laufender Partien (optional)
+  }
+
+  getBoardState() { return [...this._entity.cells]; }
+  getCurrentPlayer() { return this._entity.currentPlayer; }
+  isGameOver() { return this._entity.finished; }
+  restart() { this._entity.reset(); }
+
+  getStats() { return this._stats.toJSON(); }
+  recordResult(winner) {
+    this._stats.recordResult(winner);
+    return this._repo.save(this._stats.toJSON());
+  }
+  async loadStats() {
+    const data = await this._repo.load();
+    this._stats.loadFromJSON(data);
+    return this._stats.toJSON();
+  }
+  async resetStats() {
+    this._stats.reset();
+    await this._repo.clear();
+    return this._stats.toJSON();
+  }
+
+  // --- Persistenz laufender Partien (Fire-and-forget wie recordResult) ---
+  saveGame(payload) {
+    if (this._gameRepo) this._gameRepo.save(payload);
+  }
+  async loadGame() {
+    return this._gameRepo ? this._gameRepo.load() : null;
+  }
+  clearSavedGame() {
+    if (this._gameRepo) this._gameRepo.clear();
+  }
+  getEntitySnapshot() { return this._entity.toJSON(); }
+  restoreEntity(data) { this._entity.loadFromJSON(data); }
+}
+
+/* GameControl: Modus-Umschaltung, Durchreich-Methoden und der
+   gemeinsame Zug-Ablauf (prüfen -> ausführen -> Ergebnis
+   verbuchen). Unterklassen liefern KI und spielspezifische
+   Zug-Einstiege. */
+class GameControl {
+  constructor(boundary, aiPlayer, aiStrategy = null) {
+    this.boundary = boundary;
+    this.vsAI = false;
+    this.aiPlayer = aiPlayer;
+    this.aiStrategy = aiStrategy; // injizierte KI (AIStrategy) oder null
+  }
+
+  setMode(vsAI) { this.vsAI = vsAI; this.restartGame(); }
+  restartGame() {
+    this.boundary.restart();
+    this.boundary.clearSavedGame(); // Neustart verwirft die gespeicherte Partie
+  }
+  getBoardState() { return this.boundary.getBoardState(); }
+  isGameOver() { return this.boundary.isGameOver(); }
+  getCurrentPlayer() { return this.boundary.getCurrentPlayer(); }
+
+  getStats() { return this.boundary.getStats(); }
+  async loadStats() { return this.boundary.loadStats(); }
+  async resetStats() { return this.boundary.resetStats(); }
+
+  isAiTurn() {
+    return this.vsAI
+      && !this.boundary.isGameOver()
+      && this.boundary.getCurrentPlayer() === this.aiPlayer;
+  }
+
+  // Gemeinsamer Zug-Ablauf für alle Spiele. Speichert nach jedem
+  // gültigen Zug den Spielstand; beendete Partien werden nicht
+  // aufbewahrt (kein Restore in einen Endzustand).
+  _executeMove(canFn, doFn) {
+    if (!canFn()) return { invalid: true };
+    const result = doFn();
+    if (result) {
+      this.boundary.recordResult(result.winner);
+      this.boundary.clearSavedGame();
+    } else {
+      this._persistGame();
+    }
+    return { invalid: false, result };
+  }
+
+  _persistGame() {
+    this.boundary.saveGame({ vsAI: this.vsAI, entity: this.boundary.getEntitySnapshot() });
+  }
+
+  // Stellt eine gespeicherte Partie wieder her (inkl. Spielmodus).
+  // Liefert true, wenn etwas wiederhergestellt wurde.
+  async restoreGame() {
+    const data = await this.boundary.loadGame();
+    if (!data || !data.entity) return false;
+    this.boundary.restoreEntity(data.entity);
+    this.vsAI = !!data.vsAI;
+    return true;
+  }
+}
+
+/* GameUI: verdrahtet die gemeinsamen Bedienelemente (Neustart,
+   Modus-Segmented-Control, Statistik) und den afterMove-Ablauf.
+   Unterklassen implementieren render(), renderGameOver(result)
+   und performAiMove() und rufen am Ende ihres Konstruktors
+   init() auf. */
+class GameUI {
+  constructor(control, cfg) {
+    this.control = control;
+    this.aiDelayMs = cfg.aiDelayMs ?? 400;
+    this.statusEl = document.getElementById(cfg.statusId);
+    this.resetBtn = document.getElementById(cfg.resetBtnId);
+    this.modeInputs = document.querySelectorAll(`input[name="${cfg.modeName}"]`);
+    this.resetStatsBtn = document.getElementById(cfg.resetStatsBtnId);
+    this.statEls = {};
+    for (const [key, id] of Object.entries(cfg.statEls)) {
+      this.statEls[key] = document.getElementById(id);
+    }
+
+    this.resetBtn.addEventListener('click', () => this.handleReset());
+    this.modeInputs.forEach(input => {
+      input.addEventListener('change', (e) => this.handleModeChange(e.target.value === 'ai'));
+    });
+    this.resetStatsBtn.addEventListener('click', () => this.handleResetStats());
+  }
+
+  init() {
+    this._restoreAndRender();
+    this.initStats();
+  }
+
+  async _restoreAndRender() {
+    const restored = await this.control.restoreGame();
+    if (restored) {
+      // Segmented Control mit dem wiederhergestellten Modus synchronisieren
+      this.modeInputs.forEach(input => {
+        input.checked = (input.value === 'ai') === this.control.vsAI;
+        input.closest('label').classList.toggle('active', input.checked);
+      });
+    }
+    this.render();
+    // Falls die Partie mitten im KI-Zug gespeichert wurde
+    if (this.control.isAiTurn()) {
+      setTimeout(() => this.runAiTurn(), this.aiDelayMs);
+    }
+  }
+
+  async initStats() {
+    await this.control.loadStats();
+    this.renderStats();
+  }
+
+  renderStats() {
+    const stats = this.control.getStats();
+    for (const [key, el] of Object.entries(this.statEls)) {
+      el.textContent = key === 'draws' ? stats.draws : (stats.wins[key] ?? 0);
+    }
+  }
+
+  async handleResetStats() {
+    await this.control.resetStats();
+    this.renderStats();
+  }
+
+  handleReset() {
+    this.control.restartGame();
+    this.render();
+  }
+
+  handleModeChange(vsAI) {
+    this.modeInputs.forEach(input => {
+      input.closest('label').classList.toggle('active', input.checked);
+    });
+    this.control.setMode(vsAI);
+    this.render();
+  }
+
+  afterMove(result) {
+    if (result) {
+      this.renderGameOver(result);
+      this.renderStats();
+      return;
+    }
+    this.render();
+    if (this.control.isAiTurn()) {
+      setTimeout(() => this.runAiTurn(), this.aiDelayMs);
+    }
+  }
+
+  async runAiTurn() {
+    const outcome = await this.performAiMove();
+    if (outcome.invalid) return;
+    this.afterMove(outcome.result);
+  }
+
+  /* Von Unterklassen zu implementieren: */
+  render() { throw new Error('render() muss von der Unterklasse implementiert werden'); }
+  renderGameOver(result) { throw new Error('renderGameOver() muss von der Unterklasse implementiert werden'); }
+  performAiMove() { throw new Error('performAiMove() muss von der Unterklasse implementiert werden'); }
+}
+
+/* ============================================================
+   KI-SCHICHT
+   ------------------------------------------------------------
+   AIEngines: reine, zustandslose Funktionen (board rein, Zug
+   raus) ohne Zugriff auf Entity/Boundary/DOM. Diese Reinheit ist
+   Voraussetzung dafür, dass derselbe Code per Serialisierung in
+   einen Web Worker verschoben werden kann.
+
+   AIStrategy: führt eine Engine aus — bevorzugt in einem Web
+   Worker (eigener Thread, blockiert die Bedienung nicht; wichtig
+   auf Mobilgeräten), mit synchronem Fallback im Hauptthread,
+   falls Worker nicht verfügbar sind. Die Controls kennen nur
+   `chooseMove(engine, args) → Promise<Zug>` und nicht, wo
+   gerechnet wird.
+   ============================================================ */
+const AIEngines = {
+  /* Tic Tac Toe: vollständiges Minimax (unbesiegbar). */
+  tictactoe(board, aiPlayer) {
+    const WIN = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    const evaluate = (b) => {
+      for (const [a, c, d] of WIN) {
+        if (b[a] && b[a] === b[c] && b[a] === b[d]) return b[a];
+      }
+      return b.every(x => x !== null) ? 'Draw' : null;
+    };
+    const other = p => (p === 'X' ? 'O' : 'X');
+    const minimax = (b, player) => {
+      const w = evaluate(b);
+      if (w) return { score: w === aiPlayer ? 10 : w === 'Draw' ? 0 : -10 };
+      let best = null;
+      for (let i = 0; i < 9; i++) {
+        if (b[i] !== null) continue;
+        b[i] = player;
+        const s = minimax(b, other(player)).score;
+        b[i] = null;
+        if (!best || (player === aiPlayer ? s > best.score : s < best.score)) {
+          best = { index: i, score: s };
+        }
+      }
+      return best;
+    };
+    return minimax([...board], aiPlayer).index;
+  },
+
+  /* Vier gewinnt: Alpha-Beta mit Tiefenbegrenzung und
+     Fenster-Heuristik. */
+  connect4(board, aiPlayer, depth) {
+    const ROWS = 6, COLS = 7;
+    const opp = aiPlayer === 'R' ? 'Y' : 'R';
+    const dropRow = (b, c) => {
+      for (let r = ROWS - 1; r >= 0; r--) if (b[r * COLS + c] === null) return r;
+      return -1;
+    };
+    const validCols = (b) => {
+      const out = [];
+      for (let c = 0; c < COLS; c++) if (dropRow(b, c) !== -1) out.push(c);
+      return out;
+    };
+    const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
+    const evaluate = (b) => {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const v = b[r * COLS + c];
+          if (!v) continue;
+          for (const [dr, dc] of dirs) {
+            let ok = true;
+            for (let k = 1; k < 4; k++) {
+              const nr = r + dr * k, nc = c + dc * k;
+              if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || b[nr * COLS + nc] !== v) { ok = false; break; }
+            }
+            if (ok) return v;
+          }
+        }
+      }
+      return b.every(x => x !== null) ? 'Draw' : null;
+    };
+    const heuristic = (b) => {
+      let score = 0;
+      const centerCol = Math.floor(COLS / 2);
+      for (let r = 0; r < ROWS; r++) if (b[r * COLS + centerCol] === aiPlayer) score += 3;
+      const scoreWindow = (cells) => {
+        const own = cells.filter(v => v === aiPlayer).length;
+        const oppN = cells.filter(v => v === opp).length;
+        const empty = cells.filter(v => v === null).length;
+        if (own === 4) return 100000;
+        if (own === 3 && empty === 1) return 5;
+        if (own === 2 && empty === 2) return 2;
+        if (oppN === 3 && empty === 1) return -4;
+        return 0;
+      };
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          for (const [dr, dc] of dirs) {
+            const windowCells = [];
+            let valid = true;
+            for (let k = 0; k < 4; k++) {
+              const nr = r + dr * k, nc = c + dc * k;
+              if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) { valid = false; break; }
+              windowCells.push(b[nr * COLS + nc]);
+            }
+            if (valid) score += scoreWindow(windowCells);
+          }
+        }
+      }
+      return score;
+    };
+    const drop = (b, c, p) => {
+      const nb = [...b];
+      nb[dropRow(nb, c) * COLS + c] = p;
+      return nb;
+    };
+    const ab = (b, d, alpha, beta, maxing) => {
+      const w = evaluate(b);
+      const cols = validCols(b);
+      if (w) {
+        if (w === aiPlayer) return { score: 1000000 + d };
+        if (w === opp) return { score: -1000000 - d };
+        return { score: 0 };
+      }
+      if (d === 0 || cols.length === 0) return { score: heuristic(b) };
+      let bestCol = cols[Math.floor(cols.length / 2)];
+      if (maxing) {
+        let v = -Infinity;
+        for (const c of cols) {
+          const { score } = ab(drop(b, c, aiPlayer), d - 1, alpha, beta, false);
+          if (score > v) { v = score; bestCol = c; }
+          alpha = Math.max(alpha, v);
+          if (alpha >= beta) break;
+        }
+        return { score: v, col: bestCol };
+      } else {
+        let v = Infinity;
+        for (const c of cols) {
+          const { score } = ab(drop(b, c, opp), d - 1, alpha, beta, true);
+          if (score < v) { v = score; bestCol = c; }
+          beta = Math.min(beta, v);
+          if (alpha >= beta) break;
+        }
+        return { score: v, col: bestCol };
+      }
+    };
+    return ab(board, depth, -Infinity, Infinity, true).col;
+  },
+
+  /* Reversi: Minimax mit Ecken-Gewichtsmatrix + Mobilitätsbonus.
+     Passen-Regel wird in der Suche berücksichtigt. */
+  othello(board, aiPlayer, depth) {
+    const WEIGHTS = [
+      100,-20, 10,  5,  5, 10,-20,100,
+      -20,-50, -2, -2, -2, -2,-50,-20,
+       10, -2, -1, -1, -1, -1, -2, 10,
+        5, -2, -1, -1, -1, -1, -2,  5,
+        5, -2, -1, -1, -1, -1, -2,  5,
+       10, -2, -1, -1, -1, -1, -2, 10,
+      -20,-50, -2, -2, -2, -2,-50,-20,
+      100,-20, 10,  5,  5, 10,-20,100
+    ];
+    const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+    const other = p => (p === 'B' ? 'W' : 'B');
+    const inB = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+    const getFlips = (b, row, col, player) => {
+      if (b[row * 8 + col] !== null) return [];
+      const opp = other(player);
+      const flips = [];
+      for (const [dr, dc] of DIRS) {
+        let r = row + dr, c = col + dc;
+        const line = [];
+        while (inB(r, c) && b[r * 8 + c] === opp) { line.push([r, c]); r += dr; c += dc; }
+        if (line.length > 0 && inB(r, c) && b[r * 8 + c] === player) flips.push(...line);
+      }
+      return flips;
+    };
+    const validMoves = (b, player) => {
+      const out = [];
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+        if (getFlips(b, r, c, player).length > 0) out.push([r, c]);
+      }
+      return out;
+    };
+    const applyMove = (b, r, c, player) => {
+      const nb = [...b];
+      nb[r * 8 + c] = player;
+      for (const [fr, fc] of getFlips(b, r, c, player)) nb[fr * 8 + fc] = player;
+      return nb;
+    };
+    const opponent = other(aiPlayer);
+    const heuristic = (b) => {
+      let score = 0;
+      for (let i = 0; i < 64; i++) {
+        if (b[i] === aiPlayer) score += WEIGHTS[i];
+        else if (b[i] === opponent) score -= WEIGHTS[i];
+      }
+      score += (validMoves(b, aiPlayer).length - validMoves(b, opponent).length) * 2;
+      return score;
+    };
+    const finalScore = (b) => {
+      let my = 0, opp = 0;
+      for (const cell of b) {
+        if (cell === aiPlayer) my++; else if (cell === opponent) opp++;
+      }
+      if (my > opp) return 100000 + (my - opp);
+      if (my < opp) return -100000 - (opp - my);
+      return 0;
+    };
+    const minimax = (b, turnPlayer, d) => {
+      const moves = validMoves(b, turnPlayer);
+      const oppMoves = validMoves(b, other(turnPlayer));
+      if (moves.length === 0 && oppMoves.length === 0) return { score: finalScore(b), move: null };
+      if (d === 0) return { score: heuristic(b), move: null };
+      if (moves.length === 0) {
+        const { score } = minimax(b, other(turnPlayer), d - 1);
+        return { score, move: null };
+      }
+      const maxing = turnPlayer === aiPlayer;
+      let best = maxing ? -Infinity : Infinity;
+      let bestMove = moves[0];
+      for (const [r, c] of moves) {
+        const { score } = minimax(applyMove(b, r, c, turnPlayer), other(turnPlayer), d - 1);
+        if (maxing ? score > best : score < best) { best = score; bestMove = [r, c]; }
+      }
+      return { score: best, move: bestMove };
+    };
+    return minimax(board, aiPlayer, depth).move;
+  },
+
+  /* Mangala (Kalaha-Regeln): Alpha-Beta über eigene, in sich
+     geschlossene Zug-Simulation (Aussäen, Zusatzzug bei eigenem
+     Kalaha, Aussetzer-Regel), da Mangala keine externe Bibliothek
+     wie Schach braucht — die Regeln sind kompakt genug für eine
+     reine Funktion. */
+  mangala(board, aiPlayer, depth) {
+    const STORE_A = 6, STORE_B = 13;
+    const ownPits = p => p === 'A' ? [0,1,2,3,4,5] : [7,8,9,10,11,12];
+    const ownStore = p => p === 'A' ? STORE_A : STORE_B;
+    const oppStore = p => p === 'A' ? STORE_B : STORE_A;
+    const opponent = p => p === 'A' ? 'B' : 'A';
+
+    const simulate = (b, player, pit) => {
+      const nb = [...b];
+      let stones = nb[pit];
+      nb[pit] = 0;
+      let idx = pit;
+      const skip = oppStore(player);
+      while (stones > 0) {
+        idx = (idx + 1) % 14;
+        if (idx === skip) continue;
+        nb[idx]++; stones--;
+      }
+      const last = idx;
+      const store = ownStore(player);
+      const extraTurn = last === store;
+      if (!extraTurn && ownPits(player).includes(last) && nb[last] === 1) {
+        const opp = 12 - last;
+        if (nb[opp] > 0) {
+          nb[store] += nb[opp] + nb[last];
+          nb[opp] = 0; nb[last] = 0;
+        }
+      }
+      const sideEmpty = p => ownPits(p).every(i => nb[i] === 0);
+      let finished = false;
+      if (sideEmpty('A') || sideEmpty('B')) {
+        for (const p of ['A', 'B']) {
+          const st = ownStore(p);
+          for (const i of ownPits(p)) { nb[st] += nb[i]; nb[i] = 0; }
+        }
+        finished = true;
+      }
+      return { board: nb, nextPlayer: extraTurn ? player : opponent(player), finished };
+    };
+
+    const validMoves = (b, player) => ownPits(player).filter(i => b[i] > 0);
+    const evaluate = (b) => b[ownStore(aiPlayer)] - b[ownStore(opponent(aiPlayer))];
+
+    const minimax = (b, player, d, alpha, beta) => {
+      const moves = validMoves(b, player);
+      if (d === 0 || moves.length === 0) return { score: evaluate(b) };
+      const maximizing = player === aiPlayer;
+      let best = maximizing ? -Infinity : Infinity;
+      let bestMove = moves[0];
+      for (const m of moves) {
+        const { board: nb, nextPlayer, finished } = simulate(b, player, m);
+        const score = finished ? evaluate(nb) : minimax(nb, nextPlayer, d - 1, alpha, beta).score;
+        if (maximizing ? score > best : score < best) { best = score; bestMove = m; }
+        if (maximizing) alpha = Math.max(alpha, best); else beta = Math.min(beta, best);
+        if (alpha >= beta) break;
+      }
+      return { score: best, move: bestMove };
+    };
+
+    return minimax(board, aiPlayer, depth, -Infinity, Infinity).move;
+  }
+};
+
+/* AIStrategy: führt AIEngines aus — im Web Worker, wenn möglich. */
+class AIStrategy {
+  constructor() {
+    this._worker = null;
+    this._pending = new Map();
+    this._nextId = 1;
+    this._initWorker();
+  }
+
+  _initWorker() {
+    if (typeof Worker === 'undefined' || typeof Blob === 'undefined'
+        || typeof URL === 'undefined' || !URL.createObjectURL) return;
+    try {
+      // Die Engine-Funktionen werden per toString() in den
+      // Worker-Quelltext serialisiert — möglich, weil sie rein
+      // und zustandslos sind. Wichtig: toString() einer Objekt-
+      // Methoden-Kurzform ("name(args) {...}") ist nur innerhalb
+      // eines Objekt-Literals gültige Syntax, daher werden die
+      // Funktionen hier direkt in ein Objekt-Literal eingebettet.
+      const src = `
+        const AIEngines = {
+          ${AIEngines.tictactoe.toString()},
+          ${AIEngines.connect4.toString()},
+          ${AIEngines.othello.toString()},
+          ${AIEngines.mangala.toString()}
+        };
+        self.onmessage = (e) => {
+          const { id, engine, args } = e.data;
+          try {
+            self.postMessage({ id, move: AIEngines[engine](...args) });
+          } catch (err) {
+            self.postMessage({ id, error: String(err) });
+          }
+        };
+      `;
+      const url = URL.createObjectURL(new Blob([src], { type: 'application/javascript' }));
+      this._worker = new Worker(url);
+      this._worker.onmessage = (e) => {
+        const pending = this._pending.get(e.data.id);
+        if (!pending) return;
+        this._pending.delete(e.data.id);
+        if (e.data.error) pending.reject(new Error(e.data.error));
+        else pending.resolve(e.data.move);
+      };
+      this._worker.onerror = () => {
+        // Worker kaputt -> alle offenen Anfragen synchron nachholen
+        this._worker = null;
+        for (const [, p] of this._pending) p.reject(new Error('Worker-Fehler'));
+        this._pending.clear();
+      };
+    } catch (err) {
+      this._worker = null;
+    }
+  }
+
+  chooseMove(engine, args) {
+    if (!this._worker) {
+      // Synchroner Fallback im Hauptthread (z.B. sehr alte Browser).
+      return Promise.resolve(AIEngines[engine](...args));
+    }
+    return new Promise((resolve, reject) => {
+      const id = this._nextId++;
+      this._pending.set(id, { resolve, reject });
+      this._worker.postMessage({ id, engine, args });
+    }).catch(() => AIEngines[engine](...args)); // Fallback bei Worker-Fehler
+  }
+}
+
+/* ============================================================
+   STOCKFISH-WASM (nur für Schach)
+   ------------------------------------------------------------
+   Eigenständig von AIStrategy, weil Stockfish nicht über das
+   Board-Array-Format der anderen Spiele spricht, sondern über
+   das textbasierte UCI-Protokoll (FEN rein, "bestmove e2e4" raus)
+   und eine fertig kompilierte WASM-Engine ist statt einer reinen
+   JS-Funktion.
+
+   Technischer Kniff: Ein Worker-Skript von einer fremden Domain
+   (CDN) lässt sich nicht direkt per `new Worker(url)` laden
+   (Cross-Origin-Einschränkung). Daher wird der Quelltext per
+   fetch() geholt und als Blob-URL in einen Worker geladen — exakt
+   dasselbe Muster wie bei AIStrategy oben, nur mit externem statt
+   selbst geschriebenem Code. Die .wasm-Datei würde der Loader sonst
+   relativ zur Blob-URL suchen und nicht finden. Stockfish 10 liest
+   den WASM-Pfad aus dem URL-Hash des Workers (self.location.hash),
+   deshalb wird die absolute Adresse dort angehängt. Ein globales
+   Module.locateFile wirkt bei diesem Build nicht, weil der Loader
+   intern ein eigenes Module-Objekt anlegt (Fehler der Vorversion).
+
+   BASE ist im Browser die CDN-Adresse; der Android-Build ersetzt sie
+   durch den lokalen Ordner './lib/', damit Schach offline läuft.
+
+   Mehrstufiger Fallback bei jedem Fehlschlag (kein WebAssembly,
+   kein Netz/CORS-Block, Ladefehler, Timeout): computeAiMove() in
+   ChessControl fällt automatisch auf die eigene, schwächere
+   Minimax-Suche zurück. Dieser Pfad wurde nicht in einer echten
+   Browser-Umgebung getestet (das Sandbox-Netzwerk hier erlaubt
+   keinen Zugriff auf cdnjs) — nur die Fallback-Logik selbst.
+   ============================================================ */
+class StockfishEngine {
+  static BASE = './lib/';
+
+  constructor() {
+    this.worker = null;
+    this.ready = false;
+    this._readyPromise = this._init();
+  }
+
+  async _init() {
+    if (typeof WebAssembly !== 'object' || typeof Worker === 'undefined'
+        || typeof fetch === 'undefined' || typeof Blob === 'undefined') {
+      return false;
+    }
+    try {
+      const base = new URL(StockfishEngine.BASE, location.href).href;
+      const resp = await fetch(base + 'stockfish.wasm.js');
+      if (!resp.ok) return false;
+      const src = await resp.text();
+      const blobUrl = URL.createObjectURL(new Blob([src], { type: 'application/javascript' }));
+      this.worker = new Worker(blobUrl + '#' + base + 'stockfish.wasm');
+
+      const uciOk = await this._waitFor(line => line.includes('uciok'), 8000, () => this.worker.postMessage('uci'));
+      if (!uciOk) return false;
+      const readyOk = await this._waitFor(line => line.includes('readyok'), 5000, () => this.worker.postMessage('isready'));
+      if (!readyOk) return false;
+
+      this.ready = true;
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  _waitFor(matches, timeoutMs, sendFn) {
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (val) => { if (!settled) { settled = true; this.worker.removeEventListener('message', onMsg); resolve(val); } };
+      const onMsg = (e) => {
+        const line = typeof e.data === 'string' ? e.data : '';
+        if (matches(line)) finish(true);
+      };
+      this.worker.addEventListener('message', onMsg);
+      this.worker.addEventListener('error', () => finish(false));
+      setTimeout(() => finish(false), timeoutMs);
+      sendFn();
+    });
+  }
+
+  async isReady() { return this._readyPromise; }
+
+  // Stockfish-eigene Spielstärke-Drosselung (0 = sehr schwach,
+  // 20 = volle Stärke). Wird vor jeder Suche mitgeschickt, damit
+  // eine Änderung sofort ab dem nächsten Zug greift.
+  setSkillLevel(level) {
+    this.skillLevel = Math.max(0, Math.min(20, level));
+  }
+
+  newGame() {
+    if (this.ready) this.worker.postMessage('ucinewgame');
+  }
+
+  // FEN rein, UCI-Zugnotation raus (z.B. "e2e4" oder "e7e8q"),
+  // oder null bei Fehlschlag/Timeout (-> Fallback in ChessControl).
+  getBestMove(fen, movetimeMs = 800) {
+    if (!this.ready) return Promise.resolve(null);
+    if (this.skillLevel !== undefined) {
+      this.worker.postMessage('setoption name Skill Level value ' + this.skillLevel);
+    }
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (val) => {
+        if (settled) return;
+        settled = true;
+        this.worker.removeEventListener('message', onMsg);
+        resolve(val);
+      };
+      const onMsg = (e) => {
+        const line = typeof e.data === 'string' ? e.data : '';
+        if (line.startsWith('bestmove')) {
+          const uciMove = line.split(' ')[1];
+          finish(uciMove === '(none)' ? null : uciMove);
+        }
+      };
+      this.worker.addEventListener('message', onMsg);
+      setTimeout(() => finish(null), movetimeMs + 4000);
+      this.worker.postMessage('position fen ' + fen);
+      this.worker.postMessage('go movetime ' + movetimeMs);
+    });
+  }
+}
+
+
+class TicTacToeBoundary extends GameBoundary {
+  canMove(index) {
+    return this._entity.isValidMove(index);
+  }
+
+  makeMove(index) {
+    return this._entity.applyMove(index);
+  }
+}
+
+/* ============================================================
+   CONTROL LAYER
+   Steuert den Spielablauf, Spielmodus (PvP / gegen KI) und die
+   Minimax-Strategie. Spricht nur mit der Boundary, nie direkt
+   mit der Entity und kennt kein DOM.
+   ============================================================ */
+class TicTacToeControl extends GameControl {
+  constructor(boundary, aiStrategy) {
+    super(boundary, 'O', aiStrategy);
+  }
+
+  playerMove(index) {
+    return this._executeMove(
+      () => this.boundary.canMove(index),
+      () => this.boundary.makeMove(index)
+    );
+  }
+
+  // Delegiert an die injizierte KI-Strategie (asynchron, läuft
+  // je nach Verfügbarkeit im Web Worker).
+  computeAiMove() {
+    return this.aiStrategy.chooseMove('tictactoe', [this.boundary.getBoardState(), this.aiPlayer]);
+  }
+}
+
+/* ============================================================
+   VIER GEWINNT — eigenständiges Spiel, gleiches BCE-Muster
+   ============================================================ */
+
+/* --- ENTITY: reine Spielregeln, 7x6-Raster, Fallgesetz --- */
+class Connect4Entity {
+  static ROWS = 6;
+  static COLS = 7;
+
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.cells = Array(Connect4Entity.ROWS * Connect4Entity.COLS).fill(null);
+    this.currentPlayer = 'R';
+    this.finished = false;
+  }
+
+  _index(row, col) {
+    return row * Connect4Entity.COLS + col;
+  }
+
+  // Finde die unterste freie Reihe in einer Spalte (Fallgesetz).
+  _dropRow(col, board = this.cells) {
+    for (let r = Connect4Entity.ROWS - 1; r >= 0; r--) {
+      if (board[this._index(r, col)] === null) return r;
+    }
+    return -1;
+  }
+
+  isValidMove(col) {
+    return !this.finished
+      && col >= 0 && col < Connect4Entity.COLS
+      && this._dropRow(col) !== -1;
+  }
+
+  applyMove(col) {
+    if (!this.isValidMove(col)) {
+      throw new Error(`Ungültiger Zug in Spalte ${col}`);
+    }
+    const row = this._dropRow(col);
+    this.cells[this._index(row, col)] = this.currentPlayer;
+    const result = this.evaluate();
+    if (result) {
+      this.finished = true;
+    } else {
+      this.currentPlayer = this.currentPlayer === 'R' ? 'Y' : 'R';
+    }
+    return result;
+  }
+
+  evaluate(board = this.cells) {
+    const { ROWS, COLS } = Connect4Entity;
+    const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const val = board[this._index(r, c)];
+        if (!val) continue;
+        for (const [dr, dc] of dirs) {
+          const line = [[r, c]];
+          let ok = true;
+          for (let k = 1; k < 4; k++) {
+            const nr = r + dr * k, nc = c + dc * k;
+            if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || board[this._index(nr, nc)] !== val) {
+              ok = false; break;
+            }
+            line.push([nr, nc]);
+          }
+          if (ok) return { winner: val, line: line.map(([rr, cc]) => this._index(rr, cc)) };
+        }
+      }
+    }
+    if (board.every(cell => cell !== null)) return { winner: 'Draw', line: null };
+    return null;
+  }
+
+  toJSON() {
+    return { cells: [...this.cells], currentPlayer: this.currentPlayer, finished: this.finished };
+  }
+
+  loadFromJSON(data) {
+    this.cells = [...data.cells];
+    this.currentPlayer = data.currentPlayer;
+    this.finished = data.finished;
+  }
+}
+
+/* --- BOUNDARY: nur die spielspezifischen Zugriffe --- */
+class Connect4Boundary extends GameBoundary {
+  canMove(col) { return this._entity.isValidMove(col); }
+  makeMove(col) { return this._entity.applyMove(col); }
+}
+
+/* --- CONTROL: Ablauf, Alpha-Beta-KI (tiefenbegrenzt,
+     da Vier-gewinnt-Minimax ohne Begrenzung zu teuer wäre) --- */
+class Connect4Control extends GameControl {
+  constructor(boundary, aiStrategy) {
+    super(boundary, 'Y', aiStrategy);
+    this.searchDepth = 5;
+  }
+
+  playerMove(col) {
+    return this._executeMove(
+      () => this.boundary.canMove(col),
+      () => this.boundary.makeMove(col)
+    );
+  }
+
+  computeAiMove() {
+    return this.aiStrategy.chooseMove('connect4', [this.boundary.getBoardState(), this.aiPlayer, this.searchDepth]);
+  }
+}
+
+/* ============================================================
+   REVERSI / OTHELLO — drittes Spiel, gleiches BCE-Muster
+   ============================================================ */
+
+/* --- ENTITY: 8x8-Raster, Einschließen + Umdrehen, Passzwang --- */
+class OthelloEntity {
+  static SIZE = 8;
+  static DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.cells = Array(64).fill(null);
+    this.cells[this._idx(3,3)] = 'W';
+    this.cells[this._idx(3,4)] = 'B';
+    this.cells[this._idx(4,3)] = 'B';
+    this.cells[this._idx(4,4)] = 'W';
+    this.currentPlayer = 'B'; // Schwarz beginnt (Standardregel)
+    this.finished = false;
+    this.lastPassOccurred = false;
+  }
+
+  _idx(r, c) { return r * 8 + c; }
+  _inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+  _opponent(p) { return p === 'B' ? 'W' : 'B'; }
+
+  // Liefert alle Steine, die bei einem Zug auf (row,col) umgedreht würden.
+  // Leeres Array = ungültiger Zug. Wird auch von der KI zur Simulation genutzt.
+  getFlips(row, col, player, board = this.cells) {
+    if (board[this._idx(row, col)] !== null) return [];
+    const opponent = this._opponent(player);
+    const flips = [];
+    for (const [dr, dc] of OthelloEntity.DIRS) {
+      let r = row + dr, c = col + dc;
+      const line = [];
+      while (this._inBounds(r, c) && board[this._idx(r, c)] === opponent) {
+        line.push([r, c]);
+        r += dr; c += dc;
+      }
+      if (line.length > 0 && this._inBounds(r, c) && board[this._idx(r, c)] === player) {
+        flips.push(...line);
+      }
+    }
+    return flips;
+  }
+
+  isValidMove(row, col, player = this.currentPlayer, board = this.cells) {
+    return this.getFlips(row, col, player, board).length > 0;
+  }
+
+  getValidMoves(player = this.currentPlayer, board = this.cells) {
+    const moves = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if (this.isValidMove(r, c, player, board)) moves.push([r, c]);
+      }
+    }
+    return moves;
+  }
+
+  applyMove(row, col) {
+    if (this.finished) throw new Error('Spiel bereits beendet');
+    const flips = this.getFlips(row, col, this.currentPlayer);
+    if (flips.length === 0) throw new Error(`Ungültiger Zug auf ${row},${col}`);
+
+    this.cells[this._idx(row, col)] = this.currentPlayer;
+    for (const [r, c] of flips) this.cells[this._idx(r, c)] = this.currentPlayer;
+
+    // Zugwechsel mit automatischem Passen, falls ein Spieler keine
+    // gültigen Züge hat (Standardregel bei Reversi).
+    this.lastPassOccurred = false;
+    const opponent = this._opponent(this.currentPlayer);
+    if (this.getValidMoves(opponent).length > 0) {
+      this.currentPlayer = opponent;
+    } else if (this.getValidMoves(this.currentPlayer).length > 0) {
+      this.lastPassOccurred = true; // Gegner muss aussetzen, gleicher Spieler bleibt dran
+    } else {
+      this.finished = true;
+    }
+    return this.finished ? this._computeResult() : null;
+  }
+
+  getCounts() {
+    let b = 0, w = 0;
+    for (const cell of this.cells) {
+      if (cell === 'B') b++; else if (cell === 'W') w++;
+    }
+    return { B: b, W: w };
+  }
+
+  _computeResult() {
+    const { B, W } = this.getCounts();
+    if (B === W) return { winner: 'Draw', line: null, counts: { B, W } };
+    return { winner: B > W ? 'B' : 'W', line: null, counts: { B, W } };
+  }
+
+  toJSON() {
+    return {
+      cells: [...this.cells],
+      currentPlayer: this.currentPlayer,
+      finished: this.finished,
+      lastPassOccurred: this.lastPassOccurred
+    };
+  }
+
+  loadFromJSON(data) {
+    this.cells = [...data.cells];
+    this.currentPlayer = data.currentPlayer;
+    this.finished = data.finished;
+    this.lastPassOccurred = data.lastPassOccurred ?? false;
+  }
+}
+
+/* --- BOUNDARY: nur die spielspezifischen Zugriffe --- */
+class OthelloBoundary extends GameBoundary {
+  wasLastMovePass() { return this._entity.lastPassOccurred; }
+  canMove(row, col) { return this._entity.isValidMove(row, col); }
+  makeMove(row, col) { return this._entity.applyMove(row, col); }
+  getValidMoves(player, board) { return this._entity.getValidMoves(player, board); }
+  getCounts() { return this._entity.getCounts(); }
+}
+
+/* --- CONTROL: Ablauf, Minimax mit Eckenheuristik --- */
+class OthelloControl extends GameControl {
+  constructor(boundary, aiStrategy) {
+    super(boundary, 'W', aiStrategy);
+    this.searchDepth = 3;
+  }
+
+  wasLastMovePass() { return this.boundary.wasLastMovePass(); }
+  getValidMoves(player = this.getCurrentPlayer()) { return this.boundary.getValidMoves(player); }
+  getCounts() { return this.boundary.getCounts(); }
+
+  playerMove(row, col) {
+    return this._executeMove(
+      () => this.boundary.canMove(row, col),
+      () => this.boundary.makeMove(row, col)
+    );
+  }
+
+  // Anmerkung: nach jedem Zug kann der Gegner passen müssen — das
+  // wird bereits vollständig in der Entity aufgelöst, daher genügt
+  // die geerbte isAiTurn()-Prüfung über den currentPlayer.
+
+  computeAiMove() {
+    return this.aiStrategy.chooseMove('othello', [this.boundary.getBoardState(), this.aiPlayer, this.searchDepth]);
+  }
+}
+
+/* ============================================================
+   MANGALA — sechstes Spiel, gleiches BCE-Muster.
+   ------------------------------------------------------------
+   Umgesetzt nach den international standardisierten Kalaha-
+   Regeln (das ist die verbreitetste, eindeutig dokumentierte
+   Variante). "Mangala" bezeichnet je nach Region eine ganze
+   Familie von Mancala-Spielen mit teils abweichenden Regeln
+   (z.B. andere Steinzahl pro Grube, andere Aussetzer-Bedingung)
+   — diese Implementierung ist bewusst die klassische, weit
+   verbreitete Kalaha-Variante.
+
+   14 Felder: A-Gruben 0–5, A-Kalaha 6, B-Gruben 7–12, B-Kalaha 13.
+   Gegenüberliegende Grube zu Index i: 12 - i.
+   ============================================================ */
+
+/* --- ENTITY: reine Spielregeln --- */
+class MangalaEntity {
+  static STORE_A = 6;
+  static STORE_B = 13;
+  static STONES_PER_PIT = 4;
+
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.cells = Array(14).fill(MangalaEntity.STONES_PER_PIT);
+    this.cells[MangalaEntity.STORE_A] = 0;
+    this.cells[MangalaEntity.STORE_B] = 0;
+    this.currentPlayer = 'A';
+    this.finished = false;
+    this.lastExtraTurn = false; // für die Status-Anzeige der UI
+  }
+
+  _opponent(p) { return p === 'A' ? 'B' : 'A'; }
+  _ownStore(p) { return p === 'A' ? MangalaEntity.STORE_A : MangalaEntity.STORE_B; }
+  _opponentStore(p) { return p === 'A' ? MangalaEntity.STORE_B : MangalaEntity.STORE_A; }
+  _ownPits(p) { return p === 'A' ? [0,1,2,3,4,5] : [7,8,9,10,11,12]; }
+
+  isValidMove(pit) {
+    return !this.finished && this._ownPits(this.currentPlayer).includes(pit) && this.cells[pit] > 0;
+  }
+
+  getValidMoves(player = this.currentPlayer) {
+    return this._ownPits(player).filter(i => this.cells[i] > 0);
+  }
+
+  applyMove(pit) {
+    if (!this.isValidMove(pit)) throw new Error(`Ungültiger Zug auf Grube ${pit}`);
+    const player = this.currentPlayer;
+    let stones = this.cells[pit];
+    this.cells[pit] = 0;
+    let idx = pit;
+    const skip = this._opponentStore(player);
+    while (stones > 0) {
+      idx = (idx + 1) % 14;
+      if (idx === skip) continue; // gegnerisches Kalaha wird beim Aussäen übersprungen
+      this.cells[idx]++;
+      stones--;
+    }
+
+    const last = idx;
+    const store = this._ownStore(player);
+    const extraTurn = last === store; // Zusatzzug: letzter Stein im eigenen Kalaha
+
+    // Aussetzer-Regel: letzter Stein landet in einer zuvor leeren
+    // eigenen Grube (jetzt genau 1 Stein) -> diese und die
+    // gegenüberliegende gegnerische Grube wandern komplett ins
+    // eigene Kalaha.
+    if (!extraTurn && this._ownPits(player).includes(last) && this.cells[last] === 1) {
+      const opposite = 12 - last;
+      if (this.cells[opposite] > 0) {
+        this.cells[store] += this.cells[opposite] + this.cells[last];
+        this.cells[opposite] = 0;
+        this.cells[last] = 0;
+      }
+    }
+
+    const result = this._checkGameState();
+    if (result) return result;
+
+    this.lastExtraTurn = extraTurn;
+    if (!extraTurn) this.currentPlayer = this._opponent(player);
+    return null;
+  }
+
+  _sideEmpty(player) {
+    return this._ownPits(player).every(i => this.cells[i] === 0);
+  }
+
+  // Ist eine Seite komplett leer, wandern die restlichen Steine der
+  // anderen Seite in deren Kalaha — Standard-Kalaha-Regel.
+  _checkGameState() {
+    if (!this._sideEmpty('A') && !this._sideEmpty('B')) return null;
+    for (const p of ['A', 'B']) {
+      const store = this._ownStore(p);
+      for (const i of this._ownPits(p)) {
+        this.cells[store] += this.cells[i];
+        this.cells[i] = 0;
+      }
+    }
+    this.finished = true;
+    const a = this.cells[MangalaEntity.STORE_A];
+    const b = this.cells[MangalaEntity.STORE_B];
+    return { winner: a === b ? 'Draw' : (a > b ? 'A' : 'B'), line: null };
+  }
+
+  toJSON() {
+    return { cells: [...this.cells], currentPlayer: this.currentPlayer, finished: this.finished, lastExtraTurn: this.lastExtraTurn };
+  }
+
+  loadFromJSON(data) {
+    this.cells = [...data.cells];
+    this.currentPlayer = data.currentPlayer;
+    this.finished = data.finished;
+    this.lastExtraTurn = data.lastExtraTurn ?? false;
+  }
+}
+
+/* --- BOUNDARY: nur die spielspezifischen Zugriffe --- */
+class MangalaBoundary extends GameBoundary {
+  canMove(pit) { return this._entity.isValidMove(pit); }
+  makeMove(pit) { return this._entity.applyMove(pit); }
+  getValidMoves(player) { return this._entity.getValidMoves(player); }
+  wasExtraTurn() { return this._entity.lastExtraTurn; }
+}
+
+/* --- CONTROL: Ablauf + KI. Zusatzzüge (eigenes Kalaha getroffen)
+     brauchen keinen Sonderfall: currentPlayer bleibt einfach
+     gleich, wodurch isAiTurn() automatisch weiter true liefert
+     und der geerbte afterMove/runAiTurn-Mechanismus (derselbe wie
+     bei Reversis Passzwang) die KI von selbst noch einmal ziehen
+     lässt. Menschliche Spieler sehen schlicht "wieder am Zug". --- */
+class MangalaControl extends GameControl {
+  constructor(boundary, aiStrategy) {
+    super(boundary, 'B', aiStrategy);
+    this.searchDepth = 8;
+  }
+
+  getValidMoves(player = this.getCurrentPlayer()) { return this.boundary.getValidMoves(player); }
+  wasExtraTurn() { return this.boundary.wasExtraTurn(); }
+
+  playerMove(pit) {
+    return this._executeMove(
+      () => this.boundary.canMove(pit),
+      () => this.boundary.makeMove(pit)
+    );
+  }
+
+  computeAiMove() {
+    return this.aiStrategy.chooseMove('mangala', [this.boundary.getBoardState(), this.aiPlayer, this.searchDepth]);
+  }
+}
+
+/* ============================================================
+   MÜHLE (Nine Men's Morris) — viertes Spiel, gleiches BCE-Muster
+   Deutlich komplexer: drei Phasen (Setzen, Ziehen, Fliegen bei
+   3 Steinen), Mühlen bilden entfernt einen gegnerischen Stein,
+   Verlust bei <3 Steinen oder wenn kein Zug mehr möglich ist.
+   ============================================================ */
+
+/* --- ENTITY: reine Spielregeln --- */
+class MuehleEntity {
+  // 16 Mühlelinien: je 4 pro Ring (außen/mitte/innen) + 4 radiale
+  // Verbindungen über die Mittelpunkte der Ringe.
+  static MILLS = (() => {
+    const mills = [];
+    for (let ring = 0; ring < 3; ring++) {
+      const o = ring * 8;
+      mills.push([o + 0, o + 1, o + 2]);
+      mills.push([o + 2, o + 3, o + 4]);
+      mills.push([o + 4, o + 5, o + 6]);
+      mills.push([o + 6, o + 7, o + 0]);
+    }
+    for (const p of [1, 3, 5, 7]) {
+      mills.push([p, 8 + p, 16 + p]);
+    }
+    return mills;
+  })();
+
+  // Nachbarschaft: innerhalb eines Rings im Kreis verbunden, plus
+  // radiale Verbindungen an den vier Mittelpunkten der Ringe.
+  static ADJACENCY = (() => {
+    const adj = Array.from({ length: 24 }, () => []);
+    const link = (a, b) => { adj[a].push(b); adj[b].push(a); };
+    for (let ring = 0; ring < 3; ring++) {
+      const o = ring * 8;
+      for (let i = 0; i < 8; i++) link(o + i, o + ((i + 1) % 8));
+    }
+    for (const p of [1, 3, 5, 7]) {
+      link(p, 8 + p);
+      link(8 + p, 16 + p);
+    }
+    return adj;
+  })();
+
+  // Positionen (x,y) auf einem 0–6-Raster für die UI-Darstellung.
+  static POSITIONS = (() => {
+    const positions = [];
+    for (let ring = 0; ring < 3; ring++) {
+      const a = ring, b = 6 - ring, mid = (a + b) / 2;
+      positions.push([a, a], [mid, a], [b, a], [b, mid], [b, b], [mid, b], [a, b], [a, mid]);
+    }
+    return positions;
+  })();
+
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.cells = Array(24).fill(null);
+    this.currentPlayer = 'B';
+    this.piecesToPlace = { B: 9, W: 9 };
+    this.piecesOnBoard = { B: 0, W: 0 };
+    this.phase = 'placing'; // 'placing' | 'moving'
+    this.pendingRemoval = false;
+    this.lastMillLine = null;
+    this.finished = false;
+    this.winner = null;
+  }
+
+  _opponent(p) { return p === 'B' ? 'W' : 'B'; }
+
+  isFlyingPhase(player) {
+    return this.phase === 'moving' && this.piecesOnBoard[player] === 3;
+  }
+
+  _millsThrough(index, player, board = this.cells) {
+    return MuehleEntity.MILLS.filter(m => m.includes(index) && m.every(i => board[i] === player));
+  }
+
+  _isPartOfMill(index, player, board = this.cells) {
+    return this._millsThrough(index, player, board).length > 0;
+  }
+
+  _allInMills(player, board = this.cells) {
+    const positions = [];
+    for (let i = 0; i < 24; i++) if (board[i] === player) positions.push(i);
+    return positions.length > 0 && positions.every(i => this._isPartOfMill(i, player, board));
+  }
+
+  canPlaceAt(index) {
+    return this.phase === 'placing' && !this.finished && !this.pendingRemoval && this.cells[index] === null;
+  }
+
+  canMoveTo(from, to) {
+    if (this.phase !== 'moving' || this.finished || this.pendingRemoval) return false;
+    if (this.cells[from] !== this.currentPlayer || this.cells[to] !== null) return false;
+    if (this.isFlyingPhase(this.currentPlayer)) return true;
+    return MuehleEntity.ADJACENCY[from].includes(to);
+  }
+
+  canRemove(index) {
+    if (!this.pendingRemoval) return false;
+    const opp = this._opponent(this.currentPlayer);
+    if (this.cells[index] !== opp) return false;
+    if (this._isPartOfMill(index, opp) && !this._allInMills(opp)) return false;
+    return true;
+  }
+
+  getValidPlacements() {
+    const moves = [];
+    for (let i = 0; i < 24; i++) if (this.cells[i] === null) moves.push(i);
+    return moves;
+  }
+
+  getValidMovePairs(player = this.currentPlayer) {
+    const pairs = [];
+    if (this.phase !== 'moving') return pairs;
+    const flying = this.piecesOnBoard[player] === 3;
+    for (let from = 0; from < 24; from++) {
+      if (this.cells[from] !== player) continue;
+      if (flying) {
+        for (let to = 0; to < 24; to++) if (this.cells[to] === null) pairs.push([from, to]);
+      } else {
+        for (const to of MuehleEntity.ADJACENCY[from]) if (this.cells[to] === null) pairs.push([from, to]);
+      }
+    }
+    return pairs;
+  }
+
+  place(index) {
+    if (!this.canPlaceAt(index)) throw new Error(`Ungültiger Platzierungszug auf ${index}`);
+    const player = this.currentPlayer;
+    this.cells[index] = player;
+    this.piecesToPlace[player]--;
+    this.piecesOnBoard[player]++;
+    if (this.piecesToPlace.B === 0 && this.piecesToPlace.W === 0) this.phase = 'moving';
+
+    const mills = this._millsThrough(index, player);
+    if (mills.length > 0) {
+      this.pendingRemoval = true;
+      this.lastMillLine = [...new Set(mills.flat())];
+    } else {
+      this._advanceTurn();
+    }
+    return this._checkGameState();
+  }
+
+  move(from, to) {
+    if (!this.canMoveTo(from, to)) throw new Error(`Ungültiger Zug ${from}->${to}`);
+    const player = this.currentPlayer;
+    this.cells[to] = player;
+    this.cells[from] = null;
+
+    const mills = this._millsThrough(to, player);
+    if (mills.length > 0) {
+      this.pendingRemoval = true;
+      this.lastMillLine = [...new Set(mills.flat())];
+    } else {
+      this._advanceTurn();
+    }
+    return this._checkGameState();
+  }
+
+  removePiece(index) {
+    if (!this.canRemove(index)) throw new Error(`Ungültige Entfernung auf ${index}`);
+    const opp = this._opponent(this.currentPlayer);
+    this.cells[index] = null;
+    this.piecesOnBoard[opp]--;
+    this.pendingRemoval = false;
+    this.lastMillLine = null;
+    this._advanceTurn();
+    return this._checkGameState();
+  }
+
+  _advanceTurn() {
+    this.currentPlayer = this._opponent(this.currentPlayer);
+  }
+
+  _hasAnyMove(player) {
+    if (this.isFlyingPhase(player)) return this.cells.includes(null);
+    for (let i = 0; i < 24; i++) {
+      if (this.cells[i] === player && MuehleEntity.ADJACENCY[i].some(n => this.cells[n] === null)) return true;
+    }
+    return false;
+  }
+
+  _checkGameState() {
+    if (this.finished) return this._result();
+    if (this.phase === 'moving') {
+      for (const p of ['B', 'W']) {
+        if (this.piecesOnBoard[p] < 3) {
+          this.finished = true;
+          this.winner = this._opponent(p);
+          return this._result();
+        }
+      }
+      if (!this.pendingRemoval && !this._hasAnyMove(this.currentPlayer)) {
+        this.finished = true;
+        this.winner = this._opponent(this.currentPlayer);
+        return this._result();
+      }
+    }
+    return null;
+  }
+
+  _result() {
+    return { winner: this.winner, line: this.lastMillLine };
+  }
+
+  toJSON() {
+    return {
+      cells: [...this.cells],
+      currentPlayer: this.currentPlayer,
+      piecesToPlace: { ...this.piecesToPlace },
+      piecesOnBoard: { ...this.piecesOnBoard },
+      phase: this.phase,
+      pendingRemoval: this.pendingRemoval,
+      lastMillLine: this.lastMillLine,
+      finished: this.finished,
+      winner: this.winner
+    };
+  }
+
+  loadFromJSON(data) {
+    this.cells = [...data.cells];
+    this.currentPlayer = data.currentPlayer;
+    this.piecesToPlace = { ...data.piecesToPlace };
+    this.piecesOnBoard = { ...data.piecesOnBoard };
+    this.phase = data.phase;
+    this.pendingRemoval = data.pendingRemoval;
+    this.lastMillLine = data.lastMillLine;
+    this.finished = data.finished;
+    this.winner = data.winner;
+  }
+
+  // Für die 1-Zug-Voraussicht der KI: vollständige Kopie des
+  // Spielzustands, auf der probeweise Aktionen ausgeführt werden
+  // können, ohne den echten Zustand zu verändern.
+  clone() {
+    const copy = new MuehleEntity();
+    copy.cells = [...this.cells];
+    copy.currentPlayer = this.currentPlayer;
+    copy.piecesToPlace = { ...this.piecesToPlace };
+    copy.piecesOnBoard = { ...this.piecesOnBoard };
+    copy.phase = this.phase;
+    copy.pendingRemoval = this.pendingRemoval;
+    copy.lastMillLine = this.lastMillLine;
+    copy.finished = this.finished;
+    copy.winner = this.winner;
+    return copy;
+  }
+}
+
+/* --- BOUNDARY --- */
+class MuehleBoundary extends GameBoundary {
+  getPhase() { return this._entity.phase; }
+  isPendingRemoval() { return this._entity.pendingRemoval; }
+  getPiecesToPlace(player) { return this._entity.piecesToPlace[player]; }
+  getPiecesOnBoard(player) { return this._entity.piecesOnBoard[player]; }
+  isFlyingPhase(player) { return this._entity.isFlyingPhase(player); }
+  canPlaceAt(index) { return this._entity.canPlaceAt(index); }
+  canMoveTo(from, to) { return this._entity.canMoveTo(from, to); }
+  canRemove(index) { return this._entity.canRemove(index); }
+  getAdjacent(index) { return MuehleEntity.ADJACENCY[index]; }
+  place(index) { return this._entity.place(index); }
+  move(from, to) { return this._entity.move(from, to); }
+  removePiece(index) { return this._entity.removePiece(index); }
+
+  getValidPlacements() { return this._entity.getValidPlacements(); }
+  getValidMovePairs(player) { return this._entity.getValidMovePairs(player); }
+
+  getRemovableIndices() {
+    const board = this._entity.cells;
+    const opp = this._entity._opponent(this._entity.currentPlayer);
+    const list = [];
+    for (let i = 0; i < 24; i++) if (board[i] === opp && this._entity.canRemove(i)) list.push(i);
+    return list;
+  }
+
+  // Simuliert eine Aktion auf einer Kopie des Zustands und liefert
+  // nur eine schlanke, sichere Momentaufnahme zurück (kein Zugriff
+  // der Control-Schicht auf die Entity-Kopie selbst).
+  simulatePlace(index) {
+    const clone = this._entity.clone();
+    if (!clone.canPlaceAt(index)) return null;
+    clone.place(index);
+    return this._snapshot(clone);
+  }
+  simulateMove(from, to) {
+    const clone = this._entity.clone();
+    if (!clone.canMoveTo(from, to)) return null;
+    clone.move(from, to);
+    return this._snapshot(clone);
+  }
+  simulateRemove(index) {
+    const clone = this._entity.clone();
+    if (!clone.canRemove(index)) return null;
+    clone.removePiece(index);
+    return this._snapshot(clone);
+  }
+  _snapshot(clone) {
+    return {
+      pendingRemoval: clone.pendingRemoval,
+      finished: clone.finished,
+      winner: clone.winner,
+      piecesOnBoard: { ...clone.piecesOnBoard }
+    };
+  }
+}
+
+/* --- CONTROL: Ablauf, Auswahl-Interaktion, 1-Zug-Heuristik-KI ---
+   Anmerkung zur KI: echtes Minimax wäre bei Mühle wegen der drei
+   Phasen (Setzen/Ziehen/Fliegen) + Mühlen-Entfernung deutlich
+   aufwändiger als bei den anderen Spielen. Die KI hier bewertet
+   daher jede mögliche Aktion nur einen Zug voraus (Stein-Vorteil,
+   Bonus für eine gebildete Mühle) — spielt solide, aber nicht
+   perfekt. */
+class MuehleControl extends GameControl {
+  constructor(boundary) {
+    super(boundary, 'W');
+    this.selected = null;
+  }
+
+  // Überschreibt die Basisklasse: zusätzlich Auswahl zurücksetzen.
+  restartGame() {
+    super.restartGame();
+    this.selected = null;
+  }
+
+  getPhase() { return this.boundary.getPhase(); }
+  isPendingRemoval() { return this.boundary.isPendingRemoval(); }
+  getPiecesToPlace(player) { return this.boundary.getPiecesToPlace(player); }
+  getPiecesOnBoard(player) { return this.boundary.getPiecesOnBoard(player); }
+  isFlyingPhase(player) { return this.boundary.isFlyingPhase(player); }
+  canRemove(index) { return this.boundary.canRemove(index); }
+  getSelected() { return this.selected; }
+
+  getValidDestinations() {
+    if (this.selected === null) return [];
+    const player = this.boundary.getCurrentPlayer();
+    if (this.boundary.isFlyingPhase(player)) {
+      return this.boundary.getBoardState().reduce((acc, v, i) => (v === null ? [...acc, i] : acc), []);
+    }
+    const board = this.boundary.getBoardState();
+    return this.boundary.getAdjacent(this.selected).filter(n => board[n] === null);
+  }
+
+  // Zentrale Klick-Interpretation: UI liefert nur den Punktindex,
+  // Control entscheidet je nach Phase/Auswahlzustand die Bedeutung.
+  handlePointClick(index) {
+    if (this.boundary.isGameOver()) return { invalid: true };
+    if (this.boundary.isPendingRemoval()) {
+      return this._executeMove(
+        () => this.boundary.canRemove(index),
+        () => this.boundary.removePiece(index)
+      );
+    }
+    if (this.boundary.getPhase() === 'placing') {
+      return this._executeMove(
+        () => this.boundary.canPlaceAt(index),
+        () => this.boundary.place(index)
+      );
+    }
+    return this._tryMoveInteraction(index);
+  }
+
+  _tryMoveInteraction(index) {
+    const board = this.boundary.getBoardState();
+    const player = this.boundary.getCurrentPlayer();
+    if (this.selected === null) {
+      if (board[index] === player) { this.selected = index; return { invalid: false }; }
+      return { invalid: true };
+    }
+    if (this.selected === index) { this.selected = null; return { invalid: false }; }
+    if (board[index] === player) { this.selected = index; return { invalid: false }; }
+    if (!this.boundary.canMoveTo(this.selected, index)) return { invalid: true };
+    const from = this.selected;
+    this.selected = null;
+    const result = this.boundary.move(from, index);
+    if (result) {
+      this.boundary.recordResult(result.winner);
+      this.boundary.clearSavedGame();
+    } else {
+      this._persistGame();
+    }
+    return { invalid: false, result };
+  }
+
+  // Führt genau eine KI-Aktion aus (Platzieren/Ziehen/Entfernen).
+  // Die UI ruft das ggf. mehrfach hintereinander auf, falls die KI
+  // durch eine Mühle direkt im Anschluss noch entfernen darf.
+  performAiAction() {
+    let result = null;
+    if (this.boundary.isPendingRemoval()) {
+      result = this.boundary.removePiece(this._chooseBestRemoval());
+    } else if (this.boundary.getPhase() === 'placing') {
+      result = this.boundary.place(this._chooseBestPlacement());
+    } else {
+      const [from, to] = this._chooseBestMove();
+      result = this.boundary.move(from, to);
+    }
+    if (result) {
+      this.boundary.recordResult(result.winner);
+      this.boundary.clearSavedGame();
+    } else {
+      this._persistGame();
+    }
+    return result;
+  }
+
+  _scoreSnapshot(snap) {
+    const opponent = this.aiPlayer === 'B' ? 'W' : 'B';
+    if (snap.finished) {
+      if (snap.winner === this.aiPlayer) return 100000;
+      if (snap.winner === opponent) return -100000;
+    }
+    let score = (snap.piecesOnBoard[this.aiPlayer] || 0) - (snap.piecesOnBoard[opponent] || 0);
+    if (snap.pendingRemoval) score += 5; // KI hat gerade eine Mühle gebildet
+    return score;
+  }
+
+  _chooseBestPlacement() {
+    const options = this.boundary.getValidPlacements();
+    let best = options[0], bestScore = -Infinity;
+    for (const idx of options) {
+      const snap = this.boundary.simulatePlace(idx);
+      if (!snap) continue;
+      const score = this._scoreSnapshot(snap);
+      if (score > bestScore) { bestScore = score; best = idx; }
+    }
+    return best;
+  }
+
+  _chooseBestMove() {
+    const pairs = this.boundary.getValidMovePairs(this.aiPlayer);
+    let best = pairs[0], bestScore = -Infinity;
+    for (const pair of pairs) {
+      const snap = this.boundary.simulateMove(pair[0], pair[1]);
+      if (!snap) continue;
+      const score = this._scoreSnapshot(snap);
+      if (score > bestScore) { bestScore = score; best = pair; }
+    }
+    return best;
+  }
+
+  _chooseBestRemoval() {
+    const options = this.boundary.getRemovableIndices();
+    let best = options[0], bestScore = -Infinity;
+    for (const idx of options) {
+      const snap = this.boundary.simulateRemove(idx);
+      if (!snap) continue;
+      // leichte Präferenz, gut vernetzte gegnerische Steine zu entfernen
+      const score = this._scoreSnapshot(snap) + MuehleEntity.ADJACENCY[idx].length * 0.1;
+      if (score > bestScore) { bestScore = score; best = idx; }
+    }
+    return best;
+  }
+}
+
+/* ============================================================
+   SCHACH — fünftes Spiel, gleiches BCE-Muster, aber die
+   Entity-Rolle wird an chess.js delegiert statt selbst
+   geschrieben (siehe <head>: CDN-Einbindung). Genau dafür ist
+   die Boundary da: Control merkt nicht, ob dahinter eigener
+   Code oder eine Fremdbibliothek steckt.
+   ------------------------------------------------------------
+   Vereinfachung: Bauernumwandlung geht per Auswahl-Buttons in
+   der UI (keine automatische Damen-Umwandlung), aber es gibt
+   keine Zugnotation/PGN-Anzeige und keine Zughistorie-Navigation
+   in dieser ersten Version.
+   ============================================================ */
+const CHESS_FILES = 'abcdefgh';
+
+/* --- ENTITY: dünner Wrapper um chess.js --- */
+class ChessEntity {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.game = new Chess();
+  }
+
+  get currentPlayer() { return this.game.turn(); } // 'w' | 'b'
+  get finished() { return this.game.game_over(); }
+
+  // 64-Felder-Array wie bei den anderen Spielen, Index 0 = a8
+  // (oben links aus Weiß-Sicht), damit die generische Rendering-
+  // Logik der anderen Spiele im Muster erhalten bleibt.
+  get cells() {
+    const board = this.game.board();
+    const flat = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const sq = board[r][c];
+        flat.push(sq ? sq.color + sq.type : null); // z.B. 'wp', 'bK'
+      }
+    }
+    return flat;
+  }
+
+  static squareFromIndex(i) {
+    const r = Math.floor(i / 8), c = i % 8;
+    return CHESS_FILES[c] + (8 - r);
+  }
+
+  isValidMove(from, to) {
+    return this.game.moves({ square: from, verbose: true }).some(m => m.to === to);
+  }
+
+  getLegalDestinations(square) {
+    return this.game.moves({ square, verbose: true }).map(m => m.to);
+  }
+
+  // Bauernumwandlung: wird nur gebraucht, wenn ein Bauer die letzte
+  // Reihe erreicht — die UI fragt in dem Fall vorher nach der Wahl.
+  needsPromotion(from, to) {
+    const moves = this.game.moves({ square: from, verbose: true });
+    return moves.some(m => m.to === to && m.flags.includes('p'));
+  }
+
+  applyMove(from, to, promotion = 'q') {
+    const move = this.game.move({ from, to, promotion });
+    if (!move) throw new Error(`Ungültiger Zug ${from}->${to}`);
+    return this._checkResult();
+  }
+
+  isInCheck() { return this.game.in_check(); }
+
+  getFEN() { return this.game.fen(); }
+
+  undo() { return this.game.undo(); }
+
+  getHistoryLength() { return this.game.history().length; }
+
+  // Persistenz über FEN: enthält Stellung, Zugrecht, Rochaderechte,
+  // En-passant-Feld und die Zähler für die 50-Züge-Regel.
+  // Einschränkung: die Historie für die dreifache Stellungswieder-
+  // holung geht beim Wiederherstellen verloren (FEN-bedingt) —
+  // ebenso die Zugliste, daher ist nach einem Restore kein Undo
+  // über den Ladezeitpunkt hinaus möglich.
+  toJSON() {
+    return { fen: this.game.fen() };
+  }
+
+  loadFromJSON(data) {
+    if (data && data.fen) this.game.load(data.fen);
+  }
+
+  _checkResult() {
+    if (!this.game.game_over()) return null;
+    if (this.game.in_checkmate()) {
+      // Der Spieler, der jetzt am Zug wäre, hat verloren.
+      const loser = this.game.turn();
+      return { winner: loser === 'w' ? 'b' : 'w', line: null };
+    }
+    // Patt, Remis durch Material, Stellungswiederholung oder 50-Züge-Regel.
+    return { winner: 'Draw', line: null };
+  }
+}
+
+/* --- BOUNDARY: wrappt die Entity/Bibliothek --- */
+class ChessBoundary extends GameBoundary {
+  static VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+
+  canMove(from, to) { return this._entity.isValidMove(from, to); }
+  makeMove(from, to, promotion) { return this._entity.applyMove(from, to, promotion); }
+  getLegalDestinations(square) { return this._entity.getLegalDestinations(square); }
+  needsPromotion(from, to) { return this._entity.needsPromotion(from, to); }
+  isInCheck() { return this._entity.isInCheck(); }
+  getFEN() { return this._entity.getFEN(); }
+  undo() { return this._entity.undo(); }
+  canUndo() { return this._entity.getHistoryLength() > 0; }
+
+  // KI-Suche ist hier und nicht in der Control, weil sie direkt mit
+  // der gewrappten chess.js-Instanz arbeitet (move()/undo() zur
+  // Simulation) — genau die Art von Bibliotheks-Detail, die laut
+  // BCE-Prinzip in der Boundary bleibt und der Control verborgen ist.
+  computeBestMove(aiColor, depth) {
+    const game = this._entity.game;
+    return this._minimax(game, depth, -Infinity, Infinity, true, aiColor).move;
+  }
+
+  _minimax(game, depth, alpha, beta, maximizing, aiColor) {
+    if (game.game_over()) {
+      if (game.in_checkmate()) {
+        const loserToMove = game.turn();
+        return { score: loserToMove === aiColor ? -100000 : 100000 };
+      }
+      return { score: 0 }; // Remis
+    }
+    if (depth === 0) {
+      return { score: this._evaluate(game, aiColor) };
+    }
+    const moves = game.moves({ verbose: true });
+    let best = maximizing ? -Infinity : Infinity;
+    let bestMove = moves[0];
+    for (const m of moves) {
+      game.move(m);
+      const { score } = this._minimax(game, depth - 1, alpha, beta, !maximizing, aiColor);
+      game.undo();
+      if (maximizing ? score > best : score < best) { best = score; bestMove = m; }
+      if (maximizing) alpha = Math.max(alpha, best); else beta = Math.min(beta, best);
+      if (beta <= alpha) break;
+    }
+    return { score: best, move: bestMove };
+  }
+
+  _evaluate(game, aiColor) {
+    const board = game.board();
+    let score = 0;
+    for (const row of board) {
+      for (const sq of row) {
+        if (!sq) continue;
+        const value = ChessBoundary.VALUES[sq.type];
+        score += sq.color === aiColor ? value : -value;
+      }
+    }
+    return score;
+  }
+}
+
+/* --- CONTROL: Ablauf, Auswahl-Interaktion, KI-Auswahl.
+     Bevorzugt Stockfish-WASM (echte Engine über UCI-Protokoll,
+     siehe StockfishEngine in der KI-Schicht), fällt bei jedem
+     Problem auf die eigene schwache Minimax-Suche zurück (läuft
+     synchron im Hauptthread, da chess.js dort noch nicht per
+     importScripts in den generischen AIStrategy-Worker geladen
+     wird — für die schwache Fallback-Suche unkritisch). */
+class ChessControl extends GameControl {
+  // Jede Stufe steuert beide KI-Wege: Stockfish (Skill Level 0-20
+  // + Bedenkzeit) und den Minimax-Fallback (Suchtiefe).
+  static DIFFICULTIES = {
+    leicht: { skill: 2,  movetime: 300, fallbackDepth: 1 },
+    mittel: { skill: 8,  movetime: 500, fallbackDepth: 2 },
+    stark:  { skill: 20, movetime: 800, fallbackDepth: 3 }
+  };
+
+  constructor(boundary, stockfish) {
+    super(boundary, 'b', null);
+    this.stockfish = stockfish; // StockfishEngine-Instanz oder null
+    this.selected = null;
+    this.pendingPromotion = null; // { from, to } während der Nutzer die Figur wählt
+    this.setDifficulty('mittel');
+  }
+
+  setDifficulty(key) {
+    this.difficulty = ChessControl.DIFFICULTIES[key] ? key : 'mittel';
+    const d = ChessControl.DIFFICULTIES[this.difficulty];
+    this.searchDepth = d.fallbackDepth;
+    if (this.stockfish) this.stockfish.setSkillLevel(d.skill);
+  }
+
+  getDifficulty() { return this.difficulty; }
+
+  canUndo() { return this.boundary.canUndo(); }
+
+  // Zugrücknahme: im KI-Modus 2 Halbzüge (eigener Zug + KI-Antwort),
+  // sonst 1. Bricht eine offene Bauernumwandlungs-Auswahl ab.
+  // Hinweis: nach dem Wiederherstellen einer gespeicherten Partie
+  // ist kein Undo über den Ladezeitpunkt hinaus möglich (FEN trägt
+  // keine Zughistorie, siehe ChessEntity.toJSON).
+  undoMove() {
+    if (this.boundary.isGameOver() || !this.boundary.canUndo()) return { invalid: true };
+    this.pendingPromotion = null;
+    this.selected = null;
+    const plies = (this.vsAI && this.boundary.getCurrentPlayer() !== this.aiPlayer) ? 2 : 1;
+    for (let i = 0; i < plies && this.boundary.canUndo(); i++) {
+      this.boundary.undo();
+    }
+    this._persistGame();
+    return { invalid: false };
+  }
+
+  restartGame() {
+    super.restartGame();
+    this.selected = null;
+    this.pendingPromotion = null;
+    if (this.stockfish) this.stockfish.newGame();
+  }
+
+  // Für die UI, um transparent zu zeigen, welche KI gerade aktiv ist.
+  async getEngineLabel() {
+    if (this.stockfish && await this.stockfish.isReady()) return 'Stockfish (WASM)';
+    return 'Einfache KI (Fallback)';
+  }
+
+  getSelected() { return this.selected; }
+  getPendingPromotion() { return this.pendingPromotion; }
+  isInCheck() { return this.boundary.isInCheck(); }
+
+  getValidDestinations() {
+    if (this.selected === null) return [];
+    return this.boundary.getLegalDestinations(this.selected).map(sq => ChessControl._indexFromSquare(sq));
+  }
+
+  static _indexFromSquare(sq) {
+    const c = CHESS_FILES.indexOf(sq[0]);
+    const r = 8 - parseInt(sq[1], 10);
+    return r * 8 + c;
+  }
+
+  // Klick-Interpretation analog zu Mühle: erst Figur auswählen,
+  // dann Zielfeld. Braucht ein Zug eine Bauernumwandlung, wird
+  // die Ausführung zurückgestellt, bis die UI choosePromotion()
+  // mit der gewählten Figur aufruft.
+  handleSquareClick(index) {
+    if (this.boundary.isGameOver() || this.pendingPromotion) return { invalid: true };
+    const board = this.boundary.getBoardState();
+    const square = ChessEntity.squareFromIndex(index);
+    const player = this.boundary.getCurrentPlayer();
+
+    if (this.selected === null) {
+      const piece = board[index];
+      if (piece && piece[0] === player) { this.selected = square; return { invalid: false }; }
+      return { invalid: true };
+    }
+    if (this.selected === square) { this.selected = null; return { invalid: false }; }
+    const piece = board[index];
+    if (piece && piece[0] === player) { this.selected = square; return { invalid: false }; }
+
+    if (!this.boundary.canMove(this.selected, square)) return { invalid: true };
+    if (this.boundary.needsPromotion(this.selected, square)) {
+      this.pendingPromotion = { from: this.selected, to: square };
+      this.selected = null;
+      return { invalid: false, awaitingPromotion: true };
+    }
+    return this._commitMove(this.selected, square);
+  }
+
+  choosePromotion(pieceType) {
+    if (!this.pendingPromotion) return { invalid: true };
+    const { from, to } = this.pendingPromotion;
+    this.pendingPromotion = null;
+    return this._commitMove(from, to, pieceType);
+  }
+
+  _commitMove(from, to, promotion = 'q') {
+    this.selected = null;
+    return this._executeMove(
+      () => true, // bereits über canMove/needsPromotion geprüft
+      () => this.boundary.makeMove(from, to, promotion)
+    );
+  }
+
+  // Nutzt Stockfish, wenn verfügbar (echte, starke Engine über UCI-
+  // Protokoll); fällt bei jedem Problem (nicht geladen, Timeout,
+  // kein WebAssembly) automatisch auf die eigene, deutlich
+  // schwächere 2-Halbzüge-Minimax-Suche zurück (reine
+  // Materialbewertung, ausgeführt von der Boundary).
+  async computeAiMove() {
+    if (this.stockfish && await this.stockfish.isReady()) {
+      const { movetime } = ChessControl.DIFFICULTIES[this.difficulty];
+      const uciMove = await this.stockfish.getBestMove(this.boundary.getFEN(), movetime);
+      if (uciMove) {
+        return {
+          from: uciMove.slice(0, 2),
+          to: uciMove.slice(2, 4),
+          promotion: uciMove.length > 4 ? uciMove[4] : undefined
+        };
+      }
+      // Stockfish war "ready", aber dieser eine Zug schlug fehl
+      // (z.B. Timeout) -> für diesen Zug auf den Fallback ausweichen.
+    }
+    return this.boundary.computeBestMove(this.aiPlayer, this.searchDepth);
+  }
+
+  // Führt einen von computeAiMove() gelieferten Zug aus. Eigene
+  // Methode (statt dass die UI selbst _executeMove/boundary
+  // anfasst), damit UI weiterhin ausschließlich mit Control spricht.
+  performAiMove(move) {
+    this.selected = null;
+    return this._executeMove(
+      () => true,
+      () => this.boundary.makeMove(move.from, move.to, move.promotion || 'q')
+    );
+  }
+}
+
+
+/* ============================================================
+   UI LAYER
+   Einzige Schicht, die das DOM anfasst. Ruft ausschließlich
+   Methoden der Control-Schicht auf und rendert deren Resultate.
+   ============================================================ */
+class TicTacToeUI extends GameUI {
+  constructor(control) {
+    super(control, {
+      statusId: 'status',
+      resetBtnId: 'resetBtn',
+      modeName: 'mode',
+      resetStatsBtnId: 'resetStatsBtn',
+      statEls: { X: 'statX', O: 'statO', draws: 'statDraw' }
+    });
+    this.boardEl = document.getElementById('board');
+    this.init();
+  }
+
+  render(winLine = null) {
+    const board = this.control.getBoardState();
+    this.boardEl.innerHTML = '';
+
+    board.forEach((val, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'cell' + (val ? ' ' + val.toLowerCase() : '');
+      btn.textContent = val || '';
+      if (winLine && winLine.includes(i)) btn.classList.add('win');
+      btn.addEventListener('click', () => this.handleCellClick(i));
+      this.boardEl.appendChild(btn);
+    });
+
+    if (!this.control.isGameOver()) {
+      this.statusEl.textContent = `Spieler ${this.control.getCurrentPlayer()} ist dran`;
+    }
+  }
+
+  renderGameOver(result) {
+    this.render(result.line);
+    this.statusEl.textContent = result.winner === 'Draw'
+      ? 'Unentschieden!'
+      : `Spieler ${result.winner} gewinnt! 🎉`;
+  }
+
+  handleCellClick(index) {
+    if (this.control.isAiTurn()) return;
+    const outcome = this.control.playerMove(index);
+    if (outcome.invalid) return;
+    this.afterMove(outcome.result);
+  }
+
+  async performAiMove() {
+    const index = await this.control.computeAiMove();
+    // Guard: während der asynchronen Berechnung könnte der Nutzer
+    // neu gestartet oder den Modus gewechselt haben.
+    if (!this.control.isAiTurn()) return { invalid: true };
+    return this.control.playerMove(index);
+  }
+}
+
+/* --- Connect4UI: eigene DOM-Schicht, spricht nur mit Connect4Control --- */
+class Connect4UI extends GameUI {
+  constructor(control) {
+    super(control, {
+      statusId: 'c4status',
+      resetBtnId: 'c4resetBtn',
+      modeName: 'c4mode',
+      resetStatsBtnId: 'c4resetStatsBtn',
+      statEls: { R: 'c4statR', Y: 'c4statY', draws: 'c4statDraw' },
+      aiDelayMs: 350
+    });
+    this.boardEl = document.getElementById('c4board');
+    this.init();
+  }
+
+  render(winLine = null) {
+    const board = this.control.getBoardState();
+    this.boardEl.innerHTML = '';
+
+    board.forEach((val, i) => {
+      const slot = document.createElement('button');
+      slot.className = 'c4-slot' + (val ? ' ' + val.toLowerCase() : '');
+      if (winLine && winLine.includes(i)) slot.classList.add('win');
+      const col = i % 7;
+      slot.addEventListener('click', () => this.handleColumnClick(col));
+      this.boardEl.appendChild(slot);
+    });
+
+    if (!this.control.isGameOver()) {
+      const player = this.control.getCurrentPlayer();
+      this.statusEl.textContent = `Spieler ${player === 'R' ? 'Rot' : 'Gelb'} ist dran`;
+    }
+  }
+
+  renderGameOver(result) {
+    this.render(result.line);
+    this.statusEl.textContent = result.winner === 'Draw'
+      ? 'Unentschieden!'
+      : `Spieler ${result.winner === 'R' ? 'Rot' : 'Gelb'} gewinnt! 🎉`;
+  }
+
+  handleColumnClick(col) {
+    if (this.control.isAiTurn()) return;
+    const outcome = this.control.playerMove(col);
+    if (outcome.invalid) return;
+    this.afterMove(outcome.result);
+  }
+
+  async performAiMove() {
+    const col = await this.control.computeAiMove();
+    if (!this.control.isAiTurn()) return { invalid: true };
+    return this.control.playerMove(col);
+  }
+}
+
+/* --- OthelloUI: eigene DOM-Schicht, spricht nur mit OthelloControl --- */
+class OthelloUI extends GameUI {
+  constructor(control) {
+    super(control, {
+      statusId: 'otstatus',
+      resetBtnId: 'otresetBtn',
+      modeName: 'otmode',
+      resetStatsBtnId: 'otresetStatsBtn',
+      statEls: { B: 'otstatB', W: 'otstatW', draws: 'otstatDraw' },
+      aiDelayMs: 350
+    });
+    this.boardEl = document.getElementById('otboard');
+    this.init();
+  }
+
+  render() {
+    const board = this.control.getBoardState();
+    const gameOver = this.control.isGameOver();
+    const currentPlayer = this.control.getCurrentPlayer();
+    const showHints = !gameOver && !this.control.isAiTurn();
+    const validSet = showHints
+      ? new Set(this.control.getValidMoves(currentPlayer).map(([r, c]) => r * 8 + c))
+      : new Set();
+
+    this.boardEl.innerHTML = '';
+    board.forEach((val, i) => {
+      const cell = document.createElement('button');
+      cell.className = 'ot-cell' + (val ? ' ' + val.toLowerCase() : '') + (validSet.has(i) ? ' valid' : '');
+      const disc = document.createElement('span');
+      disc.className = 'ot-disc';
+      cell.appendChild(disc);
+      const row = Math.floor(i / 8), col = i % 8;
+      cell.addEventListener('click', () => this.handleCellClick(row, col));
+      this.boardEl.appendChild(cell);
+    });
+
+    if (!gameOver) {
+      const name = currentPlayer === 'B' ? 'Schwarz' : 'Weiß';
+      let msg = `Spieler ${name} ist dran`;
+      if (this.control.wasLastMovePass()) msg += ' (Gegner musste aussetzen)';
+      this.statusEl.textContent = msg;
+    }
+  }
+
+  renderGameOver(result) {
+    this.render();
+    const counts = this.control.getCounts();
+    this.statusEl.textContent = result.winner === 'Draw'
+      ? `Unentschieden! (${counts.B}:${counts.W})`
+      : `${result.winner === 'B' ? 'Schwarz' : 'Weiß'} gewinnt! (${counts.B}:${counts.W}) 🎉`;
+  }
+
+  handleCellClick(row, col) {
+    if (this.control.isAiTurn()) return;
+    const outcome = this.control.playerMove(row, col);
+    if (outcome.invalid) return;
+    this.afterMove(outcome.result);
+  }
+
+  async performAiMove() {
+    const move = await this.control.computeAiMove();
+    if (!this.control.isAiTurn() || !move) return { invalid: true };
+    const [row, col] = move;
+    return this.control.playerMove(row, col);
+  }
+}
+
+/* --- MuehleUI: eigene DOM-Schicht, spricht nur mit MuehleControl.
+     Das Brett ist kein Raster, sondern ein Graph aus 24 Punkten;
+     die Linien werden einmalig als SVG anhand der Adjazenzliste
+     gezeichnet, die Punkte bei jedem render() neu aufgebaut. --- */
+class MuehleUI extends GameUI {
+  constructor(control) {
+    super(control, {
+      statusId: 'mustatus',
+      resetBtnId: 'muresetBtn',
+      modeName: 'mumode',
+      resetStatsBtnId: 'muresetStatsBtn',
+      statEls: { B: 'mustatB', W: 'mustatW' }
+    });
+    this.pointsEl = document.getElementById('mupoints');
+    this.linesSvg = document.getElementById('mulines');
+    this.placeBEl = document.getElementById('muplaceB');
+    this.placeWEl = document.getElementById('muplaceW');
+
+    this.buildLines();
+    this.init();
+  }
+
+  // Zeichnet die Verbindungslinien des Bretts einmalig anhand der
+  // Adjazenzliste der Entity (wir greifen hier bewusst nur auf
+  // statische, unveränderliche Topologie-Daten zu, keinen
+  // Spielzustand).
+  buildLines() {
+    const ns = 'http://www.w3.org/2000/svg';
+    const seen = new Set();
+    MuehleEntity.ADJACENCY.forEach((neighbors, i) => {
+      neighbors.forEach(j => {
+        const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        const [x1, y1] = MuehleEntity.POSITIONS[i];
+        const [x2, y2] = MuehleEntity.POSITIONS[j];
+        const line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', (x1 / 6) * 100);
+        line.setAttribute('y1', (y1 / 6) * 100);
+        line.setAttribute('x2', (x2 / 6) * 100);
+        line.setAttribute('y2', (y2 / 6) * 100);
+        line.setAttribute('class', 'mu-line');
+        this.linesSvg.appendChild(line);
+      });
+    });
+  }
+
+  render() {
+    const board = this.control.getBoardState();
+    const selected = this.control.getSelected();
+    const phase = this.control.getPhase();
+    const pending = this.control.isPendingRemoval();
+    const gameOver = this.control.isGameOver();
+    const currentPlayer = this.control.getCurrentPlayer();
+    const opponent = currentPlayer === 'B' ? 'W' : 'B';
+    const showHints = !gameOver && !this.control.isAiTurn();
+
+    const validDestSet = (showHints && phase === 'moving' && selected !== null)
+      ? new Set(this.control.getValidDestinations())
+      : new Set();
+
+    this.pointsEl.innerHTML = '';
+    board.forEach((val, i) => {
+      const [x, y] = MuehleEntity.POSITIONS[i];
+      const btn = document.createElement('button');
+      let cls = 'mu-point' + (val ? ' ' + val.toLowerCase() : '');
+      if (i === selected) cls += ' selected';
+      if (validDestSet.has(i)) cls += ' valid-dest';
+      if (showHints && phase === 'placing' && val === null) cls += ' valid-dest';
+      if (showHints && pending && val === opponent && this.control.canRemove(i)) cls += ' removable';
+      btn.className = cls;
+      btn.style.left = ((x / 6) * 100) + '%';
+      btn.style.top = ((y / 6) * 100) + '%';
+      btn.addEventListener('click', () => this.handlePointClick(i));
+      this.pointsEl.appendChild(btn);
+    });
+
+    if (!gameOver) {
+      this.statusEl.textContent = this._buildStatusText(currentPlayer, phase, pending);
+    }
+    this.placeBEl.textContent = this.control.getPiecesToPlace('B');
+    this.placeWEl.textContent = this.control.getPiecesToPlace('W');
+  }
+
+  renderGameOver(result) {
+    this.render();
+    const name = result.winner === 'B' ? 'Schwarz' : 'Weiß';
+    this.statusEl.textContent = `${name} gewinnt! 🎉`;
+  }
+
+  _buildStatusText(player, phase, pending) {
+    const name = player === 'B' ? 'Schwarz' : 'Weiß';
+    if (pending) return `${name}: Mühle! Gegnerischen Stein zum Entfernen wählen`;
+    if (phase === 'placing') return `${name} ist dran – noch ${this.control.getPiecesToPlace(player)} Steine zu setzen`;
+    if (this.control.isFlyingPhase(player)) return `${name} ist dran (Fliegen: freie Zugwahl, nur noch 3 Steine)`;
+    return `${name} ist dran – Stein wählen und ziehen`;
+  }
+
+  handlePointClick(index) {
+    if (this.control.isAiTurn()) return;
+    const outcome = this.control.handlePointClick(index);
+    if (outcome.invalid) return;
+    this.afterMove(outcome.result);
+  }
+
+  // Die KI kann pro Zug mehrere Aktionen brauchen (z.B. Ziehen und
+  // danach, weil eine Mühle entstand, sofort noch Entfernen) — der
+  // geerbte afterMove-Ablauf ruft runAiTurn erneut auf, solange
+  // isAiTurn() true bleibt, wodurch die Aktionen verkettet werden.
+  performAiMove() {
+    return { invalid: false, result: this.control.performAiAction() };
+  }
+}
+
+/* --- ChessUI: eigene DOM-Schicht, spricht nur mit ChessControl --- */
+class ChessUI extends GameUI {
+  static SYMBOLS = {
+    wp: '♙', wn: '♘', wb: '♗', wr: '♖', wq: '♕', wk: '♔',
+    bp: '♟', bn: '♞', bb: '♝', br: '♜', bq: '♛', bk: '♚'
+  };
+
+  constructor(control) {
+    super(control, {
+      statusId: 'chstatus',
+      resetBtnId: 'chresetBtn',
+      modeName: 'chmode',
+      resetStatsBtnId: 'chresetStatsBtn',
+      statEls: { w: 'chstatW', b: 'chstatB', draws: 'chstatDraw' }
+    });
+    this.boardEl = document.getElementById('chboard');
+    this.promoEl = document.getElementById('chpromo');
+    this.engineEl = document.getElementById('chengine');
+    this.undoBtn = document.getElementById('chundoBtn');
+    this.undoBtn.addEventListener('click', () => this.handleUndo());
+    this.diffEl = document.getElementById('chdiff');
+    this.diffInputs = document.querySelectorAll('input[name="chdiff"]');
+    this.diffInputs.forEach(input => {
+      input.addEventListener('change', () => this.handleDifficultyChange(input.value));
+    });
+    this.promoEl.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => this.handlePromotionChoice(btn.dataset.piece));
+    });
+    this.init();
+  }
+
+  render() {
+    const board = this.control.getBoardState();
+    const selected = this.control.getSelected();
+    const gameOver = this.control.isGameOver();
+    const player = this.control.getCurrentPlayer();
+    const showHints = !gameOver && !this.control.isAiTurn();
+    const selectedIndex = selected !== null ? ChessControl._indexFromSquare(selected) : null;
+    const validDestSet = (showHints && selectedIndex !== null)
+      ? new Set(this.control.getValidDestinations())
+      : new Set();
+
+    let checkedKingIndex = null;
+    if (this.control.isInCheck()) {
+      checkedKingIndex = board.findIndex(v => v === player + 'k');
+    }
+
+    this.boardEl.innerHTML = '';
+    board.forEach((val, i) => {
+      const row = Math.floor(i / 8), col = i % 8;
+      const sq = document.createElement('button');
+      let cls = 'ch-square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+      if (i === selectedIndex) cls += ' selected';
+      if (validDestSet.has(i)) cls += ' valid-dest' + (val ? ' has-piece' : '');
+      if (i === checkedKingIndex) cls += ' in-check';
+      sq.className = cls;
+      if (val) {
+        const piece = document.createElement('span');
+        piece.className = 'ch-piece ' + val[0];
+        piece.textContent = ChessUI.SYMBOLS[val];
+        sq.appendChild(piece);
+      }
+      sq.addEventListener('click', () => this.handleSquareClick(i));
+      this.boardEl.appendChild(sq);
+    });
+
+    this.promoEl.classList.toggle('active', !!this.control.getPendingPromotion());
+    this.undoBtn.disabled = !this.control.canUndo() || this.control.isGameOver();
+
+    if (!gameOver) {
+      const name = player === 'w' ? 'Weiß' : 'Schwarz';
+      let msg = `${name} ist dran`;
+      if (this.control.isInCheck()) msg += ' – Schach!';
+      this.statusEl.textContent = msg;
+    }
+  }
+
+  renderGameOver(result) {
+    this.render();
+    this.statusEl.textContent = result.winner === 'Draw'
+      ? 'Remis!'
+      : `${result.winner === 'w' ? 'Weiß' : 'Schwarz'} gewinnt durch Matt! 🎉`;
+  }
+
+  handleSquareClick(index) {
+    if (this.control.isAiTurn()) return;
+    const outcome = this.control.handleSquareClick(index);
+    if (outcome.invalid) return;
+    if (outcome.awaitingPromotion) { this.render(); return; }
+    this.afterMove(outcome.result);
+  }
+
+  handleUndo() {
+    if (this.control.isAiTurn()) return; // nicht während die KI rechnet
+    const outcome = this.control.undoMove();
+    if (outcome.invalid) return;
+    this.render();
+  }
+
+  handlePromotionChoice(pieceType) {
+    const outcome = this.control.choosePromotion(pieceType);
+    if (outcome.invalid) return;
+    this.afterMove(outcome.result);
+  }
+
+  // Überschreibt die Basisklasse: zusätzlich anzeigen, welche KI
+  // gerade aktiv ist (Transparenz für den Nutzer, ob Stockfish
+  // geladen werden konnte oder der schwächere Fallback greift).
+  async handleModeChange(vsAI) {
+    super.handleModeChange(vsAI);
+    this.diffEl.classList.toggle('active', vsAI);
+    if (!vsAI) { this.engineEl.textContent = ''; return; }
+    this.engineEl.textContent = 'KI wird geladen …';
+    const label = await this.control.getEngineLabel();
+    this.engineEl.textContent = label;
+  }
+
+  // Schwierigkeitswechsel wirkt ab dem nächsten KI-Zug — die
+  // laufende Partie bleibt bewusst erhalten (kein Neustart).
+  handleDifficultyChange(key) {
+    this.diffInputs.forEach(input => {
+      input.closest('label').classList.toggle('active', input.checked);
+    });
+    this.control.setDifficulty(key);
+  }
+
+  async performAiMove() {
+    const move = await this.control.computeAiMove();
+    if (!this.control.isAiTurn() || !move) return { invalid: true };
+    return this.control.performAiMove(move);
+  }
+}
+
+/* --- MangalaUI: eigene DOM-Schicht, spricht nur mit MangalaControl.
+     Klassisches Mancala-Layout: Kalahas als hohe Felder an den
+     äußeren Spalten, A-Gruben unten links nach rechts, B-Gruben
+     oben — gegenläufig, damit das Aussäen im Uhrzeigersinn optisch
+     stimmt (B12 liegt über A0, B7 über A5). --- */
+class MangalaUI extends GameUI {
+  constructor(control) {
+    super(control, {
+      statusId: 'mastatus',
+      resetBtnId: 'maresetBtn',
+      modeName: 'mamode',
+      resetStatsBtnId: 'maresetStatsBtn',
+      statEls: { A: 'mastatA', B: 'mastatB', draws: 'mastatDraw' },
+      aiDelayMs: 450
+    });
+    this.boardEl = document.getElementById('maboard');
+    this.init();
+  }
+
+  // Grube-Index -> Grid-Position (Spalte 1-8, Zeile 1-2).
+  _gridPosition(i) {
+    if (i >= 0 && i <= 5) return { col: 2 + i, row: 2 };       // A-Gruben, untere Reihe
+    return { col: 2 + (12 - i), row: 1 };                       // B-Gruben, obere Reihe
+  }
+
+  render() {
+    const board = this.control.getBoardState();
+    const gameOver = this.control.isGameOver();
+    const currentPlayer = this.control.getCurrentPlayer();
+    const showHints = !gameOver && !this.control.isAiTurn();
+    const validMoves = showHints ? new Set(this.control.getValidMoves(currentPlayer)) : new Set();
+
+    this.boardEl.innerHTML = '';
+    for (let i = 0; i < 14; i++) {
+      if (i === 6 || i === 13) {
+        const store = document.createElement('div');
+        store.className = 'ma-store';
+        store.id = i === 6 ? 'mastore-a' : 'mastore-b';
+        store.textContent = board[i];
+        this.boardEl.appendChild(store);
+        continue;
+      }
+      const { col, row } = this._gridPosition(i);
+      const pit = document.createElement('button');
+      const isValid = validMoves.has(i);
+      pit.className = 'ma-pit' + (board[i] === 0 ? ' empty' : '') + (isValid ? ' valid' : '');
+      pit.style.gridColumn = col;
+      pit.style.gridRow = row;
+      pit.textContent = board[i];
+      pit.disabled = !isValid;
+      pit.addEventListener('click', () => this.handlePitClick(i));
+      this.boardEl.appendChild(pit);
+    }
+
+    if (!gameOver) {
+      let msg = `Spieler ${currentPlayer} ist dran`;
+      if (this.control.wasExtraTurn()) msg += ' – Zusatzzug! (letzter Stein landete im eigenen Kalaha)';
+      this.statusEl.textContent = msg;
+    }
+  }
+
+  renderGameOver(result) {
+    this.render();
+    const board = this.control.getBoardState();
+    this.statusEl.textContent = result.winner === 'Draw'
+      ? `Unentschieden! (${board[6]}:${board[13]})`
+      : `Spieler ${result.winner} gewinnt! (${board[6]}:${board[13]}) 🎉`;
+  }
+
+  handlePitClick(index) {
+    if (this.control.isAiTurn()) return;
+    const outcome = this.control.playerMove(index);
+    if (outcome.invalid) return;
+    this.afterMove(outcome.result);
+  }
+
+  async performAiMove() {
+    const move = await this.control.computeAiMove();
+    if (!this.control.isAiTurn() || move === null || move === undefined) return { invalid: true };
+    return this.control.playerMove(move);
+  }
+}
+
+/* ============================================================
+   PLATFORM-ADAPTER (UI-Schicht)
+   Kapselt alles, was nur in der Android-App (Capacitor) existiert.
+   Im Browser fehlt window.Capacitor: dann sind alle Methoden
+   wirkungslos, dieselbe HTML-Datei läuft unverändert.
+   ============================================================ */
+const Platform = {
+  isNative() {
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+      && window.Capacitor.isNativePlatform());
+  },
+  _app() {
+    return this.isNative() && window.Capacitor.Plugins ? window.Capacitor.Plugins.App : null;
+  },
+  onBackButton(handler) {
+    const app = this._app();
+    if (app) app.addListener('backButton', handler);
+  },
+  exitApp() {
+    const app = this._app();
+    if (app) app.exitApp();
+  }
+};
+
+/* ============================================================
+   TAB-STEUERUNG
+   Reine UI-Angelegenheit: schaltet zwischen den bereits
+   initialisierten Spiel-Views um. Rührt keine Spiellogik an.
+   ============================================================ */
+class TabController {
+  constructor(platform) {
+    this.tabButtons = document.querySelectorAll('.tabBtn');
+    this.homeTab = this.tabButtons[0].dataset.tab;
+    this.activeTab = this.homeTab; // eigener Zustand, nie aus dem DOM zurückgelesen
+    this.platform = platform;
+    this.tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => this.switchTo(btn.dataset.tab));
+    });
+    // Android-Zurück-Taste (nur in der App): erst zum ersten Tab,
+    // von dort beendet sie die App.
+    this.platform.onBackButton(() => this.handleBack());
+  }
+
+  getActiveTab() { return this.activeTab; }
+
+  handleBack() {
+    if (this.activeTab !== this.homeTab) this.switchTo(this.homeTab);
+    else this.platform.exitApp();
+  }
+
+  switchTo(tabName) {
+    this.activeTab = tabName;
+    this.tabButtons.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+    document.querySelectorAll('.tab-content').forEach(view => {
+      view.classList.toggle('active', view.id === `${tabName}-view`);
+    });
+  }
+}
+
+/* ============================================================
+   BOOTSTRAP
+   Verkabelt alle Spiele nach demselben Muster:
+   Entity + Stats + Repo (+ GameRepo) <- Boundary <- Control (mit
+   injizierter KI-Strategie) <- UI. Die AIStrategy wird geteilt —
+   sie hält einen Web Worker, in dem alle Engines rechnen.
+
+   wireGame() kapselt die fünffach identische Verdrahtung: Jedes
+   Spiel bekommt eine eigene IndexedDB (dbName) mit zwei Stores
+   ('summary' für Statistik, 'game' für die laufende Partie).
+   controlExtraArgs sind die zusätzlichen Konstruktor-Argumente
+   der jeweiligen Control-Klasse nach der Boundary (z.B. die
+   geteilte AIStrategy oder — bei Schach — die StockfishEngine).
+   ============================================================ */
+function wireGame({ dbName, EntityCls, BoundaryCls, ControlCls, UICls, controlExtraArgs = [] }) {
+  const entity = new EntityCls();
+  const stats = new StatsEntity();
+  const statsRepo = new StatsRepository(dbName, 'stats', 'summary');
+  const gameRepo = new StatsRepository(dbName, 'stats', 'game');
+  const boundary = new BoundaryCls(entity, stats, statsRepo, gameRepo);
+  const control = new ControlCls(boundary, ...controlExtraArgs);
+  const ui = new UICls(control);
+  return { entity, boundary, control, ui };
+}
+
+const aiStrategy = new AIStrategy();
+
+wireGame({
+  dbName: 'ticTacToeDB',
+  EntityCls: TicTacToeEntity, BoundaryCls: TicTacToeBoundary,
+  ControlCls: TicTacToeControl, UICls: TicTacToeUI,
+  controlExtraArgs: [aiStrategy]
+});
+
+wireGame({
+  dbName: 'connect4DB',
+  EntityCls: Connect4Entity, BoundaryCls: Connect4Boundary,
+  ControlCls: Connect4Control, UICls: Connect4UI,
+  controlExtraArgs: [aiStrategy]
+});
+
+wireGame({
+  dbName: 'othelloDB',
+  EntityCls: OthelloEntity, BoundaryCls: OthelloBoundary,
+  ControlCls: OthelloControl, UICls: OthelloUI,
+  controlExtraArgs: [aiStrategy]
+});
+
+wireGame({
+  dbName: 'muehleDB',
+  EntityCls: MuehleEntity, BoundaryCls: MuehleBoundary,
+  ControlCls: MuehleControl, UICls: MuehleUI
+  // Mühle hat keine geteilte AIStrategy — ihre 1-Zug-Heuristik
+  // läuft synchron in der Control, siehe dortiger Kommentar.
+});
+
+wireGame({
+  dbName: 'mangalaDB',
+  EntityCls: MangalaEntity, BoundaryCls: MangalaBoundary,
+  ControlCls: MangalaControl, UICls: MangalaUI,
+  controlExtraArgs: [aiStrategy]
+});
+
+// Schach hängt von der CDN-Bibliothek chess.js ab (siehe <head>).
+// Ist sie nicht geladen (z.B. offline ohne Cache, CDN nicht
+// erreichbar), darf das nicht die gesamte App zum Absturz bringen —
+// der Tab wird dann einfach ausgeblendet, alle anderen vier Spiele
+// bleiben voll funktionsfähig.
+if (typeof Chess !== 'undefined') {
+  const stockfish = new StockfishEngine();
+  wireGame({
+    dbName: 'chessDB',
+    EntityCls: ChessEntity, BoundaryCls: ChessBoundary,
+    ControlCls: ChessControl, UICls: ChessUI,
+    controlExtraArgs: [stockfish]
+  });
+} else {
+  console.warn('chess.js konnte nicht geladen werden (offline/CDN nicht erreichbar) – Schach-Tab wird ausgeblendet.');
+  document.querySelector('[data-tab="chess"]')?.remove();
+  document.getElementById('chess-view')?.remove();
+}
+
+new TabController(Platform);
+
+/* ============================================================
+   SERVICE WORKER (optional, nur bei Hosting wirksam)
+   Registriert sw.js für Offline-Caching der App-Shell und der
+   CDN-Bibliotheken (chess.js, Stockfish inkl. .wasm).
+   Greift NUR, wenn die App über HTTP(S) ausgeliefert wird und
+   eine sw.js neben der HTML-Datei liegt — bei lokal geöffneter
+   Datei (file://) oder fehlender sw.js passiert still nichts,
+   die App funktioniert unverändert.
+   ============================================================ */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !Platform.isNative()) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {
+    // sw.js nicht vorhanden oder Registrierung fehlgeschlagen —
+    // bewusst still, die App läuft ohne Offline-Cache weiter.
+  });
+}
+</script>
+
+</body>
+</html>
