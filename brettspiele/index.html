@@ -3,23 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brettspiele (BCE-Architektur)</title>
-<!-- ============================================================
-     PWA-Integration ("Zum Startbildschirm hinzufügen")
-     Das Manifest ist als data:-URL eingebettet, damit die App eine
-     einzelne Datei bleibt. Das Icon ist ein Inline-SVG (data-URL).
-     Volle Offline-Fähigkeit (Service Worker) erfordert Hosting
-     über HTTPS + die separate sw.js — siehe Registrierung am
-     Skriptende: bei file:// passiert einfach nichts.
-     ============================================================ -->
+<title>Brettspiele</title>
+<!-- Symbol und Manifest liegen als eigene Dateien auf der Spieleseite. -->
 <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Brettspiele">
-<link rel="manifest" href='data:application/manifest+json,{"name":"Brettspiele","short_name":"Brettspiele","display":"standalone","start_url":".","background_color":"%23f2f2f7","theme_color":"%23f2f2f7","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2722%27 fill=%27%23007aff%27/%3E%3Ctext x=%2750%27 y=%2768%27 font-size=%2752%27 text-anchor=%27middle%27%3E%E2%99%9F%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml"}]}'>
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23007aff'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle'%3E%E2%99%9F%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/brettspiele-192.png">
+<link rel="apple-touch-icon" href="../bilder/symbole/brettspiele-192.png">
 <!-- chess.js übernimmt die Schachregeln (Zuggenerierung/-validierung,
      Schach/Matt/Patt-Erkennung) — siehe ChessEntity: die Boundary
      wrappt die Bibliothek, Control/UI merken nichts davon. -->
@@ -148,7 +142,7 @@
     box-shadow: 0 4px 14px rgba(52,199,89,0.4);
   }
 
-  #controls { margin-top: 24px; display: flex; gap: 12px; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols) { margin-top: 24px; display: flex; gap: 12px; }
   button.action {
     background: var(--ios-blue);
     color: white;
@@ -171,7 +165,7 @@
   button.action:disabled { opacity: 0.4; cursor: default; }
 
   /* iOS-Segmented-Control-Optik statt Radiobuttons */
-  #mode {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) {
     margin-top: 18px;
     display: flex;
     background: var(--segment-bg);
@@ -180,7 +174,7 @@
     position: relative;
     font-size: 0.85rem;
   }
-  #mode label {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -191,21 +185,21 @@
     color: var(--ios-label);
     transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
-  #mode input {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) input {
     position: absolute;
     opacity: 0;
     pointer-events: none;
   }
-  #mode label:has(input:checked),
-  #mode label.active {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label:has(input:checked),
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label.active {
     background: var(--surface);
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
   }
-  #mode label:has(input:not(:checked)):not(.active) {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label:has(input:not(:checked)):not(.active) {
     color: var(--ios-secondary-label);
   }
 
-  #stats {
+  :is(#stats, #c4stats, #otstats, #mustats, #chstats, #mastats) {
     margin-top: 20px;
     display: flex;
     gap: 10px;
@@ -514,7 +508,7 @@
     min-height: 16px;
   }
 
-  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie #mode,
+  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode),
      aber nur sichtbar, wenn gegen den Computer gespielt wird. */
   #chdiff {
     display: none;
@@ -591,9 +585,21 @@
   }
   #mastore-a { grid-column: 8; }
   #mastore-b { grid-column: 1; }
+
+  /* Zurück zur Spieleseite */
+  .ng-zurueck { align-self: flex-start; display: inline-flex; align-items: center; min-height: 36px; margin: 0 0 12px; padding: 0 14px;
+    border-radius: 999px; background: var(--segment-bg); color: var(--ios-label); font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+  #layerNote a { color: inherit; }
+  /* Schmale Bildschirme: alle sechs Reiter sichtbar, drei pro Zeile statt Wischen */
+  @media (max-width: 600px) {
+    #tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 420px; overflow: visible; }
+    .tabBtn { padding: 9px 4px; text-align: center; }
+  }
 </style>
 </head>
 <body>
+
+<a class="ng-zurueck" href="../">← Alle Spiele</a>
 
 <div id="tabs">
   <button class="tabBtn active" data-tab="tictactoe">Tic Tac Toe</button>
@@ -757,7 +763,7 @@
   <button class="linkBtn" id="maresetStatsBtn">Statistik zurücksetzen</button>
 </div>
 
-<div id="layerNote">Architektur: Entity (Spielregeln) → Boundary (Zugriffsschicht) → Control (Ablauf) → UI (Anzeige)<br>Datenschicht: Statistik wird lokal in der Browser-Datenbank (IndexedDB, Fallback localStorage) gespeichert – kein Server, keine personenbezogenen Daten, keine Weitergabe an Dritte.</div>
+<div id="layerNote">Statistik bleibt nur auf diesem Gerät, kein Server, keine Weitergabe.<br>Schach-Computer: Stockfish (GPL v3), <a href="lib/STOCKFISH-LICENSE-GPL.txt">Lizenz</a> und <a href="https://github.com/nmrugg/stockfish.js/tree/v10.0.2">Quelltext</a>. Schachregeln: chess.js (<a href="lib/CHESSJS-LICENSE.txt">Lizenz</a>).</div>
 
 <script>
 /* ============================================================
@@ -3564,21 +3570,7 @@ if (typeof Chess !== 'undefined') {
 
 new TabController(Platform);
 
-/* ============================================================
-   SERVICE WORKER (optional, nur bei Hosting wirksam)
-   Registriert sw.js für Offline-Caching der App-Shell und der
-   CDN-Bibliotheken (chess.js, Stockfish inkl. .wasm).
-   Greift NUR, wenn die App über HTTP(S) ausgeliefert wird und
-   eine sw.js neben der HTML-Datei liegt — bei lokal geöffneter
-   Datei (file://) oder fehlender sw.js passiert still nichts,
-   die App funktioniert unverändert.
-   ============================================================ */
-if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !Platform.isNative()) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {
-    // sw.js nicht vorhanden oder Registrierung fehlgeschlagen —
-    // bewusst still, die App läuft ohne Offline-Cache weiter.
-  });
-}
+/* Kein Service Worker auf der Spieleseite: es liegt keine sw.js bereit (Spec S-W01). */
 </script>
 
 </body>

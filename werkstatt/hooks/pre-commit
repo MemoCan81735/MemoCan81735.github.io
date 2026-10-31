@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Vor jedem Commit (unter 1 s): statische Prüfung der Spieleseite (Spec werkstatt/specs/S-W01).
+cd "$(git rev-parse --show-toplevel)" || exit 1
+python3 werkstatt/seite_pruefen.py || { echo "Commit abgelehnt: Spieleseite nicht grün."; exit 1; }

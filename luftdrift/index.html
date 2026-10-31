@@ -2,6 +2,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Luftdrift 3D</title>
+<meta name="theme-color" content="#16202b">
+<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/luftdrift-192.png">
+<link rel="apple-touch-icon" href="../bilder/symbole/luftdrift-192.png">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout: eine Bildschirmseite, 3D-Bild füllt alles, HUD liegt darüber. Einzige Stimmung: Spätnachmittag über Hügelland mit See. */
@@ -36,8 +40,8 @@ body { margin: 0; background: var(--himmel); color: var(--papier); font-family: 
 #taste { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 84px; height: 84px; border-radius: 50%; border: 2px solid var(--papier); background: rgba(22,32,43,0.45); color: var(--papier); font: 700 15px var(--schrift); letter-spacing: 0.06em; touch-action: none; }
 #taste.an { background: var(--signal); color: var(--tinte); border-color: var(--signal); }
 .rund { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(246,241,230,0.6); background: rgba(22,32,43,0.45); color: var(--papier); font-size: 18px; }
-#zahnrad { top: calc(64px + env(safe-area-inset-top, 0px)); }
-#ton { top: calc(112px + env(safe-area-inset-top, 0px)); }
+#zahnrad { top: calc(84px + env(safe-area-inset-top, 0px)); }
+#ton { top: calc(132px + env(safe-area-inset-top, 0px)); }
 #panel { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(160px + env(safe-area-inset-top, 0px)); width: min(300px, calc(100vw - 32px)); background: rgba(22,32,43,0.92); border: 1px solid rgba(246,241,230,0.25); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; font-size: 13px; }
 #panel label { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; }
 #panel input[type=range] { grid-column: 1 / -1; width: 100%; }
@@ -54,6 +58,7 @@ body { margin: 0; background: var(--himmel); color: var(--papier); font-family: 
 #schub i { display: block; height: 100%; width: 0; background: var(--gut); }
 #menue { position: fixed; inset: 0; display: grid; place-items: center; background: linear-gradient(rgba(22,32,43,0.15), rgba(22,32,43,0.75)); padding: 0 max(16px, env(safe-area-inset-left, 0px)); }
 #menue .karte { width: min(360px, 100%); display: grid; gap: 10px; }
+.ng-zurueck { justify-self: start; display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px; background: rgba(22,32,43,0.55); border: 1px solid rgba(246,241,230,0.45); color: var(--papier); font: 600 14px var(--schrift); text-decoration: none; }
 #menue h1 { margin: 0; font: 900 44px/1 var(--schrift); letter-spacing: -0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
 #menue h1 small { display: block; font: 500 13px var(--schrift); letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; margin-top: 6px; }
 .modus { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; text-align: left; background: rgba(246,241,230,0.94); color: var(--tinte); border: 0; border-radius: 12px; padding: 12px 16px; font: 600 17px var(--schrift); }
@@ -99,7 +104,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
 <div id="meldung"></div>
 <canvas id="schlupf" width="220" height="140"></canvas>
 <div id="schub"><i id="schubBalken"></i></div>
-<div id="hinweis">Seitlich ziehen = lenken, hoch oder runter = Höhe. Voll einschlagen oder DRIFT halten = Heck ausbrechen lassen, loslassen = Schub. Knapp an Türmen und Gegnern vorbei bringt Bonus.</div>
+<div id="hinweis">Seitlich ziehen = lenken, deutlich hoch oder runter = Höhe. DRIFT halten = Heck ausbrechen lassen, loslassen = Schub. Knapp an Türmen und Gegnern vorbei bringt Bonus.</div>
 <button id="taste" type="button" aria-pressed="false">DRIFT</button>
 <button id="zahnrad" class="rund" type="button" aria-label="Abstimmung">⚙</button>
 <button id="ton" class="rund" type="button" aria-label="Ton an oder aus">🔊</button>
@@ -118,7 +123,8 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
 <button id="pauseKnopf" type="button" aria-label="Pause" hidden>⏸</button>
 <div id="menue">
   <div class="karte">
-    <h1>Luftdrift<small>Prototyp · Fassung 5</small></h1>
+    <a class="ng-zurueck" href="../">← Alle Spiele</a>
+    <h1>Luftdrift<small>Flugrennen durch Ringe</small></h1>
     <button class="modus" type="button" data-modus="drift"><span>Drift-Runde</span><small>60 s driften, Türme, Ringe und Gegner streifen</small><span class="sterne" id="st_drift">☆☆☆</span><span class="wert" id="bw_drift"></span></button>
     <button class="modus" type="button" data-modus="ringe"><span>Ringjagd</span><small>Alle 9 Ringe der Reihe nach gegen die Uhr</small><span class="sterne" id="st_ringe">☆☆☆</span><span class="wert" id="bw_ringe"></span></button>
     <button class="modus" type="button" data-modus="rennen"><span>Rennen</span><small>Eine Runde durch alle Ringe gegen drei Gegner</small><span class="sterne" id="st_rennen">☆☆☆</span><span class="wert" id="bw_rennen"></span></button>
@@ -127,6 +133,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
       <button type="button" id="e_links">Drift-Taste links</button>
       <button type="button" id="e_emp">Lenkung: normal</button>
       <button type="button" id="e_tut">Tutorial zeigen</button>
+      <button type="button" id="e_hilfe" style="grid-column: 1 / -1;">Flughilfe: stark</button>
     </div>
   </div>
 </div>
@@ -160,7 +167,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   let abst = Object.assign({}, STANDARD);
   try { Object.assign(abst, JSON.parse(localStorage.getItem('luftdrift3d.abst') || '{}')); } catch (e) {}
   let best = 0, tonAn = true;
-  const einst = { links: false, emp: 1, tutorial: true };
+  const einst = { links: false, emp: 1, tutorial: true, hilfe: 2 };
   const bestwerte = { drift: 0, ringe: 0, rennen: 0 }, sterne = { drift: 0, ringe: 0, rennen: 0 };
   try {
     best = Number(localStorage.getItem('luftdrift3d.best')) || 0; tonAn = localStorage.getItem('luftdrift3d.ton') !== 'aus';
@@ -337,7 +344,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   const segGeo = new THREE.CylinderGeometry(5, 6.5, TURM_HOEHE / 6, 14);
   const ringNah = new THREE.MeshBasicMaterial({ color: 0xff9f2e, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
   const ringFern = new THREE.MeshBasicMaterial({ color: 0xff9f2e, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
-  const RINGE = [], RING_RADIUS = 20;
+  const RINGE = [], RING_RADIUS = 28;
   for (const p of PYLONEN) {
     const g = gelaende(p.x, p.z); p.boden = g; p.knappZeit = 0;
     for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(segGeo, i % 2 ? matWeiss : matOrange); m.position.set(p.x, g + (i + 0.5) * TURM_HOEHE / 6, p.z); m.castShadow = true; szene.add(m); }
@@ -426,9 +433,9 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
 
   // Gegner: drei Maschinen, die von Turm zu Turm fliegen und dort driften. Knapp vorbei = Bonus in Zeitlupe.
   const GEGNER = [
-    { hell: 0x4f8fd6, akzent: 0xf6f1e6, nummer: 3, ziel: 1, x: 300, z: 100, y: 70, h: 1.0, tempo: 51 },
-    { hell: 0xe85d5d, akzent: 0xf6f1e6, nummer: 12, ziel: 4, x: -300, z: -100, y: 85, h: 3.0, tempo: 48 },
-    { hell: 0xf2d35b, akzent: 0x16202b, nummer: 21, ziel: 6, x: 0, z: 500, y: 55, h: -1.5, tempo: 54 },
+    { hell: 0x4f8fd6, akzent: 0xf6f1e6, nummer: 3, ziel: 1, x: 300, z: 100, y: 70, h: 1.0, tempo: 45 },
+    { hell: 0xe85d5d, akzent: 0xf6f1e6, nummer: 12, ziel: 4, x: -300, z: -100, y: 85, h: 3.0, tempo: 42 },
+    { hell: 0xf2d35b, akzent: 0x16202b, nummer: 21, ziel: 6, x: 0, z: 500, y: 55, h: -1.5, tempo: 47 },
   ];
   for (const g of GEGNER) { g.mesh = baueFlugzeug(g.hell, g.akzent, g.nummer); g.spuren = [spur(0xffffff), spur(0xffffff)]; g.schlupf = 0; g.knappZeit = 0; g.roll = 0; }
   const _gp = new THREE.Vector3();
@@ -439,7 +446,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
       const r = RINGE[g.ringIndex % RINGE.length];
       zx = r.x; zz = r.z; d = Math.hypot(zx - g.x, zz - g.z); zielY = r.y;
       const vorsprung = g.ringIndex - s.ringIndex;
-      tempo = g.tempo * (vorsprung > 1 ? 0.82 : vorsprung < -1 ? 1.18 : 1) * (g.schub > 0 ? 1.2 : 1);
+      tempo = g.tempo * (vorsprung > 0 ? 0.75 : vorsprung < -1 ? 1.15 : 1) * (g.schub > 0 ? 1.15 : 1);
       if (d < RING_RADIUS + 8 && Math.abs(g.y - r.y) < RING_RADIUS + 8) { g.ringIndex = Math.min(g.ringIndex + 1, RING_ZAHL * RUNDEN_RENNEN); g.schub = 1; }
       g.schub = Math.max(0, (g.schub || 0) - dt);
     } else {
@@ -568,6 +575,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     $('bw_rennen').textContent = bestwerte.rennen ? 'Best Platz ' + bestwerte.rennen : 'noch kein Wert';
     $('e_ton').textContent = tonAn ? 'Ton an' : 'Ton aus'; $('e_ton').classList.toggle('an', tonAn);
     $('e_links').classList.toggle('an', einst.links); $('e_emp').textContent = 'Lenkung: ' + (einst.emp < 1 ? 'ruhig' : einst.emp > 1 ? 'scharf' : 'normal');
+    $('e_hilfe').textContent = 'Flughilfe: ' + ['aus', 'mittel', 'stark'][einst.hilfe]; $('e_hilfe').classList.toggle('an', einst.hilfe > 0);
     $('e_tut').classList.toggle('an', einst.tutorial); document.body.classList.toggle('links', einst.links);
   }
   function pausieren(an) {
@@ -602,7 +610,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     $('ende').hidden = false; $('pauseKnopf').hidden = true; $('tutorial').hidden = true;
   }
   // Tutorial in der Drift-Runde: vier Schritte, jeder endet mit der passenden Handlung
-  const TUT = ['Zieh den Finger seitlich: so lenkst du.', 'Zieh hoch oder runter: so änderst du die Höhe.', 'Halte DRIFT (oder voll einschlagen) und lenke: das Heck bricht aus.', 'Lass den Drift los: du bekommst Schub. Jetzt zu den Ringen!'];
+  const TUT = ['Zieh den Finger seitlich: so lenkst du.', 'Zieh deutlich hoch oder runter: so änderst du die Höhe. Sonst hält die Flughilfe die Höhe der Ringe.', 'Halte DRIFT und lenke: das Heck bricht aus.', 'Lass den Drift los: du bekommst Schub. Jetzt zu den Ringen!'];
   function tutorialSchritt(dt, l, hv, drift) {
     if (s.tutSchritt < 0) { $('tutorial').hidden = true; return; }
     $('tutorial').hidden = false; $('tutorial').textContent = TUT[s.tutSchritt];
@@ -618,6 +626,15 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
 
   // ---------- Eingabe ----------
   let lenk = 0, hoch = 0, driftTaste = false, zeiger = null, zx0 = 0, zy0 = 0;
+  // Fingerweg in Pixeln ab Auflegen -> Lenkung und Höhe (-1 bis 1)
+  function fingerAbbildung(dx, dy) {
+    if (window.__proto && window.__proto.altEingabe) return [Math.max(-1, Math.min(1, dx / (70 / einst.emp))), Math.max(-1, Math.min(1, -dy / 90))];
+    // Lenkung: 8 px Totzone, dann weich ansteigend (halber Weg = ein Drittel Ausschlag), voll bei 100 px
+    const ax = Math.max(0, Math.abs(dx) - 8) / (92 / einst.emp), lx = Math.sign(dx) * Math.min(1, ax * (0.45 + 0.55 * Math.min(1, ax)));
+    // Höhe: erst ab 28 px senkrecht und nur, wenn der Zug eher senkrecht als waagrecht ist
+    const ay = Math.max(0, Math.abs(dy) - 28 - Math.abs(dx) * 0.35) / 70, hy = -Math.sign(dy) * Math.min(1, ay);
+    return [lx, hy];
+  }
   const tasten = {};
   canvas.addEventListener('pointerdown', (e) => {
     tonStart();
@@ -627,8 +644,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   });
   canvas.addEventListener('pointermove', (e) => {
     if (e.pointerId !== zeiger) return;
-    lenk = Math.max(-1, Math.min(1, (e.clientX - zx0) / (70 / einst.emp)));
-    hoch = Math.max(-1, Math.min(1, -(e.clientY - zy0) / 90));
+    [lenk, hoch] = fingerAbbildung(e.clientX - zx0, e.clientY - zy0);
   });
   const los = (e) => { if (e.pointerId === zeiger) { zeiger = null; lenk = 0; hoch = 0; } };
   canvas.addEventListener('pointerup', los); canvas.addEventListener('pointercancel', los);
@@ -643,6 +659,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   for (const b of document.querySelectorAll('.modus')) b.addEventListener('click', () => { tonStart(); neustart(b.dataset.modus); });
   $('e_ton').addEventListener('click', () => { tonAn = !tonAn; tonZeigen(); try { localStorage.setItem('luftdrift3d.ton', tonAn ? 'an' : 'aus'); } catch (e) {} tonStart(); menueZeigen(); });
   $('e_links').addEventListener('click', () => { einst.links = !einst.links; speichern(); menueZeigen(); });
+  $('e_hilfe').addEventListener('click', () => { einst.hilfe = (einst.hilfe + 2) % 3; speichern(); menueZeigen(); });
   $('e_emp').addEventListener('click', () => { einst.emp = einst.emp < 1 ? 1 : einst.emp > 1 ? 0.7 : 1.4; speichern(); menueZeigen(); });
   $('e_tut').addEventListener('click', () => { einst.tutorial = !einst.tutorial; speichern(); menueZeigen(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) pausieren(true); });
@@ -677,14 +694,36 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
         }
         if (window.__proto.auto === 'mensch') {
           // menschlicher Testspieler: 0,4 s Reaktion, grobe Höhenwahrnehmung (erst ab 12 m Unterschied), zittrige Hand
-          const pr = window.__proto; pr.verlauf = pr.verlauf || []; pr.verlauf.push({ l, hv: Math.abs(bester.y - s.y) > 12 ? Math.sign(bester.y - s.y) : 0 });
-          const alt = pr.verlauf.length > 24 ? pr.verlauf.shift() : { l: 0, hv: 0 };
+          // Verzögerung nach Spielzeit, nicht nach Schritten (sonst hängt sie an der Bildrate)
+          const pr = window.__proto; pr.verlauf = pr.verlauf || []; pr.uhr = (pr.uhr || 0) + dt; pr.verlauf.push({ t: pr.uhr, l, hv: Math.abs(bester.y - s.y) > 12 ? Math.sign(bester.y - s.y) : 0 });
+          while (pr.verlauf.length > 1 && pr.verlauf[0].t <= pr.uhr - 0.4) pr.letzte = pr.verlauf.shift(); const alt = pr.letzte || { l: 0, hv: 0 };
           l = Math.max(-1, Math.min(1, alt.l * 0.8 + (Math.random() - 0.5) * 0.3)); hv = alt.hv;
         }
         window.__proto.ziel = { d: bd, dy: bester.y - s.y, diff };
       }
     }
-    const drift = driftTaste || tasten[' '] || Math.abs(l) > 0.85;
+    if (window.__proto && window.__proto.auto === 'passiv') { l = 0; hv = 0; }
+    if (window.__proto && window.__proto.auto === 'finger' && s.naechsterRing) {
+      // Fingerspieler: will zum Ring, schiebt den Finger aber wie ein Mensch zu weit, zittert und verrutscht senkrecht; 0,4 s Reaktion
+      const pr = window.__proto, r = s.naechsterRing; pr.uhr = (pr.uhr || 0) + dt;
+      let diff = Math.atan2(r.x - s.x, r.z - s.z) - s.h; while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
+      const willX = Math.max(-110, Math.min(110, -diff * 2.5 * 70 * 1.4)), willY = Math.abs(r.y - s.y) > 12 ? -Math.sign(r.y - s.y) * 60 : 0;
+      pr.verlauf = pr.verlauf || []; pr.verlauf.push({ t: pr.uhr, x: willX, y: willY });
+      while (pr.verlauf.length > 1 && pr.verlauf[0].t <= pr.uhr - 0.4) pr.letzte = pr.verlauf.shift();
+      const alt = pr.letzte || { x: 0, y: 0 };
+      pr.rauschY = Math.max(-35, Math.min(35, (pr.rauschY || 0) + (Math.random() - 0.5) * 120 * dt));
+      [l, hv] = fingerAbbildung(alt.x + (Math.random() - 0.5) * 12, alt.y + pr.rauschY + Math.abs(alt.x) * 0.25);
+    }
+    // Flughilfe: dreht sanft zum nächsten Ring, umso stärker je weniger der Daumen selbst lenkt; gegen den Daumen arbeitet sie nie
+    const hilfe = [0, 0.35, 0.65][einst.hilfe];
+    const zr = s.naechsterRing;
+    if (hilfe > 0 && zr && !(driftTaste || tasten[' '])) {
+      let diff = Math.atan2(zr.x - s.x, zr.z - s.z) - s.h; while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
+      const soll = Math.max(-0.8, Math.min(0.8, -diff * 2.2));
+      if (Math.sign(soll) === Math.sign(l) || Math.abs(l) < 0.15) l = Math.max(-0.84, Math.min(0.84, l + (soll - l) * hilfe * (1 - Math.min(1, Math.abs(l)))));
+    }
+    // Drift nur über die Taste; bei Flughilfe aus zusätzlich bei vollem Einschlag wie bisher
+    const drift = driftTaste || tasten[' '] || (einst.hilfe === 0 && Math.abs(l) > 0.85);
     tutorialSchritt(dt, l, hv, drift);
     if (drift && !s.warDrift) { s.kick = 0.35; brumm(12); klang(220, 140, 0.18, 'triangle'); }
     if (!drift && s.warDrift && s.driftZeit >= 1.0) {
@@ -725,7 +764,7 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     for (const p of PYLONEN) {
       const d = Math.hypot(p.x - s.x, p.z - s.z), unterSpitze = s.y < p.boden + TURM_HOEHE + 6;
       naechste = Math.min(naechste, d);
-      if (d < 12 && unterSpitze) { s.vf *= 0.5; s.combo = 0; s.treffer++; s.x += (s.x - p.x) * 0.6; s.z += (s.z - p.z) * 0.6; p.knappZeit = 3; brumm(80); klang(140, 60, 0.3, 'sawtooth'); melden('Turm gerammt'); }
+      if (d < 9 && unterSpitze) { s.vf *= 0.5; s.combo = 0; s.treffer++; s.x += (s.x - p.x) * 0.6; s.z += (s.z - p.z) * 0.6; p.knappZeit = 3; brumm(80); klang(140, 60, 0.3, 'sawtooth'); melden('Turm gerammt'); }
       else if (d < 24 && unterSpitze && p.knappZeit <= 0 && tempo > 35) { p.knappZeit = 4; knappVorbei('Turm'); }
       p.knappZeit = Math.max(0, p.knappZeit - dt);
     }
@@ -743,17 +782,18 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
     if (naechsterRing) {
       const r = naechsterRing; r.marke.visible = true; r.marke.position.y = r.y + RING_RADIUS + 12 + Math.sin(s.zeit * 6) * 3;
       let diff = Math.atan2(r.x - s.x, r.z - s.z) - s.h; while (diff > Math.PI) diff -= 2 * Math.PI; while (diff < -Math.PI) diff += 2 * Math.PI;
-      if (hv === 0 && ringAbstand < 260 && Math.abs(diff) < 0.7) s.zielY += (r.y - s.zielY) * Math.min(1, dt * 1.5);
+      if (Math.abs(hv) < 0.35 && (einst.hilfe > 0 ? ringAbstand < 700 : ringAbstand < 260 && Math.abs(diff) < 0.7)) s.zielY += (r.y - s.zielY) * Math.min(1, dt * (einst.hilfe > 1 ? 2.5 : 1.5));
       const nx = Math.sin(r.gier), nz = Math.cos(r.gier), dx = s.x - r.x, dz = s.z - r.z, dEbene = dx * nx + dz * nz;
       const querXZ = Math.hypot(dx - nx * dEbene, dz - nz * dEbene);
-      if (Math.abs(dEbene) < 70 && querXZ < RING_RADIUS + 14 && Math.abs(s.y - r.y) < RING_RADIUS + 14) {
+      const fang = einst.hilfe > 1 ? 34 : einst.hilfe > 0 ? 22 : 14;
+      if (Math.abs(dEbene) < 70 + fang * 2 && querXZ < RING_RADIUS + fang && Math.abs(s.y - r.y) < RING_RADIUS + fang) {
         const k = Math.min(1, dt * 3.0); s.x -= (dx - nx * dEbene) * k; s.z -= (dz - nz * dEbene) * k; s.y += (r.y - s.y) * k; s.zielY += (r.y - s.zielY) * k;
       }
     }
     for (const r of RINGE) {
       const nx = Math.sin(r.gier), nz = Math.cos(r.gier), dx = s.x - r.x, dz = s.z - r.z, dy = s.y - r.y;
       const d = dx * nx + dz * nz, seite = Math.sign(d), quer = Math.hypot(dx - nx * d, dz - nz * d, dy);
-      if (r.seite !== 0 && seite !== 0 && seite !== r.seite && Math.abs(d) < 40 && quer < RING_RADIUS + 4 && (s.modus === 'drift' ? r.gruen <= 0 : r === naechsterRing)) {
+      if (r.seite !== 0 && seite !== 0 && seite !== r.seite && Math.abs(d) < 40 && quer < RING_RADIUS + 6 && (s.modus === 'drift' ? r.gruen <= 0 : r === naechsterRing)) {
         r.gruen = s.modus === 'drift' ? 3 : 1.2; s.punkte += 300; s.ringe++; s.ringIndex++; s.schub = Math.max(s.schub, 1.0); s.schubMax = Math.max(s.schubMax, 1.0);
         const gesamt = RING_ZAHL * (s.modus === 'rennen' ? RUNDEN_RENNEN : 1);
         melden(s.modus === 'drift' ? 'Ring +300' : `Ring ${Math.min(s.ringIndex, gesamt)} von ${gesamt}`); klang(660, 1320, 0.3); brumm(25);
@@ -902,5 +942,21 @@ button:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
   window.__proto = { s, RINGE, abst, PYLONEN, neustart, zumMenue, GEGNER, einst };
   zumMenue();
   requestAnimationFrame(bild);
+})();
+</script>
+
+<script>
+// Bildschirm wach halten, solange geflogen wird (nicht im Startbild).
+(function () {
+  let sperre = null;
+  async function pruefen() {
+    const fliegt = !document.body.classList.contains('menue') && document.visibilityState === 'visible';
+    try {
+      if (fliegt && !sperre && navigator.wakeLock) { sperre = await navigator.wakeLock.request('screen'); sperre.addEventListener('release', () => { sperre = null; }); }
+      else if (!fliegt && sperre) { await sperre.release(); sperre = null; }
+    } catch (e) { sperre = null; }
+  }
+  new MutationObserver(pruefen).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  document.addEventListener('visibilitychange', pruefen);
 })();
 </script>

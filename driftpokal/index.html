@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f1320">
+<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/driftpokal-192.png">
+<link rel="apple-touch-icon" href="../bilder/symbole/driftpokal-192.png">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="description" content="Driftpokal: Kart-Rennspiel mit Cup, Items und Drift-Turbo. Läuft offline in einer Datei.">
@@ -89,6 +92,7 @@ button:focus-visible{ outline:3px solid var(--signal); outline-offset:2px; }
 .btn.primary:active{ box-shadow:inset 0 2px 0 rgba(255,255,255,0.55), 0 1px 0 #9a5a00; }
 .row-actions{ display:flex; gap:10px; flex-wrap:wrap; }
 .row-actions .btn{ flex:1 1 150px; align-items:center; text-align:center; }
+a.btn{ text-decoration:none; color:inherit; justify-content:center; }
 
 .label{ font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:var(--dim); }
 
@@ -494,6 +498,7 @@ body.pad :focus{ outline:3px solid #ffd23f !important; outline-offset:3px; box-s
       <div class="row-actions">
         <button class="btn" id="btnSettings" aria-expanded="false">Einstellungen</button>
         <button class="btn" id="btnFullscreen">Vollbild</button>
+        <a class="btn ng-zurueck" href="../">Alle Spiele</a>
       </div>
       <div class="settings" id="settingsBox" hidden></div>
       <p class="portrait-note" id="portraitNote" hidden>Im Querformat siehst du mehr von der Strecke.</p>
@@ -12756,6 +12761,8 @@ class AppUI {
     // In der Android-App läuft das Spiel schon im Vollbild; der Knopf hätte dort keine Wirkung
     const cap = this.win.Capacitor;
     if (cap && typeof cap.isNativePlatform === "function" && cap.isNativePlatform()) this.el.btnFullscreen.hidden = true;
+    // Im Browser gibt es kein WLAN-Rennen: Knopf nur in der Android-App zeigen (Spec S-W01)
+    else this.el.btnLan.hidden = true;
     await this.app.init(Date.now());
     // Vorführ- und Testmodus: #autopilot lässt auch das eigene Kart von der KI fahren
     if (this.win.location && /autopilot/.test(this.win.location.hash || "")) this.app.setAutopilot(true);
