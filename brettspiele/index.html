@@ -586,6 +586,50 @@
   #mastore-a { grid-column: 8; }
   #mastore-b { grid-column: 1; }
 
+  /* --- S-W02: Kopfzeile, Knöpfe, Stufen, Spielgefühl --- */
+  .kopfzeile { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 420px; margin-bottom: 12px; }
+  .kopfzeile .ng-zurueck { margin: 0; }
+  .ton-schalter { min-width: 40px; min-height: 36px; border: none; border-radius: 999px; background: var(--segment-bg); font-size: 1rem; cursor: pointer; }
+  .ton-schalter[aria-pressed="false"] { opacity: 0.55; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols) { flex-wrap: wrap; justify-content: center; }
+  button.action.klein { padding: 10px 16px; font-size: 0.9rem; }
+  .stufen { display: none; margin-top: 10px; background: var(--segment-bg); padding: 3px; border-radius: 10px; font-size: 0.8rem; }
+  .stufen.active { display: flex; }
+  .stufen label { display: flex; align-items: center; justify-content: center; padding: 5px 14px; border-radius: 8px; cursor: pointer;
+    font-weight: 500; color: var(--ios-secondary-label); transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease; }
+  .stufen input { position: absolute; opacity: 0; pointer-events: none; }
+  .stufen label:has(input:checked), .stufen label.active { background: var(--surface); color: var(--ios-label); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+
+  @keyframes ploppen { from { transform: scale(0.35); opacity: 0.2; } to { transform: scale(1); opacity: 1; } }
+  @keyframes ploppenMitte { from { transform: translate(-50%, -50%) scale(0.35); } to { transform: translate(-50%, -50%) scale(1); } }
+  @keyframes fallen {
+    0% { transform: translateY(calc(var(--fall) * -1 * (var(--c4-slot) + 4px))); }
+    72% { transform: translateY(0); }
+    86% { transform: translateY(-7px); }
+    100% { transform: translateY(0); }
+  }
+  @keyframes drehen { 0% { transform: rotateY(0); } 50% { transform: rotateY(90deg) scale(1.08); } 100% { transform: rotateY(0); } }
+  @keyframes pulsieren { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
+  @keyframes gleiten { from { transform: translate(calc(var(--dx) * var(--ch-square)), calc(var(--dy) * var(--ch-square))); } to { transform: none; } }
+  @keyframes siegpuls { from { filter: brightness(1); } to { filter: brightness(1.3) drop-shadow(0 0 8px #34c759); } }
+  @keyframes tippen { from { box-shadow: 0 0 0 0 rgba(255,159,10,0.95); } to { box-shadow: 0 0 0 10px rgba(255,159,10,0); } }
+
+  .cell.neu { animation: ploppen 0.28s cubic-bezier(.3,1.6,.5,1); }
+  .c4-slot.neu { animation: fallen calc(0.14s + var(--fall) * 0.05s) cubic-bezier(.55,0,.8,.6) both; }
+  .ot-cell.neu .ot-disc { animation: ploppen 0.28s cubic-bezier(.3,1.6,.5,1); }
+  .ot-cell.dreht .ot-disc { animation: drehen 0.45s ease-in-out; }
+  .mu-point.neu { animation: ploppenMitte 0.28s cubic-bezier(.3,1.6,.5,1); }
+  .ma-pit.neu, .ma-store.neu { animation: pulsieren 0.35s ease-out; }
+  .ch-piece.gleitet { position: relative; z-index: 5; animation: gleiten 0.24s ease-out; }
+  .ch-square.zuletzt { background-image: linear-gradient(rgba(255,214,10,0.38), rgba(255,214,10,0.38)); }
+  .cell.win, .c4-slot.win { animation: siegpuls 0.8s ease-in-out infinite alternate; }
+  .tipp { outline: 3px solid #ff9f0a; outline-offset: -3px; animation: tippen 0.8s ease-out infinite; }
+  .mu-point.tipp { outline-offset: 2px; }
+  canvas.konfetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 50; }
+  @media (prefers-reduced-motion: reduce) {
+    .neu, .neu .ot-disc, .dreht .ot-disc, .gleitet, .win, .tipp { animation: none !important; }
+  }
+
   /* Zurück zur Spieleseite */
   .ng-zurueck { align-self: flex-start; display: inline-flex; align-items: center; min-height: 36px; margin: 0 0 12px; padding: 0 14px;
     border-radius: 999px; background: var(--segment-bg); color: var(--ios-label); font-size: 0.85rem; font-weight: 600; text-decoration: none; }
@@ -599,7 +643,10 @@
 </head>
 <body>
 
-<a class="ng-zurueck" href="../">← Alle Spiele</a>
+<div class="kopfzeile">
+  <a class="ng-zurueck" href="../">← Alle Spiele</a>
+  <button class="ton-schalter" type="button" aria-label="Ton an oder aus" aria-pressed="true">🔊</button>
+</div>
 
 <div id="tabs">
   <button class="tabBtn active" data-tab="tictactoe">Tic Tac Toe</button>
@@ -1045,13 +1092,68 @@ class GameControl {
     this.vsAI = false;
     this.aiPlayer = aiPlayer;
     this.aiStrategy = aiStrategy; // injizierte KI (AIStrategy) oder null
+    this._verlauf = [];           // Zustände vor jeder Aktion, für "Zug zurück" (S-W02)
+    this._zufall = () => 1;       // wird von außen hineingereicht (setZufall); 1 = nie ein Fehlerzug
+    this.fehlerquote = 0;
   }
 
   setMode(vsAI) { this.vsAI = vsAI; this.restartGame(); }
   restartGame() {
     this.boundary.restart();
     this.boundary.clearSavedGame(); // Neustart verwirft die gespeicherte Partie
+    this._verlauf = [];
   }
+
+  /* --- Stufen (S-W02, B2): Tabelle je Spiel in static STUFEN,
+     { leicht|mittel|stark: { tiefe, fehler } }. Mit der Wahrscheinlichkeit
+     "fehler" spielt die KI einen zufälligen gültigen Zug. Der Zufall wird
+     hineingereicht, damit Tests ihn festlegen können. --- */
+  setDifficulty(key) {
+    const tab = this.constructor.STUFEN;
+    if (!tab) return;
+    this.difficulty = tab[key] ? key : 'mittel';
+    const s = tab[this.difficulty];
+    if (s.tiefe !== undefined) this.searchDepth = s.tiefe;
+    this.fehlerquote = s.fehler;
+  }
+  getDifficulty() { return this.difficulty; }
+  setZufall(fn) { this._zufall = fn; }
+  _entscheideFehler() { return this._zufall() < this.fehlerquote; }
+  _zufallsZug(zuege) {
+    if (!zuege.length) return null;
+    return zuege[Math.min(zuege.length - 1, Math.floor(this._zufall() * zuege.length))];
+  }
+
+  /* --- Zug zurück (S-W02, B3) --- */
+  _merke() {
+    this._verlauf.push({
+      zustand: JSON.parse(JSON.stringify(this.boundary.getEntitySnapshot())),
+      spieler: this.boundary.getCurrentPlayer()
+    });
+  }
+  canUndo() {
+    if (this.boundary.isGameOver() || this.isAiTurn()) return false;
+    return this.vsAI ? this._verlauf.some(v => v.spieler !== this.aiPlayer) : this._verlauf.length > 0;
+  }
+  // Ohne KI eine Aktion zurück, gegen die KI bis wieder der Mensch am Zug ist.
+  undoMove() {
+    if (!this.canUndo()) return { invalid: true };
+    let v;
+    do { v = this._verlauf.pop(); } while (this.vsAI && v.spieler === this.aiPlayer);
+    this.boundary.restoreEntity(v.zustand);
+    this._nachZurueck();
+    this._persistGame();
+    return { invalid: false };
+  }
+  _nachZurueck() { }
+
+  /* --- Tipp (S-W02, B3): bester Zug für den Spieler am Zug --- */
+  async computeHint() {
+    if (this.boundary.isGameOver() || this.isAiTurn()) return null;
+    const zug = await this._tippFuer(this.boundary.getCurrentPlayer());
+    return zug === undefined ? null : zug;
+  }
+  _tippFuer() { return null; }
   getBoardState() { return this.boundary.getBoardState(); }
   isGameOver() { return this.boundary.isGameOver(); }
   getCurrentPlayer() { return this.boundary.getCurrentPlayer(); }
@@ -1071,6 +1173,7 @@ class GameControl {
   // aufbewahrt (kein Restore in einen Endzustand).
   _executeMove(canFn, doFn) {
     if (!canFn()) return { invalid: true };
+    this._merke();
     const result = doFn();
     if (result) {
       this.boundary.recordResult(result.winner);
@@ -1091,6 +1194,7 @@ class GameControl {
     const data = await this.boundary.loadGame();
     if (!data || !data.entity) return false;
     this.boundary.restoreEntity(data.entity);
+    this._verlauf = [];
     this.vsAI = !!data.vsAI;
     return true;
   }
@@ -1119,6 +1223,120 @@ class GameUI {
       input.addEventListener('change', (e) => this.handleModeChange(e.target.value === 'ai'));
     });
     this.resetStatsBtn.addEventListener('click', () => this.handleResetStats());
+    this._baueZusatzknoepfe();
+    // Nach jedem render() die Knöpfe Zug zurück und Tipp nachführen.
+    const render = this.render.bind(this);
+    this.render = (...a) => { const x = render(...a); this._knoepfeAktualisieren(); return x; };
+  }
+
+  /* --- S-W02: Zug zurück, Tipp, Stufenwahl, Spielgefühl --- */
+  _baueZusatzknoepfe() {
+    this.viewEl = this.resetBtn.closest('.tab-content');
+    this.spiel = this.viewEl.id.replace('-view', '');
+    const leiste = this.resetBtn.parentElement;
+    const knopf = (cls, text) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'action secondary klein ' + cls; b.textContent = text;
+      leiste.appendChild(b); return b;
+    };
+    if (!leiste.querySelector('#chundoBtn')) {
+      this.undoBtn = knopf('zurueck', 'Zug zurück');
+      this.undoBtn.addEventListener('click', () => this.handleUndo());
+    }
+    this.tippBtn = knopf('tipp-knopf', 'Tipp');
+    this.tippBtn.addEventListener('click', () => this.handleTipp());
+    // Stufenwahl: Schach hat sie schon (#chdiff), die anderen bekommen sie hier.
+    this.stufenEl = this.viewEl.querySelector('#chdiff');
+    if (!this.stufenEl) {
+      this.stufenEl = document.createElement('div');
+      this.stufenEl.className = 'stufen';
+      for (const [wert, text] of [['leicht', 'Leicht'], ['mittel', 'Mittel'], ['stark', 'Stark']]) {
+        const l = document.createElement('label');
+        l.innerHTML = `<input type="radio" name="${this.spiel}-stufe" value="${wert}"><span>${text}</span>`;
+        l.querySelector('input').addEventListener('change', () => this.handleStufe(wert));
+        this.stufenEl.appendChild(l);
+      }
+      this.modeInputs[0].closest('div').after(this.stufenEl);
+    }
+    const stufe = GameUI.einst ? GameUI.einst.stufe(this.spiel) : 'mittel';
+    this.control.setDifficulty(stufe);
+    this._zeigeStufe(this.control.getDifficulty());
+  }
+
+  _zeigeStufe(stufe) {
+    this.stufenEl.querySelectorAll('input').forEach(i => {
+      i.checked = i.value === stufe;
+      i.closest('label').classList.toggle('active', i.checked);
+    });
+  }
+
+  handleStufe(stufe) {
+    this.control.setDifficulty(stufe);
+    if (GameUI.einst) GameUI.einst.setzeStufe(this.spiel, this.control.getDifficulty());
+    this._zeigeStufe(this.control.getDifficulty());
+  }
+
+  _knoepfeAktualisieren() {
+    const aus = this.control.isGameOver() || this.control.isAiTurn();
+    if (this.undoBtn) this.undoBtn.disabled = aus || !this.control.canUndo();
+    if (this.tippBtn) this.tippBtn.disabled = aus;
+    if (this.stufenEl) this.stufenEl.classList.toggle('active', this.control.vsAI);
+  }
+
+  handleUndo() {
+    if (this.control.isAiTurn()) return;
+    const outcome = this.control.undoMove();
+    if (outcome.invalid) return;
+    this.render();
+  }
+
+  async handleTipp() {
+    if (this._tippLaeuft) return;
+    this._tippLaeuft = true;
+    try {
+      const zug = await this.control.computeHint();
+      if (zug === null || zug === undefined) return;
+      this._zeigeTipp(this._tippFelder(zug));
+    } finally {
+      this._tippLaeuft = false;
+    }
+  }
+
+  _zeigeTipp(felder) {
+    clearTimeout(this._tippTimer);
+    const el = this._feldElemente();
+    [...el].forEach(e => e.classList.remove('tipp'));
+    felder.forEach(i => el[i] && el[i].classList.add('tipp'));
+    this._tippTimer = setTimeout(() => [...this._feldElemente()].forEach(e => e.classList.remove('tipp')), 1600);
+  }
+  _feldElemente() { return this.boardEl.children; }
+  _tippFelder(zug) { return [zug]; }
+
+  // Liefert die seit dem letzten Bild geänderten Felder (nur bei einem Zug, nicht bei Neustart oder Zug zurück).
+  _aenderungen(brett) {
+    const alt = this._basis;
+    this._basis = brett.slice();
+    const geaendert = !!alt && alt.some((v, i) => v !== brett[i]);
+    const neu = new Set();
+    if (this._animieren && alt) brett.forEach((v, i) => { if (v !== alt[i]) neu.add(i); });
+    return { neu, alt: alt || brett, geaendert };
+  }
+
+  _menschGewinnt(result) {
+    if (!result || result.winner === 'Draw') return false;
+    return !this.control.vsAI || result.winner !== this.control.aiPlayer;
+  }
+
+  _rueckmeldung(result, bewegt) {
+    if (!GameUI.einst || !GameUI.einst.istTonAn()) return;
+    const vib = (m) => { try { if (navigator.vibrate) navigator.vibrate(m); } catch (e) { } };
+    if (result) {
+      if (result.winner === 'Draw') { GameUI.klang.spiele('remis'); vib([20, 40, 20]); }
+      else if (this._menschGewinnt(result)) { GameUI.klang.spiele('sieg'); vib([30, 50, 30, 50, 60]); }
+      else { GameUI.klang.spiele('verlust'); vib([80]); }
+    } else if (bewegt) {
+      GameUI.klang.spiele('zug'); vib(12);
+    }
   }
 
   init() {
@@ -1173,12 +1391,20 @@ class GameUI {
   }
 
   afterMove(result) {
-    if (result) {
-      this.renderGameOver(result);
-      this.renderStats();
-      return;
+    const bewegt = !this._basis || JSON.stringify(this.control.getBoardState()) !== JSON.stringify(this._basis);
+    this._rueckmeldung(result, bewegt);
+    this._animieren = true;
+    try {
+      if (result) {
+        this.renderGameOver(result);
+        this.renderStats();
+        if (this._menschGewinnt(result)) konfetti();
+        return;
+      }
+      this.render();
+    } finally {
+      this._animieren = false;
     }
-    this.render();
     if (this.control.isAiTurn()) {
       setTimeout(() => this.runAiTurn(), this.aiDelayMs);
     }
@@ -1222,14 +1448,15 @@ const AIEngines = {
       return b.every(x => x !== null) ? 'Draw' : null;
     };
     const other = p => (p === 'X' ? 'O' : 'X');
-    const minimax = (b, player) => {
+    // Tiefe im Wert: schneller Sieg zählt mehr, späte Niederlage weniger (S-W02, Tipp zeigt den direkten Sieg).
+    const minimax = (b, player, tiefe = 0) => {
       const w = evaluate(b);
-      if (w) return { score: w === aiPlayer ? 10 : w === 'Draw' ? 0 : -10 };
+      if (w) return { score: w === aiPlayer ? 10 - tiefe : w === 'Draw' ? 0 : tiefe - 10 };
       let best = null;
       for (let i = 0; i < 9; i++) {
         if (b[i] !== null) continue;
         b[i] = player;
-        const s = minimax(b, other(player)).score;
+        const s = minimax(b, other(player), tiefe + 1).score;
         b[i] = null;
         if (!best || (player === aiPlayer ? s > best.score : s < best.score)) {
           best = { index: i, score: s };
@@ -1698,8 +1925,27 @@ class TicTacToeBoundary extends GameBoundary {
    mit der Entity und kennt kein DOM.
    ============================================================ */
 class TicTacToeControl extends GameControl {
+  static STUFEN = {
+    leicht: { fehler: 0.45 },
+    mittel: { fehler: 0.15 },
+    stark:  { fehler: 0 }
+  };
+
   constructor(boundary, aiStrategy) {
     super(boundary, 'O', aiStrategy);
+    this.setDifficulty('mittel');
+  }
+
+  _gueltigeZuege() {
+    return this.boundary.getBoardState().map((v, i) => (v === null ? i : -1)).filter(i => i >= 0);
+  }
+  _tippFuer(spieler) {
+    return this.aiStrategy.chooseMove('tictactoe', [this.boundary.getBoardState(), spieler]);
+  }
+  // Synchrone KI-Entscheidung (mit Fehlerquote), für Testläufe vieler Partien.
+  _engineZugSync() {
+    if (this._entscheideFehler()) return this._zufallsZug(this._gueltigeZuege());
+    return AIEngines.tictactoe(this.boundary.getBoardState(), this.aiPlayer);
   }
 
   playerMove(index) {
@@ -1711,7 +1957,8 @@ class TicTacToeControl extends GameControl {
 
   // Delegiert an die injizierte KI-Strategie (asynchron, läuft
   // je nach Verfügbarkeit im Web Worker).
-  computeAiMove() {
+  async computeAiMove() {
+    if (this._entscheideFehler()) return this._zufallsZug(this._gueltigeZuege());
     return this.aiStrategy.chooseMove('tictactoe', [this.boundary.getBoardState(), this.aiPlayer]);
   }
 }
@@ -1813,9 +2060,23 @@ class Connect4Boundary extends GameBoundary {
 /* --- CONTROL: Ablauf, Alpha-Beta-KI (tiefenbegrenzt,
      da Vier-gewinnt-Minimax ohne Begrenzung zu teuer wäre) --- */
 class Connect4Control extends GameControl {
+  static STUFEN = {
+    leicht: { tiefe: 2, fehler: 0.25 },
+    mittel: { tiefe: 4, fehler: 0.05 },
+    stark:  { tiefe: 6, fehler: 0 }
+  };
+
   constructor(boundary, aiStrategy) {
     super(boundary, 'Y', aiStrategy);
-    this.searchDepth = 5;
+    this.setDifficulty('mittel');
+  }
+
+  _gueltigeZuege() {
+    const b = this.boundary.getBoardState();
+    return [0, 1, 2, 3, 4, 5, 6].filter(k => b[k] === null);
+  }
+  _tippFuer(spieler) {
+    return this.aiStrategy.chooseMove('connect4', [this.boundary.getBoardState(), spieler, Connect4Control.STUFEN.stark.tiefe]);
   }
 
   playerMove(col) {
@@ -1825,7 +2086,8 @@ class Connect4Control extends GameControl {
     );
   }
 
-  computeAiMove() {
+  async computeAiMove() {
+    if (this._entscheideFehler()) return this._zufallsZug(this._gueltigeZuege());
     return this.aiStrategy.chooseMove('connect4', [this.boundary.getBoardState(), this.aiPlayer, this.searchDepth]);
   }
 }
@@ -1956,9 +2218,19 @@ class OthelloBoundary extends GameBoundary {
 
 /* --- CONTROL: Ablauf, Minimax mit Eckenheuristik --- */
 class OthelloControl extends GameControl {
+  static STUFEN = {
+    leicht: { tiefe: 1, fehler: 0.3 },
+    mittel: { tiefe: 3, fehler: 0.05 },
+    stark:  { tiefe: 4, fehler: 0 }
+  };
+
   constructor(boundary, aiStrategy) {
     super(boundary, 'W', aiStrategy);
-    this.searchDepth = 3;
+    this.setDifficulty('mittel');
+  }
+
+  _tippFuer(spieler) {
+    return this.aiStrategy.chooseMove('othello', [this.boundary.getBoardState(), spieler, OthelloControl.STUFEN.stark.tiefe]);
   }
 
   wasLastMovePass() { return this.boundary.wasLastMovePass(); }
@@ -1976,7 +2248,8 @@ class OthelloControl extends GameControl {
   // wird bereits vollständig in der Entity aufgelöst, daher genügt
   // die geerbte isAiTurn()-Prüfung über den currentPlayer.
 
-  computeAiMove() {
+  async computeAiMove() {
+    if (this._entscheideFehler()) return this._zufallsZug(this.getValidMoves(this.aiPlayer));
     return this.aiStrategy.chooseMove('othello', [this.boundary.getBoardState(), this.aiPlayer, this.searchDepth]);
   }
 }
@@ -2115,9 +2388,19 @@ class MangalaBoundary extends GameBoundary {
      bei Reversis Passzwang) die KI von selbst noch einmal ziehen
      lässt. Menschliche Spieler sehen schlicht "wieder am Zug". --- */
 class MangalaControl extends GameControl {
+  static STUFEN = {
+    leicht: { tiefe: 2, fehler: 0.25 },
+    mittel: { tiefe: 5, fehler: 0.05 },
+    stark:  { tiefe: 8, fehler: 0 }
+  };
+
   constructor(boundary, aiStrategy) {
     super(boundary, 'B', aiStrategy);
-    this.searchDepth = 8;
+    this.setDifficulty('mittel');
+  }
+
+  _tippFuer(spieler) {
+    return this.aiStrategy.chooseMove('mangala', [this.boundary.getBoardState(), spieler, MangalaControl.STUFEN.stark.tiefe]);
   }
 
   getValidMoves(player = this.getCurrentPlayer()) { return this.boundary.getValidMoves(player); }
@@ -2130,7 +2413,8 @@ class MangalaControl extends GameControl {
     );
   }
 
-  computeAiMove() {
+  async computeAiMove() {
+    if (this._entscheideFehler()) return this._zufallsZug(this.getValidMoves(this.aiPlayer));
     return this.aiStrategy.chooseMove('mangala', [this.boundary.getBoardState(), this.aiPlayer, this.searchDepth]);
   }
 }
@@ -2452,9 +2736,26 @@ class MuehleBoundary extends GameBoundary {
    Bonus für eine gebildete Mühle) — spielt solide, aber nicht
    perfekt. */
 class MuehleControl extends GameControl {
+  static STUFEN = {
+    leicht: { fehler: 0.4 },
+    mittel: { fehler: 0.15 },
+    stark:  { fehler: 0 }
+  };
+
   constructor(boundary) {
     super(boundary, 'W');
     this.selected = null;
+    this.setDifficulty('mittel');
+  }
+
+  _nachZurueck() { this.selected = null; }
+
+  // Tipp: dieselbe 1-Zug-Bewertung wie die KI, aber für den Spieler am Zug.
+  _tippFuer(spieler) {
+    if (this.boundary.isPendingRemoval()) return { entfernen: this._chooseBestRemoval(spieler) };
+    if (this.boundary.getPhase() === 'placing') return { setzen: this._chooseBestPlacement(spieler) };
+    const paar = this._chooseBestMove(spieler);
+    return paar ? { von: paar[0], nach: paar[1] } : null;
   }
 
   // Überschreibt die Basisklasse: zusätzlich Auswahl zurücksetzen.
@@ -2512,6 +2813,7 @@ class MuehleControl extends GameControl {
     if (!this.boundary.canMoveTo(this.selected, index)) return { invalid: true };
     const from = this.selected;
     this.selected = null;
+    this._merke();
     const result = this.boundary.move(from, index);
     if (result) {
       this.boundary.recordResult(result.winner);
@@ -2527,12 +2829,16 @@ class MuehleControl extends GameControl {
   // durch eine Mühle direkt im Anschluss noch entfernen darf.
   performAiAction() {
     let result = null;
+    const fehler = this._entscheideFehler();
+    this._merke();
     if (this.boundary.isPendingRemoval()) {
-      result = this.boundary.removePiece(this._chooseBestRemoval());
+      const i = fehler ? this._zufallsZug(this.boundary.getRemovableIndices()) : this._chooseBestRemoval();
+      result = this.boundary.removePiece(i);
     } else if (this.boundary.getPhase() === 'placing') {
-      result = this.boundary.place(this._chooseBestPlacement());
+      const i = fehler ? this._zufallsZug(this.boundary.getValidPlacements()) : this._chooseBestPlacement();
+      result = this.boundary.place(i);
     } else {
-      const [from, to] = this._chooseBestMove();
+      const [from, to] = fehler ? this._zufallsZug(this.boundary.getValidMovePairs(this.aiPlayer)) : this._chooseBestMove();
       result = this.boundary.move(from, to);
     }
     if (result) {
@@ -2544,49 +2850,49 @@ class MuehleControl extends GameControl {
     return result;
   }
 
-  _scoreSnapshot(snap) {
-    const opponent = this.aiPlayer === 'B' ? 'W' : 'B';
+  _scoreSnapshot(snap, spieler = this.aiPlayer) {
+    const opponent = spieler === 'B' ? 'W' : 'B';
     if (snap.finished) {
-      if (snap.winner === this.aiPlayer) return 100000;
+      if (snap.winner === spieler) return 100000;
       if (snap.winner === opponent) return -100000;
     }
-    let score = (snap.piecesOnBoard[this.aiPlayer] || 0) - (snap.piecesOnBoard[opponent] || 0);
+    let score = (snap.piecesOnBoard[spieler] || 0) - (snap.piecesOnBoard[opponent] || 0);
     if (snap.pendingRemoval) score += 5; // KI hat gerade eine Mühle gebildet
     return score;
   }
 
-  _chooseBestPlacement() {
+  _chooseBestPlacement(spieler = this.aiPlayer) {
     const options = this.boundary.getValidPlacements();
     let best = options[0], bestScore = -Infinity;
     for (const idx of options) {
       const snap = this.boundary.simulatePlace(idx);
       if (!snap) continue;
-      const score = this._scoreSnapshot(snap);
+      const score = this._scoreSnapshot(snap, spieler);
       if (score > bestScore) { bestScore = score; best = idx; }
     }
     return best;
   }
 
-  _chooseBestMove() {
-    const pairs = this.boundary.getValidMovePairs(this.aiPlayer);
+  _chooseBestMove(spieler = this.aiPlayer) {
+    const pairs = this.boundary.getValidMovePairs(spieler);
     let best = pairs[0], bestScore = -Infinity;
     for (const pair of pairs) {
       const snap = this.boundary.simulateMove(pair[0], pair[1]);
       if (!snap) continue;
-      const score = this._scoreSnapshot(snap);
+      const score = this._scoreSnapshot(snap, spieler);
       if (score > bestScore) { bestScore = score; best = pair; }
     }
     return best;
   }
 
-  _chooseBestRemoval() {
+  _chooseBestRemoval(spieler = this.aiPlayer) {
     const options = this.boundary.getRemovableIndices();
     let best = options[0], bestScore = -Infinity;
     for (const idx of options) {
       const snap = this.boundary.simulateRemove(idx);
       if (!snap) continue;
       // leichte Präferenz, gut vernetzte gegnerische Steine zu entfernen
-      const score = this._scoreSnapshot(snap) + MuehleEntity.ADJACENCY[idx].length * 0.1;
+      const score = this._scoreSnapshot(snap, spieler) + MuehleEntity.ADJACENCY[idx].length * 0.1;
       if (score > bestScore) { bestScore = score; best = idx; }
     }
     return best;
@@ -2789,7 +3095,21 @@ class ChessControl extends GameControl {
 
   getDifficulty() { return this.difficulty; }
 
-  canUndo() { return this.boundary.canUndo(); }
+  canUndo() { return this.boundary.canUndo() && !this.boundary.isGameOver() && !this.isAiTurn(); }
+
+  // Tipp: Stockfish mit voller Stärke für den Spieler am Zug, sonst Ersatzsuche Tiefe 3.
+  async computeHint() {
+    if (this.boundary.isGameOver() || this.isAiTurn() || this.pendingPromotion) return null;
+    const spieler = this.boundary.getCurrentPlayer();
+    if (this.stockfish && await this.stockfish.isReady()) {
+      const vorher = this.stockfish.skillLevel;
+      this.stockfish.setSkillLevel(20);
+      const uci = await this.stockfish.getBestMove(this.boundary.getFEN(), 600);
+      this.stockfish.setSkillLevel(vorher);
+      if (uci) return { from: uci.slice(0, 2), to: uci.slice(2, 4) };
+    }
+    return this.boundary.computeBestMove(spieler, 3) || null;
+  }
 
   // Zugrücknahme: im KI-Modus 2 Halbzüge (eigener Zug + KI-Antwort),
   // sonst 1. Bricht eine offene Bauernumwandlungs-Auswahl ab.
@@ -2934,12 +3254,14 @@ class TicTacToeUI extends GameUI {
 
   render(winLine = null) {
     const board = this.control.getBoardState();
+    const { neu } = this._aenderungen(board);
     this.boardEl.innerHTML = '';
 
     board.forEach((val, i) => {
       const btn = document.createElement('button');
       btn.className = 'cell' + (val ? ' ' + val.toLowerCase() : '');
       btn.textContent = val || '';
+      if (val && neu.has(i)) btn.classList.add('neu');
       if (winLine && winLine.includes(i)) btn.classList.add('win');
       btn.addEventListener('click', () => this.handleCellClick(i));
       this.boardEl.appendChild(btn);
@@ -2990,11 +3312,13 @@ class Connect4UI extends GameUI {
 
   render(winLine = null) {
     const board = this.control.getBoardState();
+    const { neu } = this._aenderungen(board);
     this.boardEl.innerHTML = '';
 
     board.forEach((val, i) => {
       const slot = document.createElement('button');
       slot.className = 'c4-slot' + (val ? ' ' + val.toLowerCase() : '');
+      if (val && neu.has(i)) { slot.classList.add('neu'); slot.style.setProperty('--fall', String(Math.floor(i / 7) + 1)); }
       if (winLine && winLine.includes(i)) slot.classList.add('win');
       const col = i % 7;
       slot.addEventListener('click', () => this.handleColumnClick(col));
@@ -3012,6 +3336,13 @@ class Connect4UI extends GameUI {
     this.statusEl.textContent = result.winner === 'Draw'
       ? 'Unentschieden!'
       : `Spieler ${result.winner === 'R' ? 'Rot' : 'Gelb'} gewinnt! 🎉`;
+  }
+
+  // Tipp markiert das Feld, in dem der Stein landen würde.
+  _tippFelder(col) {
+    const b = this.control.getBoardState();
+    for (let r = 5; r >= 0; r--) if (b[r * 7 + col] === null) return [r * 7 + col];
+    return [];
   }
 
   handleColumnClick(col) {
@@ -3052,10 +3383,12 @@ class OthelloUI extends GameUI {
       ? new Set(this.control.getValidMoves(currentPlayer).map(([r, c]) => r * 8 + c))
       : new Set();
 
+    const { neu, alt } = this._aenderungen(board);
     this.boardEl.innerHTML = '';
     board.forEach((val, i) => {
       const cell = document.createElement('button');
       cell.className = 'ot-cell' + (val ? ' ' + val.toLowerCase() : '') + (validSet.has(i) ? ' valid' : '');
+      if (val && neu.has(i)) cell.classList.add(alt[i] ? 'dreht' : 'neu');
       const disc = document.createElement('span');
       disc.className = 'ot-disc';
       cell.appendChild(disc);
@@ -3079,6 +3412,8 @@ class OthelloUI extends GameUI {
       ? `Unentschieden! (${counts.B}:${counts.W})`
       : `${result.winner === 'B' ? 'Schwarz' : 'Weiß'} gewinnt! (${counts.B}:${counts.W}) 🎉`;
   }
+
+  _tippFelder([row, col]) { return [row * 8 + col]; }
 
   handleCellClick(row, col) {
     if (this.control.isAiTurn()) return;
@@ -3156,11 +3491,13 @@ class MuehleUI extends GameUI {
       ? new Set(this.control.getValidDestinations())
       : new Set();
 
+    const { neu } = this._aenderungen(board);
     this.pointsEl.innerHTML = '';
     board.forEach((val, i) => {
       const [x, y] = MuehleEntity.POSITIONS[i];
       const btn = document.createElement('button');
       let cls = 'mu-point' + (val ? ' ' + val.toLowerCase() : '');
+      if (val && neu.has(i)) cls += ' neu';
       if (i === selected) cls += ' selected';
       if (validDestSet.has(i)) cls += ' valid-dest';
       if (showHints && phase === 'placing' && val === null) cls += ' valid-dest';
@@ -3191,6 +3528,13 @@ class MuehleUI extends GameUI {
     if (phase === 'placing') return `${name} ist dran – noch ${this.control.getPiecesToPlace(player)} Steine zu setzen`;
     if (this.control.isFlyingPhase(player)) return `${name} ist dran (Fliegen: freie Zugwahl, nur noch 3 Steine)`;
     return `${name} ist dran – Stein wählen und ziehen`;
+  }
+
+  _feldElemente() { return this.pointsEl.children; }
+  _tippFelder(zug) {
+    if (zug.setzen !== undefined) return [zug.setzen];
+    if (zug.entfernen !== undefined) return [zug.entfernen];
+    return [zug.von, zug.nach];
   }
 
   handlePointClick(index) {
@@ -3256,11 +3600,27 @@ class ChessUI extends GameUI {
       checkedKingIndex = board.findIndex(v => v === player + 'k');
     }
 
+    // Gleiten: Zielfeld mit neuer Figur, Startfeld ist leer geworden und hatte dieselbe Figur.
+    const { neu, alt, geaendert } = this._aenderungen(board);
+    const gleiten = new Map();
+    if (neu.size) {
+      this._zuletzt = null;
+      for (const ziel of neu) {
+        if (!board[ziel]) continue;
+        const start = [...neu].find(j => !board[j] && alt[j] === board[ziel]);
+        if (start === undefined) continue;
+        gleiten.set(ziel, { dx: (start % 8) - (ziel % 8), dy: Math.floor(start / 8) - Math.floor(ziel / 8) });
+        if (!this._zuletzt || board[ziel][1] === 'k') this._zuletzt = [start, ziel];
+      }
+    } else if (geaendert) {
+      this._zuletzt = null;
+    }
     this.boardEl.innerHTML = '';
     board.forEach((val, i) => {
       const row = Math.floor(i / 8), col = i % 8;
       const sq = document.createElement('button');
       let cls = 'ch-square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+      if (this._zuletzt && this._zuletzt.includes(i)) cls += ' zuletzt';
       if (i === selectedIndex) cls += ' selected';
       if (validDestSet.has(i)) cls += ' valid-dest' + (val ? ' has-piece' : '');
       if (i === checkedKingIndex) cls += ' in-check';
@@ -3269,6 +3629,13 @@ class ChessUI extends GameUI {
         const piece = document.createElement('span');
         piece.className = 'ch-piece ' + val[0];
         piece.textContent = ChessUI.SYMBOLS[val];
+        if (gleiten.has(i)) {
+          piece.classList.add('gleitet');
+          piece.style.setProperty('--dx', String(gleiten.get(i).dx));
+          piece.style.setProperty('--dy', String(gleiten.get(i).dy));
+        } else if (neu.has(i)) {
+          sq.classList.add('neu');
+        }
         sq.appendChild(piece);
       }
       sq.addEventListener('click', () => this.handleSquareClick(i));
@@ -3308,6 +3675,8 @@ class ChessUI extends GameUI {
     this.render();
   }
 
+  _tippFelder(zug) { return [ChessControl._indexFromSquare(zug.from), ChessControl._indexFromSquare(zug.to)]; }
+
   handlePromotionChoice(pieceType) {
     const outcome = this.control.choosePromotion(pieceType);
     if (outcome.invalid) return;
@@ -3333,6 +3702,7 @@ class ChessUI extends GameUI {
       input.closest('label').classList.toggle('active', input.checked);
     });
     this.control.setDifficulty(key);
+    if (GameUI.einst) GameUI.einst.setzeStufe(this.spiel, this.control.getDifficulty());
   }
 
   async performAiMove() {
@@ -3374,11 +3744,12 @@ class MangalaUI extends GameUI {
     const showHints = !gameOver && !this.control.isAiTurn();
     const validMoves = showHints ? new Set(this.control.getValidMoves(currentPlayer)) : new Set();
 
+    const { neu } = this._aenderungen(board);
     this.boardEl.innerHTML = '';
     for (let i = 0; i < 14; i++) {
       if (i === 6 || i === 13) {
         const store = document.createElement('div');
-        store.className = 'ma-store';
+        store.className = 'ma-store' + (neu.has(i) ? ' neu' : '');
         store.id = i === 6 ? 'mastore-a' : 'mastore-b';
         store.textContent = board[i];
         this.boardEl.appendChild(store);
@@ -3387,7 +3758,7 @@ class MangalaUI extends GameUI {
       const { col, row } = this._gridPosition(i);
       const pit = document.createElement('button');
       const isValid = validMoves.has(i);
-      pit.className = 'ma-pit' + (board[i] === 0 ? ' empty' : '') + (isValid ? ' valid' : '');
+      pit.className = 'ma-pit' + (board[i] === 0 ? ' empty' : '') + (isValid ? ' valid' : '') + (neu.has(i) ? ' neu' : '');
       pit.style.gridColumn = col;
       pit.style.gridRow = row;
       pit.textContent = board[i];
@@ -3423,6 +3794,107 @@ class MangalaUI extends GameUI {
     if (!this.control.isAiTurn() || move === null || move === undefined) return { invalid: true };
     return this.control.playerMove(move);
   }
+}
+
+/* ============================================================
+   EINSTELLUNGEN (S-W02): Ton und Stufen je Spiel.
+   Boundary: liest und schreibt localStorage mit Formatversion.
+   Control: Regeln (Standardwerte, erlaubte Stufen).
+   ============================================================ */
+class EinstellungenBoundary {
+  static SCHLUESSEL = 'brettspiele.einstellungen';
+  static FORMAT = 1;
+  constructor(speicher) { this._speicher = speicher; }
+  lade() {
+    try {
+      const d = JSON.parse(this._speicher.getItem(EinstellungenBoundary.SCHLUESSEL));
+      if (d && typeof d === 'object' && d.formatversion === EinstellungenBoundary.FORMAT) {
+        return { ton: d.ton !== false, stufen: (d.stufen && typeof d.stufen === 'object') ? { ...d.stufen } : {} };
+      }
+    } catch (e) { /* kaputte Daten: Standardwerte */ }
+    return { ton: true, stufen: {} };
+  }
+  speichere(e) {
+    try {
+      this._speicher.setItem(EinstellungenBoundary.SCHLUESSEL,
+        JSON.stringify({ formatversion: EinstellungenBoundary.FORMAT, ton: e.ton, stufen: e.stufen }));
+    } catch (err) { /* Speicher voll oder gesperrt: Einstellung gilt nur bis zum Neuladen */ }
+  }
+}
+
+class EinstellungenControl {
+  static STUFEN = ['leicht', 'mittel', 'stark'];
+  constructor(boundary) { this._b = boundary; this._e = boundary.lade(); }
+  istTonAn() { return this._e.ton; }
+  setzeTon(an) { this._e.ton = !!an; this._b.speichere(this._e); }
+  stufe(spiel) { const s = this._e.stufen[spiel]; return EinstellungenControl.STUFEN.includes(s) ? s : 'mittel'; }
+  setzeStufe(spiel, stufe) { this._e.stufen[spiel] = stufe; this._b.speichere(this._e); }
+}
+
+/* Klang (UI): eigene Töne per WebAudio, keine Tondateien. */
+class Klang {
+  constructor() { this._ctx = null; }
+  _kontext() {
+    if (!this._ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      this._ctx = new AC();
+    }
+    if (this._ctx.state === 'suspended') this._ctx.resume();
+    return this._ctx;
+  }
+  _ton(c, frequenz, start, dauer, lautstaerke = 0.18, form = 'triangle') {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = form; o.frequency.value = frequenz;
+    g.gain.setValueAtTime(0.0001, c.currentTime + start);
+    g.gain.exponentialRampToValueAtTime(lautstaerke, c.currentTime + start + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + start + dauer);
+    o.connect(g); g.connect(c.destination);
+    o.start(c.currentTime + start); o.stop(c.currentTime + start + dauer + 0.02);
+  }
+  spiele(name) {
+    let c;
+    try { c = this._kontext(); } catch (e) { return; }
+    if (!c) return;
+    const T = {
+      zug: [[660, 0, 0.07, 0.16], [990, 0.01, 0.05, 0.05, 'sine']],
+      sieg: [[523, 0, 0.14], [659, 0.1, 0.14], [784, 0.2, 0.14], [1047, 0.3, 0.35, 0.2]],
+      verlust: [[392, 0, 0.18], [330, 0.15, 0.18], [262, 0.3, 0.4]],
+      remis: [[440, 0, 0.16], [440, 0.18, 0.22]]
+    }[name];
+    if (T) T.forEach(([f, s, d, l, form]) => this._ton(c, f, s, d, l, form));
+  }
+}
+
+/* Konfetti (UI), 1,8 s; aus bei reduzierter Bewegung. */
+function konfetti() {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('canvas.konfetti').forEach(c => c.remove());
+  const cv = document.createElement('canvas');
+  cv.className = 'konfetti';
+  const w = cv.width = window.innerWidth, h = cv.height = window.innerHeight;
+  document.body.appendChild(cv);
+  const ctx = cv.getContext('2d');
+  const farben = ['#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#007aff', '#af52de'];
+  const teile = Array.from({ length: 120 }, () => ({
+    x: w / 2 + (Math.random() - 0.5) * w * 0.3, y: h * 0.35,
+    vx: (Math.random() - 0.5) * 9, vy: -Math.random() * 11 - 3,
+    r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
+    f: farben[Math.floor(Math.random() * farben.length)], s: 5 + Math.random() * 5
+  }));
+  const start = performance.now();
+  const schritt = (jetzt) => {
+    if (!cv.isConnected) return;
+    ctx.clearRect(0, 0, w, h);
+    for (const t of teile) {
+      t.vy += 0.35; t.x += t.vx; t.y += t.vy; t.r += t.vr;
+      ctx.save(); ctx.translate(t.x, t.y); ctx.rotate(t.r); ctx.fillStyle = t.f;
+      ctx.fillRect(-t.s / 2, -t.s / 4, t.s, t.s / 2); ctx.restore();
+    }
+    if (jetzt - start < 1800) requestAnimationFrame(schritt);
+  };
+  requestAnimationFrame(schritt);
+  setTimeout(() => cv.remove(), 1800);
 }
 
 /* ============================================================
@@ -3507,11 +3979,26 @@ function wireGame({ dbName, EntityCls, BoundaryCls, ControlCls, UICls, controlEx
   const gameRepo = new StatsRepository(dbName, 'stats', 'game');
   const boundary = new BoundaryCls(entity, stats, statsRepo, gameRepo);
   const control = new ControlCls(boundary, ...controlExtraArgs);
+  control.setZufall(Math.random); // Zufall von außen hineinreichen (S-W02)
   const ui = new UICls(control);
-  return { entity, boundary, control, ui };
+  const g = { entity, boundary, control, ui };
+  spiele[ui.spiel] = g;
+  return g;
 }
+const spiele = {};
 
 const aiStrategy = new AIStrategy();
+
+// S-W02: Einstellungen, Klang und Zufall werden hier hineingereicht.
+const speicher = (() => { try { return window.localStorage; } catch (e) { return null; } })();
+GameUI.einst = new EinstellungenControl(new EinstellungenBoundary(speicher));
+GameUI.klang = new Klang();
+(function tonSchalter() {
+  const b = document.querySelector('.ton-schalter');
+  const zeige = () => { const an = GameUI.einst.istTonAn(); b.textContent = an ? '🔊' : '🔇'; b.setAttribute('aria-pressed', String(an)); };
+  b.addEventListener('click', () => { GameUI.einst.setzeTon(!GameUI.einst.istTonAn()); zeige(); if (GameUI.einst.istTonAn()) GameUI.klang.spiele('zug'); });
+  zeige();
+})();
 
 wireGame({
   dbName: 'ticTacToeDB',
@@ -3569,6 +4056,9 @@ if (typeof Chess !== 'undefined') {
 }
 
 new TabController(Platform);
+
+// Zugang für die Tests in werkstatt/tests (nur lesend gedacht).
+window.__brett = Object.assign(spiele, { einstellungen: GameUI.einst, klang: GameUI.klang });
 
 /* Kein Service Worker auf der Spieleseite: es liegt keine sw.js bereit (Spec S-W01). */
 </script>
