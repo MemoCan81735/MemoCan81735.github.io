@@ -204,6 +204,7 @@ test('d3_markierung', async () => {
     out.auswahl = marken('auswahl'); out.ziele = marken('ziel'); out.gehoben = a.stuecke.get(52).position.y;
     ui.handleSquareClick(52);
     // Narrenmatt: f3 e5 g4 Dh4#
+    g.control.setLernen(false);   // Narrenmatt absichtlich: ohne Warnung der Lernhilfe (S-W07)
     for (const [v, n] of [[53, 45], [12, 28], [54, 38], [3, 39]]) { ui.handleSquareClick(v); ui.handleSquareClick(n); }
     await new Promise(r => setTimeout(r, 500));
     out.schach = marken('schach'); out.zuletzt = marken('zuletzt');

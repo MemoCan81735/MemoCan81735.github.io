@@ -100,5 +100,6 @@ Die Regeln sind einfach (zwei Halbzüge). Sie erkennen keine Gabeln über mehrer
 - Unabhängige Prüfung (zweiter Agent): keine Fehler im Ablauf, kein Schichtverstoß. Ergänzt nach den Befunden: ganze Liste der Gründe statt nur des ersten,
   Umwandlung und Matt-Drohung, höchstens zwei Gründe im Satz, Sperre des Tipps in der Control, Neustart, Moduswechsel, Zug zurück und Ausschalten bei offener Warnung (PS-26 bis PS-29),
   Satz in 3D wirklich sichtbar. Behoben: ein Tipp, der noch rechnet, während gezogen wird, zeigt keinen veralteten Satz mehr; Rochade-Satz ohne doppelten Doppelpunkt.
+- Gesamtlauf: der ältere 3D-Test `d3_markierung` spielt absichtlich das Narrenmatt und wurde jetzt von der Warnung angehalten; der Test schaltet die Lernhilfe dafür aus. Früheste Stufe: Spec (betroffene Tests anderer Specs mit Schachzügen vorab suchen).
 - Bekannte Grenze: Der Tipp nennt bei einer Umwandlung immer die Dame. Gabeln und Fesselungen über mehrere Züge erkennt die Warnung nicht (siehe Risiken).
 - Gerätetest: offen (Abnahmeliste `abnahme-schach-lernen-S-W07.md`).
