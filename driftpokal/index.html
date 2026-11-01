@@ -9458,6 +9458,7 @@ const KartLook = {
 
 const TRACK_LOOK = {
   wiese: {
+    grade: { tint: "#f2ffe4", sat: 1.14, vignette: 0.3 },
     balloon: true,
     name: "Wiesenring", sub: "Weite Bögen, viel Grün",
     outside: ["#5fae45", 16], offroad: ["#3e8a31", 14], road: ["#6c717b", 9],
@@ -9470,7 +9471,7 @@ const TRACK_LOOK = {
     hemi: ["#d6ecff", "#4f7a3c"], rock: "#8d9286", high: "#3f7c37", sunColor: "#fff2dc"
   },
   duene: {
-    grade: { tint: "#fff6e2", vignette: 0.28 },
+    grade: { tint: "#ffedcc", sat: 1.12, vignette: 0.3 },
     gravel: false,
     name: "Dünenpiste", sub: "Lange Geraden, Turbofelder",
     outside: ["#e2b172", 14], offroad: ["#cf9352", 14], road: ["#b5764a", 10],
@@ -9482,7 +9483,7 @@ const TRACK_LOOK = {
     hemi: ["#ffe6c2", "#9a6236"], rock: "#b5633a", high: "#c9824e", sunColor: "#ffe4bd"
   },
   frost: {
-    grade: { tint: "#eef4ff", vignette: 0.3 },
+    grade: { tint: "#e4f0ff", sat: 0.92, vignette: 0.32 },
     gravel: false,
     name: "Frostpass", sub: "Eisflächen, enge Kehren",
     outside: ["#edf2f8", 8], offroad: ["#d9e4f0", 9], road: ["#5a6574", 9],
@@ -9498,7 +9499,7 @@ const TRACK_LOOK = {
 // Neue Strecken: Herbstwald (Abendsonne, nasses Laub), Neonstadt (Nacht), Vulkaninsel (Dämmerung, Lava)
 Object.assign(TRACK_LOOK, {
   herbst: {
-    grade: { tint: "#fff1dc", vignette: 0.38 },
+    grade: { tint: "#ffedd4", sat: 1.22, vignette: 0.32 },
     grassTint: "#8f8240",
     name: "Herbstwald", sub: "Nasses Laub, Abendsonne",
     outside: ["#7c7a3a", 14], offroad: ["#8e5a2c", 14], road: ["#5f6169", 9],
@@ -9511,7 +9512,7 @@ Object.assign(TRACK_LOOK, {
     light: { sun: 2.4, hemi: 0.55, env: 0.7, exposure: 1.05 }
   },
   stadt: {
-    grade: { tint: "#eef0ff", vignette: 0.45, lift: 0.03, bloom: 0.6 },
+    grade: { tint: "#eeeeff", sat: 1.22, vignette: 0.45, lift: 0.03, bloom: 0.6 },
     gravel: false,
     name: "Neonstadt", sub: "Nachtfahrt im Neonlicht",
     outside: ["#2c2f38", 8], offroad: ["#3b3e47", 9], road: ["#3d414b", 9],
@@ -9524,7 +9525,7 @@ Object.assign(TRACK_LOOK, {
     light: { sun: 0.9, hemi: 0.95, env: 0.45, exposure: 1.25 }
   },
   vulkan: {
-    grade: { tint: "#ffe3cc", vignette: 0.4, bloom: 0.4 },
+    grade: { tint: "#ffecdd", sat: 1.16, vignette: 0.42, bloom: 0.4 },
     gravel: "#4f4848",
     name: "Vulkaninsel", sub: "Lava, Palmen, Dämmerung",
     outside: ["#3c3336", 12], offroad: ["#2b2527", 12], road: ["#57525c", 9],
@@ -9543,6 +9544,7 @@ Object.assign(TRACK_LOOK, {
 // yachts (Anzahl im Wasser), stands (weitere Tribünen an den längsten Geraden), housePalette
 Object.assign(TRACK_LOOK, {
   hafen: {
+    grade: { tint: "#e8f3ff", sat: 1.06, vignette: 0.32 },
     gravel: false,
     name: "Hafenring", sub: "Hafen, Tunnel, Haarnadel",
     outside: ["#cbbfa9", 10], offroad: ["#b8b0a2", 8], road: ["#5b5f68", 9],
@@ -9558,6 +9560,7 @@ Object.assign(TRACK_LOOK, {
     housePalette: ["#f2d7b0", "#f0c2a8", "#f5e6c8", "#e8b89a", "#f7dca2", "#e9c9c0", "#fdf3e1"]
   },
   koenig: {
+    grade: { tint: "#fffadc", sat: 1.1, vignette: 0.3 },
     name: "Königspark", sub: "Vollgas, Schikanen, Parabolica",
     outside: ["#6aa84a", 16], offroad: ["#4f963c", 14], road: ["#5d6168", 9],
     wallA: "#23262e", wallB: "#f2f2f2", curbA: "#ffffff", curbB: "#d9352a",
@@ -9570,6 +9573,7 @@ Object.assign(TRACK_LOOK, {
     stands: 3
   },
   seen: {
+    grade: { tint: "#e2f4ff", sat: 1.08, vignette: 0.32 },
     name: "Seenring", sub: "Linksherum, zwei Seen",
     outside: ["#5c9e42", 16], offroad: ["#4a8f37", 14], road: ["#595d66", 9],
     wallA: "#23262e", wallB: "#f2f2f2", curbA: "#ffffff", curbB: "#f2b705",
@@ -9589,7 +9593,7 @@ Object.assign(TRACK_LOOK, {
 // { type, x, y, rot, s, r } (r = Freiraum für andere Deko)
 Object.assign(TRACK_LOOK, {
   caycuma: {
-    grade: { tint: "#fff4e4", vignette: 0.3 },
+    grade: { tint: "#ffedd4", sat: 1.14, vignette: 0.34 },
     ads: ["FİLYOS ÇAYI", "KARADENİZ FINDIK", "ÇAYCUMA PİDE", "BURÇ LOKUM", "YENİCE KÖFTE", "DRIFTPOKAL"],
     crowd: { flag: "tr", shirts: ["#e30a17", "#ffffff", "#e30a17", "#b8101c"], caps: ["#e30a17", "#ffffff"], seats: ["#e30a17", "#f4f4f4"], flags: 0.14, share: 0.6 },
     name: "Çaycuma", sub: "Filyos-Tal, Burg und Schwarzes Meer",
@@ -9609,6 +9613,7 @@ Object.assign(TRACK_LOOK, {
                 { type: "flags", x: 650, y: 25, rot: 3.14, s: 1.4, r: 20 }, { type: "hazel", x: 1082, y: 286, rot: 0.4, s: 1.6, r: 60 }]
   },
   erken: {
+    grade: { tint: "#eef0e6", sat: 0.9, vignette: 0.36 },
     ads: ["GLÜCKAUF GRILL", "HAARD BÄCKER", "STIMBERG SPRUDEL", "SCHLÄGEL & EISEN", "KOHLENPOTT KAFFEE", "DRIFTPOKAL"],
     crowd: { flag: "oe", shirts: ["#111111", "#c8102e", "#f6c700"], caps: ["#111111", "#c8102e"], seats: ["#c8102e", "#1a1a1a", "#f6c700"], flags: 0.12, share: 0.55 },
     name: "Oer-Erkenschwick", sub: "Zeche, Haard und Stimberg",
@@ -9626,6 +9631,7 @@ Object.assign(TRACK_LOOK, {
                 { type: "loren", x: 488, y: 640, rot: 1.57, s: 3.2, r: 36 }]
   },
   muenchen: {
+    grade: { tint: "#fff2d8", sat: 1.06, vignette: 0.32 },
     balloon: true,
     ads: ["BREZN BENNI", "ALMLIMO", "WEISSWURST WASTL", "SCHWABINGER RADL", "ISARTAL KÄS", "DRIFTPOKAL"],
     crowd: { flag: "by", shirts: ["#ffffff", "#0098d4", "#1c4f9c", "#ffffff"], caps: ["#0098d4", "#ffffff"], seats: ["#0098d4", "#f4f4f4"], flags: 0.12, share: 0.55 },
@@ -9649,6 +9655,7 @@ Object.assign(TRACK_LOOK, {
 // Schwaben-Cup: Blaubeuren (Blautopf, Kloster, Albfelsen) und Ulm (Münster, Donau, Fischerviertel). Wahrzeichen wie im Heimat-Cup
 Object.assign(TRACK_LOOK, {
   blaubeuren: {
+    grade: { tint: "#dff4ff", sat: 1.12, vignette: 0.32 },
     ads: ["SPÄTZLE SEPP", "ALB LINSEN HOF", "BLAUTOPF SPRUDEL", "MOSTBIRNE", "MAULTASCH MAX", "DRIFTPOKAL"],
     crowd: { flag: "bb", shirts: ["#ffffff", "#1e6fb8", "#2a8fd6", "#ffffff"], caps: ["#1e6fb8", "#ffffff"], seats: ["#1e6fb8", "#f4f4f4"], flags: 0.12, share: 0.55 },
     name: "Blaubeuren", sub: "Blautopf, Kloster und Albfelsen",
@@ -9669,6 +9676,7 @@ Object.assign(TRACK_LOOK, {
                 { type: "cliff", x: 176, y: 183, rot: 3.6, s: 2.6, r: 80 }]
   },
   ulm: {
+    grade: { tint: "#fff0d4", sat: 1.02, vignette: 0.34 },
     ads: ["SPATZEN BRÄU", "DONAU SCHIFFLE", "SCHWÖRMONTAG SEKT", "LAUGENBREZEL LOTTE", "FISCHERVIERTEL FISCH", "DRIFTPOKAL"],
     crowd: { flag: "ul", shirts: ["#111111", "#ffffff", "#111111", "#e8e8e8"], caps: ["#111111", "#ffffff"], seats: ["#111111", "#f4f4f4"], flags: 0.12, share: 0.55 },
     name: "Ulm", sub: "Münster, Donau und Fischerviertel",
@@ -17237,8 +17245,8 @@ class ShadowCacheUI {
    --------------------------------------------------------------------- */
 // grade: Farbstimmung je Strecke (TRACK_LOOK.<strecke>.grade: tint, vignette, lift, sat). Sie war seit Version 30 nie wirksam:
 // ShaderPass kopiert übergebene Uniforms, die Werte je Strecke kamen nie im Shader an, es galt immer Vignette 0,32 ohne Tönung.
-// Damit das Bild gleich bleibt, ist sie aus, bis entschieden ist, ob sie kommen soll.
-const POST_LOOK = { levels: 5, knee: 0.01, grade: false, vignette: 0.32 };
+// Seit S-W10 (01.11.2026) ist sie an: alle 14 Strecken haben eine eigene Stimmung (Tönung, Sättigung, Vignette).
+const POST_LOOK = { levels: 5, knee: 0.01, grade: true, vignette: 0.32 };
 // Leuchten wie bisher: three's UnrealBloomPass legte das Leuchten mit Alpha = 3 × Stärke über das Bild (Alphakanal der Summe),
 // wirksam also (3 × Stärke)² mal das weichgezeichnete Helle. Hier zählen alle Stufen einfach (je normiert), daher geteilt durch ihre Zahl.
 POST_LOOK.bloomOf = (strength) => (3 * strength) * (3 * strength) / POST_LOOK.levels;
