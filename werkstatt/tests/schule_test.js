@@ -9,8 +9,8 @@ const PORT = 8000 + Math.floor(Math.random() * 900);
 const URL_ = `http://127.0.0.1:${PORT}/brettspiele/`;
 
 let browser;
-// Freigabe des Betreibers zum Speichern des Fortschritts (S-W08): steht aus. Bei Freigabe hier und in SchuleBoundary.SPEICHERN auf true.
-const FREIGABE_SPEICHERN = false;
+// Freigabe des Betreibers zum Speichern des Fortschritts (S-W08): erteilt am 01.11.2026, 18:14.
+const FREIGABE_SPEICHERN = true;
 // schule: Inhalt von brettspiele.schule (roher Text) oder null
 async function seite({ schule = null, breite = 412, tab = 'schule' } = {}) {
   const ctx = await browser.newContext({ viewport: { width: breite, height: 915 }, deviceScaleFactor: 1 });

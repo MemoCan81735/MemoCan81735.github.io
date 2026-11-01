@@ -1,6 +1,6 @@
 # S-W08: Schachschule (Figuren-Schule, Aufgaben, Computerzug erklärt)
 
-**Status:** gebaut, freigegeben am 01.11.2026, 16:55 (Speichern des Fortschritts: Freigabe steht aus, bis dahin ausgeschaltet)
+**Status:** gebaut, freigegeben am 01.11.2026, 16:55; Speichern des Fortschritts freigegeben am 01.11.2026, 18:14
 <!-- Freigabe durch den Betreiber im Projekt-Thread: "Ja, und Figuren schule. Baue alles ein was relativ einfach zu implementieren ist"
      (Antwort auf das Angebot "Übungsaufgaben (zum Beispiel Matt in 1) oder eine Figuren-Schule"). Speichern des Fortschritts: eigene Frage, siehe unten. -->
 
@@ -26,7 +26,7 @@ Ein neuer Reiter **Schachschule** mit drei Teilen, dazu eine kleine Ergänzung i
   "Tipp" markiert die Figur, die ziehen muss. "Lösung" zeigt den Zug (Start und Ziel markiert), die Aufgabe zählt dann nicht als gelöst.
   Am Zug ist die Seite aus der Stellung (meist Weiß, je eine Aufgabe für Schwarz); die Überschrift sagt, wer zieht.
 - **Fortschritt:** gelöste Lektionen und Aufgaben bekommen einen Haken in der Übersicht. Wurde bei einer Aufgabe die Lösung gezeigt, zählt sie bis zum Neuladen nicht mehr (auch nach "Nochmal").
-  Speichern erst nach Freigabe durch den Betreiber (Frage am 01.11.2026 gestellt, Schalter `SchuleBoundary.SPEICHERN`, bis dahin aus, Haken gelten bis zum Neuladen). Dann
+  Speichern freigegeben am 01.11.2026, 18:14 (Auswahl "Ja, nur auf dem Handy speichern"; Schalter `SchuleBoundary.SPEICHERN`), vorher galten die Haken nur bis zum Neuladen. Gespeichert
   in `brettspiele.schule` als `{"formatversion":1,"geloest":["L1","M3",...]}` (nur auf dem Gerät). Unbekannte Kennungen werden ignoriert, kaputte Daten → leer.
 - **Schichten:** `SchuleEntity` (Lektion: Feld, Sterne, Züge, Zugerzeugung, Bestwert; rein, ohne DOM), `SchuleBoundary` (Speicher, Aufgabenprüfung mit chess.js),
   `SchuleControl` (Inhalte, Ablauf, Tipp, Lösung), `SchuleUI` (Reiter, Texte, Brett). Keine Zeit, kein Zufall.
@@ -70,7 +70,7 @@ Ein neuer Reiter **Schachschule** mit drei Teilen, dazu eine kleine Ergänzung i
 | PS-13b | Normal | Tipp in Lektionen (nächstes Feld eines kürzesten Wegs) und bei Gewinn- und Schwarz-Aufgaben | AK-6 |
 | PS-5b | Grenzwert | Umweg: Turm-Lektion in 5 Zügen → "Bestwert: 3"; eigene Suche im Test bestätigt jeden Bestwert | AK-3 |
 | PS-10b | Missbrauch | Eigene Figur wählen, Feld ohne Punkt tippen → nichts passiert | AK-4 |
-| PS-16b | Fehlerfall | Ohne Freigabe: nach Neuladen kein Haken und nichts gespeichert | AK-7 |
+| PS-16b | Fehlerfall | Speichern abgeschaltet (Gegenprobe): nach Neuladen fehlt der Haken → Test rot | AK-7 |
 | PS-18b | Normal | Nach "Zug zurück" ist der Computersatz weg; Control liefert ohne Lernhilfe keine Gründe | AK-8 |
 | PS-19 | Grenzwert | 412 px: Brett passt, Felder ≥ 44 px, kein Querscroll, 7 Reiter innerhalb der Leiste | AK-9 |
 
@@ -93,4 +93,5 @@ Neu: `SchuleEntity`, `SchuleBoundary`, `SchuleControl`, `SchuleUI`. Geändert: `
   Früheste Stufe: Spec (jede Stellung vor dem Eintragen mit der Schachregel und der Suche prüfen).
 - Unabhängige Prüfung (zweiter Agent): Fehler gefunden und behoben: nach "Lösung" und "Nochmal" zählte die Aufgabe wieder als gelöst; Speichern lief ohne Freigabe (jetzt aus, bis zur Antwort).
   Tests ergänzt: eigene Suche für den Bestwert, Umweg-Meldung, unerlaubter Zug, Tipp in Lektion und Schwarz-Aufgaben, Haken bei Lektionen, Computersatz nach "Zug zurück", weitere Zugregeln. Texte: Bauer wird "meist zur Dame", Computersatz ohne Grund jetzt neutral.
+- Nachtrag 18:14: Speichern nach Freigabe eingeschaltet; Test zuerst umgestellt und rot gesehen, dann grün.
 - Gerätetest: offen (Abnahmeliste `abnahme-schachschule-S-W08.md`).

@@ -4589,7 +4589,7 @@ class SchuleEntity {
 class SchuleBoundary {
   static SCHLUESSEL = 'brettspiele.schule';
   static FORMAT = 1;
-  static SPEICHERN = false;   // Freigabe des Betreibers steht aus (S-W08): bis dahin gilt der Fortschritt nur bis zum Neuladen
+  static SPEICHERN = true;    // Freigabe des Betreibers am 01.11.2026, 18:14 (S-W08): Fortschritt nur auf dem Gerät
   constructor(speicher, ChessCls) { this._speicher = speicher; this._Chess = ChessCls; }
   ladeGeloest(gueltig) {
     if (!SchuleBoundary.SPEICHERN) return new Set();
