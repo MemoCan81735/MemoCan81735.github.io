@@ -295,6 +295,14 @@
   .tab-content { display: none; flex-direction: column; align-items: center; }
   .tab-content.active { display: flex; }
 
+  /* --- S-W05: 3D-Ansicht --- */
+  .versteckt3d { display: none !important; }
+  .brett3d { width: min(400px, 96vw); aspect-ratio: 1 / 0.95; touch-action: pan-y; border-radius: 20px; overflow: hidden;
+    background: radial-gradient(ellipse at 50% 35%, #ffffff 0%, #e4e9f1 70%, #d3dae5 100%); box-shadow: 0 8px 24px rgba(0,0,0,0.14); }
+  .brett3d.chess { aspect-ratio: 1 / 0.92; background: radial-gradient(ellipse at 50% 40%, #fdf8f0 0%, #e8dccb 75%, #d8c8b2 100%); }
+  .brett3d canvas { display: block; width: 100%; height: 100%; }
+  .brett3d[hidden] { display: none; }
+
   /* --- Vier gewinnt Brett --- */
   #c4board {
     display: grid;
@@ -1227,7 +1235,7 @@ class GameUI {
     this._baueZusatzknoepfe();
     // Nach jedem render() die Knöpfe Zug zurück und Tipp nachführen.
     const render = this.render.bind(this);
-    this.render = (...a) => { const x = render(...a); this._knoepfeAktualisieren(); return x; };
+    this.render = (...a) => { const x = render(...a); this._letzteLinie = a[0] || null; this._knoepfeAktualisieren(); if (this.ansicht3d && this.ansicht3d.aktiv) this.ansicht3d.aktualisieren(a[0]); return x; };
   }
 
   /* --- S-W02: Zug zurück, Tipp, Stufenwahl, Spielgefühl --- */
@@ -1263,9 +1271,42 @@ class GameUI {
       }
       this.modeInputs[0].closest('div').after(this.stufenEl);
     }
+    // S-W05: 3D-Ansicht für Vier gewinnt und Schach, eingeschaltet erst, wenn der Reiter sichtbar ist
+    if (GameUI.ANSICHT_3D.includes(this.spiel)) {
+      this.ansichtBtn = knopf('ansicht-knopf', '3D');
+      this.ansichtBtn.addEventListener('click', () => this.handleAnsicht());
+      new MutationObserver(() => this._ansichtPruefen()).observe(this.viewEl, { attributes: true, attributeFilter: ['class'] });
+      setTimeout(() => this._ansichtPruefen(), 0);
+    }
     const stufe = GameUI.einst ? GameUI.einst.stufe(this.spiel) : 'mittel';
     this.control.setDifficulty(stufe);
     this._zeigeStufe(this.control.getDifficulty());
+  }
+
+  _wunsch3d() { return !GameUI.einst || GameUI.einst.ansicht(this.spiel) === '3d'; }
+  async _ansichtPruefen() {
+    if (!this.viewEl.classList.contains('active') || this._ansichtLaeuft) return;
+    const wunsch = this._wunsch3d();
+    if (wunsch && !(this.ansicht3d && this.ansicht3d.aktiv)) {
+      this._ansichtLaeuft = true;
+      try {
+        if (!this.ansicht3d) this.ansicht3d = new Ansicht3D(this, this.spiel);
+        const ok = await this.ansicht3d.einschalten();
+        if (!ok) { this.ansichtBtn.disabled = true; this.ansichtBtn.textContent = '3D nicht möglich'; return; }
+      } finally { this._ansichtLaeuft = false; }
+      if (!this._wunsch3d()) this.ansicht3d.ausschalten();
+    } else if (!wunsch && this.ansicht3d && this.ansicht3d.aktiv) this.ansicht3d.ausschalten();
+    this._ansichtKnopf();
+  }
+  _ansichtKnopf() {
+    if (this.ansichtBtn && !this.ansichtBtn.disabled) this.ansichtBtn.textContent = (this.ansicht3d && this.ansicht3d.aktiv) ? '2D' : '3D';
+  }
+  handleAnsicht() {
+    if (this.ansichtBtn.disabled) return;
+    const neu = (this.ansicht3d && this.ansicht3d.aktiv) ? '2d' : '3d';
+    if (GameUI.einst) GameUI.einst.setzeAnsicht(this.spiel, neu);
+    if (neu === '2d' && this.ansicht3d) { this.ansicht3d.ausschalten(); this._ansichtKnopf(); }
+    else this._ansichtPruefen();
   }
 
   _zeigeStufe(stufe) {
@@ -1325,6 +1366,7 @@ class GameUI {
     [...el].forEach(e => e.classList.remove('tipp'));
     felder.forEach(i => el[i] && el[i].classList.add('tipp'));
     this._tippTimer = setTimeout(() => [...this._feldElemente()].forEach(e => e.classList.remove('tipp')), 1600);
+    if (this.ansicht3d && this.ansicht3d.aktiv) this.ansicht3d.markiere(felder, 1600);
   }
   _feldElemente() { return this.boardEl.children; }
   _tippFelder(zug) { return [zug]; }
@@ -3820,6 +3862,329 @@ class MangalaUI extends GameUI {
    Boundary: liest und schreibt localStorage mit Formatversion.
    Control: Regeln (Standardwerte, erlaubte Stufen).
    ============================================================ */
+/* --- S-W05: 3D-Ansicht (nur UI). Liest den Zustand über die Control,
+     Tippen geht an dieselben Handler wie die 2D-Ansicht. three.js wird erst bei Bedarf geladen. --- */
+class Ansicht3D {
+  static THREE_URL = 'lib/three.min.js';
+  static G = 30;            // Schwerkraft in Feldern/s²
+  static DREH_MAX = 35 * Math.PI / 180;
+  static ZIEH_SCHWELLE = 8; // px: darüber ist es Drehen statt Tippen
+  static webglMoeglich() {
+    try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); }
+    catch (e) { return false; }
+  }
+  static laden() {
+    if (window.THREE) return Promise.resolve(true);
+    if (!Ansicht3D._laden) {
+      Ansicht3D._laden = new Promise(res => {
+        const s = document.createElement('script'); s.src = Ansicht3D.THREE_URL;
+        s.onload = () => res(!!window.THREE); s.onerror = () => res(false);
+        document.head.appendChild(s);
+      });
+    }
+    return Ansicht3D._laden;
+  }
+  static fallzeit(hoehe) { return Math.sqrt(2 * hoehe / Ansicht3D.G); }
+
+  constructor(ui, art) {
+    this.ui = ui; this.art = art; this.aktiv = false; this.drehung = 0;
+    this.anim = []; this.marken = []; this.bilder = 0; this._alt = null;
+    this.huelle = document.createElement('div');
+    this.huelle.className = 'brett3d ' + art; this.huelle.hidden = true;
+    ui.boardEl.after(this.huelle);
+  }
+
+  async einschalten() {
+    if (!Ansicht3D.webglMoeglich() || !(await Ansicht3D.laden())) return false;
+    if (!this.renderer) {
+      try { this._aufbauen(); } catch (e) { this.renderer = null; return false; }
+    }
+    this.aktiv = true; this.huelle.hidden = false; this.ui.boardEl.classList.add('versteckt3d');
+    this._groesse(); this.aktualisieren(this.ui.control.isGameOver() ? this.ui._letzteLinie : null, true);
+    return true;
+  }
+  ausschalten() {
+    if (this.renderer) this._markenWeg();
+    this.aktiv = false; this.huelle.hidden = true; this.ui.boardEl.classList.remove('versteckt3d');
+  }
+
+  _aufbauen() {
+    const T = THREE;
+    this.renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    this.huelle.appendChild(this.renderer.domElement);
+    this.szene = new T.Scene();
+    this.kamera = new T.PerspectiveCamera(this.art === 'chess' ? 40 : 34, 1, 0.1, 100);
+    this.szene.add(new T.HemisphereLight(0xffffff, 0x606878, 0.55));
+    const sonne = new T.DirectionalLight(0xffffff, 0.95); sonne.position.set(-5, 11, 8); this.szene.add(sonne);
+    const gegen = new T.DirectionalLight(0xbfd4ff, 0.3); gegen.position.set(6, 4, -6); this.szene.add(gegen);
+    this.ray = new T.Raycaster(); this.ziele = [];
+    this.figuren = new T.Group(); this.szene.add(this.figuren);
+    this.markGruppe = new T.Group(); this.szene.add(this.markGruppe);
+    if (this.art === 'connect4') this._baueC4(); else this._baueSchach();
+    this._eingabe();
+    if (window.ResizeObserver) new ResizeObserver(() => { if (this.aktiv) { this._groesse(); this._bild(); } }).observe(this.huelle);
+  }
+
+  _eingabe() {
+    const el = this.renderer.domElement;
+    let start = null;
+    el.addEventListener('pointerdown', e => { start = { x: e.clientX, y: e.clientY, d: this.drehung, zieht: false }; try { el.setPointerCapture(e.pointerId); } catch (x) { } });
+    el.addEventListener('pointermove', e => {
+      if (!start) return;
+      const dx = e.clientX - start.x;
+      if (!start.zieht && Math.abs(dx) > Ansicht3D.ZIEH_SCHWELLE) start.zieht = true;
+      if (start.zieht) this.drehen(start.d - dx * 0.006);
+    });
+    el.addEventListener('pointerup', e => {
+      if (!start) return;
+      const s = start; start = null;
+      if (!s.zieht && Math.abs(e.clientX - s.x) <= Ansicht3D.ZIEH_SCHWELLE) this.tippen(e.clientX, e.clientY);
+    });
+    el.addEventListener('pointercancel', () => { start = null; });
+  }
+
+  drehen(w) {
+    this.drehung = Math.max(-Ansicht3D.DREH_MAX, Math.min(Ansicht3D.DREH_MAX, w));
+    this._kamera(); this._bild();
+  }
+
+  _groesse() {
+    const b = this.huelle.clientWidth, h = this.huelle.clientHeight;
+    if (!b || !h) return;
+    this.renderer.setSize(b, h, false);
+    this.kamera.aspect = b / h; this._kamera();
+  }
+
+  _kamera() {
+    const k = this.kamera, w = this.drehung;
+    if (this.art === 'connect4') { const r = 15; k.position.set(Math.sin(w) * r, 7.2, Math.cos(w) * r); k.lookAt(0, 2.9, 0); }
+    else { const r = 9.4; k.position.set(Math.sin(w) * r, 10.6, Math.cos(w) * r); k.lookAt(0, -0.2, 0.55); }
+    k.updateProjectionMatrix(); k.updateMatrixWorld();   // sofort gültig für Tippen, nicht erst nach dem nächsten Bild
+  }
+
+  // Liefert die Spalte (Vier gewinnt) oder das Feld (Schach) unter dem Bildschirmpunkt, sonst null.
+  feldBei(cx, cy) {
+    if (!this.renderer) return null;
+    const r = this.renderer.domElement.getBoundingClientRect();
+    const v = new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+    this.ray.setFromCamera(v, this.kamera);
+    const treffer = this.ray.intersectObjects(this.art === 'chess' ? [...this.figuren.children, ...this.ziele] : this.ziele, true);
+    for (const t of treffer) { let o = t.object; while (o && o.userData.feld === undefined) o = o.parent; if (o) return o.userData.feld; }
+    return null;
+  }
+  // Bildschirmpunkt der Mitte einer Spalte (Höhe 0 bis 1 von unten) bzw. eines Felds (für Tests und Tipp).
+  bildschirmPunkt(feld, hoehe = 0.5) {
+    const p = this.art === 'connect4' ? new THREE.Vector3(feld - 3, 0.5 + hoehe * 5, 0.3) : this._feldPos(feld).setY(0.05);
+    p.project(this.kamera);
+    const r = this.renderer.domElement.getBoundingClientRect();
+    return { x: r.left + (p.x + 1) / 2 * r.width, y: r.top + (1 - p.y) / 2 * r.height };
+  }
+  tippen(cx, cy) {
+    const f = this.feldBei(cx, cy);
+    if (f === null || f === undefined) return;
+    if (this.art === 'connect4') this.ui.handleColumnClick(f); else this.ui.handleSquareClick(f);
+  }
+
+  // ---------- Vier gewinnt ----------
+  _baueC4() {
+    const T = THREE;
+    const blau = new T.MeshStandardMaterial({ color: 0x0a5fd8, roughness: 0.3, metalness: 0.1 });
+    const form = new T.Shape(); form.moveTo(-3.75, -0.05); form.lineTo(3.75, -0.05); form.lineTo(3.75, 6.25); form.lineTo(-3.75, 6.25); form.lineTo(-3.75, -0.05);
+    for (let c = 0; c < 7; c++) for (let r = 0; r < 6; r++) { const l = new T.Path(); l.absarc(c - 3, r + 0.5, 0.41, 0, Math.PI * 2, true); form.holes.push(l); }
+    const platte = new T.ExtrudeGeometry(form, { depth: 0.16, bevelEnabled: true, bevelSize: 0.04, bevelThickness: 0.04, bevelSegments: 2, curveSegments: 20 });
+    for (const z of [0.12, -0.28]) { const m = new T.Mesh(platte, blau); m.position.z = z; this.szene.add(m); }
+    const fussGeo = new T.BoxGeometry(0.35, 1.3, 2.4);
+    for (const x of [-3.9, 3.9]) {
+      const s = new T.Mesh(new T.BoxGeometry(0.3, 6.6, 0.6), blau); s.position.set(x, 3.1, -0.05); this.szene.add(s);
+      const f = new T.Mesh(fussGeo, blau); f.position.set(x, -0.2, -0.05); this.szene.add(f);
+    }
+    const boden = new T.Mesh(new T.CircleGeometry(9, 48), new T.MeshStandardMaterial({ color: 0xe9edf3, roughness: 1 }));
+    boden.rotation.x = -Math.PI / 2; boden.position.y = -0.85; this.szene.add(boden);
+    this.steinGeo = new T.CylinderGeometry(0.4, 0.4, 0.2, 32); this.steinGeo.rotateX(Math.PI / 2);
+    this.steinMat = {
+      R: new T.MeshStandardMaterial({ color: 0xe0281e, roughness: 0.25, emissive: 0x000000 }),
+      Y: new T.MeshStandardMaterial({ color: 0xf5b800, roughness: 0.25, emissive: 0x000000 }),
+    };
+    const unsichtbar = new T.MeshBasicMaterial({ visible: false });
+    const spalte = new T.BoxGeometry(1, 7.6, 1.2);
+    for (let c = 0; c < 7; c++) { const z = new T.Mesh(spalte, unsichtbar); z.position.set(c - 3, 3.3, 0); z.userData.feld = c; this.szene.add(z); this.ziele.push(z); }
+  }
+  _c4Pos(i) { return new THREE.Vector3((i % 7) - 3, (5 - Math.floor(i / 7)) + 0.5, -0.06); }
+
+  // ---------- Schach ----------
+  _feldPos(i) { return new THREE.Vector3((i % 8) - 3.5, 0, Math.floor(i / 8) - 3.5); }
+  _baueSchach() {
+    const T = THREE;
+    const hell = new T.MeshStandardMaterial({ color: 0xeed9b0, roughness: 0.6 }), dunkel = new T.MeshStandardMaterial({ color: 0x9a6a45, roughness: 0.6 });
+    const feldGeo = new T.BoxGeometry(1, 0.1, 1);
+    this.felder = [];
+    for (let i = 0; i < 64; i++) {
+      const r = Math.floor(i / 8), c = i % 8;
+      const m = new T.Mesh(feldGeo, (r + c) % 2 === 0 ? hell : dunkel); m.position.copy(this._feldPos(i)).setY(-0.05);
+      m.userData.feld = i; this.szene.add(m); this.ziele.push(m); this.felder.push(m);
+    }
+    const rahmen = new T.Mesh(new T.BoxGeometry(8.8, 0.3, 8.8), new T.MeshStandardMaterial({ color: 0x5a3a26, roughness: 0.5 }));
+    rahmen.position.y = -0.21; this.szene.add(rahmen);
+    const p = (pts) => pts.map(([x, y]) => new T.Vector2(x, y));
+    const dreh = (pts) => new T.LatheGeometry(p(pts), 28);
+    const fuss = [[0, 0], [0.34, 0], [0.34, 0.08], [0.25, 0.15]];
+    this.figurGeo = {
+      p: [dreh([...fuss, [0.14, 0.3], [0.11, 0.42], [0.19, 0.46], [0.12, 0.5], [0.17, 0.58], [0.16, 0.66], [0.09, 0.72], [0, 0.74]])],
+      r: [dreh([...fuss, [0.22, 0.3], [0.2, 0.64], [0.28, 0.7], [0.28, 0.86], [0.2, 0.86], [0.2, 0.8], [0, 0.8]])],
+      b: [dreh([...fuss, [0.14, 0.42], [0.12, 0.62], [0.21, 0.66], [0.13, 0.7], [0.18, 0.8], [0.12, 0.95], [0.04, 1.0], [0.07, 1.04], [0, 1.08]])],
+      q: [dreh([...fuss, [0.16, 0.45], [0.13, 0.76], [0.23, 0.8], [0.15, 0.85], [0.25, 1.0], [0.19, 1.04], [0.08, 1.07], [0.08, 1.12], [0, 1.16]])],
+      k: [dreh([...fuss, [0.17, 0.45], [0.14, 0.8], [0.24, 0.84], [0.16, 0.89], [0.22, 1.04], [0.0, 1.07]])],
+      n: [dreh([...fuss, [0.22, 0.3], [0, 0.3]])],
+    };
+    const kreuz1 = new T.BoxGeometry(0.07, 0.24, 0.07); kreuz1.translate(0, 1.18, 0);
+    const kreuz2 = new T.BoxGeometry(0.2, 0.07, 0.07); kreuz2.translate(0, 1.2, 0);
+    this.figurGeo.k.push(kreuz1, kreuz2);
+    const kopf = new T.Shape();
+    [[-0.2, 0.25], [0.2, 0.25], [0.16, 0.5], [0.3, 0.6], [0.4, 0.68], [0.36, 0.82], [0.16, 0.88], [0.06, 1.0], [-0.04, 0.94], [-0.2, 0.8], [-0.24, 0.55]].forEach(([x, y], i) => i ? kopf.lineTo(x, y) : kopf.moveTo(x, y));
+    const kopfGeo = new T.ExtrudeGeometry(kopf, { depth: 0.22, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 1 });
+    kopfGeo.translate(0, 0, -0.11); kopfGeo.rotateY(Math.PI);   // Profil zum Spieler, Schnauze nach links (Schwarz: nach rechts)
+    this.figurGeo.n.push(kopfGeo);
+    this.figurMat = { w: new T.MeshStandardMaterial({ color: 0xf4ead6, roughness: 0.45 }), b: new T.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.4 }) };
+    this.markGeo = { feld: new T.PlaneGeometry(1, 1), punkt: new T.CircleGeometry(0.15, 20), ring: new T.RingGeometry(0.36, 0.48, 32) };
+    this.markMat = {
+      auswahl: new T.MeshBasicMaterial({ color: 0xffd60a, transparent: true, opacity: 0.55 }),
+      ziel: new T.MeshBasicMaterial({ color: 0x34c759, transparent: true, opacity: 0.85 }),
+      zuletzt: new T.MeshBasicMaterial({ color: 0xffd60a, transparent: true, opacity: 0.3 }),
+      schach: new T.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.6 }),
+      tipp: new T.MeshBasicMaterial({ color: 0x0a84ff, transparent: true, opacity: 0.9 }),
+    };
+  }
+  _figur(wert) {
+    const g = new THREE.Group();
+    for (const geo of this.figurGeo[wert[1]]) g.add(new THREE.Mesh(geo, this.figurMat[wert[0]]));
+    if (wert === 'bn') g.rotation.y = Math.PI;
+    g.userData.wert = wert;
+    return g;
+  }
+
+  // ---------- Stellung zeichnen ----------
+  aktualisieren(gewinnLinie, sofort) {
+    if (!this.aktiv) return;
+    const brett = this.ui.control.getBoardState().slice();
+    const alt = this._alt, animieren = !sofort && !!alt && !!this.ui._animieren;
+    this._alt = brett;
+    this._markenWeg();
+    const jetzt = performance.now(), vorher = this.stuecke || new Map();
+    this.stuecke = new Map();
+    if (this.art === 'connect4') {
+      // Steine, die schon liegen oder noch fallen, bleiben samt Animation (der KI-Zug unterbricht den Fall nicht).
+      const bleibt = new Set();
+      brett.forEach((v, i) => {
+        if (!v) return;
+        const mat = gewinnLinie && gewinnLinie.includes(i) ? this._leuchtMat(v) : this.steinMat[v];
+        const da = !sofort && vorher.get(i);
+        if (da && da.userData.wert === v) { da.material = mat; bleibt.add(da); this.stuecke.set(i, da); return; }
+        const m = new THREE.Mesh(this.steinGeo, mat);
+        const ziel = this._c4Pos(i); m.position.copy(ziel);
+        if (animieren && alt[i] !== v) {
+          const start = 7.4, h = start - ziel.y, dauer = Ansicht3D.fallzeit(h);
+          m.position.y = start;
+          this.anim.push({ t0: jetzt, dauer: dauer * 1000 + 120, f: (t) => {
+            const s = t / 1000;
+            if (s < dauer) m.position.y = start - 0.5 * Ansicht3D.G * s * s;
+            else { const n = s - dauer; m.position.y = ziel.y + Math.max(0, Math.sin(n / 0.12 * Math.PI)) * 0.12; }
+          }, ende: () => { m.position.y = ziel.y; }, mesh: m });
+          m.userData.fall = { start, ziel: ziel.y, dauer };
+        }
+        m.userData.feld = i; m.userData.wert = v; this.figuren.add(m); this.stuecke.set(i, m); bleibt.add(m);
+      });
+      for (const m of [...this.figuren.children]) if (!bleibt.has(m)) this.figuren.remove(m);
+      this.anim = this.anim.filter(a => a.mesh && bleibt.has(a.mesh));
+      if (gewinnLinie && !this._gewinn) this._gewinnBis = jetzt + 3000;
+      this._gewinn = gewinnLinie || null;
+    } else {
+      this.figuren.clear(); this.anim = [];
+      this._schachMarken(brett);
+      const neu = animieren ? brett.map((v, i) => v !== alt[i] ? i : -1).filter(i => i >= 0) : [];
+      brett.forEach((v, i) => {
+        if (!v) return;
+        const g = this._figur(v), ziel = this._feldPos(i); g.position.copy(ziel);
+        if (this._auswahl === i) g.position.y = 0.25;
+        const start = neu.includes(i) ? neu.find(j => !brett[j] && alt[j] === v) : undefined;
+        if (start !== undefined) {
+          const a = this._feldPos(start), bogen = v[1] === 'n' ? 1.1 : 0.35;
+          g.position.copy(a);
+          this.anim.push({ t0: jetzt, dauer: 350, f: (t) => { const u = Math.min(1, t / 350), e = u * u * (3 - 2 * u); g.position.lerpVectors(a, ziel, e); g.position.y = Math.sin(u * Math.PI) * bogen; }, ende: () => { g.position.copy(ziel); } });
+          g.userData.gleitet = { von: start, nach: i };
+        }
+        g.userData.feld = i; this.figuren.add(g); this.stuecke.set(i, g);
+      });
+      // Geschlagene Figur versinkt
+      if (animieren) for (const i of neu) {
+        if (alt[i] && brett[i] && alt[i] !== brett[i]) {
+          const weg = this._figur(alt[i]); weg.position.copy(this._feldPos(i)); this.figuren.add(weg);
+          this.anim.push({ t0: jetzt, dauer: 350, f: (t) => { weg.position.y = -t / 350 * 1.2; }, ende: () => { this.figuren.remove(weg); } });
+        }
+      }
+    }
+    this._bild();
+  }
+  _leuchtMat(v) {
+    if (!this._leucht) this._leucht = { R: this.steinMat.R.clone(), Y: this.steinMat.Y.clone() };
+    return this._leucht[v];
+  }
+  _schachMarken(brett) {
+    this.markGruppe.clear();
+    const c = this.ui.control, sel = c.getSelected(), zeige = !c.isGameOver() && !c.isAiTurn();
+    this._auswahl = sel !== null ? ChessControl._indexFromSquare(sel) : null;
+    const flach = (geo, mat, i, y) => { const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.position.copy(this._feldPos(i)).setY(y); m.userData.feld = i; this.markGruppe.add(m); return m; };
+    if (this.ui._zuletzt) for (const i of this.ui._zuletzt) flach(this.markGeo.feld, this.markMat.zuletzt, i, 0.005).userData.art = 'zuletzt';
+    if (this._auswahl !== null) flach(this.markGeo.feld, this.markMat.auswahl, this._auswahl, 0.006).userData.art = 'auswahl';
+    if (zeige && this._auswahl !== null) for (const i of c.getValidDestinations()) flach(this.markGeo.punkt, this.markMat.ziel, i, 0.02).userData.art = 'ziel';
+    if (c.isInCheck()) { const k = brett.findIndex(v => v === c.getCurrentPlayer() + 'k'); if (k >= 0) flach(this.markGeo.feld, this.markMat.schach, k, 0.007).userData.art = 'schach'; }
+  }
+
+  _markenWeg() {
+    this.marken.forEach(m => { if (m.mesh.parent) m.mesh.parent.remove(m.mesh); if (m.mesh.userData.eigenesMaterial) m.mesh.material.dispose(); });
+    this.marken = [];
+  }
+  // Tipp: blinkende Markierung für ms Millisekunden
+  markiere(felder, ms) {
+    this._markenWeg();
+    if (!this.aktiv) return;
+    const bis = performance.now() + ms;
+    for (const f of felder) {
+      let mesh;
+      if (this.art === 'connect4') {
+        const farbe = this.ui.control.getCurrentPlayer();
+        mesh = new THREE.Mesh(this.steinGeo, new THREE.MeshBasicMaterial({ color: farbe === 'Y' ? 0xffcc00 : 0xff3b30, transparent: true, opacity: 0.5 })); mesh.userData.eigenesMaterial = true;
+        mesh.position.copy(this._c4Pos(f));
+      } else {
+        mesh = new THREE.Mesh(this.markGeo.ring, this.markMat.tipp); mesh.rotation.x = -Math.PI / 2; mesh.position.copy(this._feldPos(f)).setY(0.03);
+      }
+      mesh.userData.feld = f; mesh.userData.art = 'tipp';
+      this.szene.add(mesh); this.marken.push({ mesh, bis });
+    }
+    this._bild();
+  }
+
+  // Zeichnen: ein Bild, Schleife nur solange Animation, Leuchten oder Markierung läuft.
+  _bild() {
+    if (!this.aktiv || !this.renderer) return;
+    if (this._raf) return;
+    this._raf = requestAnimationFrame(() => { this._raf = 0; this._schritt(); });
+  }
+  _schritt() {
+    const jetzt = performance.now();
+    this.anim = this.anim.filter(a => { const t = jetzt - a.t0; if (t >= a.dauer) { a.ende(); return false; } a.f(t); return true; });
+    this.marken = this.marken.filter(m => { if (jetzt >= m.bis) { if (m.mesh.parent) m.mesh.parent.remove(m.mesh); if (m.mesh.userData.eigenesMaterial) m.mesh.material.dispose(); return false; } m.mesh.visible = Math.floor(jetzt / 200) % 2 === 0; return true; });
+    let leuchtet = false;
+    if (this._leucht && this._gewinn && this.art === 'connect4') {
+      leuchtet = jetzt < this._gewinnBis;   // 3 s pulsieren, danach ruhig hell (spart Akku)
+      const w = leuchtet ? 0.35 + 0.35 * Math.sin(jetzt / 160) : 0.45;
+      for (const m of Object.values(this._leucht)) m.emissive.setScalar(w);
+    }
+    this.renderer.render(this.szene, this.kamera); this.bilder++;
+    if (this.anim.length || this.marken.length || leuchtet) this._bild();
+  }
+}
+
 class EinstellungenBoundary {
   static SCHLUESSEL = 'brettspiele.einstellungen';
   static FORMAT = 1;
@@ -3828,15 +4193,16 @@ class EinstellungenBoundary {
     try {
       const d = JSON.parse(this._speicher.getItem(EinstellungenBoundary.SCHLUESSEL));
       if (d && typeof d === 'object' && d.formatversion === EinstellungenBoundary.FORMAT) {
-        return { ton: d.ton !== false, stufen: (d.stufen && typeof d.stufen === 'object') ? { ...d.stufen } : {} };
+        return { ton: d.ton !== false, stufen: (d.stufen && typeof d.stufen === 'object') ? { ...d.stufen } : {},
+          ansicht: (d.ansicht && typeof d.ansicht === 'object') ? { ...d.ansicht } : {} };
       }
     } catch (e) { /* kaputte Daten: Standardwerte */ }
-    return { ton: true, stufen: {} };
+    return { ton: true, stufen: {}, ansicht: {} };
   }
   speichere(e) {
     try {
       this._speicher.setItem(EinstellungenBoundary.SCHLUESSEL,
-        JSON.stringify({ formatversion: EinstellungenBoundary.FORMAT, ton: e.ton, stufen: e.stufen }));
+        JSON.stringify({ formatversion: EinstellungenBoundary.FORMAT, ton: e.ton, stufen: e.stufen, ansicht: e.ansicht }));
     } catch (err) { /* Speicher voll oder gesperrt: Einstellung gilt nur bis zum Neuladen */ }
   }
 }
@@ -3848,6 +4214,8 @@ class EinstellungenControl {
   setzeTon(an) { this._e.ton = !!an; this._b.speichere(this._e); }
   stufe(spiel) { const s = this._e.stufen[spiel]; return EinstellungenControl.STUFEN.includes(s) ? s : 'mittel'; }
   setzeStufe(spiel, stufe) { this._e.stufen[spiel] = stufe; this._b.speichere(this._e); }
+  ansicht(spiel) { return this._e.ansicht[spiel] === '2d' ? '2d' : '3d'; }
+  setzeAnsicht(spiel, a) { this._e.ansicht[spiel] = a === '2d' ? '2d' : '3d'; this._b.speichere(this._e); }
 }
 
 /* Klang (UI): eigene Töne per WebAudio, keine Tondateien. */
@@ -4014,6 +4382,7 @@ GameUI.einst = new EinstellungenControl(new EinstellungenBoundary(speicher));
 GameUI.klang = new Klang();
 GameUI.NAMEN = { tictactoe: 'Tic Tac Toe', connect4: 'Vier gewinnt', othello: 'Reversi', muehle: 'Mühle', chess: 'Schach', mangala: 'Mangala' };
 GameUI.STUFEN_TEXT = { leicht: 'Leicht', mittel: 'Mittel', stark: 'Stark' };
+GameUI.ANSICHT_3D = ['connect4', 'chess'];
 (function tonSchalter() {
   const b = document.querySelector('.ton-schalter');
   const zeige = () => { const an = GameUI.einst.istTonAn(); b.textContent = an ? '🔊' : '🔇'; b.setAttribute('aria-pressed', String(an)); };
