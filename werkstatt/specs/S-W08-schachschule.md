@@ -1,6 +1,6 @@
 # S-W08: Schachschule (Figuren-Schule, Aufgaben, Computerzug erklärt)
 
-**Status:** freigegeben am 01.11.2026, 16:55
+**Status:** gebaut, freigegeben am 01.11.2026, 16:55 (Speichern des Fortschritts: Freigabe steht aus, bis dahin ausgeschaltet)
 <!-- Freigabe durch den Betreiber im Projekt-Thread: "Ja, und Figuren schule. Baue alles ein was relativ einfach zu implementieren ist"
      (Antwort auf das Angebot "Übungsaufgaben (zum Beispiel Matt in 1) oder eine Figuren-Schule"). Speichern des Fortschritts: eigene Frage, siehe unten. -->
 
@@ -25,7 +25,8 @@ Ein neuer Reiter **Schachschule** mit drei Teilen, dazu eine kleine Ergänzung i
 - **Aufgaben:** Brett und Regeln wie im Schachspiel (chess.js). Falscher, aber erlaubter Zug: "Noch nicht. Versuch es nochmal." und die Stellung steht wieder am Anfang.
   "Tipp" markiert die Figur, die ziehen muss. "Lösung" zeigt den Zug (Start und Ziel markiert), die Aufgabe zählt dann nicht als gelöst.
   Am Zug ist die Seite aus der Stellung (meist Weiß, je eine Aufgabe für Schwarz); die Überschrift sagt, wer zieht.
-- **Fortschritt:** gelöste Lektionen und Aufgaben bekommen einen Haken in der Übersicht. Gespeichert wird nach der Antwort des Betreibers auf die Frage dazu
+- **Fortschritt:** gelöste Lektionen und Aufgaben bekommen einen Haken in der Übersicht. Wurde bei einer Aufgabe die Lösung gezeigt, zählt sie bis zum Neuladen nicht mehr (auch nach "Nochmal").
+  Speichern erst nach Freigabe durch den Betreiber (Frage am 01.11.2026 gestellt, Schalter `SchuleBoundary.SPEICHERN`, bis dahin aus, Haken gelten bis zum Neuladen). Dann
   in `brettspiele.schule` als `{"formatversion":1,"geloest":["L1","M3",...]}` (nur auf dem Gerät). Unbekannte Kennungen werden ignoriert, kaputte Daten → leer.
 - **Schichten:** `SchuleEntity` (Lektion: Feld, Sterne, Züge, Zugerzeugung, Bestwert; rein, ohne DOM), `SchuleBoundary` (Speicher, Aufgabenprüfung mit chess.js),
   `SchuleControl` (Inhalte, Ablauf, Tipp, Lösung), `SchuleUI` (Reiter, Texte, Brett). Keine Zeit, kein Zufall.
@@ -65,6 +66,12 @@ Ein neuer Reiter **Schachschule** mit drei Teilen, dazu eine kleine Ergänzung i
 | PS-16 | Fehlerfall | Speicher `{kaputt`, `{"formatversion":1,"geloest":["X9",5]}` und `{"formatversion":2,...}` → Übersicht ohne Haken, keine Fehler | AK-7 |
 | PS-17 | Normal | Gegen Computer e2-e4: nach dem Antwortzug Satz "Computer: …" | AK-8 |
 | PS-18 | Normal | Lernhilfe aus: kein Satz nach dem Computerzug | AK-8 |
+| PS-14b | Grenzwert | Lösung zeigen, "Nochmal", selbst spielen (Matt und Gewinn-Aufgabe) → kein Haken | AK-6 |
+| PS-13b | Normal | Tipp in Lektionen (nächstes Feld eines kürzesten Wegs) und bei Gewinn- und Schwarz-Aufgaben | AK-6 |
+| PS-5b | Grenzwert | Umweg: Turm-Lektion in 5 Zügen → "Bestwert: 3"; eigene Suche im Test bestätigt jeden Bestwert | AK-3 |
+| PS-10b | Missbrauch | Eigene Figur wählen, Feld ohne Punkt tippen → nichts passiert | AK-4 |
+| PS-16b | Fehlerfall | Ohne Freigabe: nach Neuladen kein Haken und nichts gespeichert | AK-7 |
+| PS-18b | Normal | Nach "Zug zurück" ist der Computersatz weg; Control liefert ohne Lernhilfe keine Gründe | AK-8 |
 | PS-19 | Grenzwert | 412 px: Brett passt, Felder ≥ 44 px, kein Querscroll, 7 Reiter innerhalb der Leiste | AK-9 |
 
 ## Gegenproben
@@ -79,4 +86,11 @@ Matt in 2, Eröffnungen, 3D in der Schachschule, Erklärungen zu Rochade und en 
 Neu: `SchuleEntity`, `SchuleBoundary`, `SchuleControl`, `SchuleUI`. Geändert: `ChessControl` (Gründe des Computerzugs), `ChessUI` (Satz), Reiterleiste, `seite_handy.js` (7 Reiter).
 
 ## Ergebnis
-- offen
+- Vorher: 9 von 9 Tests rot (Reiter fehlt). Nachher: 9 von 9 grün (`werkstatt/tests/schule_test.js`), 10 von 10 Gegenproben erkannt (`gegenproben_schule.py`).
+- Bestwerte: Turm 3, Läufer 3, Dame 4, Springer 3, König 5, Bauer 4 Züge. 12 Matt-Aufgaben mit zusammen 15 Mattzügen. Gewinn-Aufgaben per Suche (4 Halbzüge) geprüft, Lösungslisten vollständig.
+- Felder der Schachschule 45 px bei 412 px Breite (Schach-Reiter bleibt bei 38 px).
+- Beim Bauen gefunden: zwei Aufgaben-Ideen waren falsch (Bauerngabel d3-d4 verliert, Läufer-Spieß stand schon im Schach); mit der Suche erkannt und ersetzt.
+  Früheste Stufe: Spec (jede Stellung vor dem Eintragen mit der Schachregel und der Suche prüfen).
+- Unabhängige Prüfung (zweiter Agent): Fehler gefunden und behoben: nach "Lösung" und "Nochmal" zählte die Aufgabe wieder als gelöst; Speichern lief ohne Freigabe (jetzt aus, bis zur Antwort).
+  Tests ergänzt: eigene Suche für den Bestwert, Umweg-Meldung, unerlaubter Zug, Tipp in Lektion und Schwarz-Aufgaben, Haken bei Lektionen, Computersatz nach "Zug zurück", weitere Zugregeln. Texte: Bauer wird "meist zur Dame", Computersatz ohne Grund jetzt neutral.
+- Gerätetest: offen (Abnahmeliste `abnahme-schachschule-S-W08.md`).

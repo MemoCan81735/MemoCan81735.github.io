@@ -9,6 +9,8 @@ const PORT = 8000 + Math.floor(Math.random() * 900);
 const URL_ = `http://127.0.0.1:${PORT}/brettspiele/`;
 
 let browser;
+// Freigabe des Betreibers zum Speichern des Fortschritts (S-W08): steht aus. Bei Freigabe hier und in SchuleBoundary.SPEICHERN auf true.
+const FREIGABE_SPEICHERN = false;
 // schule: Inhalt von brettspiele.schule (roher Text) oder null
 async function seite({ schule = null, breite = 412, tab = 'schule' } = {}) {
   const ctx = await browser.newContext({ viewport: { width: breite, height: 915 }, deviceScaleFactor: 1 });
@@ -56,7 +58,8 @@ test('s_uebersicht', async () => {
 test('s_zuege', async () => {
   const p = await seite();
   const F = [['r', 'd4', [], 14], ['b', 'd4', [], 13], ['q', 'd4', [], 27], ['n', 'd4', [], 8], ['k', 'd4', [], 8], ['p', 'e2', [], 2],
-    ['n', 'a1', [], 2], ['k', 'a1', [], 3], ['r', 'a1', ['a3'], 9], ['p', 'e2', ['e3'], 0], ['p', 'e2', ['d3'], 3], ['p', 'e3', [], 1], ['b', 'c1', ['e3'], 4]];
+    ['n', 'a1', [], 2], ['k', 'a1', [], 3], ['r', 'a1', ['a3'], 9], ['p', 'e2', ['e3'], 0], ['p', 'e2', ['d3'], 3], ['p', 'e3', [], 1], ['b', 'c1', ['e3'], 4],
+    ['n', 'a1', ['b3'], 2], ['q', 'd4', ['d6'], 25], ['p', 'e2', ['e4'], 1], ['p', 'e8', [], 0]];
   const r = await p.evaluate(([F, I]) => F.map(([fig, sq, st]) => {
     const i = s => (8 - Number(s[1])) * 8 + 'abcdefgh'.indexOf(s[0]);
     return SchuleEntity.ziele(fig, i(sq), new Set(st.map(i))).length;
@@ -77,6 +80,28 @@ test('s_lektion', async () => {
     pruefe(a.art === 'lektion' && a.brett.filter(x => x === '*').length >= 2, `${id}: Lektion ohne Sterne ${JSON.stringify(a.brett)}`);
     const weg = await p.evaluate(() => { const a = window.__brett.schule.control.getAnsicht(); return SchuleEntity.bestweg(a.figur, a.feld, new Set(a.brett.map((x, i) => x === '*' ? i : -1).filter(i => i >= 0))); });
     pruefe(weg && weg.length === a.bestwert, `${id}: Bestwert ${a.bestwert}, Weg ${weg && weg.length}`);
+    // eigene Suche im Test: alle Zugfolgen der Länge 1, 2, ... bis alle Sterne gesammelt sind
+    const minimal = await p.evaluate(() => {
+      const a = window.__brett.schule.control.getAnsicht(), sterne = a.brett.map((x, i) => x === '*' ? i : -1).filter(i => i >= 0);
+      let stand = [{ f: a.feld, rest: sterne }];
+      for (let n = 1; n <= 8; n++) {
+        const neu = [];
+        for (const s of stand) for (const z of SchuleEntity.ziele(a.figur, s.f, new Set(s.rest))) {
+          const rest = s.rest.filter(x => x !== z);
+          if (!rest.length) return n;
+          neu.push({ f: z, rest });
+        }
+        stand = neu;
+      }
+      return -1;
+    });
+    pruefe(minimal === a.bestwert, `${id}: eigene Suche ${minimal}, Bestwert ${a.bestwert}`);
+    // Tipp in der Lektion: markiert ein Ziel, von dem aus der Rest in Bestwert-1 Zügen geht
+    await p.click('#schule-view .sc-tipp');
+    const tipp = await p.evaluate(() => { const c = window.__brett.schule.control, a = c.getAnsicht(), z = a.markiert[0];
+      const sterne = new Set(a.brett.map((x, i) => x === '*' ? i : -1).filter(i => i >= 0)), ok = SchuleEntity.ziele(a.figur, a.feld, sterne).includes(z);
+      sterne.delete(z); const rest = sterne.size ? SchuleEntity.bestweg(a.figur, z, sterne).length : 0; return { ok, rest, anzahl: a.markiert.length }; });
+    pruefe(tipp.anzahl === 1 && tipp.ok && tipp.rest === a.bestwert - 1, `${id}: Tipp ${JSON.stringify(tipp)}`);
     // PS-6: Feld ohne Ziel antippen
     const ohne = await p.evaluate(() => { const c = window.__brett.schule.control, a = c.getAnsicht(); c.handleFeld(a.feld); const z = new Set(c.getAnsicht().ziele); for (let i = 0; i < 64; i++) if (!z.has(i) && i !== a.feld) { c.handleFeld(i); return i; } return -1; });
     pruefe((await ANSICHT(p)).zuege === 0, `${id}: Fehltipp auf ${ohne} zählt als Zug`);
@@ -94,7 +119,13 @@ test('s_lektion', async () => {
     const n = await ANSICHT(p);
     pruefe(n.zuege === 0 && !n.fertig && n.feld === a.feld && JSON.stringify(n.brett) === JSON.stringify(a.brett), `${id}: Nochmal stellt nicht zurück`);
     await p.click('#schule-view .sc-zurueck');
+    pruefe(await p.evaluate(id => document.querySelector(`.sc-eintrag[data-id=${id}]`).classList.contains('geloest'), id), `${id}: kein Haken nach dem Lösen`);
   }
+  // Umweg: Turm-Lektion in 5 statt 3 Zügen → Meldung nennt den Bestwert
+  await p.click('.sc-eintrag[data-id=L1]');
+  for (const [a, b] of [['a1', 'a3'], ['a3', 'a6'], ['a6', 'f6'], ['f6', 'f4'], ['f4', 'f2']]) { await p.click(`#scboard .ch-square:nth-child(${idx(a) + 1})`); await p.click(`#scboard .ch-square:nth-child(${idx(b) + 1})`); }
+  const umweg = await ANSICHT(p);
+  pruefe(umweg.fertig && /Geschafft in 5 Zügen\. Bestwert: 3/.test(umweg.meldung), `Umweg: ${umweg.meldung}`);
   console.log(`       Bestwerte ${ergebnis.join(' ')}`);
   const f = p.fehler; await zu(p);
   pruefe(f.length === 0, f.join(' | '));
@@ -126,6 +157,14 @@ test('s_matt', async () => {
     // PS-10: gegnerische Figur antippen
     const gegner = await p.evaluate(() => { const a = window.__brett.schule.control.getAnsicht(); return a.brett.findIndex(x => x && x !== '*' && x[0] !== a.amZug); });
     if (gegner >= 0) { await p.click(`#scboard .ch-square:nth-child(${gegner + 1})`); pruefe((await ANSICHT(p)).ausgewaehlt === null, `${id}: gegnerische Figur wählbar`); }
+    // unerlaubter Zug: eigene Figur, dann ein Feld ohne Punkt
+    await p.click('#schule-view .sc-nochmal');
+    const unerlaubt = await p.evaluate(() => { const c = window.__brett.schule.control, a = c.getAnsicht();
+      const eigen = a.brett.findIndex(x => x && x !== '*' && x[0] === a.amZug); c.handleFeld(eigen);
+      const z = new Set(c.getAnsicht().ziele); const leer = a.brett.findIndex((x, i) => !x && !z.has(i)); c.handleFeld(leer);
+      const b = c.getAnsicht(); return { fen: b.fen === a.fen, status: b.status }; });
+    pruefe(unerlaubt.fen && !unerlaubt.status, `${id}: unerlaubter Zug ${JSON.stringify(unerlaubt)}`);
+    await p.click('#schule-view .sc-nochmal');
     // PS-8: jeder Mattzug wird angenommen
     for (const [a, b] of r.matt) {
       await p.click('#schule-view .sc-nochmal');
@@ -197,8 +236,24 @@ test('s_tipp_loesung', async () => {
   pruefe(a.fertig, 'Zug nach Lösung nicht ausgeführt');
   await p.click('#schule-view .sc-zurueck');
   const haken = await p.evaluate(() => document.querySelector('.sc-eintrag[data-id=M1]').classList.contains('geloest'));
-  const f = p.fehler; await zu(p);
   pruefe(!haken, 'Aufgabe nach "Lösung" als gelöst markiert');
+  // Lösung zeigen, Nochmal, dann selbst spielen: zählt weiter nicht (auch bei einer Gewinn-Aufgabe)
+  for (const id of ['M2', 'G1']) {
+    await p.click(`.sc-eintrag[data-id=${id}]`);
+    await p.click('#schule-view .sc-loesung'); await p.click('#schule-view .sc-nochmal');
+    const l = await p.evaluate(id => window.__brett.schule.control.loesungen(id)[0], id);
+    await KLICK(p, l.from); await KLICK(p, l.to);
+    pruefe((await ANSICHT(p)).fertig, `${id}: Zug nicht ausgeführt`);
+    await p.click('#schule-view .sc-zurueck');
+    pruefe(!(await p.evaluate(id => document.querySelector(`.sc-eintrag[data-id=${id}]`).classList.contains('geloest'), id)), `${id}: nach Lösung und Nochmal als gelöst markiert`);
+  }
+  // Tipp bei Gewinn-Aufgaben und für Schwarz
+  for (const id of ['G1', 'G7', 'M11', 'M12']) {
+    const r = await p.evaluate(id => { const c = window.__brett.schule.control; c.oeffne(id); const m = c.tipp(); const a = c.getAnsicht();
+      return { m, von: c.loesungen(id).map(l => SchuleControl.idx(l.from)), farbe: a.brett[m[0]] && a.brett[m[0]][0], amZug: a.amZug }; }, id);
+    pruefe(r.m.length === 1 && r.von.includes(r.m[0]) && r.farbe === r.amZug, `${id}: Tipp ${JSON.stringify(r)}`);
+  }
+  const f = p.fehler; await zu(p);
   pruefe(f.length === 0, f.join(' | '));
 });
 
@@ -209,18 +264,34 @@ test('s_fortschritt', async () => {
   await KLICK(p, z.from); await KLICK(p, z.to);
   await p.click('#schule-view .sc-zurueck');
   pruefe(await p.evaluate(() => document.querySelector('.sc-eintrag[data-id=M1]').classList.contains('geloest')), 'kein Haken nach dem Lösen');
+  // Ohne Freigabe zum Speichern (SchuleBoundary.SPEICHERN = false) bleibt nichts nach dem Neuladen
+  const freigabe = FREIGABE_SPEICHERN;
   await p.reload(); await oeffne(p, 'schule');
   const r = await p.evaluate(() => ({ haken: document.querySelector('.sc-eintrag[data-id=M1]').classList.contains('geloest'), roh: localStorage.getItem('brettspiele.schule') }));
+  if (freigabe) pruefe(r.haken && JSON.parse(r.roh).formatversion === 1, `mit Freigabe: Haken nach Neuladen weg: ${r.roh}`);
+  else pruefe(!r.haken && r.roh === null, `ohne Freigabe gespeichert: ${r.roh}`);
+  // Speicherweg selbst (wie nach der Freigabe): speichern, neu laden, kaputte Daten
+  const s = await p.evaluate(() => {
+    const vorher = SchuleBoundary.SPEICHERN; SchuleBoundary.SPEICHERN = true;
+    try {
+      localStorage.removeItem('brettspiele.schule');
+      const c = new SchuleControl(new SchuleBoundary(localStorage, Chess));
+      c.oeffne('M1'); const l = c.loesungen('M1')[0];
+      c.handleFeld(SchuleControl.idx(l.from)); c.handleFeld(SchuleControl.idx(l.to));
+      const roh = localStorage.getItem('brettspiele.schule');
+      const wieder = new SchuleControl(new SchuleBoundary(localStorage, Chess)).uebersicht().matt[0].geloest;
+      const kaputt = ['{kaputt', JSON.stringify({ formatversion: 1, geloest: ['X9', 5] }), JSON.stringify({ formatversion: 2, geloest: ['M1'] }), JSON.stringify({ formatversion: 1, geloest: 'M1' })].map(k => {
+        localStorage.setItem('brettspiele.schule', k);
+        const u = new SchuleControl(new SchuleBoundary(localStorage, Chess)).uebersicht();
+        return [...u.lektionen, ...u.matt, ...u.gewinn].filter(x => x.geloest).length;
+      });
+      return { roh, wieder, kaputt };
+    } finally { SchuleBoundary.SPEICHERN = vorher; localStorage.removeItem('brettspiele.schule'); }
+  });
   const f = p.fehler; await zu(p);
-  pruefe(r.haken, `Haken nach Neuladen weg: ${r.roh}`);
-  pruefe(JSON.parse(r.roh).formatversion === 1, `Formatversion fehlt: ${r.roh}`);
+  pruefe(JSON.parse(s.roh).formatversion === 1 && s.wieder, `Speicherweg: ${JSON.stringify(s)}`);
+  pruefe(s.kaputt.every(n => n === 0), `kaputte Daten ergeben Haken: ${s.kaputt}`);
   pruefe(f.length === 0, f.join(' | '));
-  for (const roh of ['{kaputt', JSON.stringify({ formatversion: 1, geloest: ['X9', 5] }), JSON.stringify({ formatversion: 2, geloest: ['M1'] }), JSON.stringify({ formatversion: 1, geloest: 'M1' })]) {
-    const q = await seite({ schule: roh });
-    const h = await q.evaluate(() => document.querySelectorAll('.sc-eintrag.geloest').length);
-    const g = q.fehler; await zu(q);
-    pruefe(h === 0 && g.length === 0, `Speicher ${roh}: ${h} Haken, Fehler ${g.join(' | ')}`);
-  }
 });
 
 test('s_computer_satz', async () => {
@@ -238,6 +309,22 @@ test('s_computer_satz', async () => {
   await p.waitForFunction(() => window.__brett.chess.control.getCurrentPlayer() === 'w', null, { timeout: 10000 });
   await p.waitForTimeout(200);
   const aus = await p.evaluate(() => { const s = document.getElementById('chlernsatz'); return s.hidden ? '' : s.textContent; });
+  // Control: Gründe nur mit Lernhilfe; nach "Zug zurück" ist der Satz weg
+  const r = await p.evaluate(() => {
+    const g = window.__brett.chess, c = g.control, fen = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    c.setMode(false);
+    c.setLernen(false); c.boundary.restoreEntity({ fen }); c.performAiMove({ from: 'e7', to: 'e5' }); const ohne = c.holeKiGrund();
+    c.setLernen(true); c.boundary.restoreEntity({ fen }); c.performAiMove({ from: 'e7', to: 'e5' }); const mit = c.holeKiGrund();
+    return { ohne, mit: !!(mit && mit.gruende.length) };
+  });
+  pruefe(r.ohne === null && r.mit, `Gründe des Computerzugs: ${JSON.stringify(r)}`);
+  await p.evaluate(() => { const g = window.__brett.chess; g.ui.handleReset(); g.ui.handleModeChange(true); g.ui.handleSquareClick(52); g.ui.handleSquareClick(36); });
+  await p.waitForFunction(() => window.__brett.chess.control.getCurrentPlayer() === 'w', null, { timeout: 10000 });
+  await p.waitForTimeout(200);
+  const vorUndo = await p.evaluate(() => !document.getElementById('chlernsatz').hidden);
+  await p.click('#chundoBtn');
+  const nachUndo = await p.evaluate(() => !document.getElementById('chlernsatz').hidden);
+  pruefe(vorUndo && !nachUndo, `Satz vor/nach Zug zurück: ${vorUndo}/${nachUndo}`);
   const f = p.fehler; await zu(p);
   pruefe(aus === '', `Satz trotz Lernhilfe aus: "${aus}"`);
   pruefe(f.length === 0, f.join(' | '));

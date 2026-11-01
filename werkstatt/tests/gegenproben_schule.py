@@ -12,7 +12,10 @@ FEHLER = [
     ('Falscher Zug wird angenommen', 'if (!richtig) { a.status', 'if (false) { a.status', 's_matt'),
     ('Lösung zählt als gelöst', 'if (!a.gezeigt) this._geloest(a.id);', 'this._geloest(a.id);', 's_tipp_loesung'),
     ('Fortschritt nicht gespeichert', '_geloest(id) { this.geloest.add(id); this.b.speichereGeloest(this.geloest); }', '_geloest(id) { this.geloest.add(id); }', 's_fortschritt'),
-    ('Computersatz fehlt', 'this._kiSatz = this.control.holeKiGrund();', 'this._kiSatz = null;', 's_computer_satz'),
+    ('Speichern ohne Freigabe', 'static SPEICHERN = false;', 'static SPEICHERN = true; /* */ static X = false;', 's_fortschritt'),
+    ('Lösung vergessen bei Nochmal', 'gezeigt: this._gezeigt.has(id),', 'gezeigt: false,', 's_tipp_loesung'),
+    ('Computergründe trotz Lernhilfe aus', 'this.kiGrund = this.lernen ?', 'this.kiGrund = true ?', 's_computer_satz'),
+    ('Computersatz fehlt', 'if (!aus.invalid) this._kiSatz = grund;', '', 's_computer_satz'),
     ('Lösungsliste unvollständig', "loesung: ['h1a8', 'h1c6', 'h1e4', 'h1h8']", "loesung: ['h1a8', 'h1c6', 'h1e4']", 's_gewinn'),
 ]
 env = dict(os.environ)

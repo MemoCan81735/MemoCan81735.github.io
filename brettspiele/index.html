@@ -3870,7 +3870,7 @@ class ChessUI extends GameUI {
       case 'schach': return 'Gibt Schach.';
       case 'entwickelt': return `Bringt ${A} ins Spiel (Entwicklung).`;
       case 'mitte': return 'Besetzt die Mitte, dort wirkt die Figur am meisten.';
-      case 'ruhig': return 'Ein ruhiger Zug ohne direkte Drohung.';
+      case 'ruhig': return 'Kein Schlagen und keine direkte Drohung, der Computer hält den Zug für gut.';
       default: return 'Ist laut Rechner der stärkste Zug.';
     }
   }
@@ -4067,7 +4067,8 @@ class ChessUI extends GameUI {
     const move = await this.control.computeAiMove();
     if (!this.control.isAiTurn() || !move) return { invalid: true };
     const aus = this.control.performAiMove(move);
-    this._kiSatz = this.control.holeKiGrund();
+    const grund = this.control.holeKiGrund();
+    if (!aus.invalid) this._kiSatz = grund;
     return aus;
   }
 }
@@ -4588,8 +4589,10 @@ class SchuleEntity {
 class SchuleBoundary {
   static SCHLUESSEL = 'brettspiele.schule';
   static FORMAT = 1;
+  static SPEICHERN = false;   // Freigabe des Betreibers steht aus (S-W08): bis dahin gilt der Fortschritt nur bis zum Neuladen
   constructor(speicher, ChessCls) { this._speicher = speicher; this._Chess = ChessCls; }
   ladeGeloest(gueltig) {
+    if (!SchuleBoundary.SPEICHERN) return new Set();
     try {
       const d = JSON.parse(this._speicher.getItem(SchuleBoundary.SCHLUESSEL));
       if (d && d.formatversion === SchuleBoundary.FORMAT && Array.isArray(d.geloest)) return new Set(d.geloest.filter(x => gueltig.has(x)));
@@ -4597,6 +4600,7 @@ class SchuleBoundary {
     return new Set();
   }
   speichereGeloest(menge) {
+    if (!SchuleBoundary.SPEICHERN) return;
     try { this._speicher.setItem(SchuleBoundary.SCHLUESSEL, JSON.stringify({ formatversion: SchuleBoundary.FORMAT, geloest: [...menge] })); }
     catch (e) { /* Speicher gesperrt: gilt bis zum Neuladen */ }
   }
@@ -4650,7 +4654,8 @@ class SchuleControl {
     const S = SchuleControl;
     this._alle = [...S.LEKTIONEN.map(l => l.id), ...S.MATT.map(m => m.id), ...S.GEWINN.map(g => g.id)];
     this.geloest = boundary.ladeGeloest(new Set(this._alle));
-    this.a = null;   // offene Lektion oder Aufgabe
+    this.a = null;            // offene Lektion oder Aufgabe
+    this._gezeigt = new Set(); // Aufgaben mit gezeigter Lösung: zählen bis zum Neuladen nicht mehr als gelöst
   }
   uebersicht() {
     const e = (x) => ({ id: x.id, geloest: this.geloest.has(x.id) });
@@ -4671,7 +4676,7 @@ class SchuleControl {
     }
     const m = S.MATT.find(x => x.id === id) || S.GEWINN.find(x => x.id === id);
     if (!m) { this.a = null; return false; }
-    this.a = { art: 'aufgabe', id, gruppe: id[0] === 'M' ? 'matt' : 'gewinn', start: m.fen, fen: m.fen, ausgewaehlt: null, status: null, fertig: false, gezeigt: false, markiert: [] };
+    this.a = { art: 'aufgabe', id, gruppe: id[0] === 'M' ? 'matt' : 'gewinn', start: m.fen, fen: m.fen, ausgewaehlt: null, status: null, fertig: false, gezeigt: this._gezeigt.has(id), markiert: [] };
     return true;
   }
   schliesse() { this.a = null; }
@@ -4734,7 +4739,7 @@ class SchuleControl {
     const a = this.a;
     if (!a || a.art !== 'aufgabe' || a.fertig) return [];
     const l = this.loesungen(a.id)[0];
-    a.gezeigt = true;
+    a.gezeigt = true; this._gezeigt.add(a.id);
     a.markiert = [SchuleControl.idx(l.from), SchuleControl.idx(l.to)];
     return a.markiert;
   }
@@ -4748,7 +4753,7 @@ class SchuleUI {
     L3: ['Dame', 'Die Dame zieht gerade und schräg, so weit sie will: Turm und Läufer zusammen. Sie ist die stärkste Figur, 9 Punkte.'],
     L4: ['Springer', 'Der Springer springt wie ein L: zwei Felder gerade, dann eins zur Seite. Er springt über alles hinweg. 3 Punkte.'],
     L5: ['König', 'Der König zieht ein Feld in jede Richtung. Wird er angegriffen, ist das Schach. Kann er nicht mehr entkommen, ist es Matt und die Partie ist aus.'],
-    L6: ['Bauer', 'Der Bauer zieht ein Feld nach vorn, beim ersten Zug auch zwei. Schlagen darf er nur schräg nach vorn. Auf der letzten Reihe wird er zur Dame.'],
+    L6: ['Bauer', 'Der Bauer zieht ein Feld nach vorn, beim ersten Zug auch zwei. Schlagen darf er nur schräg nach vorn. Auf der letzten Reihe wird er zu einer anderen Figur, meist zur Dame.'],
   };
   static GEWINN = {
     G1: 'Die Dame war ungedeckt.', G2: 'Der Turm war ungedeckt.', G3: 'Auch der König darf eine ungedeckte Figur schlagen.',
