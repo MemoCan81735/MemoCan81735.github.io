@@ -53,6 +53,7 @@ test('f_2d_svg', async () => {
     out.breite = Math.min(...figuren.map(f => mass(f).width / feld.width));
     // Umwandlung für Schwarz: Stellung mit schwarzem Bauern auf der 2. Reihe
     const g = window.__brett.chess; g.control.setMode(false); g.ui.handleReset();
+    g.control.setLernen(false);   // Zugfolge mit absichtlichen Patzern: ohne Warnung der Lernhilfe (S-W07)
     // a3 h5 a4 h4 a5 h3 a6 hxg2 axb7, dann gxh1: Umwandlung für Schwarz
     for (const [v, n] of [[48, 40], [15, 31], [40, 32], [31, 39], [32, 24], [39, 47], [24, 16], [47, 54], [16, 9], [54, 63]]) { g.ui.handleSquareClick(v); g.ui.handleSquareClick(n); }
     out.umwandlung = !!g.control.getPendingPromotion();
