@@ -519,6 +519,13 @@
     background: var(--ios-card);
     cursor: pointer;
   }
+  /* Lernhilfe (S-W07) */
+  .lern-satz { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--ios-card); font-size: 0.9rem; line-height: 1.35; border-left: 4px solid #ff9f0a; max-width: 100%; box-sizing: border-box; }
+  .warnung { margin-top: 12px; padding: 12px; border-radius: 12px; background: #fff1f0; color: #5a0f0a; border: 2px solid #ff3b30; font-size: 0.95rem; line-height: 1.35; max-width: 100%; box-sizing: border-box; }
+  .warnung p { margin: 0 0 10px; }
+  .warn-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; }
+  .warn-knoepfe button { min-height: 44px; flex: 1 1 auto; }
+  .lern-satz[hidden], .warnung[hidden] { display: none; }
   #chengine {
     margin-top: 8px;
     font-size: 0.7rem;
@@ -780,6 +787,11 @@
     <button data-piece="r">♜</button>
     <button data-piece="b">♝</button>
     <button data-piece="n">♞</button>
+  </div>
+  <div id="chlernsatz" class="lern-satz" hidden></div>
+  <div id="chwarnung" class="warnung" role="alert" hidden>
+    <p></p>
+    <div class="warn-knoepfe"><button class="action warn-zurueck" type="button">Zurücknehmen</button><button class="action secondary warn-weiter" type="button">Trotzdem weiter</button></div>
   </div>
 
   <div id="chcontrols">
@@ -3118,6 +3130,90 @@ class ChessBoundary extends GameBoundary {
     return { score: best, move: bestMove };
   }
 
+  /* --- Lernhilfe (S-W07): reine Rechnung auf Kopien der Stellung, liefert nur Fakten. --- */
+  // Gegner (die Seite am Zug in game) schlägt; Verlust je Figur über zwei Halbzüge, größter zählt.
+  static _verlust(game) {
+    let best = null;
+    for (const m of game.moves({ verbose: true })) {
+      if (!m.captured || m.captured === 'k') continue;
+      const w = ChessBoundary.VALUES[m.captured];
+      game.move(m);
+      const zurueck = game.moves({ verbose: true }).some(r => r.to === m.to && r.captured);
+      game.undo();
+      const v = zurueck ? Math.max(0, w - ChessBoundary.VALUES[m.piece]) : w;
+      if (!best || v > best.punkte) best = { punkte: v, figur: m.captured, feld: m.to };
+    }
+    return best || { punkte: 0 };
+  }
+  static _mattInEins(game) {
+    for (const m of game.moves({ verbose: true })) {
+      if (m.captured === 'k') continue;
+      game.move(m);
+      const matt = game.in_checkmate();
+      game.undo();
+      if (matt) return m;
+    }
+    return null;
+  }
+  // Gleiche Stellung, aber die andere Seite am Zug (ohne en passant).
+  static _gewendet(fen) {
+    const t = fen.split(' ');
+    t[1] = t[1] === 'w' ? 'b' : 'w'; t[3] = '-';
+    const g = new Chess();
+    return g.load(t.join(' ')) ? g : null;
+  }
+
+  zugGruende(fen, from, to, promotion = 'q') {
+    const g = new Chess(fen);
+    const m = g.move({ from, to, promotion });
+    if (!m) return [];
+    const gruende = [], fig = m.piece;
+    if (g.in_checkmate()) return [{ art: 'matt', figur: fig }];
+    const vorher = ChessBoundary._gewendet(fen);
+    if (vorher && ChessBoundary._mattInEins(vorher) && !ChessBoundary._mattInEins(g)) gruende.push({ art: 'verhindertMatt' });
+    if (m.captured) gruende.push({ art: 'schlaegt', figur: m.captured, punkte: ChessBoundary.VALUES[m.captured] });
+    if (vorher) {
+      const alt = ChessBoundary._verlust(vorher);
+      if (alt.punkte >= 2 && alt.feld === from && ChessBoundary._verlust(g).punkte === 0) gruende.push({ art: 'rettet', figur: fig });
+    }
+    const weiter = g.in_check() ? null : ChessBoundary._gewendet(g.fen());
+    if (weiter && ChessBoundary._mattInEins(weiter)) gruende.push({ art: 'drohtMatt' });
+    if (m.promotion) gruende.push({ art: 'umwandlung', figur: m.promotion });
+    if (m.flags.includes('k') || m.flags.includes('q')) gruende.push({ art: 'rochade' });
+    if (weiter) {
+      // Ziele der gezogenen Figur: Gewinn über zwei Halbzüge mindestens 2
+      let ziel = null;
+      for (const z of weiter.moves({ square: to, verbose: true })) {
+        if (!z.captured || z.captured === 'k') continue;
+        weiter.move(z);
+        const zurueck = weiter.moves({ verbose: true }).some(r => r.to === z.to && r.captured);
+        weiter.undo();
+        const w = ChessBoundary.VALUES[z.captured], gewinn = zurueck ? w - ChessBoundary.VALUES[z.piece] : w;
+        if (gewinn >= 2 && (!ziel || w > ziel.punkte)) ziel = { art: 'greiftAn', figur: z.captured, feld: z.to, punkte: w };
+      }
+      if (ziel) gruende.push(ziel);
+    }
+    if (g.in_check()) gruende.push({ art: 'schach' });
+    const grund = m.color === 'w' ? '1' : '8';
+    if ((fig === 'n' || fig === 'b') && from[1] === grund) gruende.push({ art: 'entwickelt', figur: fig });
+    if (['d4', 'e4', 'd5', 'e5'].includes(to)) gruende.push({ art: 'mitte', figur: fig });
+    if (!gruende.length) gruende.push({ art: 'stellung' });
+    return gruende;
+  }
+
+  // Patzer nach dem Zug from-to aus der Stellung fen: Matt in einem Zug für den Gegner oder Verlust netto ≥ 2.
+  patzer(fen, from, to, promotion = 'q') {
+    const g = new Chess(fen);
+    const m = g.move({ from, to, promotion });
+    if (!m || g.game_over()) return null;
+    const matt = ChessBoundary._mattInEins(g);
+    if (matt) return { art: 'matt', zug: { from: matt.from, to: matt.to, figur: matt.piece } };
+    const v = ChessBoundary._verlust(g);
+    const netto = v.punkte - (m.captured ? ChessBoundary.VALUES[m.captured] : 0);
+    if (netto >= 2) return { art: 'haengt', figur: v.figur, feld: v.feld, punkte: v.punkte };
+    return null;
+  }
+
   _evaluate(game, aiColor) {
     const board = game.board();
     let score = 0;
@@ -3153,8 +3249,27 @@ class ChessControl extends GameControl {
     this.stockfish = stockfish; // StockfishEngine-Instanz oder null
     this.selected = null;
     this.pendingPromotion = null; // { from, to } während der Nutzer die Figur wählt
+    this.lernen = true;           // Lernhilfe (S-W07): Tipp mit Gründen, Warnung vor Patzern
+    this.warnung = null;          // offene Warnung { art, ..., vorher: FEN }, sperrt Brett, Tipp und KI
     this.setDifficulty('mittel');
   }
+
+  /* --- Lernhilfe (S-W07) --- */
+  setLernen(an) { this.lernen = !!an; if (!this.lernen) this.warnung = null; }
+  istLernen() { return this.lernen; }
+  getWarnung() { return this.warnung; }
+  tippGruende(zug) { return this.lernen && zug ? this.boundary.zugGruende(this.boundary.getFEN(), zug.from, zug.to) : null; }
+  // Nimmt genau den gewarnten Zug zurück (ein Halbzug), auch gegen die KI.
+  warnungZuruecknehmen() {
+    if (!this.warnung) return { invalid: true };
+    this.warnung = null;
+    this.selected = null;
+    this.boundary.undo();
+    this._persistGame();
+    return { invalid: false };
+  }
+  warnungWeiter() { if (!this.warnung) return { invalid: true }; this.warnung = null; return { invalid: false }; }
+  isAiTurn() { return !this.warnung && super.isAiTurn(); }
 
   setDifficulty(key) {
     this.difficulty = ChessControl.DIFFICULTIES[key] ? key : 'mittel';
@@ -3169,7 +3284,7 @@ class ChessControl extends GameControl {
 
   // Tipp: Stockfish mit voller Stärke für den Spieler am Zug, sonst Ersatzsuche Tiefe 3.
   async computeHint() {
-    if (this.boundary.isGameOver() || this.isAiTurn() || this.pendingPromotion) return null;
+    if (this.boundary.isGameOver() || this.isAiTurn() || this.pendingPromotion || this.warnung) return null;
     const spieler = this.boundary.getCurrentPlayer();
     if (this.stockfish && await this.stockfish.isReady()) {
       const vorher = this.stockfish.skillLevel;
@@ -3188,6 +3303,7 @@ class ChessControl extends GameControl {
   // keine Zughistorie, siehe ChessEntity.toJSON).
   undoMove() {
     if (this.boundary.isGameOver() || !this.boundary.canUndo()) return { invalid: true };
+    if (this.warnung) return this.warnungZuruecknehmen();
     this.pendingPromotion = null;
     this.selected = null;
     const plies = (this.vsAI && this.boundary.getCurrentPlayer() !== this.aiPlayer) ? 2 : 1;
@@ -3202,6 +3318,7 @@ class ChessControl extends GameControl {
     super.restartGame();
     this.selected = null;
     this.pendingPromotion = null;
+    this.warnung = null;
     if (this.stockfish) this.stockfish.newGame();
   }
 
@@ -3231,7 +3348,7 @@ class ChessControl extends GameControl {
   // die Ausführung zurückgestellt, bis die UI choosePromotion()
   // mit der gewählten Figur aufruft.
   handleSquareClick(index) {
-    if (this.boundary.isGameOver() || this.pendingPromotion) return { invalid: true };
+    if (this.boundary.isGameOver() || this.pendingPromotion || this.warnung) return { invalid: true };
     const board = this.boundary.getBoardState();
     const square = ChessEntity.squareFromIndex(index);
     const player = this.boundary.getCurrentPlayer();
@@ -3263,10 +3380,14 @@ class ChessControl extends GameControl {
 
   _commitMove(from, to, promotion = 'q') {
     this.selected = null;
-    return this._executeMove(
+    const vorher = this.boundary.getFEN();
+    const patzer = this.lernen ? this.boundary.patzer(vorher, from, to, promotion) : null;
+    const aus = this._executeMove(
       () => true, // bereits über canMove/needsPromotion geprüft
       () => this.boundary.makeMove(from, to, promotion)
     );
+    if (patzer && !aus.result) this.warnung = patzer;
+    return aus;
   }
 
   // Nutzt Stockfish, wenn verfügbar (echte, starke Engine über UCI-
@@ -3667,7 +3788,91 @@ class ChessUI extends GameUI {
     this.promoEl.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', () => this.handlePromotionChoice(btn.dataset.piece));
     });
+    // Lernhilfe (S-W07): Satz zum Tipp, Warnung vor Patzern, Schalter
+    this.satzEl = document.getElementById('chlernsatz');
+    this.warnEl = document.getElementById('chwarnung');
+    this.warnEl.querySelector('.warn-zurueck').addEventListener('click', () => this.handleWarnung(false));
+    this.warnEl.querySelector('.warn-weiter').addEventListener('click', () => this.handleWarnung(true));
+    this.control.setLernen(GameUI.einst ? GameUI.einst.lernen(this.spiel) : true);
+    this.lernenBtn = document.createElement('button');
+    this.lernenBtn.type = 'button'; this.lernenBtn.className = 'action secondary klein lernen-knopf';
+    this.lernenBtn.addEventListener('click', () => this.handleLernen());
+    this.resetBtn.parentElement.appendChild(this.lernenBtn);
     this.init();
+  }
+
+  static AKK = { p: 'den Bauern', n: 'den Springer', b: 'den Läufer', r: 'den Turm', q: 'die Dame', k: 'den König' };
+  static DEIN = { p: 'Dein Bauer', n: 'Dein Springer', b: 'Dein Läufer', r: 'Dein Turm', q: 'Deine Dame', k: 'Dein König' };
+  static UMWANDLUNG = { q: 'eine Dame', r: 'einen Turm', b: 'einen Läufer', n: 'einen Springer' };
+  static grundSatz(g) {
+    const A = ChessUI.AKK[g.figur];
+    switch (g.art) {
+      case 'matt': return 'Setzt Matt.';
+      case 'verhindertMatt': return 'Verhindert, dass der Gegner Matt setzt.';
+      case 'schlaegt': return `Schlägt ${A} (${g.punkte} ${g.punkte === 1 ? 'Punkt' : 'Punkte'}).`;
+      case 'rettet': return `Rettet ${A} vor dem Angriff.`;
+      case 'drohtMatt': return 'Droht im nächsten Zug Matt.';
+      case 'umwandlung': return `Macht aus dem Bauern ${ChessUI.UMWANDLUNG[g.figur]}.`;
+      case 'rochade': return 'Rochade: Der König steht sicher, der Turm kommt ins Spiel.';
+      case 'greiftAn': return `Greift ${A} auf ${g.feld} an.`;
+      case 'schach': return 'Gibt Schach.';
+      case 'entwickelt': return `Bringt ${A} ins Spiel (Entwicklung).`;
+      case 'mitte': return 'Besetzt die Mitte, dort wirkt die Figur am meisten.';
+      default: return 'Ist laut Rechner der stärkste Zug.';
+    }
+  }
+  static warnSatz(w) {
+    if (w.art === 'matt') return `Vorsicht: Jetzt kann der Gegner Matt setzen (${ChessUI.NAMEN[w.zug.figur]} ${w.zug.from} nach ${w.zug.to}).`;
+    return `Vorsicht: ${ChessUI.DEIN[w.figur]} auf ${w.feld} kann geschlagen werden, du verlierst ${w.punkte} Punkte.`;
+  }
+  _stand() { return JSON.stringify(this.control.getBoardState()) + this.control.getCurrentPlayer(); }
+
+  async handleTipp() {
+    if (this._tippLaeuft) return;
+    this._tippLaeuft = true;
+    try {
+      const zug = await this.control.computeHint();
+      if (!zug) return;
+      this._zeigeTipp(this._tippFelder(zug));
+      const gruende = this.control.tippGruende(zug);
+      if (!gruende || !gruende.length) return;
+      const figur = this.control.getBoardState()[ChessControl._indexFromSquare(zug.from)];
+      this.satzEl.textContent = `${ChessUI.NAMEN[figur ? figur[1] : 'p']} ${zug.from} nach ${zug.to}: ` + gruende.slice(0, 2).map(ChessUI.grundSatz).join(' ');
+      this.satzEl.hidden = false;
+      this._satzStand = this._stand();
+    } finally {
+      this._tippLaeuft = false;
+    }
+  }
+
+  handleWarnung(weiter) {
+    const aus = weiter ? this.control.warnungWeiter() : this.control.warnungZuruecknehmen();
+    if (aus.invalid) return;
+    this.render();
+    if (this.control.isAiTurn()) setTimeout(() => this.runAiTurn(), this.aiDelayMs);
+  }
+
+  handleLernen() {
+    const an = !this.control.istLernen();
+    const warAi = this.control.getWarnung();
+    this.control.setLernen(an);
+    if (GameUI.einst) GameUI.einst.setzeLernen(this.spiel, an);
+    this.render();
+    if (warAi && this.control.isAiTurn()) setTimeout(() => this.runAiTurn(), this.aiDelayMs);
+  }
+
+  _knoepfeAktualisieren() {
+    super._knoepfeAktualisieren();
+    if (this.tippBtn && this.control.getWarnung()) this.tippBtn.disabled = true;
+  }
+
+  _lernenZeigen() {
+    if (!this.warnEl) return;
+    const w = this.control.getWarnung();
+    this.warnEl.hidden = !w;
+    if (w) this.warnEl.querySelector('p').textContent = ChessUI.warnSatz(w);
+    if (!this.control.istLernen() || this._satzStand !== this._stand()) { this.satzEl.hidden = true; this.satzEl.textContent = ''; }
+    this.lernenBtn.textContent = this.control.istLernen() ? 'Lernhilfe an' : 'Lernhilfe aus';
   }
 
   render() {
@@ -3733,6 +3938,7 @@ class ChessUI extends GameUI {
     // Umwandlung: Figuren in der Farbe des Spielers am Zug
     this.promoEl.querySelectorAll('button').forEach(b => { const w = player + b.dataset.piece; if (b.dataset.figur !== w) { b.dataset.figur = w; b.innerHTML = ChessUI.figurSvg(w); b.setAttribute('aria-label', ChessUI.NAMEN[b.dataset.piece]); } });
     this.undoBtn.disabled = !this.control.canUndo() || this.control.isGameOver();
+    this._lernenZeigen();
 
     if (!gameOver) {
       const name = player === 'w' ? 'Weiß' : 'Schwarz';
@@ -4254,15 +4460,16 @@ class EinstellungenBoundary {
       const d = JSON.parse(this._speicher.getItem(EinstellungenBoundary.SCHLUESSEL));
       if (d && typeof d === 'object' && d.formatversion === EinstellungenBoundary.FORMAT) {
         return { ton: d.ton !== false, stufen: (d.stufen && typeof d.stufen === 'object') ? { ...d.stufen } : {},
-          ansicht: (d.ansicht && typeof d.ansicht === 'object') ? { ...d.ansicht } : {} };
+          ansicht: (d.ansicht && typeof d.ansicht === 'object') ? { ...d.ansicht } : {},
+          lernen: (d.lernen && typeof d.lernen === 'object') ? { ...d.lernen } : {} };
       }
     } catch (e) { /* kaputte Daten: Standardwerte */ }
-    return { ton: true, stufen: {}, ansicht: {} };
+    return { ton: true, stufen: {}, ansicht: {}, lernen: {} };
   }
   speichere(e) {
     try {
       this._speicher.setItem(EinstellungenBoundary.SCHLUESSEL,
-        JSON.stringify({ formatversion: EinstellungenBoundary.FORMAT, ton: e.ton, stufen: e.stufen, ansicht: e.ansicht }));
+        JSON.stringify({ formatversion: EinstellungenBoundary.FORMAT, ton: e.ton, stufen: e.stufen, ansicht: e.ansicht, lernen: e.lernen }));
     } catch (err) { /* Speicher voll oder gesperrt: Einstellung gilt nur bis zum Neuladen */ }
   }
 }
@@ -4276,6 +4483,9 @@ class EinstellungenControl {
   setzeStufe(spiel, stufe) { this._e.stufen[spiel] = stufe; this._b.speichere(this._e); }
   ansicht(spiel) { return this._e.ansicht[spiel] === '2d' ? '2d' : '3d'; }
   setzeAnsicht(spiel, a) { this._e.ansicht[spiel] = a === '2d' ? '2d' : '3d'; this._b.speichere(this._e); }
+  // Lernhilfe (S-W07): nur ein gespeichertes false schaltet sie aus
+  lernen(spiel) { return this._e.lernen[spiel] !== false; }
+  setzeLernen(spiel, an) { this._e.lernen[spiel] = !!an; this._b.speichere(this._e); }
 }
 
 /* Klang (UI): eigene Töne per WebAudio, keine Tondateien. */
