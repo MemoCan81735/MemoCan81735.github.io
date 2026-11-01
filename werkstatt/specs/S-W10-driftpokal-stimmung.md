@@ -20,7 +20,7 @@ gesetzt und gegenüber den ersten Vergleichsbildern stärker gemacht.
 | --- | --- | --- |
 | AK-1 | Alle 14 Strecken haben `grade` mit gültiger Tönung (#rrggbb), Sättigung 0,85 bis 1,25, Vignette 0,20 bis 0,50 | `s_daten` |
 | AK-2 | Leuchtdichte jeder Tönung ≥ 0,93; mindestens 10 verschiedene Tönungen; jede Strecke außer höchstens 2 hat Sättigung ≠ 1 | `s_daten` |
-| AK-3 | Alle Wetter- und Tageszeit-Abwandlungen aller Strecken haben gültiges `grade` (Tönung und Vignette wie oben; Sättigung 0,5 bis 1,25, weil Regen bewusst entsättigt, oder nicht gesetzt) | `s_wetter` |
+| AK-3 | Alle Wetter- und Tageszeit-Abwandlungen aller Strecken haben gültiges `grade` (gültige Tönung und Vignette wie oben, die Leuchtdichte der Tönung wird bei Wetter nicht geprüft, weil Gewitter und Nacht sie bewusst dunkler tönen; Sättigung 0,5 bis 1,25, weil Regen bewusst entsättigt, oder nicht gesetzt) | `s_wetter` |
 | AK-4 | `POST_LOOK.grade` ist an | `s_schalter` |
 | AK-5 | Echtes Rennen Herbstwald: Verhältnis Rot zu Blau im Bild mit Stimmung ≥ 8 % höher als ohne; mittlere Helligkeit um höchstens ±12 % (warme Szene mit Tönung 0,93 verliert von sich aus etwa 10 %) verändert | `s_bild` |
 | AK-6 | Das Rennen startet ohne Skriptfehler und ohne Anfragen an fremde Server | `s_bild` |

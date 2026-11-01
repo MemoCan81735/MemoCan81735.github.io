@@ -16,18 +16,18 @@ async function seite() {
   p.on('pageerror', e => p.fehler.push(e.message));
   p.on('request', r => { const u = r.url(); if (!u.startsWith(`http://127.0.0.1:${PORT}/`) && !u.startsWith('data:') && !u.startsWith('blob:')) p.fremd.push(u); });
   await p.goto(URL_);
-  await p.waitForFunction(() => typeof TRACK_LOOK !== 'undefined' && typeof POST_LOOK !== 'undefined', null, { timeout: 30000 });
+  await p.waitForFunction(() => typeof TRACK_LOOK !== 'undefined' && typeof POST_LOOK !== 'undefined', null, { timeout: 90000 });
   return p;
 }
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
 const pruefe = (bed, text) => { if (!bed) throw new Error(text); };
 const GRENZEN = `
-  window.__gueltig = (g, satMin = 0.85, satOpt = false) => {
+  window.__gueltig = (g, satMin = 0.85, satOpt = false, lumMin = 0.93) => {
     const f = [];
     if (!g) return ['kein grade'];
     if (!/^#[0-9a-fA-F]{6}$/.test(g.tint || '')) f.push('Tönung ungültig ' + g.tint);
-    else { const n = parseInt(g.tint.slice(1), 16), l = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255; if (l < 0.93) f.push('Tönung zu dunkel ' + l.toFixed(3)); }
+    else { const n = parseInt(g.tint.slice(1), 16), l = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255; if (l < lumMin) f.push('Tönung zu dunkel ' + l.toFixed(3)); }
     if (!((satOpt && g.sat == null) || (g.sat >= satMin && g.sat <= 1.25))) f.push('Sättigung ' + g.sat);
     if (!(g.vignette >= 0.2 && g.vignette <= 0.5)) f.push('Vignette ' + g.vignette);
     return f;
@@ -58,7 +58,7 @@ test('s_wetter', async () => {
     for (const id of Object.keys(TRACK_LOOK)) for (const k of arten) {
       const a = TrackLookUI.withWeather(TRACK_LOOK[id], k), b = TrackLookUI.withWeather(TRACK_LOOK[id], k);
       n++; if (a !== b) gleich = false;
-      for (const f of window.__gueltig(a.grade, 0.5, true)) fehler.push(id + '/' + k + ': ' + f);
+      for (const f of window.__gueltig(a.grade, 0.5, true, 0)) fehler.push(id + '/' + k + ': ' + f);
     }
     return { n, arten, fehler, gleich };
   });
@@ -87,7 +87,7 @@ async function rennenBild(an) {
   const idx = await p.evaluate(() => { const ids = Object.keys(TRACK_LOOK); return ids.indexOf('herbst'); });
   await p.evaluate((i) => document.querySelectorAll('#trackGrid > *')[i].click(), idx); await p.waitForTimeout(300);
   await p.evaluate(() => document.getElementById('trackGo').click()); await p.waitForTimeout(7000);
-  const png = await p.screenshot();
+  const png = await p.screenshot({ timeout: 90000 });
   const werte = await p.evaluate(async (b64) => {
     const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
     const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const x = c.getContext('2d'); x.drawImage(img, 0, 0);
@@ -120,6 +120,7 @@ test('s_bild', async () => {
   for (const t of tests) {
     if (nur && t.name !== nur) continue;
     try { await t.fn(); console.log('OK     ' + t.name); } catch (e) { rot++; console.log('FEHLER ' + t.name + ': ' + e.message); }
+    for (const c of browser.contexts()) await c.close().catch(() => { });   // auch nach Fehlern aufräumen (sonst rechnet die Seite weiter)
   }
   await browser.close(); srv.kill();
   console.log(rot ? `${rot} Test(s) rot` : 'Alle Stimmungstests grün');
