@@ -7,8 +7,8 @@ export NODE_PATH="${NODE_PATH:-$(npm root -g)}"
 set -e
 python3 werkstatt/seite_pruefen.py --gegenproben
 node werkstatt/seite_handy.js
-for t in brett brett3d luft teilen; do node "werkstatt/tests/${t}_test.js"; done
+for t in brett brett3d schach_figuren luft teilen; do node "werkstatt/tests/${t}_test.js"; done
 if [ "${1:-schnell}" = voll ]; then
-  for g in brett brett3d luft teilen; do python3 "werkstatt/tests/gegenproben_${g}.py"; done
+  for g in brett brett3d schach_figuren luft teilen; do python3 "werkstatt/tests/gegenproben_${g}.py"; done
 fi
 echo "Alle Prüfungen grün (${1:-schnell})."

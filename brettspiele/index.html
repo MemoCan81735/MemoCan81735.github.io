@@ -493,8 +493,16 @@
     box-shadow: inset 0 0 0 3px rgba(220,50,50,0.75);
   }
   .ch-square.in-check { box-shadow: inset 0 0 0 3px var(--ios-red); }
-  .ch-piece.w { color: #ffffff; text-shadow: 0 0 2px #000, 0 1px 1px rgba(0,0,0,0.6); }
-  .ch-piece.b { color: #1c1c1e; text-shadow: 0 1px 1px rgba(255,255,255,0.3); }
+  /* S-W06: eigene Figuren als SVG, unabhängig von der Schrift des Geräts */
+  #chboard .ch-square, #chpromo button { padding: 0; }
+  .ch-piece { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; }
+  .ch-piece svg, #chpromo svg { width: 92%; height: 92%; overflow: visible; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.35)); }
+  svg.w .koerper { fill: #ffffff; stroke: #111111; stroke-width: 1.6; stroke-linejoin: round; }
+  svg.w .innen { fill: none; stroke: #111111; stroke-width: 1.4; stroke-linecap: round; }
+  svg.b .koerper { fill: #1c1c1e; stroke: #000000; stroke-width: 1.6; stroke-linejoin: round; }
+  svg.b .innen { fill: none; stroke: #f2f2f2; stroke-width: 1.4; stroke-linecap: round; }
+  svg .auge { stroke: none; }
+  svg.w .auge { fill: #111111; } svg.b .auge { fill: #f2f2f2; }
 
   #chpromo {
     display: none;
@@ -503,6 +511,7 @@
   }
   #chpromo.active { display: flex; }
   #chpromo button {
+    display: flex; align-items: center; justify-content: center; padding: 3px;
     width: 44px; height: 44px;
     font-size: 1.6rem;
     border: none;
@@ -3616,10 +3625,26 @@ class MuehleUI extends GameUI {
 
 /* --- ChessUI: eigene DOM-Schicht, spricht nur mit ChessControl --- */
 class ChessUI extends GameUI {
+  static NAMEN = { p: 'Bauer', r: 'Turm', n: 'Springer', b: 'Läufer', q: 'Dame', k: 'König' };
   static SYMBOLS = {
     wp: '♙', wn: '♘', wb: '♗', wr: '♖', wq: '♕', wk: '♔',
     bp: '♟', bn: '♞', bb: '♝', br: '♜', bq: '♛', bk: '♚'
   };
+
+  // S-W06: Umrisse (gezeichnet im Raster 45 × 45, sichtbarer Ausschnitt 5..40 × 1..41). koerper = Fläche mit Rand, innen = Linien in Kontrastfarbe.
+  static SOCKEL = '<path d="M7 40 H38 V37 Q38 34 35 34 H10 Q7 34 7 37 Z"/>';
+  static FIGUREN = {
+    p: { k: '<circle cx="22.5" cy="20" r="5.5"/><path d="M17 27.5 Q22.5 24 28 27.5 L31 34 H14 Z"/>', i: '' },
+    r: { k: '<path d="M14.5 34 L15.5 18 H29.5 L30.5 34 Z"/><path d="M12 18 V8 H16.5 V12 H20.5 V8 H24.5 V12 H28.5 V8 H33 V18 Z"/>', i: '<path d="M15.5 18 H29.5"/>' },
+    n: { k: '<path d="M13 34 C13 27 16 23.5 20.5 20.5 C17 20 14 21.5 12 24 L9 20.5 C11 14 16 9 23 7.5 L25 3.5 L28 8 C34 11 36 20 33 34 Z"/>', i: '<path d="M14 26 C16.5 24 19 22.5 21 20.5"/>', auge: '<circle class="auge" cx="20" cy="13" r="1.6"/>' },
+    b: { k: '<circle cx="22.5" cy="5.5" r="2.6"/><path d="M22.5 8.5 C30 13 30.5 19 27.5 23 H17.5 C14.5 19 15 13 22.5 8.5 Z"/><path d="M17.5 23 H27.5 L30 34 H15 Z"/>', i: '<path d="M25 12.5 L21 18"/><path d="M17.5 23 H27.5"/>' },
+    q: { k: '<path d="M14.5 34 L16.5 23 H28.5 L30.5 34 Z"/><path d="M13 23 L10 11 L17 17 L19 7.5 L22.5 15.5 L26 7.5 L28 17 L35 11 L32 23 Z"/><circle cx="10" cy="10" r="2.3"/><circle cx="19" cy="6.5" r="2.3"/><circle cx="26" cy="6.5" r="2.3"/><circle cx="35" cy="10" r="2.3"/>', i: '<path d="M13 23 H32"/>' },
+    k: { k: '<path d="M14.5 34 L16.5 23 H28.5 L30.5 34 Z"/><path d="M13 23 Q11 14.5 17.5 14.5 Q22.5 14.5 22.5 18.5 Q22.5 14.5 27.5 14.5 Q34 14.5 32 23 Z"/><path d="M21 2.5 H24 V6 H27.5 V9 H24 V14 H21 V9 H17.5 V6 H21 Z"/>', i: '<path d="M13 23 H32"/>' },
+  };
+  static figurSvg(wert) {
+    const f = ChessUI.FIGUREN[wert[1]];
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="5 1 35 40" class="${wert[0]}" data-figur="${wert}" aria-hidden="true"><g class="koerper">${ChessUI.SOCKEL}${f.k}</g><g class="innen">${f.i}</g>${f.auge || ''}</svg>`;
+  }
 
   constructor(control) {
     super(control, {
@@ -3689,7 +3714,8 @@ class ChessUI extends GameUI {
       if (val) {
         const piece = document.createElement('span');
         piece.className = 'ch-piece ' + val[0];
-        piece.textContent = ChessUI.SYMBOLS[val];
+        piece.innerHTML = ChessUI.figurSvg(val);
+        piece.setAttribute('aria-label', ChessUI.NAMEN[val[1]] + (val[0] === 'w' ? ' weiß' : ' schwarz'));
         if (gleiten.has(i)) {
           piece.classList.add('gleitet');
           piece.style.setProperty('--dx', String(gleiten.get(i).dx));
@@ -3704,6 +3730,8 @@ class ChessUI extends GameUI {
     });
 
     this.promoEl.classList.toggle('active', !!this.control.getPendingPromotion());
+    // Umwandlung: Figuren in der Farbe des Spielers am Zug
+    this.promoEl.querySelectorAll('button').forEach(b => { const w = player + b.dataset.piece; if (b.dataset.figur !== w) { b.dataset.figur = w; b.innerHTML = ChessUI.figurSvg(w); b.setAttribute('aria-label', ChessUI.NAMEN[b.dataset.piece]); } });
     this.undoBtn.disabled = !this.control.canUndo() || this.control.isGameOver();
 
     if (!gameOver) {
@@ -4016,7 +4044,7 @@ class Ansicht3D {
   _feldPos(i) { return new THREE.Vector3((i % 8) - 3.5, 0, Math.floor(i / 8) - 3.5); }
   _baueSchach() {
     const T = THREE;
-    const hell = new T.MeshStandardMaterial({ color: 0xeed9b0, roughness: 0.6 }), dunkel = new T.MeshStandardMaterial({ color: 0x9a6a45, roughness: 0.6 });
+    const hell = new T.MeshStandardMaterial({ color: 0xc8a070, roughness: 0.6 }), dunkel = new T.MeshStandardMaterial({ color: 0x8b5a36, roughness: 0.6 });
     const feldGeo = new T.BoxGeometry(1, 0.1, 1);
     this.felder = [];
     for (let i = 0; i < 64; i++) {
@@ -4026,26 +4054,32 @@ class Ansicht3D {
     }
     const rahmen = new T.Mesh(new T.BoxGeometry(8.8, 0.3, 8.8), new T.MeshStandardMaterial({ color: 0x5a3a26, roughness: 0.5 }));
     rahmen.position.y = -0.21; this.szene.add(rahmen);
+    // S-W06: Figuren mit klaren Umrissen und gestuften Höhen (Bauer 0,74 bis König 1,57)
     const p = (pts) => pts.map(([x, y]) => new T.Vector2(x, y));
     const dreh = (pts) => new T.LatheGeometry(p(pts), 28);
-    const fuss = [[0, 0], [0.34, 0], [0.34, 0.08], [0.25, 0.15]];
+    const fuss = [[0, 0], [0.36, 0], [0.36, 0.08], [0.26, 0.15]];
+    const kugel = (r, y, sy = 1) => { const g = new T.SphereGeometry(r, 20, 14); g.scale(1, sy, 1); g.translate(0, y, 0); return g; };
+    const kiste = (b, h, t, x, y, z) => { const g = new T.BoxGeometry(b, h, t); g.translate(x, y, z); return g; };
+    const zinnen = [0, 1, 2, 3].map(i => { const w = i * Math.PI / 2 + Math.PI / 4; return kiste(0.13, 0.15, 0.13, Math.sin(w) * 0.2, 0.845, Math.cos(w) * 0.2); });
+    const zacken = Array.from({ length: 8 }, (_, i) => { const w = i * Math.PI / 4, g = new T.ConeGeometry(0.05, 0.16, 8); g.translate(Math.sin(w) * 0.21, 1.27, Math.cos(w) * 0.21); return g; });
+    const perlen = Array.from({ length: 8 }, (_, i) => { const w = i * Math.PI / 4; const g = new T.SphereGeometry(0.04, 8, 6); g.translate(Math.sin(w) * 0.21, 1.36, Math.cos(w) * 0.21); return g; });
     this.figurGeo = {
-      p: [dreh([...fuss, [0.14, 0.3], [0.11, 0.42], [0.19, 0.46], [0.12, 0.5], [0.17, 0.58], [0.16, 0.66], [0.09, 0.72], [0, 0.74]])],
-      r: [dreh([...fuss, [0.22, 0.3], [0.2, 0.64], [0.28, 0.7], [0.28, 0.86], [0.2, 0.86], [0.2, 0.8], [0, 0.8]])],
-      b: [dreh([...fuss, [0.14, 0.42], [0.12, 0.62], [0.21, 0.66], [0.13, 0.7], [0.18, 0.8], [0.12, 0.95], [0.04, 1.0], [0.07, 1.04], [0, 1.08]])],
-      q: [dreh([...fuss, [0.16, 0.45], [0.13, 0.76], [0.23, 0.8], [0.15, 0.85], [0.25, 1.0], [0.19, 1.04], [0.08, 1.07], [0.08, 1.12], [0, 1.16]])],
-      k: [dreh([...fuss, [0.17, 0.45], [0.14, 0.8], [0.24, 0.84], [0.16, 0.89], [0.22, 1.04], [0.0, 1.07]])],
-      n: [dreh([...fuss, [0.22, 0.3], [0, 0.3]])],
+      p: [dreh([...fuss, [0.15, 0.3], [0.11, 0.42], [0.2, 0.46], [0.12, 0.5], [0.17, 0.58], [0.16, 0.66], [0.09, 0.72], [0, 0.74]])],
+      r: [dreh([...fuss, [0.24, 0.3], [0.21, 0.62], [0.29, 0.66], [0.29, 0.77], [0, 0.77]]), ...zinnen],
+      n: [dreh([...fuss, [0.24, 0.3], [0, 0.3]])],
+      b: [dreh([...fuss, [0.15, 0.42], [0.12, 0.64], [0.22, 0.68], [0.13, 0.72], [0, 0.72]]), kugel(0.18, 0.93, 1.4), kugel(0.06, 1.22)],
+      q: [dreh([...fuss, [0.17, 0.45], [0.13, 0.86], [0.25, 0.9], [0.16, 0.95], [0.19, 1.05], [0.25, 1.2], [0, 1.2]]), ...zacken, ...perlen, kugel(0.08, 1.3)],
+      k: [dreh([...fuss, [0.18, 0.45], [0.14, 0.92], [0.26, 0.96], [0.17, 1.01], [0.23, 1.18], [0.13, 1.24], [0, 1.25]]), kiste(0.08, 0.32, 0.08, 0, 1.41, 0), kiste(0.26, 0.08, 0.08, 0, 1.46, 0)],
     };
-    const kreuz1 = new T.BoxGeometry(0.07, 0.24, 0.07); kreuz1.translate(0, 1.18, 0);
-    const kreuz2 = new T.BoxGeometry(0.2, 0.07, 0.07); kreuz2.translate(0, 1.2, 0);
-    this.figurGeo.k.push(kreuz1, kreuz2);
     const kopf = new T.Shape();
     [[-0.2, 0.25], [0.2, 0.25], [0.16, 0.5], [0.3, 0.6], [0.4, 0.68], [0.36, 0.82], [0.16, 0.88], [0.06, 1.0], [-0.04, 0.94], [-0.2, 0.8], [-0.24, 0.55]].forEach(([x, y], i) => i ? kopf.lineTo(x, y) : kopf.moveTo(x, y));
-    const kopfGeo = new T.ExtrudeGeometry(kopf, { depth: 0.22, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 1 });
-    kopfGeo.translate(0, 0, -0.11); kopfGeo.rotateY(Math.PI);   // Profil zum Spieler, Schnauze nach links (Schwarz: nach rechts)
+    const kopfGeo = new T.ExtrudeGeometry(kopf, { depth: 0.24, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.03, bevelSegments: 1 });
+    kopfGeo.translate(0, 0, -0.12); kopfGeo.scale(1.12, 1.0, 1); kopfGeo.rotateY(Math.PI);   // Profil zum Spieler, Schnauze nach links (Schwarz: nach rechts)
     this.figurGeo.n.push(kopfGeo);
-    this.figurMat = { w: new T.MeshStandardMaterial({ color: 0xf4ead6, roughness: 0.45 }), b: new T.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.4 }) };
+    // Linien in Kontrastfarbe: Schlitz des Läufers, Auge des Springers
+    this.figurDetail = { b: [kiste(0.035, 0.24, 0.06, 0, 0.98, 0.17)], n: [kugel(0.045, 0.82).translate(0, 0, 0.14), kugel(0.045, 0.82).translate(0, 0, -0.14)] };
+    this.figurMat = { w: new T.MeshStandardMaterial({ color: 0xfffdf6, roughness: 0.4 }), b: new T.MeshStandardMaterial({ color: 0x1d1d22, roughness: 0.35 }) };
+    this.detailMat = { w: new T.MeshBasicMaterial({ color: 0x1d1d22 }), b: new T.MeshBasicMaterial({ color: 0xf2f2f2 }) };
     this.markGeo = { feld: new T.PlaneGeometry(1, 1), punkt: new T.CircleGeometry(0.15, 20), ring: new T.RingGeometry(0.36, 0.48, 32) };
     this.markMat = {
       auswahl: new T.MeshBasicMaterial({ color: 0xffd60a, transparent: true, opacity: 0.55 }),
@@ -4058,6 +4092,7 @@ class Ansicht3D {
   _figur(wert) {
     const g = new THREE.Group();
     for (const geo of this.figurGeo[wert[1]]) g.add(new THREE.Mesh(geo, this.figurMat[wert[0]]));
+    for (const geo of (this.figurDetail[wert[1]] || [])) g.add(new THREE.Mesh(geo, this.detailMat[wert[0]]));
     if (wert === 'bn') g.rotation.y = Math.PI;
     g.userData.wert = wert;
     return g;
