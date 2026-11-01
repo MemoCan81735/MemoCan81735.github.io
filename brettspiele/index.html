@@ -4115,7 +4115,7 @@ class Ansicht3D {
     const g = new THREE.Group();
     for (const geo of this.figurGeo[wert[1]]) {
       g.add(new THREE.Mesh(geo, this.figurMat[wert[0]]));
-      const k = this._konturMesh(geo, wert[0]); k.userData.kontur = true; g.add(k);
+      const k = this._konturMesh(geo, wert[0]); k.userData.kontur = true; k.raycast = () => { }; g.add(k);   // Rand zählt nicht beim Tippen
     }
     for (const geo of (this.figurDetail[wert[1]] || [])) g.add(new THREE.Mesh(geo, this.detailMat[wert[0]]));
     if (wert === 'bn') g.rotation.y = Math.PI;

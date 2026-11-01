@@ -53,3 +53,4 @@
 - Rückblick: Früheste Stufe, die das hätte finden können, ist die Spec S-W05 (dort fehlte ein Kriterium "Figuren unterscheidbar", gemessen statt angesehen). Ab jetzt hat jede Spec mit Spielfiguren ein Messkriterium für Unterscheidbarkeit und Kontrast.
 - Nachtrag Kontur (13:22): Strich 1,56 px breit am fernsten Feld bei 396 px Leinwand; Weiß fast schwarz, Schwarz hellgrau. 6 von 6 Tests grün, 7 von 7 Gegenproben erkannt.
   Eckige Teile (Kreuz, Zinnen, Pferdekopf) bekommen eine vergrößerte Kopie statt Aufblähen, sonst reißt die Kontur an den Kanten auf (im Bild gesehen und behoben).
+- Fehler im Gesamtlauf aus sauberem Klon: Tippen auf e2/e4 in 3D traf den Konturrand statt des Felds (`d3_tippen` rot). Ursache: Randkörper zählten beim Tippen mit. Behoben (Rand ignoriert Tippen), danach 3 von 3 Läufen grün.
