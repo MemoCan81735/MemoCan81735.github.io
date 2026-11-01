@@ -1,6 +1,6 @@
 # S-W07: Schach lernen beim Spielen (Lernhilfe)
 
-**Status:** freigegeben am 01.11.2026, 14:30
+**Status:** gebaut, freigegeben am 01.11.2026, 14:30
 <!-- Freigabe durch den Betreiber im Projekt-Thread: Auswahl "Lernmodus beim Spielen" auf die Frage "Welche Art Schach lernen soll ich zuerst bauen?"
      (Text der Wahl: "Tipp erklärt den Zug in einem Satz, und vor einem Patzer (Figur hängt, Matt droht) kommt eine Warnung mit Rücknahme."). -->
 
@@ -34,7 +34,7 @@ Wunsch des Betreibers: "Ist es möglich beim Schachspiel zu lernen?" Es gab scho
 | Nr. | Kriterium | Test |
 | --- | --- | --- |
 | AK-1 | Tipp zeigt nach höchstens 2 s einen Satz mit Figur, Start- und Zielfeld und mindestens einem Grund; der Satz verschwindet beim nächsten Zug | `l_tipp_satz` |
-| AK-2 | Gründe stimmen in 10 festen Stellungen (Tabelle in den Prüfszenarien) | `l_gruende` |
+| AK-2 | Gründe stimmen in 13 festen Stellungen (Tabelle in den Prüfszenarien), geprüft wird die ganze Liste in Reihenfolge | `l_gruende` |
 | AK-3 | Warnung genau bei den Patzern a) und b); keine Warnung bei Abtausch (netto < 2), bei normalen Zügen und bei eigenem Matt | `l_patzer` |
 | AK-4 | Während der Warnung zieht der Computer nicht (2 s gemessen), Brett und Tipp sind gesperrt; "Zurücknehmen" stellt genau die Stellung vor dem Zug her (gleiche FEN); "Trotzdem weiter" lässt den Computer innerhalb von 3 s ziehen | `l_warnung_ablauf` |
 | AK-5 | Schalter: Standard an, Zustand bleibt nach Neuladen; aus → keine Warnung und Tipp ohne Satz; kaputte oder alte Daten → an | `l_schalter` |
@@ -52,7 +52,9 @@ Wunsch des Betreibers: "Ist es möglich beim Schachspiel zu lernen?" Es gab scho
 | PS-6 | Normal | Rochade: `4k3/8/8/8/8/8/8/4K2R w K - 0 1`, e1-g1 → Rochade | AK-2 |
 | PS-7 | Normal | Entwicklung und Mitte: Startstellung g1-f3 → Entwicklung; e2-e4 → Mitte | AK-2 |
 | PS-8 | Normal | Matt verhindern: `r5k1/8/8/8/8/8/5PPP/6K1 w - - 0 1`, h2-h3 → verhindert Matt | AK-2 |
-| PS-9 | Normal | Angriff: `4k3/8/8/1r6/8/8/8/3BK3 w - - 0 1`, d1-a4 → greift Turm an | AK-2 |
+| PS-9 | Normal | Angriff: `4k3/8/8/1r6/8/8/8/3BK3 w - - 0 1`, d1-a4 → greift Turm an, Entwicklung | AK-2 |
+| PS-9b | Normal | Umwandlung: `4k3/P7/8/8/8/8/8/4K3 w - - 0 1`, a7-a8 → Umwandlung, Schach | AK-2 |
+| PS-9c | Normal | Matt-Drohung: `6k1/5ppp/8/8/8/8/7R/6K1 w - - 0 1`, h2-a2 → droht Matt | AK-2 |
 | PS-10 | Grenzwert | Ruhiger Zug ohne Grund: `4k3/8/8/8/8/8/8/4K3 w - - 0 1`, e1-f1 → "stärkster Zug" | AK-2 |
 | PS-11 | Normal | Dame hängt: `4k3/8/8/3p4/8/8/Q7/4K3 w - - 0 1`, a2-c4 → Warnung Dame c4, 9 Punkte | AK-3 |
 | PS-12 | Normal | Matt droht: nach 1. f3 e5 (`rnbqkbnr/pppp1ppp/8/4p3/8/5P2/PPPPP1PP/RNBQKBNR w KQkq - 0 2`) g2-g4 → Warnung Matt mit d8-h4 | AK-3 |
@@ -67,10 +69,14 @@ Wunsch des Betreibers: "Ist es möglich beim Schachspiel zu lernen?" Es gab scho
 | PS-19 | Normal | "Trotzdem weiter" → Computer zieht innerhalb von 3 s | AK-4 |
 | PS-20 | Missbrauch | Zu zweit: Patzer von Schwarz wird ebenso gewarnt; während der Warnung schwarze und weiße Figuren nicht wählbar | AK-4 |
 | PS-21 | Normal | Schalter aus, neu laden → aus; Patzer PS-11 → keine Warnung; Tipp → kein Satz | AK-5 |
-| PS-22 | Fehlerfall | Speicher ohne `lernen` und mit `"lernen":"kaputt"` → an | AK-5 |
+| PS-22 | Fehlerfall | Speicher ohne `lernen`, mit `"lernen":"kaputt"`, mit `{"chess":"kaputt"}` und kaputtes JSON → an | AK-5 |
 | PS-23 | Wiederholbarkeit | 200 Stellungen aus Zufallspartien (fester Startwert): Gründe und Patzer ohne Ausnahme, Mittel ≤ 50 ms, zweiter Lauf gleich | AK-6 |
 | PS-24 | Grenzwert | Breite 412 px: Warnung offen, kein Querscroll, Knöpfe ≥ 44 px | AK-7 |
 | PS-25 | Normal | In 3D: Patzer zeigt Warnung, Tipp zeigt Satz | AK-7 |
+| PS-26 | Fehlerfall | Warnung offen, dann "Neu starten" oder Moduswechsel → Warnung weg | AK-4 |
+| PS-27 | Missbrauch | Warnung offen gegen Computer, Knopf "Zug zurück" → genau der Patzer zurück, Warnung weg | AK-4 |
+| PS-28 | Missbrauch | Warnung offen gegen Computer, Lernhilfe ausschalten → Warnung weg, Computer zieht innerhalb von 3 s | AK-4, AK-5 |
+| PS-29 | Grenzwert | Satz mit drei Gründen nennt nur die ersten zwei; Umwandlung und Matt-Drohung werden erkannt (vollständige Liste der Gründe geprüft) | AK-1, AK-2 |
 
 ## Gegenproben
 - Verstoß: Rückschlagen nicht berücksichtigt (jeder Abtausch wird gewarnt); Matt in einem Zug nicht geprüft; Computer zieht trotz Warnung; Zurücknehmen nimmt zwei Halbzüge zurück; Schalter nicht gespeichert; Satz fehlt beim Tipp. Jeder muss seinen Test rot machen.
@@ -86,4 +92,13 @@ Boundary (`ChessBoundary`: Analyse; `EinstellungenBoundary`: optionales Feld), C
 Die Regeln sind einfach (zwei Halbzüge). Sie erkennen keine Gabeln über mehrere Züge und keine Fesselungen, die erst später wirken. Lieber eine Warnung zu wenig als zu viele.
 
 ## Ergebnis
-- offen
+- Vorher: 7 von 7 Tests rot (Lernhilfe fehlt). Nachher: 7 von 7 grün (`werkstatt/tests/lernen_test.js`), 11 von 11 Gegenproben erkannt (`gegenproben_lernen.py`).
+- Messwerte: Satz zum Tipp nach 0,68 s; Analyse 20 ms je Zug im Mittel (200 Stellungen); Computer zieht 0,97 s nach "Trotzdem weiter"; Warnknöpfe 44 px hoch.
+- Fehlalarme gemessen: 12 Partien, beide Seiten mit der Ersatz-KI (Tiefe 2): 7 Warnungen bei 376 Zügen (1,9 %), alle sieben angesehen, es waren echte Figurenverluste.
+- Beim Testbau gefunden: zwei Prüfstellungen enthielten unmögliche Damenzüge (d1-c4), der Test meldete deshalb "keine Warnung", ohne dass ein Zug geschah.
+  Seitdem prüft der Test, dass der Zug wirklich ausgeführt wurde. Früheste Stufe: Spec (Stellungen beim Schreiben mit der Schachregel prüfen).
+- Unabhängige Prüfung (zweiter Agent): keine Fehler im Ablauf, kein Schichtverstoß. Ergänzt nach den Befunden: ganze Liste der Gründe statt nur des ersten,
+  Umwandlung und Matt-Drohung, höchstens zwei Gründe im Satz, Sperre des Tipps in der Control, Neustart, Moduswechsel, Zug zurück und Ausschalten bei offener Warnung (PS-26 bis PS-29),
+  Satz in 3D wirklich sichtbar. Behoben: ein Tipp, der noch rechnet, während gezogen wird, zeigt keinen veralteten Satz mehr; Rochade-Satz ohne doppelten Doppelpunkt.
+- Bekannte Grenze: Der Tipp nennt bei einer Umwandlung immer die Dame. Gabeln und Fesselungen über mehrere Züge erkennt die Warnung nicht (siehe Risiken).
+- Gerätetest: offen (Abnahmeliste `abnahme-schach-lernen-S-W07.md`).

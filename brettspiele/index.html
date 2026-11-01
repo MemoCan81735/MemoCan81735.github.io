@@ -3250,7 +3250,7 @@ class ChessControl extends GameControl {
     this.selected = null;
     this.pendingPromotion = null; // { from, to } während der Nutzer die Figur wählt
     this.lernen = true;           // Lernhilfe (S-W07): Tipp mit Gründen, Warnung vor Patzern
-    this.warnung = null;          // offene Warnung { art, ..., vorher: FEN }, sperrt Brett, Tipp und KI
+    this.warnung = null;          // offene Warnung aus boundary.patzer(), sperrt Brett, Tipp und KI
     this.setDifficulty('mittel');
   }
 
@@ -3813,7 +3813,7 @@ class ChessUI extends GameUI {
       case 'rettet': return `Rettet ${A} vor dem Angriff.`;
       case 'drohtMatt': return 'Droht im nächsten Zug Matt.';
       case 'umwandlung': return `Macht aus dem Bauern ${ChessUI.UMWANDLUNG[g.figur]}.`;
-      case 'rochade': return 'Rochade: Der König steht sicher, der Turm kommt ins Spiel.';
+      case 'rochade': return 'Der König steht sicher, der Turm kommt ins Spiel (Rochade).';
       case 'greiftAn': return `Greift ${A} auf ${g.feld} an.`;
       case 'schach': return 'Gibt Schach.';
       case 'entwickelt': return `Bringt ${A} ins Spiel (Entwicklung).`;
@@ -3825,21 +3825,26 @@ class ChessUI extends GameUI {
     if (w.art === 'matt') return `Vorsicht: Jetzt kann der Gegner Matt setzen (${ChessUI.NAMEN[w.zug.figur]} ${w.zug.from} nach ${w.zug.to}).`;
     return `Vorsicht: ${ChessUI.DEIN[w.figur]} auf ${w.feld} kann geschlagen werden, du verlierst ${w.punkte} Punkte.`;
   }
+  // Satz zum Tipp: Figur, Felder und höchstens zwei Gründe
+  static tippSatz(art, zug, gruende) {
+    return `${ChessUI.NAMEN[art]} ${zug.from} nach ${zug.to}: ` + gruende.slice(0, 2).map(ChessUI.grundSatz).join(' ');
+  }
   _stand() { return JSON.stringify(this.control.getBoardState()) + this.control.getCurrentPlayer(); }
 
   async handleTipp() {
     if (this._tippLaeuft) return;
     this._tippLaeuft = true;
     try {
+      const stand = this._stand();
       const zug = await this.control.computeHint();
-      if (!zug) return;
+      if (!zug || this._stand() !== stand) return;   // inzwischen gezogen: Tipp gilt nicht mehr
       this._zeigeTipp(this._tippFelder(zug));
       const gruende = this.control.tippGruende(zug);
       if (!gruende || !gruende.length) return;
       const figur = this.control.getBoardState()[ChessControl._indexFromSquare(zug.from)];
-      this.satzEl.textContent = `${ChessUI.NAMEN[figur ? figur[1] : 'p']} ${zug.from} nach ${zug.to}: ` + gruende.slice(0, 2).map(ChessUI.grundSatz).join(' ');
+      this.satzEl.textContent = ChessUI.tippSatz(figur ? figur[1] : 'p', zug, gruende);
       this.satzEl.hidden = false;
-      this._satzStand = this._stand();
+      this._satzStand = stand;
     } finally {
       this._tippLaeuft = false;
     }

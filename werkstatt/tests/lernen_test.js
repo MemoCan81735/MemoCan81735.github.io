@@ -56,16 +56,22 @@ const GRUENDE = [
   ['PS-7a', 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 'g1', 'f3', 'entwickelt'],
   ['PS-7b', 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 'e2', 'e4', 'mitte'],
   ['PS-8', 'r5k1/8/8/8/8/8/5PPP/6K1 w - - 0 1', 'h2', 'h3', 'verhindertMatt'],
-  ['PS-9', '4k3/8/8/1r6/8/8/8/3BK3 w - - 0 1', 'd1', 'a4', 'greiftAn'],
+  ['PS-9', '4k3/8/8/1r6/8/8/8/3BK3 w - - 0 1', 'd1', 'a4', 'greiftAn,entwickelt'],
   ['PS-10', '4k3/8/8/8/8/8/8/4K3 w - - 0 1', 'e1', 'f1', 'stellung'],
   ['Schach', '4k3/8/8/8/8/8/8/R3K3 w - - 0 1', 'a1', 'a8', 'schach'],
+  ['PS-9b', '4k3/P7/8/8/8/8/8/4K3 w - - 0 1', 'a7', 'a8', 'umwandlung,schach'],
+  ['PS-9c', '6k1/5ppp/8/8/8/8/7R/6K1 w - - 0 1', 'h2', 'a2', 'drohtMatt'],
 ];
 
 test('l_gruende', async () => {
   const p = await seite();
   const r = await p.evaluate((G) => G.map(([n, fen, a, b]) => [n, window.__brett.chess.control.boundary.zugGruende(fen, a, b).map(g => g.art)]), GRUENDE);
+  // Satz nennt höchstens zwei Gründe, in der Reihenfolge des Vorrangs
+  const satz = await p.evaluate(() => ChessUI.tippSatz('n', { from: 'e3', to: 'd5' }, [{ art: 'schlaegt', figur: 'q', punkte: 9 }, { art: 'schach' }, { art: 'mitte' }]));
   const f = p.fehler; await zu(p);
-  const falsch = r.filter(([n, arten], i) => arten[0] !== GRUENDE[i][4]).map(([n, arten], i) => `${n}: ${arten.join(',')}`);
+  pruefe(satz === 'Springer e3 nach d5: Schlägt die Dame (9 Punkte). Gibt Schach.', `Satz mit drei Gründen: "${satz}"`);
+  // erwartete Liste: vollständig (alle Gründe in Reihenfolge)
+  const falsch = r.filter(([n, arten], i) => arten.join(',') !== GRUENDE[i][4]).map(([n, arten]) => `${n}: ${arten.join(',')}`);
   console.log(`       ${r.map(([n, a]) => `${n}=${a[0]}`).join(' ')}`);
   pruefe(!falsch.length, `Gründe falsch: ${falsch.join(' | ')} (erwartet ${GRUENDE.map(g => g[4]).join(',')})`);
   pruefe(f.length === 0, f.join(' | '));
@@ -143,6 +149,7 @@ test('l_warnung_ablauf', async () => {
   pruefe(gewartet.fen === nachZug.fen, `Computer zog trotz Warnung: ${gewartet.fen}`);
   const tippAus = await p.evaluate(() => document.querySelector('#chess-view .tipp-knopf').disabled);
   pruefe(tippAus, 'Tipp nicht gesperrt während der Warnung');
+  pruefe(await p.evaluate(async () => (await window.__brett.chess.control.computeHint()) === null), 'Tipp in der Control nicht gesperrt während der Warnung');
   await ZUG(p, 'e8', 'e7');   // schwarze Figur ziehen wollen
   await ZUG(p, 'c4', 'c5');   // weiße Figur ziehen wollen
   pruefe((await ZUSTAND(p)).fen === nachZug.fen, 'Brett nicht gesperrt während der Warnung');
@@ -176,13 +183,31 @@ test('l_warnung_ablauf', async () => {
   await ZUG(p, 'd4', 'c5');
   await ZUG(p, 'e8', 'd8');
   pruefe((await ZUSTAND(p)).fen === zz.fen, 'zu zweit Brett nicht gesperrt');
+  // PS-26: Neu starten und Moduswechsel beenden die Warnung
+  await p.click('#chresetBtn');
+  pruefe(!(await ZUSTAND(p)).warnung && !(await ZUSTAND(p)).warnSichtbar, 'Warnung bleibt nach Neustart');
+  await STELLUNG(p, fen, false); await ZUG(p, 'a2', 'c4');
+  await p.click('#chmode label:nth-child(2)');
+  pruefe(!(await ZUSTAND(p)).warnSichtbar, 'Warnung bleibt nach Moduswechsel');
+  // PS-27: Knopf "Zug zurück" bei offener Warnung nimmt genau den Patzer zurück
+  await STELLUNG(p, fen, true); await ZUG(p, 'a2', 'c4');
+  await p.click('#chundoBtn');
+  const zr = await ZUSTAND(p);
+  pruefe(zr.fen === fen && !zr.warnung && !zr.warnSichtbar, `Zug zurück bei Warnung: ${zr.fen}`);
+  // PS-28: Lernhilfe bei offener Warnung ausschalten → Warnung weg, Computer zieht
+  await ZUG(p, 'a2', 'c4');
+  pruefe((await ZUSTAND(p)).warnSichtbar, 'Warnung vor dem Ausschalten fehlt');
+  await p.click('#chess-view .lernen-knopf');
+  pruefe(!(await ZUSTAND(p)).warnSichtbar, 'Warnung bleibt nach Ausschalten');
+  await p.waitForFunction(() => window.__brett.chess.control.getCurrentPlayer() === 'w', null, { timeout: 3000 });
+  await p.click('#chess-view .lernen-knopf');
   const f = p.fehler; await zu(p);
   pruefe(f.length === 0, f.join(' | '));
 });
 
 test('l_schalter', async () => {
   // PS-22: ohne Feld und mit kaputtem Wert → an
-  for (const einst of [{ formatversion: 1, ton: false, stufen: {}, ansicht: { chess: '2d' } }, { formatversion: 1, ton: false, stufen: {}, ansicht: { chess: '2d' }, lernen: 'kaputt' }, '{kaputt', null]) {
+  for (const einst of [{ formatversion: 1, ton: false, stufen: {}, ansicht: { chess: '2d' } }, { formatversion: 1, ton: false, stufen: {}, ansicht: { chess: '2d' }, lernen: 'kaputt' }, { formatversion: 1, ton: false, stufen: {}, ansicht: { chess: '2d' }, lernen: { chess: 'kaputt' } }, '{kaputt', null]) {
     const p = await seite({ einst });
     const an = await p.evaluate(() => window.__brett.chess.control.istLernen());
     const text = await p.evaluate(() => document.querySelector('#chess-view .lernen-knopf').textContent);
@@ -260,7 +285,9 @@ test('l_handy', async () => {
     await p.click('#chwarnung .warn-zurueck');
     await p.evaluate(() => window.__brett.chess.control.setMode(false));
     await p.click('#chess-view .tipp-knopf');
-    await p.waitForFunction(() => { const s = document.getElementById('chlernsatz'); return s && !s.hidden && s.textContent.trim().length > 0; }, null, { timeout: 3000 });
+    await p.waitForFunction(() => { const s = document.getElementById('chlernsatz'); return s && !s.hidden && s.offsetHeight > 0 && s.textContent.trim().length > 0; }, null, { timeout: 3000 });
+    const satz = await p.evaluate(() => { const s = document.getElementById('chlernsatz'), b = s.getBoundingClientRect(); return { quer: document.documentElement.scrollWidth - window.innerWidth, links: b.left, rechts: b.right }; });
+    pruefe(satz.quer <= 0 && satz.links >= 0 && satz.rechts <= 412, `${ansicht}: Satz ragt heraus ${JSON.stringify(satz)}`);
     if (ansicht === '2d') console.log(`       Knöpfe ${r.knoepfe.map(h => h.toFixed(0)).join('/')} px hoch`);
     const f = p.fehler; await zu(p);
     pruefe(f.length === 0, `${ansicht}: ${f.join(' | ')}`);

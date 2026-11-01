@@ -15,6 +15,9 @@ FEHLER = [
      '    this.boundary.undo(); this.boundary.undo();\n    this._persistGame();\n    return { invalid: false };\n  }\n  warnungWeiter', 'l_warnung_ablauf'),
     ('Schalter nicht gespeichert', 'if (GameUI.einst) GameUI.einst.setzeLernen(this.spiel, an);', '', 'l_schalter'),
     ('Satz fehlt beim Tipp', 'this.satzEl.hidden = false;', 'this.satzEl.hidden = true;', 'l_tipp_satz'),
+    ('Tipp in der Control nicht gesperrt', 'this.pendingPromotion || this.warnung) return null;', 'this.pendingPromotion) return null;', 'l_warnung_ablauf'),
+    ('Brett nicht gesperrt', 'this.pendingPromotion || this.warnung) return { invalid: true };', 'this.pendingPromotion) return { invalid: true };', 'l_warnung_ablauf'),
+    ('Satz nennt drei Gründe', 'gruende.slice(0, 2)', 'gruende.slice(0, 3)', 'l_gruende'),
     ('Grund Retten fehlt', "gruende.push({ art: 'rettet', figur: fig });", '', 'l_gruende'),
 ]
 env = dict(os.environ)
