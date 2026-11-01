@@ -68,7 +68,7 @@ const melde = (pruefung, ok, text) => {
         if (seite === '/brettspiele/' && fname === 'hoch') {
           const reiter = await p.$$eval('.tabBtn', bs => bs.map(b => { const r = b.getBoundingClientRect(); const e = b.parentElement.getBoundingClientRect(); return { t: b.textContent, l: r.left, r: r.right, el: e.left, er: e.right }; }));
           const raus = reiter.filter(x => x.l < 0 || x.r > innerWidthOf(vp) + 0.5 || x.l < x.el - 0.5 || x.r > x.er + 0.5);
-          melde('D5_reiter_sichtbar', reiter.length === 6 && raus.length === 0, `${reiter.length} Reiter, abgeschnitten: ${raus.map(x => x.t).join(', ')}`);
+          melde('D5_reiter_sichtbar', reiter.length === 7 && raus.length === 0, `${reiter.length} Reiter, abgeschnitten: ${raus.map(x => x.t).join(', ')}`);
           const ungestaltet = [];
           for (const tab of ['tictactoe', 'connect4', 'othello', 'muehle', 'chess', 'mangala']) {
             await p.evaluate(t => document.querySelector(`.tabBtn[data-tab="${t}"]`).click(), tab);

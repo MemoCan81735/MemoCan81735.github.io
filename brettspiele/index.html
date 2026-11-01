@@ -526,6 +526,24 @@
   .warn-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; }
   .warn-knoepfe button { min-height: 44px; flex: 1 1 auto; }
   .lern-satz[hidden], .warnung[hidden] { display: none; }
+  /* Schachschule (S-W08) */
+  #schule-view h2 { font-size: 1.05rem; margin: 18px 0 4px; text-align: center; }
+  .sc-hinweis { margin: 0 0 8px; font-size: 0.85rem; color: var(--ios-secondary-label); text-align: center; }
+  .sc-liste { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 380px; }
+  .sc-eintrag { min-width: 48px; min-height: 44px; padding: 0 12px; border: none; border-radius: 12px; background: var(--ios-card); color: var(--ios-label); font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+  .sc-eintrag.geloest { background: #34c759; color: #fff; }
+  .sc-eintrag.geloest::after { content: ' ✓'; }
+  #scaufgabe { display: flex; flex-direction: column; align-items: center; }
+  #scaufgabe[hidden], #scmenue[hidden] { display: none; }
+  #sctext { margin: 0 0 12px; max-width: 360px; text-align: center; font-size: 0.95rem; line-height: 1.35; }
+  #scboard { --ch-square: min(48px, 11vw); display: grid; grid-template-columns: repeat(8, var(--ch-square)); grid-template-rows: repeat(8, var(--ch-square)); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+  #scboard .ch-square { padding: 0; }
+  #scboard .stern { width: 70%; height: 70%; fill: #ffcc00; stroke: #7a5a00; stroke-width: 1.2; }
+  .sc-meldung { margin-top: 12px; min-height: 2.6em; max-width: 360px; text-align: center; font-size: 0.95rem; line-height: 1.35; }
+  .sc-meldung.gut { color: #1f7a35; font-weight: 600; }
+  .sc-meldung.falsch { color: #c0261c; font-weight: 600; }
+  .sc-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+  .sc-knoepfe button[hidden] { display: none; }
   #chengine {
     margin-top: 8px;
     font-size: 0.7rem;
@@ -680,6 +698,7 @@
   <button class="tabBtn" data-tab="muehle">Mühle</button>
   <button class="tabBtn" data-tab="chess">Schach</button>
   <button class="tabBtn" data-tab="mangala">Mangala</button>
+  <button class="tabBtn" data-tab="schule">Schachschule</button>
 </div>
 
 <div id="tictactoe-view" class="tab-content active">
@@ -775,6 +794,34 @@
     <div class="stat"><span class="stat-value" id="mustatW">0</span><span class="stat-label">Siege Weiß</span></div>
   </div>
   <button class="linkBtn" id="muresetStatsBtn">Statistik zurücksetzen</button>
+</div>
+
+<div id="schule-view" class="tab-content">
+  <h1>Schachschule</h1>
+  <div id="scmenue">
+    <h2>Figuren</h2>
+    <p class="sc-hinweis">Wie zieht welche Figur? Sammle mit jeder Figur alle Sterne ein.</p>
+    <div class="sc-liste" id="sclektionen"></div>
+    <h2>Matt in 1</h2>
+    <p class="sc-hinweis">Finde den Zug, der sofort Matt setzt.</p>
+    <div class="sc-liste" id="scmatt"></div>
+    <h2>Figur gewinnen</h2>
+    <p class="sc-hinweis">Freie Figuren schlagen, Gabel und Spieß.</p>
+    <div class="sc-liste" id="scgewinn"></div>
+  </div>
+  <div id="scaufgabe" hidden>
+    <h2 id="sctitel"></h2>
+    <p id="sctext"></p>
+    <div id="scboard"></div>
+    <div id="scmeldung" class="sc-meldung"></div>
+    <div class="sc-knoepfe">
+      <button class="action secondary klein sc-zurueck" type="button">Übersicht</button>
+      <button class="action secondary klein sc-tipp" type="button">Tipp</button>
+      <button class="action secondary klein sc-loesung" type="button">Lösung</button>
+      <button class="action secondary klein sc-nochmal" type="button">Nochmal</button>
+      <button class="action klein sc-weiter" type="button" hidden>Weiter</button>
+    </div>
+  </div>
 </div>
 
 <div id="chess-view" class="tab-content">
@@ -3258,6 +3305,8 @@ class ChessControl extends GameControl {
   setLernen(an) { this.lernen = !!an; if (!this.lernen) this.warnung = null; }
   istLernen() { return this.lernen; }
   getWarnung() { return this.warnung; }
+  // Gründe des letzten Computerzugs (S-W08), einmal abholbar
+  holeKiGrund() { const g = this.kiGrund; this.kiGrund = null; return g; }
   tippGruende(zug) { return this.lernen && zug ? this.boundary.zugGruende(this.boundary.getFEN(), zug.from, zug.to) : null; }
   // Nimmt genau den gewarnten Zug zurück (ein Halbzug), auch gegen die KI.
   warnungZuruecknehmen() {
@@ -3417,6 +3466,9 @@ class ChessControl extends GameControl {
   // anfasst), damit UI weiterhin ausschließlich mit Control spricht.
   performAiMove(move) {
     this.selected = null;
+    // S-W08: Gründe des Computerzugs aus der Stellung vor dem Zug (nur mit Lernhilfe)
+    this.kiGrund = this.lernen ? { zug: { from: move.from, to: move.to }, figur: this.boundary.getBoardState()[ChessControl._indexFromSquare(move.from)],
+      gruende: this.boundary.zugGruende(this.boundary.getFEN(), move.from, move.to, move.promotion || 'q') } : null;
     return this._executeMove(
       () => true,
       () => this.boundary.makeMove(move.from, move.to, move.promotion || 'q')
@@ -3818,6 +3870,7 @@ class ChessUI extends GameUI {
       case 'schach': return 'Gibt Schach.';
       case 'entwickelt': return `Bringt ${A} ins Spiel (Entwicklung).`;
       case 'mitte': return 'Besetzt die Mitte, dort wirkt die Figur am meisten.';
+      case 'ruhig': return 'Ein ruhiger Zug ohne direkte Drohung.';
       default: return 'Ist laut Rechner der stärkste Zug.';
     }
   }
@@ -3876,7 +3929,12 @@ class ChessUI extends GameUI {
     const w = this.control.getWarnung();
     this.warnEl.hidden = !w;
     if (w) this.warnEl.querySelector('p').textContent = ChessUI.warnSatz(w);
-    if (!this.control.istLernen() || this._satzStand !== this._stand()) { this.satzEl.hidden = true; this.satzEl.textContent = ''; }
+    const ki = this._kiSatz; this._kiSatz = null;
+    if (ki && ki.figur && ki.gruende.length && this.control.istLernen()) {
+      this.satzEl.textContent = 'Computer: ' + ChessUI.tippSatz(ki.figur[1], ki.zug, ki.gruende.map(g => g.art === 'stellung' ? { art: 'ruhig' } : g));
+      this.satzEl.hidden = false;
+      this._satzStand = this._stand();
+    } else if (!this.control.istLernen() || this._satzStand !== this._stand()) { this.satzEl.hidden = true; this.satzEl.textContent = ''; }
     this.lernenBtn.textContent = this.control.istLernen() ? 'Lernhilfe an' : 'Lernhilfe aus';
   }
 
@@ -4008,7 +4066,9 @@ class ChessUI extends GameUI {
   async performAiMove() {
     const move = await this.control.computeAiMove();
     if (!this.control.isAiTurn() || !move) return { invalid: true };
-    return this.control.performAiMove(move);
+    const aus = this.control.performAiMove(move);
+    this._kiSatz = this.control.holeKiGrund();
+    return aus;
   }
 }
 
@@ -4456,6 +4516,333 @@ class Ansicht3D {
   }
 }
 
+/* ============================================================
+   SCHACHSCHULE (S-W08): Figuren-Schule, Matt in 1, Figur gewinnen.
+   Entity (Lektion, rein) -> Boundary (Speicher, chess.js) -> Control (Inhalte, Ablauf) -> UI (SchuleUI).
+   ============================================================ */
+class SchuleEntity {
+  static GERADE = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  static SCHRAEG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+  static L = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]];
+  // Zielfelder einer weißen Figur auf leerem Brett mit Sternen (Index 0 = a8). Gleitende Figuren halten am ersten Stern.
+  static ziele(figur, feld, sterne) {
+    const r0 = Math.floor(feld / 8), c0 = feld % 8, out = [];
+    const auf = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+    const gleiten = (dirs) => {
+      for (const [dr, dc] of dirs) {
+        for (let r = r0 + dr, c = c0 + dc; auf(r, c); r += dr, c += dc) { out.push(r * 8 + c); if (sterne.has(r * 8 + c)) break; }
+      }
+    };
+    const springen = (dirs) => { for (const [dr, dc] of dirs) if (auf(r0 + dr, c0 + dc)) out.push((r0 + dr) * 8 + c0 + dc); };
+    const S = SchuleEntity;
+    if (figur === 'r') gleiten(S.GERADE);
+    else if (figur === 'b') gleiten(S.SCHRAEG);
+    else if (figur === 'q') gleiten([...S.GERADE, ...S.SCHRAEG]);
+    else if (figur === 'n') springen(S.L);
+    else if (figur === 'k') springen([...S.GERADE, ...S.SCHRAEG]);
+    else if (figur === 'p' && r0 > 0) {
+      const vor = feld - 8;
+      if (!sterne.has(vor)) { out.push(vor); if (r0 === 6 && !sterne.has(vor - 8)) out.push(vor - 8); }
+      for (const dc of [-1, 1]) if (auf(r0 - 1, c0 + dc) && sterne.has(vor + dc)) out.push(vor + dc);   // schlagen nur schräg
+    }
+    return out;
+  }
+  // Kürzester Weg (Liste der Zielfelder), der alle Sterne einsammelt; Breitensuche über Feld und eingesammelte Sterne.
+  static bestweg(figur, start, sterne) {
+    const liste = [...sterne], voll = (1 << liste.length) - 1;
+    const besucht = new Set([start + ',0']);
+    let schicht = [{ feld: start, maske: 0, weg: [] }];
+    while (schicht.length) {
+      const naechste = [];
+      for (const s of schicht) {
+        const offen = new Set(liste.filter((_, k) => !(s.maske & (1 << k))));
+        for (const z of SchuleEntity.ziele(figur, s.feld, offen)) {
+          const k = liste.indexOf(z), maske = k >= 0 ? s.maske | (1 << k) : s.maske, weg = [...s.weg, z];
+          if (maske === voll) return weg;
+          const schl = z + ',' + maske;
+          if (!besucht.has(schl)) { besucht.add(schl); naechste.push({ feld: z, maske, weg }); }
+        }
+      }
+      schicht = naechste;
+    }
+    return null;
+  }
+
+  constructor(figur, start, sterne) { this.figur = figur; this.start = start; this.sterneStart = [...sterne]; this.reset(); }
+  reset() { this.feld = this.start; this.sterne = new Set(this.sterneStart); this.zuege = 0; }
+  get fertig() { return this.sterne.size === 0; }
+  ziele() { return this.fertig ? [] : SchuleEntity.ziele(this.figur, this.feld, this.sterne); }
+  ziehe(ziel) {
+    if (!this.ziele().includes(ziel)) return false;
+    this.feld = ziel; this.sterne.delete(ziel); this.zuege++;
+    return true;
+  }
+  brett() {
+    const b = new Array(64).fill(null);
+    for (const s of this.sterne) b[s] = '*';
+    b[this.feld] = 'w' + this.figur;
+    return b;
+  }
+}
+
+class SchuleBoundary {
+  static SCHLUESSEL = 'brettspiele.schule';
+  static FORMAT = 1;
+  constructor(speicher, ChessCls) { this._speicher = speicher; this._Chess = ChessCls; }
+  ladeGeloest(gueltig) {
+    try {
+      const d = JSON.parse(this._speicher.getItem(SchuleBoundary.SCHLUESSEL));
+      if (d && d.formatversion === SchuleBoundary.FORMAT && Array.isArray(d.geloest)) return new Set(d.geloest.filter(x => gueltig.has(x)));
+    } catch (e) { /* kaputte oder fehlende Daten: leer */ }
+    return new Set();
+  }
+  speichereGeloest(menge) {
+    try { this._speicher.setItem(SchuleBoundary.SCHLUESSEL, JSON.stringify({ formatversion: SchuleBoundary.FORMAT, geloest: [...menge] })); }
+    catch (e) { /* Speicher gesperrt: gilt bis zum Neuladen */ }
+  }
+  // Schachregeln der Aufgaben (chess.js)
+  brett(fen) { return new this._Chess(fen).board().flat().map(x => x ? x.color + x.type : null); }
+  amZug(fen) { return fen.split(' ')[1]; }
+  ziele(fen, feld) { return new this._Chess(fen).moves({ square: feld, verbose: true }).map(m => m.to); }
+  // Zug ausführen: null, wenn unerlaubt; sonst neue Stellung und ob Matt
+  ziehe(fen, from, to) {
+    const g = new this._Chess(fen);
+    const m = g.move({ from, to, promotion: 'q' });
+    return m ? { fen: g.fen(), matt: g.in_checkmate() } : null;
+  }
+  mattZuege(fen) {
+    const g = new this._Chess(fen), out = [];
+    for (const m of g.moves({ verbose: true })) { g.move(m); if (g.in_checkmate()) out.push({ from: m.from, to: m.to }); g.undo(); }
+    return out;
+  }
+}
+
+class SchuleControl {
+  static LEKTIONEN = [
+    { id: 'L1', figur: 'r', start: 'a1', sterne: ['a6', 'f6', 'f2'] },
+    { id: 'L2', figur: 'b', start: 'c1', sterne: ['f4', 'd6', 'b4'] },
+    { id: 'L3', figur: 'q', start: 'd1', sterne: ['d7', 'h3', 'a4', 'f5'] },
+    { id: 'L4', figur: 'n', start: 'b1', sterne: ['c3', 'e4', 'f6'] },
+    { id: 'L5', figur: 'k', start: 'e1', sterne: ['e3', 'f4', 'd5'] },
+    { id: 'L6', figur: 'p', start: 'e2', sterne: ['d5', 'c6', 'b7'] },
+  ];
+  static MATT = [
+    '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1', 'k7/8/1K6/8/8/8/8/7Q w - - 0 1', '7k/R7/8/8/8/8/8/1R4K1 w - - 0 1',
+    'k7/pp6/8/8/8/8/8/K5R1 w - - 0 1', '6rk/6pp/8/6N1/8/8/8/6K1 w - - 0 1', '7k/8/6K1/8/8/8/8/Q7 w - - 0 1',
+    '3r2k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1', 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4',
+    'kb6/p7/1PK5/8/8/8/8/8 w - - 0 1', '5k2/8/5K2/8/8/8/8/7Q w - - 0 1',
+    'r5k1/8/8/8/8/8/5PPP/6K1 b - - 0 1', 'rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2',
+  ].map((fen, i) => ({ id: 'M' + (i + 1), fen }));
+  static GEWINN = [
+    { id: 'G1', fen: '4k3/8/8/3q4/8/8/8/3RK3 w - - 0 1', loesung: ['d1d5'] },
+    { id: 'G2', fen: '4k3/8/8/6r1/8/8/8/2B1K3 w - - 0 1', loesung: ['c1g5'] },
+    { id: 'G3', fen: '4k3/8/8/8/8/8/5q2/4K3 w - - 0 1', loesung: ['e1f2'] },
+    { id: 'G4', fen: 'r3k3/8/8/1N6/8/8/8/4K3 w - - 0 1', loesung: ['b5c7'] },
+    { id: 'G5', fen: 'r3k3/8/8/8/8/8/8/4K2Q w - - 0 1', loesung: ['h1a8', 'h1c6', 'h1e4', 'h1h8'] },
+    { id: 'G6', fen: 'q7/1k6/8/8/8/8/8/1K3B2 w - - 0 1', loesung: ['f1g2'] },
+    { id: 'G7', fen: '4k3/8/8/8/3n4/8/8/R3K3 b - - 0 1', loesung: ['d4c2'] },
+  ];
+  static idx(sq) { return (8 - Number(sq[1])) * 8 + 'abcdefgh'.indexOf(sq[0]); }
+  static feld(i) { return 'abcdefgh'[i % 8] + (8 - Math.floor(i / 8)); }
+
+  constructor(boundary) {
+    this.b = boundary;
+    const S = SchuleControl;
+    this._alle = [...S.LEKTIONEN.map(l => l.id), ...S.MATT.map(m => m.id), ...S.GEWINN.map(g => g.id)];
+    this.geloest = boundary.ladeGeloest(new Set(this._alle));
+    this.a = null;   // offene Lektion oder Aufgabe
+  }
+  uebersicht() {
+    const e = (x) => ({ id: x.id, geloest: this.geloest.has(x.id) });
+    return { lektionen: SchuleControl.LEKTIONEN.map(e), matt: SchuleControl.MATT.map(e), gewinn: SchuleControl.GEWINN.map(e) };
+  }
+  loesungen(id) {
+    const g = SchuleControl.GEWINN.find(x => x.id === id);
+    if (g) return g.loesung.map(z => ({ from: z.slice(0, 2), to: z.slice(2, 4) }));
+    const m = SchuleControl.MATT.find(x => x.id === id);
+    return m ? this.b.mattZuege(m.fen) : [];
+  }
+  oeffne(id) {
+    const S = SchuleControl, l = S.LEKTIONEN.find(x => x.id === id);
+    if (l) {
+      const ent = new SchuleEntity(l.figur, S.idx(l.start), l.sterne.map(S.idx));
+      this.a = { art: 'lektion', id, ent, bestwert: SchuleEntity.bestweg(ent.figur, ent.start, ent.sterne).length, ausgewaehlt: null, status: null, markiert: [] };
+      return true;
+    }
+    const m = S.MATT.find(x => x.id === id) || S.GEWINN.find(x => x.id === id);
+    if (!m) { this.a = null; return false; }
+    this.a = { art: 'aufgabe', id, gruppe: id[0] === 'M' ? 'matt' : 'gewinn', start: m.fen, fen: m.fen, ausgewaehlt: null, status: null, fertig: false, gezeigt: false, markiert: [] };
+    return true;
+  }
+  schliesse() { this.a = null; }
+  naechste() {
+    if (!this.a) return null;
+    const gruppe = this.a.id[0], ids = this._alle.filter(x => x[0] === gruppe), k = ids.indexOf(this.a.id);
+    return ids[k + 1] || null;
+  }
+  nochmal() { if (this.a) this.oeffne(this.a.id); }
+  getAnsicht() {
+    const a = this.a;
+    if (!a) return null;
+    if (a.art === 'lektion') {
+      const e = a.ent;
+      return { art: 'lektion', id: a.id, figur: e.figur, feld: e.feld, brett: e.brett(), ausgewaehlt: a.ausgewaehlt,
+        ziele: a.ausgewaehlt === null ? [] : e.ziele(), zuege: e.zuege, bestwert: a.bestwert, fertig: e.fertig, status: a.status, markiert: a.markiert, amZug: 'w' };
+    }
+    const ziele = a.ausgewaehlt === null ? [] : this.b.ziele(a.fen, SchuleControl.feld(a.ausgewaehlt)).map(SchuleControl.idx);
+    return { art: 'aufgabe', id: a.id, gruppe: a.gruppe, fen: a.fen, brett: this.b.brett(a.fen), amZug: this.b.amZug(a.start), ausgewaehlt: a.ausgewaehlt,
+      ziele, zuege: 0, fertig: a.fertig, status: a.status, markiert: a.markiert, gezeigt: a.gezeigt };
+  }
+  _geloest(id) { this.geloest.add(id); this.b.speichereGeloest(this.geloest); }
+
+  handleFeld(i) {
+    const a = this.a;
+    if (!a || a.art === 'lektion' && a.ent.fertig || a.fertig) return { invalid: true };
+    a.markiert = [];
+    if (a.art === 'lektion') {
+      const e = a.ent;
+      if (i === e.feld) { a.ausgewaehlt = i; return { invalid: false }; }
+      if (a.ausgewaehlt === null || !e.ziehe(i)) return { invalid: true };
+      a.ausgewaehlt = null;
+      if (e.fertig) { a.status = { art: 'geschafft', zuege: e.zuege, bestwert: a.bestwert }; this._geloest(a.id); }
+      return { invalid: false };
+    }
+    const brett = this.b.brett(a.fen), seite = this.b.amZug(a.start);
+    if (brett[i] && brett[i][0] === seite) { a.ausgewaehlt = i; return { invalid: false }; }
+    if (a.ausgewaehlt === null) return { invalid: true };
+    const von = SchuleControl.feld(a.ausgewaehlt), nach = SchuleControl.feld(i);
+    if (!this.b.ziele(a.fen, von).includes(nach)) return { invalid: true };
+    a.ausgewaehlt = null;
+    const r = this.b.ziehe(a.fen, von, nach);
+    const richtig = a.gruppe === 'matt' ? r.matt : this.loesungen(a.id).some(l => l.from === von && l.to === nach);
+    if (!richtig) { a.status = { art: 'falsch' }; return { invalid: false }; }   // Stellung bleibt am Anfang
+    a.fen = r.fen; a.fertig = true;
+    a.status = { art: a.gruppe === 'matt' ? 'matt' : 'gewonnen', gezeigt: a.gezeigt };
+    if (!a.gezeigt) this._geloest(a.id);
+    return { invalid: false };
+  }
+  // Tipp: Lektion → nächstes Feld des kürzesten Wegs; Aufgabe → Figur, die ziehen muss
+  tipp() {
+    const a = this.a;
+    if (!a || this.getAnsicht().fertig) return [];
+    if (a.art === 'lektion') { const w = SchuleEntity.bestweg(a.ent.figur, a.ent.feld, a.ent.sterne); a.markiert = w ? [w[0]] : []; }
+    else a.markiert = [SchuleControl.idx(this.loesungen(a.id)[0].from)];
+    return a.markiert;
+  }
+  // Lösung (nur Aufgaben): zeigt Start und Ziel, die Aufgabe zählt danach nicht mehr als gelöst
+  loesung() {
+    const a = this.a;
+    if (!a || a.art !== 'aufgabe' || a.fertig) return [];
+    const l = this.loesungen(a.id)[0];
+    a.gezeigt = true;
+    a.markiert = [SchuleControl.idx(l.from), SchuleControl.idx(l.to)];
+    return a.markiert;
+  }
+}
+
+/* SchuleUI (UI der Schachschule): Übersicht, Texte, Brett. Spricht nur mit SchuleControl. */
+class SchuleUI {
+  static LEKTION = {
+    L1: ['Turm', 'Der Turm zieht gerade: nach oben, unten, links oder rechts, so weit er will. Er ist 5 Punkte wert.'],
+    L2: ['Läufer', 'Der Läufer zieht schräg, so weit er will. Er bleibt immer auf seiner Feldfarbe. Er ist 3 Punkte wert.'],
+    L3: ['Dame', 'Die Dame zieht gerade und schräg, so weit sie will: Turm und Läufer zusammen. Sie ist die stärkste Figur, 9 Punkte.'],
+    L4: ['Springer', 'Der Springer springt wie ein L: zwei Felder gerade, dann eins zur Seite. Er springt über alles hinweg. 3 Punkte.'],
+    L5: ['König', 'Der König zieht ein Feld in jede Richtung. Wird er angegriffen, ist das Schach. Kann er nicht mehr entkommen, ist es Matt und die Partie ist aus.'],
+    L6: ['Bauer', 'Der Bauer zieht ein Feld nach vorn, beim ersten Zug auch zwei. Schlagen darf er nur schräg nach vorn. Auf der letzten Reihe wird er zur Dame.'],
+  };
+  static GEWINN = {
+    G1: 'Die Dame war ungedeckt.', G2: 'Der Turm war ungedeckt.', G3: 'Auch der König darf eine ungedeckte Figur schlagen.',
+    G4: 'Gabel: Der Springer gibt Schach und greift zugleich den Turm an.', G5: 'Die Dame gewinnt den Turm, oft mit Schach und Angriff zugleich (Gabel).',
+    G6: 'Spieß: Der König steht im Schach und muss weg, dahinter fällt die Dame.', G7: 'Gabel: Der Springer gibt Schach und greift zugleich den Turm an.',
+  };
+  static STERN = '<svg viewBox="0 0 24 24" class="stern" aria-label="Stern"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7.1L12 17.3 5.8 21l1.6-7.1L2 9.2l7.1-.6z"/></svg>';
+
+  constructor(control) {
+    this.control = control;
+    this.viewEl = document.getElementById('schule-view');
+    this.menueEl = document.getElementById('scmenue');
+    this.aufgabeEl = document.getElementById('scaufgabe');
+    this.boardEl = document.getElementById('scboard');
+    this.titelEl = document.getElementById('sctitel');
+    this.textEl = document.getElementById('sctext');
+    this.meldungEl = document.getElementById('scmeldung');
+    const knopf = (cls, fn) => this.viewEl.querySelector(cls).addEventListener('click', fn);
+    knopf('.sc-zurueck', () => { this.control.schliesse(); this.render(); });
+    knopf('.sc-nochmal', () => { this.control.nochmal(); this.render(); });
+    knopf('.sc-tipp', () => { this.control.tipp(); this.render(); });
+    knopf('.sc-loesung', () => { this.control.loesung(); this.render(); });
+    knopf('.sc-weiter', () => { const n = this.control.naechste(); if (n) this.control.oeffne(n); else this.control.schliesse(); this.render(); });
+    this._baueMenue();
+    this.render();
+  }
+
+  _baueMenue() {
+    const u = this.control.uebersicht();
+    const fuelle = (id, liste, name) => {
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+      liste.forEach((x, k) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'sc-eintrag'; b.dataset.id = x.id;
+        b.textContent = name(x, k);
+        b.addEventListener('click', () => { this.control.oeffne(x.id); this.render(); });
+        el.appendChild(b);
+      });
+    };
+    fuelle('sclektionen', u.lektionen, x => SchuleUI.LEKTION[x.id][0]);
+    fuelle('scmatt', u.matt, (x, k) => String(k + 1));
+    fuelle('scgewinn', u.gewinn, (x, k) => String(k + 1));
+  }
+
+  _meldung(a) {
+    const s = a.status;
+    if (!s) return a.art === 'lektion' ? 'Tippe die Figur an, dann ein Feld mit Punkt. Sammle alle Sterne ein.' : 'Tippe deine Figur an, dann das Zielfeld.';
+    if (s.art === 'geschafft') return `Geschafft in ${s.zuege} Zügen. ` + (s.zuege > s.bestwert ? `Bestwert: ${s.bestwert}. Nochmal versuchen?` : 'Schneller geht es nicht!');
+    if (s.art === 'falsch') return 'Noch nicht. Versuch es nochmal.';
+    const nach = s.gezeigt ? ' (mit Lösung, zählt nicht)' : '';
+    if (s.art === 'matt') return 'Matt! Der König kann nicht mehr entkommen.' + nach;
+    return 'Richtig! ' + (SchuleUI.GEWINN[a.id] || '') + nach;
+  }
+
+  render() {
+    const u = this.control.uebersicht();
+    for (const x of [...u.lektionen, ...u.matt, ...u.gewinn]) {
+      const b = this.menueEl.querySelector(`.sc-eintrag[data-id="${x.id}"]`);
+      if (b) b.classList.toggle('geloest', x.geloest);
+    }
+    const a = this.control.getAnsicht();
+    this.menueEl.hidden = !!a;
+    this.aufgabeEl.hidden = !a;
+    if (!a) return;
+    const seite = a.amZug === 'w' ? 'Weiß' : 'Schwarz';
+    if (a.art === 'lektion') { this.titelEl.textContent = 'Figuren-Schule: ' + SchuleUI.LEKTION[a.id][0]; this.textEl.textContent = SchuleUI.LEKTION[a.id][1]; }
+    else {
+      const nr = Number(a.id.slice(1));
+      this.titelEl.textContent = (a.gruppe === 'matt' ? `Matt in 1, Aufgabe ${nr}` : `Figur gewinnen, Aufgabe ${nr}`);
+      this.textEl.textContent = a.gruppe === 'matt' ? `${seite} zieht und setzt sofort Matt.` : `${seite} zieht und gewinnt eine Figur.`;
+    }
+    this.meldungEl.textContent = this._meldung(a);
+    this.meldungEl.className = 'sc-meldung' + (a.fertig ? ' gut' : a.status && a.status.art === 'falsch' ? ' falsch' : '');
+    this.viewEl.querySelector('.sc-loesung').hidden = a.art !== 'aufgabe';
+    this.viewEl.querySelector('.sc-weiter').hidden = !a.fertig;
+    const ziele = new Set(a.ziele), mark = new Set(a.markiert);
+    this.boardEl.innerHTML = '';
+    a.brett.forEach((v, i) => {
+      const sq = document.createElement('button');
+      sq.type = 'button';
+      let cls = 'ch-square ' + ((Math.floor(i / 8) + i % 8) % 2 === 0 ? 'light' : 'dark');
+      if (i === a.ausgewaehlt) cls += ' selected';
+      if (ziele.has(i)) cls += ' valid-dest' + (v ? ' has-piece' : '');
+      if (mark.has(i)) cls += ' tipp';
+      sq.className = cls;
+      if (v === '*') sq.innerHTML = SchuleUI.STERN;
+      else if (v) sq.innerHTML = `<span class="ch-piece ${v[0]}">${ChessUI.figurSvg(v)}</span>`;
+      sq.addEventListener('click', () => { this.control.handleFeld(i); this.render(); });
+      this.boardEl.appendChild(sq);
+    });
+  }
+}
+
 class EinstellungenBoundary {
   static SCHLUESSEL = 'brettspiele.einstellungen';
   static FORMAT = 1;
@@ -4718,6 +5105,14 @@ if (typeof Chess !== 'undefined') {
   console.warn('chess.js konnte nicht geladen werden (offline/CDN nicht erreichbar) – Schach-Tab wird ausgeblendet.');
   document.querySelector('[data-tab="chess"]')?.remove();
   document.getElementById('chess-view')?.remove();
+}
+// Schachschule (S-W08): braucht ebenfalls chess.js
+if (typeof Chess !== 'undefined') {
+  const control = new SchuleControl(new SchuleBoundary(speicher, Chess));
+  spiele.schule = { control, ui: new SchuleUI(control) };
+} else {
+  document.querySelector('[data-tab="schule"]')?.remove();
+  document.getElementById('schule-view')?.remove();
 }
 
 new TabController(Platform);
