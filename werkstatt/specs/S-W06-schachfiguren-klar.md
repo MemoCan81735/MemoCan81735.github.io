@@ -13,6 +13,7 @@
   Weiß: weiße Fläche mit fast schwarzem Rand; Schwarz: fast schwarze Fläche mit weißen Innenlinien. Auch die Knöpfe zur Bauernumwandlung zeigen diese Figuren.
 - **3D:** Höhen gestuft Bauer < Turm < Springer < Läufer < Dame < König mit mindestens 0,1 Feld Abstand. König mit großem Kreuz, Dame mit Zackenkrone,
   Läufer mit Kugel und Schlitz, Turm mit vier Zinnen. Holzfarbene helle Felder, damit weiße Figuren abstechen.
+  Nachtrag 01.11.2026, 13:22 (Wunsch des Betreibers "Konturstriche in 3D deutlicher"): jede Figur hat einen Konturstrich, mindestens 1,5 px breit auf dem Handy (412 px Breite). Weiße Figuren fast schwarz, schwarze Figuren hellgrau (Nachtrag 13:22: "Und bei den schwarzen Figuren").
 - Nur UI. Keine neuen Daten, keine Berechtigung.
 
 ## Akzeptanzkriterien
@@ -24,6 +25,7 @@
 | AK-4 | 3D: Höhen streng gestuft mit ≥ 0,1 Abstand, König mindestens 0,12 höher als Dame | `f_3d_hoehen` |
 | AK-5 | 3D: Farbkontrast weiße Figur zu hellem Feld ≥ 1,4, schwarze Figur zu dunklem Feld ≥ 2,5 | `f_3d_kontrast` |
 | AK-6 | Umwandlung zeigt die Figuren in der Farbe des Spielers am Zug | `f_2d_svg` |
+| AK-7 | 3D: jedes Körperteil jeder Figur hat einen Konturstrich ≥ 1,5 px breit bei 412 px; Weiß fast schwarz, Schwarz hellgrau | `f_3d_kontur` |
 
 ## Prüfszenarien
 | Nr. | Kategorie | Szenario | Kriterium |
@@ -36,9 +38,11 @@
 | PS-6 | Normal | 3D-Höhen messen (Begrenzungsquader) | AK-4 |
 | PS-7 | Normal | 3D-Materialfarben gegen Feldfarben | AK-5 |
 | PS-8 | Grenzwert | Umwandlung für Schwarz: schwarze Figuren auf den Knöpfen | AK-6 |
+| PS-9 | Normal | Alle 32 Figuren der Startstellung: Kontur je Körperteil, Breite am fernsten Feld (a8) gemessen | AK-7 |
+| PS-10 | Normal | Bild der Startstellung: am weißen Bauern e2 (helles Feld) dunkle, am schwarzen Bauern e7 (dunkles Feld) helle Bildpunkte | AK-7 |
 
 ## Gegenproben
-- Verstoß: alle Arten mit dem Bauern-Umriss; weißer Rand statt schwarzem; Dame so hoch wie König; helle Felder wieder fast weiß. Jeder muss seinen Test rot machen.
+- Verstoß: alle Arten mit dem Bauern-Umriss; weißer Rand statt schwarzem; Dame so hoch wie König; helle Felder wieder fast weiß; Kontur zu dünn (0,01); schwarze Figuren mit dunkler Kontur. Jeder muss seinen Test rot machen.
 - Fehlalarm: siehe PS-4.
 
 ## Ergebnis
@@ -47,3 +51,5 @@
 - 2D: König 86 % der Feldhöhe, schmalste Figur 71 % der Feldbreite, größte Überdeckung zweier Arten 0,79 (Bauer und Läufer). Kontraste: Rand Weiß zu hellem Feld 16, Schwarz zu dunklem Feld 5,1.
 - 3D: Höhen Bauer 0,74, Turm 0,92, Springer 1,04, Läufer 1,28, Dame 1,40, König 1,57. Kontrast weiße Figur zu hellem Feld 2,37, schwarze zu dunklem 2,89.
 - Rückblick: Früheste Stufe, die das hätte finden können, ist die Spec S-W05 (dort fehlte ein Kriterium "Figuren unterscheidbar", gemessen statt angesehen). Ab jetzt hat jede Spec mit Spielfiguren ein Messkriterium für Unterscheidbarkeit und Kontrast.
+- Nachtrag Kontur (13:22): Strich 1,56 px breit am fernsten Feld bei 396 px Leinwand; Weiß fast schwarz, Schwarz hellgrau. 6 von 6 Tests grün, 7 von 7 Gegenproben erkannt.
+  Eckige Teile (Kreuz, Zinnen, Pferdekopf) bekommen eine vergrößerte Kopie statt Aufblähen, sonst reißt die Kontur an den Kanten auf (im Bild gesehen und behoben).

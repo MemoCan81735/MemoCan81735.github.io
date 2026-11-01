@@ -3896,6 +3896,7 @@ class Ansicht3D {
   static THREE_URL = 'lib/three.min.js';
   static G = 30;            // Schwerkraft in Feldern/s²
   static DREH_MAX = 35 * Math.PI / 180;
+  static KONTUR = 0.05;     // Breite des Konturstrichs der Schachfiguren in Feldern (S-W06)
   static ZIEH_SCHWELLE = 8; // px: darüber ist es Drehen statt Tippen
   static webglMoeglich() {
     try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); }
@@ -4080,6 +4081,16 @@ class Ansicht3D {
     this.figurDetail = { b: [kiste(0.035, 0.24, 0.06, 0, 0.98, 0.17)], n: [kugel(0.045, 0.82).translate(0, 0, 0.14), kugel(0.045, 0.82).translate(0, 0, -0.14)] };
     this.figurMat = { w: new T.MeshStandardMaterial({ color: 0xfffdf6, roughness: 0.4 }), b: new T.MeshStandardMaterial({ color: 0x1d1d22, roughness: 0.35 }) };
     this.detailMat = { w: new T.MeshBasicMaterial({ color: 0x1d1d22 }), b: new T.MeshBasicMaterial({ color: 0xf2f2f2 }) };
+    // Konturstrich: Rückseite, entlang der Normalen um KONTUR aufgebläht, einfarbig. Weiß: fast schwarz, Schwarz: hellgrau (wie die Innenlinien in 2D)
+    const kontur = (farbe, dicke = Ansicht3D.KONTUR) => new T.ShaderMaterial({
+      side: T.BackSide, uniforms: { dicke: { value: dicke }, farbe: { value: new T.Color(farbe) } },
+      vertexShader: 'uniform float dicke; void main(){ vec3 p = position + normalize(normal) * dicke; gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); }',
+      fragmentShader: 'uniform vec3 farbe; void main(){ gl_FragColor = vec4(farbe, 1.0); }',
+    });
+    this.konturMat = { w: kontur(0x0b0b0e), b: kontur(0xe6e6e6) };
+    // Kanten mit geteilten Normalen (Kreuz, Zinnen, Pferdekopf) reißen beim Aufblähen auf: dort eine vergrößerte Kopie ohne Aufblähen
+    this.konturEckig = { w: kontur(0x0b0b0e, 0), b: kontur(0xe6e6e6, 0) };
+    this._konturGeo = new Map();
     this.markGeo = { feld: new T.PlaneGeometry(1, 1), punkt: new T.CircleGeometry(0.15, 20), ring: new T.RingGeometry(0.36, 0.48, 32) };
     this.markMat = {
       auswahl: new T.MeshBasicMaterial({ color: 0xffd60a, transparent: true, opacity: 0.55 }),
@@ -4089,9 +4100,23 @@ class Ansicht3D {
       tipp: new T.MeshBasicMaterial({ color: 0x0a84ff, transparent: true, opacity: 0.9 }),
     };
   }
+  _konturMesh(geo, farbe) {
+    const rund = geo.type === 'LatheGeometry' || geo.type === 'SphereGeometry';
+    if (rund) return new THREE.Mesh(geo, this.konturMat[farbe]);
+    if (!this._konturGeo.has(geo)) {
+      geo.computeBoundingBox();
+      const b = geo.boundingBox, m = b.getCenter(new THREE.Vector3()), g = b.getSize(new THREE.Vector3()), d = 2 * Ansicht3D.KONTUR;
+      const k = geo.clone(); k.translate(-m.x, -m.y, -m.z); k.scale((g.x + d) / g.x, (g.y + d) / g.y, (g.z + d) / g.z); k.translate(m.x, m.y, m.z);
+      this._konturGeo.set(geo, k);
+    }
+    return new THREE.Mesh(this._konturGeo.get(geo), this.konturEckig[farbe]);
+  }
   _figur(wert) {
     const g = new THREE.Group();
-    for (const geo of this.figurGeo[wert[1]]) g.add(new THREE.Mesh(geo, this.figurMat[wert[0]]));
+    for (const geo of this.figurGeo[wert[1]]) {
+      g.add(new THREE.Mesh(geo, this.figurMat[wert[0]]));
+      const k = this._konturMesh(geo, wert[0]); k.userData.kontur = true; g.add(k);
+    }
     for (const geo of (this.figurDetail[wert[1]] || [])) g.add(new THREE.Mesh(geo, this.detailMat[wert[0]]));
     if (wert === 'bn') g.rotation.y = Math.PI;
     g.userData.wert = wert;

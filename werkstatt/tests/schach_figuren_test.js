@@ -144,6 +144,48 @@ test('f_3d_kontrast', async () => {
   pruefe(f.length === 0, f.join(' | '));
 });
 
+test('f_3d_kontur', async () => {
+  const p = await seite('3d');
+  const r = await p.evaluate(() => {
+    const a = window.__brett.chess.ui.ansicht3d, out = { fehlt: [] };
+    for (const [feld, g] of a.stuecke) {
+      const koerper = g.children.filter(m => m.material === a.figurMat.w || m.material === a.figurMat.b).length;
+      const kontur = g.children.filter(m => m.userData.kontur && [a.konturMat, a.konturEckig].some(k => m.material === k[g.userData.wert[0]])).length;
+      if (!koerper || kontur !== koerper) out.fehlt.push(feld);
+    }
+    out.anzahl = a.stuecke.size;
+    const hell = (m) => { const f = m.uniforms.farbe.value; return 0.2126 * f.r + 0.7152 * f.g + 0.0722 * f.b; };
+    out.hellW = hell(a.konturMat.w); out.hellB = hell(a.konturMat.b);
+    // Breite in Bildpunkten am fernsten Feld a8
+    const el = a.renderer.domElement.getBoundingClientRect(), rechts = new THREE.Vector3(1, 0, 0).applyQuaternion(a.kamera.quaternion);
+    const p1 = a._feldPos(0).setY(0.5), p2 = p1.clone().addScaledVector(rechts, Math.min(a.konturMat.w.uniforms.dicke.value, a.konturMat.b.uniforms.dicke.value));
+    const px = (v) => { const q = v.clone().project(a.kamera); return { x: (q.x + 1) / 2 * el.width, y: (1 - q.y) / 2 * el.height }; };
+    const q1 = px(p1), q2 = px(p2); out.breite = Math.hypot(q2.x - q1.x, q2.y - q1.y); out.leinwand = el.width;
+    // Bild lesen: dunkle Punkte am Rand des weißen Bauern e2 (helles Feld)
+    const w = a.renderer.domElement.width, h = a.renderer.domElement.height, rt = new THREE.WebGLRenderTarget(w, h);
+    a.renderer.setRenderTarget(rt); a.renderer.render(a.szene, a.kamera);
+    const buf = new Uint8Array(w * h * 4); a.renderer.readRenderTargetPixels(rt, 0, 0, w, h, buf); a.renderer.setRenderTarget(null); rt.dispose();
+    const s = w / el.width;
+    const zaehle = (feld, bed) => { const m = px(a._feldPos(feld).setY(0.4)); let n = 0;
+      for (let dy = -18; dy <= 18; dy++) for (let dx = -18; dx <= 18; dx++) {
+        const x = Math.round((m.x + dx) * s), y = h - 1 - Math.round((m.y + dy) * s), i = (y * w + x) * 4;
+        if (bed(buf[i] + buf[i + 1] + buf[i + 2])) n++;
+      } return n; };
+    out.dunkel = zaehle(52, (v) => v < 3 * 45);    // weißer Bauer e2 auf hellem Feld: dunkle Kontur
+    out.hellePunkte = zaehle(12, (v) => v > 3 * 200); // schwarzer Bauer e7 auf dunklem Feld: helle Kontur
+    a._bild();
+    return out;
+  });
+  const f = p.fehler; await zu(p);
+  console.log(`       Kontur ${r.breite.toFixed(2)} px breit (Leinwand ${r.leinwand} px), ${r.dunkel} dunkle Punkte am Bauern e2, ${r.hellePunkte} helle am Bauern e7`);
+  pruefe(r.anzahl === 32 && !r.fehlt.length, `Kontur fehlt an ${JSON.stringify(r.fehlt)}`);
+  pruefe(r.hellW < 0.05 && r.hellB > 0.7, `Konturfarben: Weiß ${r.hellW}, Schwarz ${r.hellB}`);
+  pruefe(r.hellePunkte >= 20, `nur ${r.hellePunkte} helle Punkte am schwarzen Bauern`);
+  pruefe(r.breite >= 1.5, `Kontur nur ${r.breite.toFixed(2)} px`);
+  pruefe(r.dunkel >= 20, `nur ${r.dunkel} dunkle Punkte am weißen Bauern`);
+  pruefe(f.length === 0, f.join(' | '));
+});
+
 (async () => {
   const server = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ordner, stdio: 'ignore' });
   await new Promise(r => setTimeout(r, 800));

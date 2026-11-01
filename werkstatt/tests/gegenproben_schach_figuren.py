@@ -10,6 +10,9 @@ FEHLER = [
     ('Alle Arten mit dem Bauern-Umriss', 'const f = ChessUI.FIGUREN[wert[1]];', 'const f = ChessUI.FIGUREN.p;', 'f_2d_umriss'),
     ('Weißer Rand statt schwarzem', 'svg.w .koerper { fill: #ffffff; stroke: #111111;', 'svg.w .koerper { fill: #ffffff; stroke: #eeeeee;', 'f_2d_kontrast'),
     ('Dame so hoch wie König', 'kiste(0.08, 0.32, 0.08, 0, 1.41, 0), kiste(0.26, 0.08, 0.08, 0, 1.46, 0)', 'kugel(0.08, 1.3)', 'f_3d_hoehen'),
+    ('Kontur zu dünn', 'static KONTUR = 0.05;', 'static KONTUR = 0.01;', 'f_3d_kontur'),
+    ('Kontur fehlt', 'const k = this._konturMesh(geo, wert[0]); k.userData.kontur = true; g.add(k);', '', 'f_3d_kontur'),
+    ('Schwarze Figuren mit dunkler Kontur', 'this.konturMat = { w: kontur(0x0b0b0e), b: kontur(0xe6e6e6) };', 'this.konturMat = { w: kontur(0x0b0b0e), b: kontur(0x0b0b0e) }; /* */', 'f_3d_kontur'),
     ('Helle Felder fast weiß', 'const hell = new T.MeshStandardMaterial({ color: 0xc8a070', 'const hell = new T.MeshStandardMaterial({ color: 0xf4ead6', 'f_3d_kontrast'),
 ]
 env = dict(os.environ)
