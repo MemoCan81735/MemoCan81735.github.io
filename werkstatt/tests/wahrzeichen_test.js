@@ -145,6 +145,53 @@ test('w_label_text', async () => {
   await p.context().close();
 });
 
+test('w_fuss_einbau', async () => {
+  const p = await seite(); const s = strecke();
+  const r = await p.evaluate(() => TRACK_LOOK.oer.landmarks.map(l => l.foot || null));
+  s.wahrzeichen.forEach((w, i) => pruefe(JSON.stringify(r[i]) === JSON.stringify(w.fuss || null), `Grundriss ${i + 1} (${w.name}) weicht ab`));
+  pruefe(r.filter(Boolean).length >= 9, 'zu wenige Grundrisse im Spiel');
+  await p.context().close();
+});
+
+test('w_fuss_teile', async () => {
+  const p = await seite();
+  const r = await p.evaluate(() => TRACK_LOOK.oer.landmarks.filter(l => l.foot).map(l => {
+    const parts = KitUI.footParts(l.type, l.foot);
+    const bb = (g) => { g.computeBoundingBox(); return g.boundingBox; };
+    const k0 = bb(parts[0].geo), all = parts.map(q => bb(q.geo));
+    const xs = l.foot.map(q => q[0]), zs = l.foot.map(q => q[1]);
+    return { type: l.type, n: parts.length, keys: parts.map(q => q.key), h: k0.max.y - k0.min.y,
+      w: k0.max.x - k0.min.x, tw: Math.max(...xs) - Math.min(...xs), d: k0.max.z - k0.min.z, td: Math.max(...zs) - Math.min(...zs),
+      top: Math.max(...all.map(b => b.max.y)), minx: k0.min.x, tminx: Math.min(...xs) };
+  }));
+  const H = { mosque: 22, kirche: 20, rathaus: 22, markt: 16 }, TOP = { mosque: 40, kirche: 40, rathaus: 40, markt: 14 };
+  for (const q of r) {
+    pruefe(q.n >= 3, `${q.type}: nur ${q.n} Teile`);
+    pruefe(Math.abs(q.h - H[q.type]) < 0.1, `${q.type}: Höhe ${q.h}`);
+    pruefe(Math.abs(q.w - q.tw) < 0.5 && Math.abs(q.d - q.td) < 0.5 && Math.abs(q.minx - q.tminx) < 0.5, `${q.type}: Körper weicht vom Umriss ab`);
+    pruefe(q.top >= TOP[q.type], `${q.type}: Merkmal (Turm, Minarett, Schild) fehlt, Höhe ${q.top}`);
+  }
+  pruefe(r.filter(q => q.type === 'mosque').every(q => q.keys.filter(x => x === 'dome').length >= 3 && q.keys.length >= 5), 'Moschee ohne Kuppel');
+  pruefe(r.some(q => q.type === 'kirche') && r.some(q => q.type === 'markt') && r.some(q => q.type === 'rathaus'), 'Typen fehlen');
+  console.log(`  Messwerte: ${r.length} Bauwerke, Höhen ${[...new Set(r.map(q => q.h.toFixed(0)))].join('/')}`);
+  await p.context().close();
+});
+
+test('w_fuss_szene', async () => {
+  const p = await seite();
+  const r = await p.evaluate((code) => {
+    const w = eval(code), out = [];
+    for (const lm of w.look.landmarks.filter(l => l.foot)) {
+      const ms = w.group.children.filter(o => o.isMesh && Math.abs(o.position.x - lm.x) < 0.01 && Math.abs(o.position.z - lm.y) < 0.01);
+      out.push({ n: ms.length, einfach: ms.every(o => Math.abs(o.scale.x - 1) < 1e-6) });
+    }
+    return out;
+  }, szene('oer'));
+  pruefe(r.length >= 9, 'Grundriss-Gebäude in der Szene: ' + r.length);
+  r.forEach((q, i) => pruefe(q.n >= 3 && q.einfach, `Gebäude ${i + 1}: ${q.n} Teile, Maßstab 1: ${q.einfach}`));
+  await p.context().close();
+});
+
 (async () => {
   const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ordner, stdio: 'ignore' });
   await new Promise(r => setTimeout(r, 800));

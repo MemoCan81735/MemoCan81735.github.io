@@ -15,13 +15,20 @@ FEHLER = [
     ('Uhrzeit in der Ausgabe', BAUE, "'abbildung': abb,", "'abbildung': abb, 'zeit': __import__('time').strftime('%H:%M:%S'),", PY, 'w_fehler'),
     ('Typprüfung aus', BAUE, "if w.get('typ') not in TYPEN:", 'if False:', PY, 'w_fehler'),
     ('Bautyp rathaus fehlt im Spiel', SEITE, 'case "rathaus": {', 'case "rathausX": {', JS, 'w_typen'),
-    ('Eine Moschee fehlt im Spiel-Eintrag', SEITE, '      { type: "mosque", x: 762.8, y: 299.8, rot: -0.415, s: 2.6, r: 40, label: "DITIB-Moschee" }, /* DITIB-Moschee Abdulhamit Han */\n', '', JS, 'w_einbau'),
+    ('Eine Moschee hat im Spiel den falschen Typ', SEITE, '{ type: "mosque", x: 762.8, y: 299.8,', '{ type: "mosqueX", x: 762.8, y: 299.8,', JS, 'w_einbau'),
     ('Längenprüfung der Anzeige aus', BAUE, "3 <= len(w['anzeige']) <= 24", 'True', PY, 'w_anzeige'),
-    ('Label fehlt im Spiel-Eintrag', SEITE, 'rot: -0.415, s: 2.6, r: 40, label: "DITIB-Moschee" }', 'rot: -0.415, s: 2.6, r: 40 }', JS, 'w_label_einbau'),
+    ('Label fehlt im Spiel-Eintrag', SEITE, 'r: 40, label: "DITIB-Moschee", foot', 'r: 40, foot', JS, 'w_label_einbau'),
     ('Schilder nie ausgeblendet', SEITE, 'return d <= 120 ? 1 : d >= 420 ? 0 : (420 - d) / 300;', 'return 1;', JS, 'w_label_alpha'),
     ('Ungültiger Abstand sichtbar', SEITE, 'if (typeof d !== "number" || !(d >= 0)) return 0;', '', JS, 'w_label_alpha'),
     ('Text ohne Verkleinern', SEITE, 'while (px > 14 && g.measureText(text).width > 512 * 0.86)', 'while (false)', JS, 'w_label_text'),
     ('Ferne Schilder bleiben sichtbar', SEITE, 'l.sprite.visible = a >= 0.02;', 'l.sprite.visible = true;', JS, 'w_label_szene'),
+    ('Umriss nicht zurückgedreht', BAUE, 'lok = [(p[0] * f * c - p[1] * f * s, p[0] * f * s + p[1] * f * c) for p in off]', 'lok = [(p[0] * f, p[1] * f) for p in off]', PY, 'w_fuss'),
+    ('Umriss nicht vereinfacht', BAUE, 'if len(v) <= FUSS_PUNKTE_MAX: break', 'break', PY, 'w_fuss'),
+    ('Größe nicht begrenzt', BAUE, 'f = min(FUSS_TYPEN[typ] / ausdehnung, 0.9 * r_s / umkreis)', 'f = 3.0', PY, 'w_fuss'),
+    ('Grundrissprüfung aus', BAUE, 'if flaeche < FLAECHE_MIN_M2:', 'if False:', PY, 'w_fuss_fehler'),
+    ('Körper zu niedrig', SEITE, 'const H = { mosque: 22,', 'const H = { mosque: 2,', JS, 'w_fuss_teile'),
+    ('Moschee ohne Kuppel', SEITE, 'add(new T3.SphereGeometry(r, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), "dome"', 'add(new T3.SphereGeometry(r, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), "marble"', JS, 'w_fuss_teile'),
+    ('Grundriss in der Szene nicht benutzt', SEITE, 'for (const part of lm.foot ? KitUI.footParts(lm.type, lm.foot) : this.kit.decorParts(lm.type, true)){', 'for (const part of this.kit.decorParts(lm.type, true)){', JS, 'w_fuss_szene'),
 ]
 env = dict(os.environ)
 env.setdefault('NODE_PATH', subprocess.run(['npm', 'root', '-g'], capture_output=True, text=True).stdout.strip())

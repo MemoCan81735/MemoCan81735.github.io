@@ -134,6 +134,58 @@ def _():
             pruefe(r.returncode == 1 and 'Anzeige' in r.stderr, f'{name}: Rückgabewert {r.returncode}, Meldung: {r.stderr[-200:]}')
             pruefe('Traceback' not in r.stderr and not os.path.exists(z), f'{name}: unklare Meldung oder Ausgabedatei')
 
+FUSS_TYPEN = {'mosque': 46.0, 'rathaus': 70.0, 'markt': 96.0, 'kirche': 50.0}
+
+def flaeche(pts): return abs(sum(pts[i - 1][0] * pts[i][1] - pts[i][0] * pts[i - 1][1] for i in range(len(pts)))) / 2
+
+@test('w_fuss')
+def _():
+    with tempfile.TemporaryDirectory() as tmp:
+        r, z = bau(tmp)
+        pruefe(r.returncode == 0, 'Bauen schlug fehl: ' + r.stderr[-300:])
+        s = lade(z); d = lade(DATEN); ab = s['abbildung']; u = ab['ursprung']; k = ab['massstab'] * K
+        mit = [w for w in s['wahrzeichen'] if w.get('fuss')]
+        soll = [w for w in s['wahrzeichen'] if w['typ'] in FUSS_TYPEN and w['osm'] in d['grundrisse']]
+        pruefe(len(mit) == len(soll) and len(mit) >= 9, f'Grundrisse: {len(mit)} von {len(soll)}')
+        for w in s['wahrzeichen']:
+            if w['typ'] not in FUSS_TYPEN: pruefe('fuss' not in w, f'{w["name"]}: Grundriss trotz Typ {w["typ"]}')
+        for w in mit:
+            f = w['fuss']; pruefe(3 <= len(f) <= 24, f'{w["name"]}: {len(f)} Ecken')
+            ring = [((p[0] - u[0]) * math.cos(math.radians(u[1])) * 111320.0, (p[1] - u[1]) * 111320.0) for p in d['grundrisse'][w['osm']]['ring']]
+            cx = sum(p[0] for p in ring) / len(ring); cy = sum(p[1] for p in ring) / len(ring)
+            g = w['fuss_faktor'] * k
+            echt = [((p[0] - cx) * g, -(p[1] - cy) * g) for p in ring]               # Welt: Osten +x, Norden -z
+            th = w['rot']
+            welt = [(a * math.cos(th) + b * math.sin(th), -a * math.sin(th) + b * math.cos(th)) for a, b in f]   # lokal -> Welt
+            for i, (name, fe, fw) in enumerate([('minx', min(p[0] for p in echt), min(p[0] for p in welt)), ('maxx', max(p[0] for p in echt), max(p[0] for p in welt)),
+                                               ('minz', min(p[1] for p in echt), min(p[1] for p in welt)), ('maxz', max(p[1] for p in echt), max(p[1] for p in welt))]):
+                pruefe(abs(fe - fw) <= 2.5, f'{w["name"]}: Lage {name} weicht ab ({fe:.1f} gegen {fw:.1f}): Drehung falsch?')
+            fl, soll_fl = flaeche(f), flaeche(echt)
+            pruefe(abs(fl / soll_fl - 1) <= 0.2, f'{w["name"]}: Fläche {fl:.0f} statt {soll_fl:.0f}')
+            gross = max(max(abs(p[0]) for p in echt), max(abs(p[1]) for p in echt)) * 2
+            pruefe(gross <= FUSS_TYPEN[w['typ']] + 0.5, f'{w["name"]}: zu groß {gross:.0f}')
+            pruefe(max(math.hypot(*p) for p in f) <= 0.9 * w['r'] * w['s'] + 0.5, f'{w["name"]}: Umkreis größer als Freiraum')
+        print('  Messwerte: %d Grundrisse, Ecken %s' % (len(mit), [len(w['fuss']) for w in mit]))
+
+@test('w_fuss_fehler')
+def _():
+    def ring(i, v): return lambda d: d['grundrisse'][list(d['grundrisse'])[i]].update(ring=v)
+    schlecht = [('zwei Punkte', ring(0, [[7.27, 51.64], [7.28, 51.64]])), ('Text', ring(0, [['x', 1], [2, 3], [3, 4]])), ('Gerade', ring(0, [[7.2765, 51.6449], [7.2766, 51.6449], [7.2767, 51.6449]])),
+                ('kein Ring', ring(0, 'x')), ('NaN', ring(0, [[float('nan'), 1], [2, 3], [3, 4]]))]
+    for name, fd in schlecht:
+        with tempfile.TemporaryDirectory() as tmp:
+            r, z = bau(tmp, None, fd)
+            pruefe(r.returncode == 1 and 'Grundriss' in r.stderr, f'{name}: Rückgabewert {r.returncode}, Meldung: {r.stderr[-200:]}')
+            pruefe('Traceback' not in r.stderr and not os.path.exists(z), f'{name}: unklare Meldung oder Ausgabedatei')
+    # Fehlalarm: ohne Grundrisse baut alles wie zuvor, ohne fuss
+    with tempfile.TemporaryDirectory() as tmp:
+        r, z = bau(tmp, None, lambda d: d.pop('grundrisse'))
+        pruefe(r.returncode == 0 and not any('fuss' in w for w in lade(z)['wahrzeichen']), 'ohne Grundrisse: ' + r.stderr[-200:])
+    # Grundriss für einen Typ ohne Umriss-Bau (Fördergerüst) wird ignoriert
+    with tempfile.TemporaryDirectory() as tmp:
+        r, z = bau(tmp)
+        s = lade(z); pruefe(all('fuss' not in w for w in s['wahrzeichen'] if w['typ'] in ('arena', 'headframe')), 'Umriss bei Fördergerüst/Stadion')
+
 @test('w_fehler')
 def _():
     faelle = [

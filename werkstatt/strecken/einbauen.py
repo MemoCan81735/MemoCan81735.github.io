@@ -70,7 +70,8 @@ def einbauen(t, s, pr):
     for i, w in enumerate(s.get('wahrzeichen', [])):
         komma = ',' if i < len(s['wahrzeichen']) - 1 else ''
         name = w['name'].replace('*/', '')
-        zeilen.append(f'      {{ type: "{w["typ"]}", x: {zahl(w["x"])}, y: {zahl(w["y"])}, rot: {zahl(w["rot"])}, s: {zahl(w["s"])}, r: {zahl(w["r"])}, label: {json.dumps(w["anzeige"], ensure_ascii=False)} }}{komma} /* {name} */')
+        fuss = (', foot: ' + json.dumps(w['fuss'], separators=(',', ':'))) if w.get('fuss') else ''
+        zeilen.append(f'      {{ type: "{w["typ"]}", x: {zahl(w["x"])}, y: {zahl(w["y"])}, rot: {zahl(w["rot"])}, s: {zahl(w["s"])}, r: {zahl(w["r"])}, label: {json.dumps(w["anzeige"], ensure_ascii=False)}{fuss} }}{komma} /* {name} */')
     lm = '    landmarks: [' + ('\n' + '\n'.join(zeilen) + '\n    ]' if zeilen else ']')
     look = re.sub(r'    landmarks: \[.*\]$', lambda _: lm, look, flags=re.S)
     if 'landmarks: [' not in look: raise Fehler('Wahrzeichen von erken nicht ersetzbar')

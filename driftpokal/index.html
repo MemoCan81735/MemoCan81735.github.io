@@ -9525,18 +9525,18 @@ const TRACK_LOOK = {
     stands: 2, rain: true,     // Ruhrgebiet: es regnet, Asphalt nass und spiegelnd
     housePalette: ["#9a4b38", "#8a3f2f", "#b0614a", "#7d3a2c", "#a8573f"],
     landmarks: [
-      { type: "mosque", x: 1085.2, y: 625.0, rot: -2.468, s: 2.6, r: 40, label: "Fatih-Moschee" }, /* Fatih-Sultan-Mehmed-Moschee */
-      { type: "mosque", x: 762.8, y: 299.8, rot: -0.415, s: 2.6, r: 40, label: "DITIB-Moschee" }, /* DITIB-Moschee Abdulhamit Han */
-      { type: "rathaus", x: 523.2, y: 1004.5, rot: 3.022, s: 2.2, r: 40, label: "Rathaus" }, /* Rathaus I */
-      { type: "markt", x: 293.6, y: 842.6, rot: 1.879, s: 2.0, r: 45, label: "Kaufland" }, /* Kaufland am Berliner Platz */
+      { type: "mosque", x: 1085.2, y: 625.0, rot: -2.468, s: 2.6, r: 40, label: "Fatih-Moschee", foot: [[-9.3,22.0],[11.3,21.0],[10.1,-3.6],[1.8,-3.1],[0.5,-4.8],[-1.0,-4.8],[-2.1,-2.9],[-10.4,-2.5]] }, /* Fatih-Sultan-Mehmed-Moschee */
+      { type: "mosque", x: 762.8, y: 299.8, rot: -0.415, s: 2.6, r: 40, label: "DITIB-Moschee", foot: [[-8.1,-6.6],[-8.0,1.3],[-10.7,1.4],[-10.5,6.9],[-7.9,6.9],[-7.8,15.6],[22.4,15.1],[22.0,-7.2],[4.7,-6.9],[4.7,-9.9],[-0.4,-9.8],[-0.3,-6.8]] }, /* DITIB-Moschee Abdulhamit Han */
+      { type: "rathaus", x: 523.2, y: 1004.5, rot: 3.022, s: 2.2, r: 40, label: "Rathaus", foot: [[-8.9,-3.6],[-11.3,-3.4],[-10.5,8.7],[-9.1,8.7],[-8.0,25.3],[-11.2,26.2],[-10.7,28.4],[1.2,27.8],[-0.0,7.5],[1.0,7.4],[0.8,4.4],[2.8,3.0],[2.6,0.0],[0.4,-1.2],[0.2,-4.3],[-0.8,-4.3],[-2.3,-23.7],[7.0,-24.3],[7.4,-18.7],[23.6,-18.6],[22.4,-35.9],[-11.0,-33.9]] }, /* Rathaus I */
+      { type: "markt", x: 293.6, y: 842.6, rot: 1.879, s: 2.0, r: 45, label: "Kaufland", foot: [[31.8,-1.8],[28.9,14.6],[23.9,13.7],[22.6,20.5],[9.4,18.2],[3.9,19.2],[-2.1,16.2],[-42.9,9.1],[-49.1,-4.0],[-23.9,-49.2],[-11.9,-45.7],[-34.9,-6.5],[-33.4,-3.8],[-21.1,-1.6],[-18.7,-14.9],[-8.0,-13.0],[-10.4,0.3],[-1.5,1.9],[6.6,-0.2],[13.9,4.7],[22.9,6.3],[25.3,4.7],[26.7,-2.6]] }, /* Kaufland am Berliner Platz */
       { type: "arena", x: 83.8, y: 666.8, rot: 2.173, s: 0.8, r: 70, label: "Stimberg-Stadion" }, /* Stimberg-Stadion */
       { type: "headframe", x: 640.9, y: 703.8, rot: 0.003, s: 3.0, r: 30, label: "Zeche Ewald, Schacht 3" }, /* Zeche Ewald Fortsetzung, Schacht 3 */
       { type: "headframe", x: 560.2, y: 718.5, rot: -0.157, s: 3.0, r: 30, label: "Zeche Ewald, Schacht 1" }, /* Zeche Ewald Fortsetzung, Schacht 1 Grevel */
-      { type: "kirche", x: 329.8, y: 955.7, rot: 2.345, s: 2.4, r: 25, label: "Johanneskirche" }, /* Johanneskirche */
-      { type: "kirche", x: 1145.7, y: 726.1, rot: -2.518, s: 2.4, r: 25, label: "St. Marien" }, /* St. Marien Kirche */
-      { type: "kirche", x: 189.7, y: 352.3, rot: -1.368, s: 2.4, r: 25, label: "Christus-König-Kirche" }, /* Christus König Kirche */
-      { type: "kirche", x: 232.8, y: 107.4, rot: 0.155, s: 2.4, r: 25, label: "Friedenskirche" }, /* Friedenskirche */
-      { type: "kirche", x: 170.7, y: 1240.1, rot: 2.531, s: 2.4, r: 25, label: "Neuapostolische Kirche" } /* Neuapostolische Kirche */
+      { type: "kirche", x: 329.8, y: 955.7, rot: 2.345, s: 2.4, r: 25, label: "Johanneskirche", foot: [[22.9,-12.6],[12.7,1.2],[9.1,-0.5],[6.5,2.9],[7.3,3.6],[6.0,3.6],[3.4,7.0],[4.3,7.7],[2.9,7.6],[0.1,11.2],[0.6,12.6],[-2.7,10.8],[-6.0,14.9],[-9.1,15.3],[-14.6,11.1],[-15.0,8.4],[-19.3,5.1],[-14.1,-1.7],[-12.0,-0.2],[-11.3,-2.4],[-9.9,-2.7],[-5.0,-10.6],[6.5,-24.2]] }, /* Johanneskirche */
+      { type: "kirche", x: 1145.7, y: 726.1, rot: -2.518, s: 2.4, r: 25, label: "St. Marien", foot: [[-8.2,22.9],[-1.5,15.0],[1.3,18.6],[1.9,17.9],[3.4,19.1],[15.9,4.3],[22.9,10.2],[26.9,5.4],[11.2,-8.0],[12.3,-11.2],[10.7,-14.2],[7.6,-15.3],[4.5,-13.8],[0.6,-17.2],[-3.6,-12.2],[-8.6,-16.5],[-21.1,-1.7],[-19.5,-0.4],[-20.2,0.3],[-16.1,2.5],[-22.8,10.4]] }, /* St. Marien Kirche */
+      { type: "kirche", x: 189.7, y: 352.3, rot: -1.368, s: 2.4, r: 25, label: "Christus-König-Kirche", foot: [[10.5,7.5],[10.5,-10.3],[7.2,-11.1],[-23.4,-10.4],[-24.4,2.7],[-23.4,2.7],[-23.5,9.9],[-18.9,9.9],[-18.9,8.0],[-6.6,8.1],[-6.6,9.8],[-2.3,9.8],[-2.3,12.7],[4.7,12.7],[4.7,7.5]] }, /* Christus König Kirche */
+      { type: "kirche", x: 232.8, y: 107.4, rot: 0.155, s: 2.4, r: 25, label: "Friedenskirche", foot: [[2.1,-25.0],[-5.4,-17.8],[-2.7,-14.9],[-5.9,-11.8],[-9.7,-15.8],[-13.9,-11.7],[-10.1,-7.7],[-18.3,0.2],[-14.5,4.2],[-16.5,6.1],[-11.6,11.3],[-13.5,13.2],[-3.8,23.4],[-1.9,21.5],[-0.2,23.1],[3.8,19.3],[5.5,20.9],[20.0,6.9],[18.3,5.2],[22.3,1.3],[14.7,-6.6],[19.1,-10.8],[12.0,-18.1],[10.3,-16.4]] }, /* Friedenskirche */
+      { type: "kirche", x: 170.7, y: 1240.1, rot: 2.531, s: 2.4, r: 25, label: "Neuapostolische Kirche", foot: [[22.8,14.6],[5.0,-11.8],[3.6,-10.9],[1.6,-14.0],[-13.5,-3.8],[-11.5,-0.8],[-12.9,0.2],[4.8,26.6]] } /* Neuapostolische Kirche */
     ]
   }
   // @@ende oer
@@ -13914,6 +13914,50 @@ class KitUI {
   }
 
   // ---------- Deko-Modelle: je Typ Teile [Geometrie, Material-Schlüssel] mit Fußpunkt bei y = 0 ----------
+  // Bauwerk mit echtem Grundriss (S-W14): Umriss [[x, z], ...] im lokalen Raum, in Welteinheiten; Körper, Dach und Merkmale je Typ
+  static footParts(type, foot){
+    const M = KitUI.mat, T3 = THREE, parts = [];
+    const pts = foot.map(([x, z]) => new T3.Vector2(x, -z));
+    let sa = 0; for (let i = 0; i < pts.length; i++){ const q = pts[(i + 1) % pts.length]; sa += pts[i].x * q.y - q.x * pts[i].y; }
+    if (sa < 0) pts.reverse();   // gegen den Uhrzeigersinn
+    const xs = foot.map(p => p[0]), zs = foot.map(p => p[1]);
+    const minx = Math.min(...xs), maxx = Math.max(...xs), minz = Math.min(...zs), maxz = Math.max(...zs);
+    const cx = (minx + maxx) / 2, cz = (minz + maxz) / 2, w = maxx - minx, d = maxz - minz;
+    const body = (h, y0) => { const g = new T3.ExtrudeGeometry(new T3.Shape(pts), { depth: h, bevelEnabled: false }); g.rotateX(-Math.PI / 2); return KitUI.merge([[g, M({ y: y0 || 0 })]]); };
+    const H = { mosque: 22, kirche: 20, rathaus: 22, markt: 16 }[type] || 18;
+    const wall = { mosque: "marble", kirche: "brick", rathaus: "brick", markt: "concrete" }[type] || "stone";
+    const add = (geo, key, p) => parts.push({ geo: KitUI.merge([[geo, M(p || {})]]), key });
+    parts.push({ geo: body(H), key: wall });
+    parts.push({ geo: body(1.2, H), key: type === "mosque" ? "dome" : "slate" });
+    // Eckpunkt des Umrisses, der in Richtung (dx, dz) am weitesten liegt, ein Stück nach innen gezogen
+    const ecke = (dx, dz, ein) => {
+      let b = foot[0]; for (const q of foot) if (q[0] * dx + q[1] * dz > b[0] * dx + b[1] * dz) b = q;
+      const l = Math.hypot(b[0] - cx, b[1] - cz) || 1, k = Math.max(0, 1 - ein / l);
+      return [cx + (b[0] - cx) * k, cz + (b[1] - cz) * k];
+    };
+    if (type === "mosque"){
+      const r = 0.36 * Math.min(w, d);
+      add(new T3.SphereGeometry(r, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), "dome", { x: cx, y: H + 1.2, z: cz });
+      const [mx, mz] = ecke(1, 1, 3.5);
+      add(new T3.CylinderGeometry(1.8, 2.2, 44, 10), "marble", { x: mx, y: 22, z: mz });
+      add(new T3.ConeGeometry(2.4, 8, 10), "dome", { x: mx, y: 48, z: mz });
+    } else if (type === "kirche"){
+      const [tx, tz] = w >= d ? ecke(-1, 0, 5) : ecke(0, -1, 5);
+      add(new T3.BoxGeometry(8, 34, 8), "brick", { x: tx, y: 17, z: tz });
+      add(new T3.ConeGeometry(5.8, 14, 4), "slate", { x: tx, y: 41, z: tz, ry: Math.PI / 4 });
+    } else if (type === "rathaus"){
+      const [tx, tz] = w >= d ? ecke(-1, 0, 9) : ecke(0, -1, 9);
+      add(new T3.BoxGeometry(7, 36, 7), "brick", { x: tx, y: 18, z: tz });
+      add(new T3.ConeGeometry(5.6, 10, 4), "copper", { x: tx, y: 41, z: tz, ry: Math.PI / 4 });
+      add(new T3.BoxGeometry(3, 3, 0.4), "gold", { x: tx, y: 30, z: tz + 3.7 });
+      add(new T3.BoxGeometry(3, 3, 0.4), "gold", { x: tx, y: 30, z: tz - 3.7 });
+    } else if (type === "markt"){
+      const [sx, sz] = ecke(1, 1, 6);
+      add(new T3.CylinderGeometry(0.4, 0.4, 14, 6), "pole", { x: sx, y: 7, z: sz });
+      add(new T3.BoxGeometry(7, 7, 1), "flagred", { x: sx, y: 15, z: sz });
+    }
+    return parts;
+  }
   decorParts(type, near){
     const M = KitUI.mat, parts = [], det = near ? 1 : 0;
     const add = (geo, key, p) => parts.push({ geo: M ? KitUI.merge([[geo, M(p || {})]]) : geo, key });
@@ -16811,7 +16855,8 @@ class TrackSceneUI {
       if (lm.label) this._addLabel(lm, h);
       q.setFromAxisAngle(up, lm.rot || 0);
       m4.compose(v.set(lm.x, h - 0.3, lm.y), q, sc.set(lm.s || 1, lm.s || 1, lm.s || 1));
-      for (const part of this.kit.decorParts(lm.type, true)){
+      if (lm.foot) m4.compose(v, q, sc.set(1, 1, 1));   // echter Grundriss: schon in Welteinheiten
+      for (const part of lm.foot ? KitUI.footParts(lm.type, lm.foot) : this.kit.decorParts(lm.type, true)){
         const mesh = new THREE.Mesh(part.geo, this._decorMaterial(part.key));
         this._keep(part.geo);
         mesh.applyMatrix4(m4);

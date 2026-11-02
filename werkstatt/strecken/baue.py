@@ -223,6 +223,43 @@ def wahrzeichen_pruefen(auftrag):
             raise Fehler(f'Wahrzeichen {w["name"]}: Anzeige muss mindestens 3 Zeichen haben')
     return liste
 
+FUSS_TYPEN = {'mosque': 46.0, 'rathaus': 70.0, 'markt': 96.0, 'kirche': 50.0}   # Typen mit echtem Grundriss und größte Ausdehnung in Welteinheiten
+FUSS_PUNKTE_MAX = 24
+FLAECHE_MIN_M2 = 4.0
+
+def vereinfache(pts, tol):
+    """Douglas-Peucker für einen geschlossenen Umriss (ohne wiederholten Endpunkt)."""
+    def dp(a):
+        if len(a) < 3: return a
+        (x1, y1), (x2, y2) = a[0], a[-1]; l = math.hypot(x2 - x1, y2 - y1)
+        d, k = max(((abs((x2 - x1) * (y1 - p[1]) - (x1 - p[0]) * (y2 - y1)) / l if l > 1e-9 else math.hypot(p[0] - x1, p[1] - y1)), i) for i, p in enumerate(a[1:-1], 1))
+        return dp(a[:k + 1])[:-1] + dp(a[k:]) if d > tol else [a[0], a[-1]]
+    h = len(pts) // 2
+    return dp(pts[:h + 1])[:-1] + dp(pts[h:] + [pts[0]])[:-1]
+
+def fussabdruck(ring, typ, rot, abb, r_s):
+    """Echter Umriss im lokalen Raum des Wahrzeichens (um dessen Drehung zurückgedreht), in Welteinheiten; (Punkte, Faktor)."""
+    if not (isinstance(ring, list) and len(ring) >= 3 and all(isinstance(p, list) and len(p) == 2 and all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) for v in p) for p in ring)):
+        raise Fehler('Grundriss: Umriss muss eine Liste von mindestens 3 Punkten [Länge, Breite] sein')
+    m = [meter(p) for p in ring]
+    flaeche = abs(sum(m[i - 1][0] * m[i][1] - m[i][0] * m[i - 1][1] for i in range(len(m)))) / 2
+    if flaeche < FLAECHE_MIN_M2:
+        raise Fehler(f'Grundriss: Fläche {flaeche:.1f} m² ist zu klein (mindestens {FLAECHE_MIN_M2:.0f})')
+    cx = sum(p[0] for p in m) / len(m); cy = sum(p[1] for p in m) / len(m)
+    k = abb['massstab'] * STRECKUNG
+    off = [((p[0] - cx) * k, -(p[1] - cy) * k) for p in m]               # Norden oben = -z
+    ausdehnung = max(max(abs(p[0]) for p in off), max(abs(p[1]) for p in off)) * 2
+    umkreis = max(math.hypot(*p) for p in off)
+    f = min(FUSS_TYPEN[typ] / ausdehnung, 0.9 * r_s / umkreis)
+    c, s = math.cos(rot), math.sin(rot)
+    lok = [(p[0] * f * c - p[1] * f * s, p[0] * f * s + p[1] * f * c) for p in off]
+    tol = 0.8
+    while True:
+        v = vereinfache(lok, tol)
+        if len(v) <= FUSS_PUNKTE_MAX: break
+        tol *= 1.5
+    return [[round(x, 1), round(z, 1)] for x, z in v], round(f, 3)
+
 def wahrzeichen(auftrag, daten, abb, punkte, massstab):
     """Stellt die Wahrzeichen des Auftrags an die echten Orte, schiebt sie von der Fahrbahn weg und prüft Abstände."""
     liste = wahrzeichen_pruefen(auftrag)
@@ -271,6 +308,9 @@ def wahrzeichen(auftrag, daten, abb, punkte, massstab):
         n = naechster(x * STRECKUNG, y * STRECKUNG)
         steht.append({'osm': w['osm'], 'name': w['name'], 'anzeige': w.get('anzeige', w['name']), 'typ': w['typ'], 'x': x, 'y': y, 's': w['s'], 'r': w['r'],
                       'rot': round(math.atan2(n[0] - x * STRECKUNG, n[1] - y * STRECKUNG), 3), 'verschoben_m': verschoben})
+        grund_ring = (daten.get('grundrisse') or {}).get(w['osm'])
+        if grund_ring is not None and w['typ'] in FUSS_TYPEN:
+            steht[-1]['fuss'], steht[-1]['fuss_faktor'] = fussabdruck(grund_ring.get('ring') if isinstance(grund_ring, dict) else None, w['typ'], steht[-1]['rot'], abb, w['r'] * w['s'])
     return steht, verworfen
 
 def abweichung(glatt, roh):
