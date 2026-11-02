@@ -9524,7 +9524,20 @@ const TRACK_LOOK = {
     light: { sun: 1.4, hemi: 1.0, env: 0.95, exposure: 1.05 },
     stands: 2, rain: true,     // Ruhrgebiet: es regnet, Asphalt nass und spiegelnd
     housePalette: ["#9a4b38", "#8a3f2f", "#b0614a", "#7d3a2c", "#a8573f"],
-    landmarks: []
+    landmarks: [
+      { type: "mosque", x: 1085.2, y: 625.0, rot: -2.468, s: 2.6, r: 40 }, /* Fatih-Sultan-Mehmed-Moschee */
+      { type: "mosque", x: 762.8, y: 299.8, rot: -0.415, s: 2.6, r: 40 }, /* DITIB-Moschee Abdulhamit Han */
+      { type: "rathaus", x: 523.2, y: 1004.5, rot: 3.022, s: 2.2, r: 40 }, /* Rathaus I */
+      { type: "markt", x: 293.6, y: 842.6, rot: 1.879, s: 2.0, r: 45 }, /* Kaufland am Berliner Platz */
+      { type: "arena", x: 83.8, y: 666.8, rot: 2.173, s: 0.8, r: 70 }, /* Stimberg-Stadion */
+      { type: "headframe", x: 640.9, y: 703.8, rot: 0.003, s: 3.0, r: 30 }, /* Zeche Ewald Fortsetzung, Schacht 3 */
+      { type: "headframe", x: 560.2, y: 718.5, rot: -0.157, s: 3.0, r: 30 }, /* Zeche Ewald Fortsetzung, Schacht 1 Grevel */
+      { type: "kirche", x: 329.8, y: 955.7, rot: 2.345, s: 2.4, r: 25 }, /* Johanneskirche */
+      { type: "kirche", x: 1145.7, y: 726.1, rot: -2.518, s: 2.4, r: 25 }, /* St. Marien Kirche */
+      { type: "kirche", x: 189.7, y: 352.3, rot: -1.368, s: 2.4, r: 25 }, /* Christus König Kirche */
+      { type: "kirche", x: 232.8, y: 107.4, rot: 0.155, s: 2.4, r: 25 }, /* Friedenskirche */
+      { type: "kirche", x: 170.7, y: 1240.1, rot: 2.531, s: 2.4, r: 25 } /* Neuapostolische Kirche */
+    ]
   }
   // @@ende oer
 };
@@ -14403,6 +14416,35 @@ class KitUI {
           for (const [dx, dz] of [[-7.5, -6.5], [7.5, -6.5], [-7.5, 6.5], [7.5, 6.5]]) beam.push([new THREE.BoxGeometry(0.8, h, 0.8), M({ x: x + dx, y: h / 2, z: dz })]);
         });
         parts.push({ geo: KitUI.merge(wall), key: "stucco" }, { geo: KitUI.merge(roof), key: "tile" }, { geo: KitUI.merge(beam), key: "timber" });
+        break;
+      }
+      // Oer-Erkenschwick (S-W12): Rathaus, Einkaufscenter und Backsteinkirche, aus einfachen Quadern
+      case "rathaus": {
+        // Rathaus: langer Backsteinbau mit Fensterband, Flachdach und Uhrturm mit Kupferspitze
+        parts.push({ geo: KitUI.merge([[new THREE.BoxGeometry(46, 16, 20), M({ y: 8 })], [new THREE.BoxGeometry(7, 34, 7), M({ x: -8, y: 17 })]]), key: "brick" });
+        parts.push({ geo: KitUI.merge([[new THREE.BoxGeometry(47, 1.2, 21), M({ y: 16.6 })]]), key: "slate" });
+        const win = []; for (const z of [-10.15, 10.15]) for (const y of [5, 11]) win.push([new THREE.BoxGeometry(42, 3, 0.4), M({ y, z })]);
+        parts.push({ geo: KitUI.merge(win), key: "glass" });
+        parts.push({ geo: KitUI.merge([[new THREE.ConeGeometry(5.6, 10, 4), M({ x: -8, y: 39, ry: Math.PI / 4 })]]), key: "copper" });
+        parts.push({ geo: KitUI.merge([[new THREE.BoxGeometry(3, 3, 0.4), M({ x: -8, y: 28, z: 3.6 })], [new THREE.BoxGeometry(3, 3, 0.4), M({ x: -8, y: 28, z: -3.6 })]]), key: "gold" });
+        break;
+      }
+      case "markt": {
+        // Einkaufscenter: breiter flacher Block, Glasfront, rotes Band, Hochschild an der Einfahrt (bewusst ohne Markenzeichen)
+        parts.push({ geo: KitUI.merge([[new THREE.BoxGeometry(60, 12, 34), M({ y: 6 })]]), key: "concrete" });
+        parts.push({ geo: KitUI.merge([[new THREE.BoxGeometry(61, 1.2, 35), M({ y: 12.6 })]]), key: "slate" });
+        parts.push({ geo: KitUI.merge([[new THREE.BoxGeometry(44, 6, 0.5), M({ x: -6, y: 4, z: 17.2 })]]), key: "glass" });
+        parts.push({ geo: KitUI.merge([[new THREE.BoxGeometry(60.4, 3, 0.8), M({ y: 10.5, z: 17.3 })], [new THREE.BoxGeometry(7, 7, 1), M({ x: -36, y: 15 })]]), key: "flagred" });
+        parts.push({ geo: KitUI.merge([[new THREE.CylinderGeometry(0.4, 0.4, 14, 6), M({ x: -36, y: 7 })]]), key: "pole" });
+        break;
+      }
+      case "kirche": {
+        // Backsteinkirche: Schiff mit Satteldach, Westturm mit Spitze
+        parts.push({ geo: KitUI.merge([[new THREE.BoxGeometry(14, 16, 30), M({ y: 8 })], [new THREE.BoxGeometry(8, 34, 8), M({ y: 17, z: -19 })]]), key: "brick" });
+        parts.push({ geo: KitUI.merge([gable(16, 9, 31, { y: 16 })]), key: "slate" });
+        parts.push({ geo: KitUI.merge([[new THREE.ConeGeometry(5.8, 14, 4), M({ y: 41, z: -19, ry: Math.PI / 4 })]]), key: "slate" });
+        const win = []; for (let z = -8; z <= 10; z += 6) for (const x of [-7.1, 7.1]) win.push([new THREE.BoxGeometry(0.4, 7, 2), M({ x, y: 9, z })]);
+        parts.push({ geo: KitUI.merge(win), key: "glass" });
         break;
       }
       case "tires": {

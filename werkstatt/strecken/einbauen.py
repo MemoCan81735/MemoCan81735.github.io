@@ -66,8 +66,14 @@ def einbauen(t, s, pr):
     if not m: raise Fehler('Aussehen von erken nicht gefunden')
     look = m.group(1)
     look = re.sub(r'name: "[^"]*", sub: "[^"]*"', lambda _: f'name: {json.dumps(s["name"], ensure_ascii=False)}, sub: {json.dumps(s["sub"], ensure_ascii=False)}', look, count=1)
-    look = re.sub(r'    landmarks: \[.*\]$', '    landmarks: []', look, flags=re.S)
-    if 'landmarks: []' not in look: raise Fehler('Wahrzeichen von erken nicht entfernbar')
+    zeilen = []
+    for i, w in enumerate(s.get('wahrzeichen', [])):
+        komma = ',' if i < len(s['wahrzeichen']) - 1 else ''
+        name = w['name'].replace('*/', '')
+        zeilen.append(f'      {{ type: "{w["typ"]}", x: {zahl(w["x"])}, y: {zahl(w["y"])}, rot: {zahl(w["rot"])}, s: {zahl(w["s"])}, r: {zahl(w["r"])} }}{komma} /* {name} */')
+    lm = '    landmarks: [' + ('\n' + '\n'.join(zeilen) + '\n    ]' if zeilen else ']')
+    look = re.sub(r'    landmarks: \[.*\]$', lambda _: lm, look, flags=re.S)
+    if 'landmarks: [' not in look: raise Fehler('Wahrzeichen von erken nicht ersetzbar')
     start = t.index('const TRACK_LOOK = {'); ende = t.index('\n};\n', start)
     teil = t[start:ende]
     neu = f',\n  // @@strecke {sid}\n  {sid}: {{\n{look}\n  }}\n  // @@ende {sid}'

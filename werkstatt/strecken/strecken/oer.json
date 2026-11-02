@@ -1,4 +1,15 @@
 {
+ "abbildung": {
+  "massstab": 0.590825,
+  "maxy": -44.1421,
+  "minx": -772.6372,
+  "ox": 120.0,
+  "oy": 264.9264,
+  "ursprung": [
+   7.265,
+   51.65
+  ]
+ },
  "abweichung_max_m": 19.3,
  "auftrag": "oer-erkenschwick",
  "datenstand": "2026-11-02",
@@ -114,6 +125,152 @@
  "name": "Oer-Runde",
  "quelle": "© OpenStreetMap-Mitwirkende (ODbL)",
  "sub": "Echte Straßen · © OpenStreetMap-Mitwirkende",
+ "verworfen": [
+  {
+   "grund": "zu nah an Zeche Ewald Fortsetzung, Schacht 1 Grevel",
+   "name": "Zeche Ewald Fortsetzung, Schacht 2 Schrader",
+   "osm": "node/3670497374"
+  },
+  {
+   "grund": "zu nah an Rathaus I",
+   "name": "Rathaus II",
+   "osm": "way/195027261"
+  }
+ ],
+ "wahrzeichen": [
+  {
+   "name": "Fatih-Sultan-Mehmed-Moschee",
+   "osm": "node/4077677268",
+   "r": 40,
+   "rot": -2.468,
+   "s": 2.6,
+   "typ": "mosque",
+   "verschoben_m": 107.1,
+   "x": 1085.2,
+   "y": 625.0
+  },
+  {
+   "name": "DITIB-Moschee Abdulhamit Han",
+   "osm": "way/301019047",
+   "r": 40,
+   "rot": -0.415,
+   "s": 2.6,
+   "typ": "mosque",
+   "verschoben_m": 122.8,
+   "x": 762.8,
+   "y": 299.8
+  },
+  {
+   "name": "Rathaus I",
+   "osm": "way/300992687",
+   "r": 40,
+   "rot": 3.022,
+   "s": 2.2,
+   "typ": "rathaus",
+   "verschoben_m": 81.3,
+   "x": 523.2,
+   "y": 1004.5
+  },
+  {
+   "name": "Kaufland am Berliner Platz",
+   "osm": "node/1203939683",
+   "r": 45,
+   "rot": 1.879,
+   "s": 2.0,
+   "typ": "markt",
+   "verschoben_m": 127.6,
+   "x": 293.6,
+   "y": 842.6
+  },
+  {
+   "name": "Stimberg-Stadion",
+   "osm": "way/614927894",
+   "r": 70,
+   "rot": 2.173,
+   "s": 0.8,
+   "typ": "arena",
+   "verschoben_m": 0,
+   "x": 83.8,
+   "y": 666.8
+  },
+  {
+   "name": "Zeche Ewald Fortsetzung, Schacht 3",
+   "osm": "node/10103709699",
+   "r": 30,
+   "rot": 0.003,
+   "s": 3.0,
+   "typ": "headframe",
+   "verschoben_m": 0,
+   "x": 640.9,
+   "y": 703.8
+  },
+  {
+   "name": "Zeche Ewald Fortsetzung, Schacht 1 Grevel",
+   "osm": "node/3670497373",
+   "r": 30,
+   "rot": -0.157,
+   "s": 3.0,
+   "typ": "headframe",
+   "verschoben_m": 0,
+   "x": 560.2,
+   "y": 718.5
+  },
+  {
+   "name": "Johanneskirche",
+   "osm": "way/223910650",
+   "r": 25,
+   "rot": 2.345,
+   "s": 2.4,
+   "typ": "kirche",
+   "verschoben_m": 0,
+   "x": 329.8,
+   "y": 955.7
+  },
+  {
+   "name": "St. Marien Kirche",
+   "osm": "way/301054562",
+   "r": 25,
+   "rot": -2.518,
+   "s": 2.4,
+   "typ": "kirche",
+   "verschoben_m": 0,
+   "x": 1145.7,
+   "y": 726.1
+  },
+  {
+   "name": "Christus König Kirche",
+   "osm": "way/244635054",
+   "r": 25,
+   "rot": -1.368,
+   "s": 2.4,
+   "typ": "kirche",
+   "verschoben_m": 71.2,
+   "x": 189.7,
+   "y": 352.3
+  },
+  {
+   "name": "Friedenskirche",
+   "osm": "way/300598723",
+   "r": 25,
+   "rot": 0.155,
+   "s": 2.4,
+   "typ": "kirche",
+   "verschoben_m": 0,
+   "x": 232.8,
+   "y": 107.4
+  },
+  {
+   "name": "Neuapostolische Kirche",
+   "osm": "way/301702294",
+   "r": 25,
+   "rot": 2.531,
+   "s": 2.4,
+   "typ": "kirche",
+   "verschoben_m": 0,
+   "x": 170.7,
+   "y": 1240.1
+  }
+ ],
  "weg": [
   [
    7.260527,

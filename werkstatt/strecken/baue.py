@@ -7,6 +7,11 @@ import heapq, json, math, sys
 OK_ARTEN = {'motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'unclassified', 'residential', 'living_street', 'service'}
 BONUS = 0.35          # genannte Straßen kosten nur 35 % (der Weg bleibt auf ihnen)
 RADIUS_ZIEL = 60.0    # kleinster Kurvenradius der geglätteten Linie in Spieleinheiten (geprüft wird ≥ 45 mit dem echten Spline)
+TYPEN = ('mosque', 'arena', 'headframe', 'rathaus', 'markt', 'kirche')   # Bautypen der Wahrzeichen im Spiel
+RAND = 61.0           # halbe Breite plus Randstreifen der Strecke (Welteinheiten), Wahrzeichen halten mindestens diesen Abstand plus Platzbedarf
+PLATZ = 0.6           # Platzbedarf = PLATZ × r × s
+MAX_VERSCHIEBUNG_M = 400.0
+RAUM_WAHRZEICHEN = (-150.0, 1350.0)
 PUNKTE_BEREICH = range(20, 31)   # Zahl der Stützpunkte: die mit dem weichsten Spline (größter kleinster Radius) gewinnt, Gleichstand: näher an 24
 STRECKUNG = 1.5
 ABSTAND_MIN = 100.0   # nicht benachbarte Teile der Strecke mindestens so weit auseinander
@@ -195,6 +200,73 @@ def kreuzung(punkte):
                 dmin = min(dmin, math.dist(g[i], g[j]))
     return dmin
 
+def wahrzeichen_pruefen(auftrag):
+    liste = auftrag.get('wahrzeichen', [])
+    if not isinstance(liste, list):
+        raise Fehler('Auftrag: wahrzeichen muss eine Liste sein')
+    for i, w in enumerate(liste):
+        if not isinstance(w, dict):
+            raise Fehler(f'Wahrzeichen {i + 1}: Eintrag ist kein Objekt')
+        if not (isinstance(w.get('osm'), str) and isinstance(w.get('name'), str) and w['osm'] and w['name']):
+            raise Fehler(f'Wahrzeichen {i + 1}: osm und name fehlen')
+        if w.get('typ') not in TYPEN:
+            raise Fehler(f'Wahrzeichen {w["name"]}: Typ {w.get("typ")!r} ist nicht erlaubt (erlaubt: {", ".join(TYPEN)})')
+        if isinstance(w.get('s'), bool) or not isinstance(w.get('s'), (int, float)) or not 0 < w['s'] <= 10:
+            raise Fehler(f'Wahrzeichen {w["name"]}: Größe s muss zwischen 0 und 10 liegen')
+        if isinstance(w.get('r'), bool) or not isinstance(w.get('r'), (int, float)) or not 0 < w['r'] <= 500:
+            raise Fehler(f'Wahrzeichen {w["name"]}: Freiraum r muss zwischen 0 und 500 liegen')
+    return liste
+
+def wahrzeichen(auftrag, daten, abb, punkte, massstab):
+    """Stellt die Wahrzeichen des Auftrags an die echten Orte, schiebt sie von der Fahrbahn weg und prüft Abstände."""
+    liste = wahrzeichen_pruefen(auftrag)
+    if not liste:
+        return [], []
+    orte = {o['osm']: o for o in daten.get('orte', []) if isinstance(o, dict) and 'osm' in o}
+    mitte = spline([(x * STRECKUNG, y * STRECKUNG) for x, y in punkte], 24)
+
+    def naechster(wx, wy):
+        return min(mitte, key=lambda p: math.hypot(wx - p[0], wy - p[1]))
+
+    steht, verworfen = [], []
+    for w in liste:
+        ort = orte.get(w['osm'])
+        if ort is None:
+            raise Fehler(f'Ort nicht gefunden: {w["osm"]} ({w["name"]}); die Datendatei kennt ihn nicht')
+        mx, my = meter((ort['lon'], ort['lat']))
+        ex = abb['ox'] + (mx - abb['minx']) * abb['massstab']; ey = abb['oy'] + (abb['maxy'] - my) * abb['massstab']
+        x, y = ex, ey
+        brauch = RAND + PLATZ * w['r'] * w['s']
+        for _ in range(12):                     # nach außen schieben, bis der Abstand reicht
+            n = naechster(x * STRECKUNG, y * STRECKUNG); d = math.hypot(x * STRECKUNG - n[0], y * STRECKUNG - n[1])
+            if d >= brauch:
+                break
+            ux, uy = ((x * STRECKUNG - n[0]) / d, (y * STRECKUNG - n[1]) / d) if d > 1e-9 else (1.0, 0.0)
+            x = (n[0] + ux * (brauch + 0.5)) / STRECKUNG; y = (n[1] + uy * (brauch + 0.5)) / STRECKUNG
+        n = naechster(x * STRECKUNG, y * STRECKUNG); d = math.hypot(x * STRECKUNG - n[0], y * STRECKUNG - n[1])
+        grund = None
+        verschoben = round(math.hypot(x - ex, y - ey) / massstab, 1) if math.hypot(x - ex, y - ey) > 1e-9 else 0
+        if d < brauch - 0.5:
+            grund = 'Fahrbahn zu nah (liegt zwischen Streckenteilen, kein Platz)'
+        elif verschoben > MAX_VERSCHIEBUNG_M:
+            grund = f'Verschiebung über {MAX_VERSCHIEBUNG_M:.0f} m nötig'
+        elif not (RAUM_WAHRZEICHEN[0] <= x <= RAUM_WAHRZEICHEN[1] and RAUM_WAHRZEICHEN[0] <= y <= RAUM_WAHRZEICHEN[1]):
+            grund = 'außerhalb des Raums'
+        else:
+            for a in steht:
+                if math.hypot((x - a['x']) * STRECKUNG, (y - a['y']) * STRECKUNG) < PLATZ * (w['r'] * w['s'] + a['r'] * a['s']):
+                    grund = f'zu nah an {a["name"]}'; break
+        if grund:
+            if w.get('pflicht'):
+                raise Fehler(f'Pflicht-Ort verworfen: {w["name"]} ({grund})')
+            verworfen.append({'osm': w['osm'], 'name': w['name'], 'grund': grund})
+            continue
+        x, y = round(x, 1), round(y, 1)
+        n = naechster(x * STRECKUNG, y * STRECKUNG)
+        steht.append({'osm': w['osm'], 'name': w['name'], 'typ': w['typ'], 'x': x, 'y': y, 's': w['s'], 'r': w['r'],
+                      'rot': round(math.atan2(n[0] - x * STRECKUNG, n[1] - y * STRECKUNG), 3), 'verschoben_m': verschoben})
+    return steht, verworfen
+
 def abweichung(glatt, roh):
     m = len(roh); worst = 0.0
     for p in glatt:
@@ -233,6 +305,8 @@ def baue(auftrag, daten):
     if kreuzung(punkte) < ABSTAND_MIN:
         raise Fehler(f'Strecke kreuzt sich oder kommt sich zu nah (kleinster Abstand {kreuzung(punkte):.0f}, nötig {ABSTAND_MIN:.0f})')
     st = auftrag['strecke']
+    abb = {'ursprung': list(URSPRUNG), 'massstab': round(s, 6), 'ox': round(ox, 4), 'oy': round(oy, 4), 'minx': round(min(xs), 4), 'maxy': round(max(ys), 4)}
+    steht, verworfen = wahrzeichen(auftrag, daten, abb, punkte, abb['massstab'])
     return {
         'formatversion': 1,
         'quelle': daten.get('quelle', '© OpenStreetMap-Mitwirkende (ODbL)'),
@@ -241,6 +315,7 @@ def baue(auftrag, daten):
         'name': st['name'], 'sub': st['sub'],
         'massstab': round(s, 4), 'laenge_m': round(laenge, 1), 'abweichung_max_m': round(abweichung(glatt, roh), 1),
         'weg': [[round(c[0], 6), round(c[1], 6)] for c in weg],
+        'abbildung': abb, 'wahrzeichen': steht, 'verworfen': verworfen,
         'def': {'id': st['id'], 'width': 70, 'offroad': 26, 'grip': 1, 'points': punkte,
                 'itemRows': [0.2, 0.5, 0.8], 'pads': [{'f': 0.35, 'lat': 0}], 'ice': [], 'ramps': [{'f': 0.12}], 'shortcuts': []},
     }

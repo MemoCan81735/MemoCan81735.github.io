@@ -1,27 +1,133 @@
 {
-  "id": "oer-erkenschwick",
-  "name": "Oer-Erkenschwick Runde",
-  "start": "Berliner Platz",
-  "bbox": [
-    51.625,
-    7.225,
-    51.675,
-    7.305
-  ],
-  "strassen": [
-    "Berliner Platz",
-    "Stimbergstraße",
-    "Klein-Erkenschwicker-Straße",
-    "Bergstraße",
-    "Holtgarde",
-    "Werderstraße",
-    "Im Buschkamp",
-    "Ludwigstraße"
-  ],
-  "hinweis": "Runde ab und bis Berliner Platz, Reihenfolge der Straßen wie vom Betreiber genannt (02.11.2026); Verbindungsstücke aus dem Straßennetz",
-  "strecke": {
-    "id": "oer",
-    "name": "Oer-Runde",
-    "sub": "Echte Straßen · © OpenStreetMap-Mitwirkende"
+ "id": "oer-erkenschwick",
+ "name": "Oer-Erkenschwick Runde",
+ "start": "Berliner Platz",
+ "bbox": [
+  51.625,
+  7.225,
+  51.675,
+  7.305
+ ],
+ "strassen": [
+  "Berliner Platz",
+  "Stimbergstraße",
+  "Klein-Erkenschwicker-Straße",
+  "Bergstraße",
+  "Holtgarde",
+  "Werderstraße",
+  "Im Buschkamp",
+  "Ludwigstraße"
+ ],
+ "hinweis": "Runde ab und bis Berliner Platz, Reihenfolge der Straßen wie vom Betreiber genannt (02.11.2026); Verbindungsstücke aus dem Straßennetz",
+ "strecke": {
+  "id": "oer",
+  "name": "Oer-Runde",
+  "sub": "Echte Straßen · © OpenStreetMap-Mitwirkende"
+ },
+ "wahrzeichen": [
+  {
+   "osm": "node/4077677268",
+   "name": "Fatih-Sultan-Mehmed-Moschee",
+   "typ": "mosque",
+   "s": 2.6,
+   "r": 40,
+   "pflicht": true
+  },
+  {
+   "osm": "way/301019047",
+   "name": "DITIB-Moschee Abdulhamit Han",
+   "typ": "mosque",
+   "s": 2.6,
+   "r": 40,
+   "pflicht": true
+  },
+  {
+   "osm": "way/300992687",
+   "name": "Rathaus I",
+   "typ": "rathaus",
+   "s": 2.2,
+   "r": 40,
+   "pflicht": true
+  },
+  {
+   "osm": "node/1203939683",
+   "name": "Kaufland am Berliner Platz",
+   "typ": "markt",
+   "s": 2.0,
+   "r": 45,
+   "pflicht": true
+  },
+  {
+   "osm": "way/614927894",
+   "name": "Stimberg-Stadion",
+   "typ": "arena",
+   "s": 0.8,
+   "r": 70,
+   "pflicht": true
+  },
+  {
+   "osm": "node/10103709699",
+   "name": "Zeche Ewald Fortsetzung, Schacht 3",
+   "typ": "headframe",
+   "s": 3.0,
+   "r": 30,
+   "pflicht": true
+  },
+  {
+   "osm": "node/3670497373",
+   "name": "Zeche Ewald Fortsetzung, Schacht 1 Grevel",
+   "typ": "headframe",
+   "s": 3.0,
+   "r": 30
+  },
+  {
+   "osm": "node/3670497374",
+   "name": "Zeche Ewald Fortsetzung, Schacht 2 Schrader",
+   "typ": "headframe",
+   "s": 3.0,
+   "r": 30
+  },
+  {
+   "osm": "way/223910650",
+   "name": "Johanneskirche",
+   "typ": "kirche",
+   "s": 2.4,
+   "r": 25
+  },
+  {
+   "osm": "way/301054562",
+   "name": "St. Marien Kirche",
+   "typ": "kirche",
+   "s": 2.4,
+   "r": 25
+  },
+  {
+   "osm": "way/244635054",
+   "name": "Christus König Kirche",
+   "typ": "kirche",
+   "s": 2.4,
+   "r": 25
+  },
+  {
+   "osm": "way/300598723",
+   "name": "Friedenskirche",
+   "typ": "kirche",
+   "s": 2.4,
+   "r": 25
+  },
+  {
+   "osm": "way/301702294",
+   "name": "Neuapostolische Kirche",
+   "typ": "kirche",
+   "s": 2.4,
+   "r": 25
+  },
+  {
+   "osm": "way/195027261",
+   "name": "Rathaus II",
+   "typ": "rathaus",
+   "s": 2.2,
+   "r": 40
   }
+ ]
 }
