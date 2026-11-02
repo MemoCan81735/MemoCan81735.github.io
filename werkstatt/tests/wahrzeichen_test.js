@@ -80,6 +80,71 @@ test('w_szene', async () => {
   await p.context().close();
 });
 
+test('w_label_einbau', async () => {
+  const p = await seite(); const s = strecke();
+  const r = await p.evaluate(() => Object.fromEntries(Object.entries(TRACK_LOOK).map(([k, v]) => [k, (v.landmarks || []).map(l => l.label)])));
+  pruefe(r.oer.length === s.wahrzeichen.length, 'Anzahl Wahrzeichen im Spiel');
+  s.wahrzeichen.forEach((w, i) => pruefe(r.oer[i] === w.anzeige && typeof w.anzeige === 'string', `Label ${i + 1}: ${r.oer[i]} statt ${w.anzeige}`));
+  for (const [k, v] of Object.entries(r)) if (k !== 'oer') pruefe(v.every(x => x === undefined), `Strecke ${k} hat Labels`);
+  await p.context().close();
+});
+
+test('w_label_alpha', async () => {
+  const p = await seite();
+  const a = await p.evaluate(() => [0, 120, 270, 420, 1000, NaN, -5, 'x', null].map(d => TrackSceneUI.labelAlpha(d)));
+  const soll = [1, 1, 0.5, 0, 0, 0, 0, 0, 0];
+  soll.forEach((v, i) => pruefe(typeof a[i] === 'number' && Math.abs(a[i] - v) <= 0.01, `alpha-Fall ${i}: ${a[i]} statt ${v}`));
+  await p.context().close();
+});
+
+const szene = (id) => `(() => {
+  const geom = new TrackEntity(TrackCatalog.def('${id}')).geometry();
+  const look = TrackLookUI.look(new RaceBoundary().trackInfo('${id}'));
+  return new TrackSceneUI(new KitUI(1), geom, look, 'fast');
+})()`;
+
+test('w_label_szene', async () => {
+  const p = await seite();
+  const r = await p.evaluate((code) => {
+    const w = eval(code.oer), lm = w.look.landmarks, out = { n: w.labels.length, hoch: w.labels.every((l, i) => l.sprite.position.y > 5), andere: eval(code.erken).labels.length };
+    const cam = (d) => ({ position: new THREE.Vector3(lm[0].x + d, 40, lm[0].y) });
+    const l0 = w.labels[0];
+    w.updateLabels(cam(60)); out.nah = [l0.sprite.visible, l0.sprite.material.opacity];
+    w.updateLabels(cam(600)); out.fern = l0.sprite.visible;
+    w.updateLabels(cam(60)); out.nah2 = [l0.sprite.visible, l0.sprite.material.opacity];
+    return out;
+  }, { oer: szene('oer'), erken: szene('erken') });
+  pruefe(r.n === 12, 'Schilder in der Oer-Runde: ' + r.n);
+  pruefe(r.hoch, 'Schilder nicht über dem Boden');
+  pruefe(r.andere === 0, 'Schilder in Strecke erken: ' + r.andere);
+  pruefe(r.nah[0] === true && Math.abs(r.nah[1] - 1) < 0.01, 'nah nicht voll sichtbar ' + r.nah);
+  pruefe(r.fern === false, 'fern nicht ausgeblendet');
+  pruefe(JSON.stringify(r.nah) === JSON.stringify(r.nah2), 'Wiederholung weicht ab');
+  await p.context().close();
+});
+
+test('w_label_text', async () => {
+  const p = await seite(); const s = strecke();
+  const lang = s.wahrzeichen.map(w => w.anzeige).sort((a, b) => b.length - a.length)[0];
+  const r = await p.evaluate((txt) => {
+    const c = TrackSceneUI.labelCanvas(txt), g = c.getContext('2d'), d = g.getImageData(0, 0, c.width, c.height).data;
+    let hell = 0, minx = c.width, maxx = 0, lum = [];
+    for (let i = 0, n = 0; i < d.length; i += 4, n++) {
+      const L = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      if (d[i + 3] > 200 && L > 200) { hell++; const x = n % c.width; if (x < minx) minx = x; if (x > maxx) maxx = x; }
+    }
+    const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const px = (x, y) => { const q = g.getImageData(x, y, 1, 1).data; return 0.2126 * lin(q[0]) + 0.7152 * lin(q[1]) + 0.0722 * lin(q[2]); };
+    const feld = px(Math.floor(c.width / 2), 6), text = 1;
+    return { w: c.width, h: c.height, anteil: hell / (c.width * c.height), breite: (maxx - minx + 1) / c.width, kontrast: (text + 0.05) / (feld + 0.05) };
+  }, lang);
+  pruefe(r.breite <= 0.92, `Text zu breit: ${(r.breite * 100).toFixed(0)} %`);
+  pruefe(r.anteil >= 0.03 && r.anteil <= 0.4, `Helle Punkte: ${(r.anteil * 100).toFixed(1)} %`);
+  pruefe(r.kontrast >= 7, `Kontrast ${r.kontrast.toFixed(1)}`);
+  console.log(`  Messwerte: "${lang}" Breite ${(r.breite * 100).toFixed(0)} %, helle Punkte ${(r.anteil * 100).toFixed(1)} %, Kontrast ${r.kontrast.toFixed(1)}`);
+  await p.context().close();
+});
+
 (async () => {
   const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ordner, stdio: 'ignore' });
   await new Promise(r => setTimeout(r, 800));

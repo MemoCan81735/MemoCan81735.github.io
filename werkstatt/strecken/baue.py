@@ -215,6 +215,12 @@ def wahrzeichen_pruefen(auftrag):
             raise Fehler(f'Wahrzeichen {w["name"]}: Größe s muss zwischen 0 und 10 liegen')
         if isinstance(w.get('r'), bool) or not isinstance(w.get('r'), (int, float)) or not 0 < w['r'] <= 500:
             raise Fehler(f'Wahrzeichen {w["name"]}: Freiraum r muss zwischen 0 und 500 liegen')
+        if 'anzeige' not in w and len(w['name']) > 24:
+            raise Fehler(f'Wahrzeichen {w["name"]}: Anzeige fehlt (Name länger als 24 Zeichen)')
+        if 'anzeige' in w and not (isinstance(w['anzeige'], str) and 3 <= len(w['anzeige']) <= 24):
+            raise Fehler(f'Wahrzeichen {w["name"]}: Anzeige muss Text mit 3 bis 24 Zeichen sein')
+        if 'anzeige' not in w and len(w['name']) < 3:
+            raise Fehler(f'Wahrzeichen {w["name"]}: Anzeige muss mindestens 3 Zeichen haben')
     return liste
 
 def wahrzeichen(auftrag, daten, abb, punkte, massstab):
@@ -263,7 +269,7 @@ def wahrzeichen(auftrag, daten, abb, punkte, massstab):
             continue
         x, y = round(x, 1), round(y, 1)
         n = naechster(x * STRECKUNG, y * STRECKUNG)
-        steht.append({'osm': w['osm'], 'name': w['name'], 'typ': w['typ'], 'x': x, 'y': y, 's': w['s'], 'r': w['r'],
+        steht.append({'osm': w['osm'], 'name': w['name'], 'anzeige': w.get('anzeige', w['name']), 'typ': w['typ'], 'x': x, 'y': y, 's': w['s'], 'r': w['r'],
                       'rot': round(math.atan2(n[0] - x * STRECKUNG, n[1] - y * STRECKUNG), 3), 'verschoben_m': verschoben})
     return steht, verworfen
 

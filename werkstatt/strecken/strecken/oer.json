@@ -139,6 +139,7 @@
  ],
  "wahrzeichen": [
   {
+   "anzeige": "Fatih-Moschee",
    "name": "Fatih-Sultan-Mehmed-Moschee",
    "osm": "node/4077677268",
    "r": 40,
@@ -150,6 +151,7 @@
    "y": 625.0
   },
   {
+   "anzeige": "DITIB-Moschee",
    "name": "DITIB-Moschee Abdulhamit Han",
    "osm": "way/301019047",
    "r": 40,
@@ -161,6 +163,7 @@
    "y": 299.8
   },
   {
+   "anzeige": "Rathaus",
    "name": "Rathaus I",
    "osm": "way/300992687",
    "r": 40,
@@ -172,6 +175,7 @@
    "y": 1004.5
   },
   {
+   "anzeige": "Kaufland",
    "name": "Kaufland am Berliner Platz",
    "osm": "node/1203939683",
    "r": 45,
@@ -183,6 +187,7 @@
    "y": 842.6
   },
   {
+   "anzeige": "Stimberg-Stadion",
    "name": "Stimberg-Stadion",
    "osm": "way/614927894",
    "r": 70,
@@ -194,6 +199,7 @@
    "y": 666.8
   },
   {
+   "anzeige": "Zeche Ewald, Schacht 3",
    "name": "Zeche Ewald Fortsetzung, Schacht 3",
    "osm": "node/10103709699",
    "r": 30,
@@ -205,6 +211,7 @@
    "y": 703.8
   },
   {
+   "anzeige": "Zeche Ewald, Schacht 1",
    "name": "Zeche Ewald Fortsetzung, Schacht 1 Grevel",
    "osm": "node/3670497373",
    "r": 30,
@@ -216,6 +223,7 @@
    "y": 718.5
   },
   {
+   "anzeige": "Johanneskirche",
    "name": "Johanneskirche",
    "osm": "way/223910650",
    "r": 25,
@@ -227,6 +235,7 @@
    "y": 955.7
   },
   {
+   "anzeige": "St. Marien",
    "name": "St. Marien Kirche",
    "osm": "way/301054562",
    "r": 25,
@@ -238,6 +247,7 @@
    "y": 726.1
   },
   {
+   "anzeige": "Christus-König-Kirche",
    "name": "Christus König Kirche",
    "osm": "way/244635054",
    "r": 25,
@@ -249,6 +259,7 @@
    "y": 352.3
   },
   {
+   "anzeige": "Friedenskirche",
    "name": "Friedenskirche",
    "osm": "way/300598723",
    "r": 25,
@@ -260,6 +271,7 @@
    "y": 107.4
   },
   {
+   "anzeige": "Neuapostolische Kirche",
    "name": "Neuapostolische Kirche",
    "osm": "way/301702294",
    "r": 25,

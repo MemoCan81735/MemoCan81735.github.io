@@ -9525,18 +9525,18 @@ const TRACK_LOOK = {
     stands: 2, rain: true,     // Ruhrgebiet: es regnet, Asphalt nass und spiegelnd
     housePalette: ["#9a4b38", "#8a3f2f", "#b0614a", "#7d3a2c", "#a8573f"],
     landmarks: [
-      { type: "mosque", x: 1085.2, y: 625.0, rot: -2.468, s: 2.6, r: 40 }, /* Fatih-Sultan-Mehmed-Moschee */
-      { type: "mosque", x: 762.8, y: 299.8, rot: -0.415, s: 2.6, r: 40 }, /* DITIB-Moschee Abdulhamit Han */
-      { type: "rathaus", x: 523.2, y: 1004.5, rot: 3.022, s: 2.2, r: 40 }, /* Rathaus I */
-      { type: "markt", x: 293.6, y: 842.6, rot: 1.879, s: 2.0, r: 45 }, /* Kaufland am Berliner Platz */
-      { type: "arena", x: 83.8, y: 666.8, rot: 2.173, s: 0.8, r: 70 }, /* Stimberg-Stadion */
-      { type: "headframe", x: 640.9, y: 703.8, rot: 0.003, s: 3.0, r: 30 }, /* Zeche Ewald Fortsetzung, Schacht 3 */
-      { type: "headframe", x: 560.2, y: 718.5, rot: -0.157, s: 3.0, r: 30 }, /* Zeche Ewald Fortsetzung, Schacht 1 Grevel */
-      { type: "kirche", x: 329.8, y: 955.7, rot: 2.345, s: 2.4, r: 25 }, /* Johanneskirche */
-      { type: "kirche", x: 1145.7, y: 726.1, rot: -2.518, s: 2.4, r: 25 }, /* St. Marien Kirche */
-      { type: "kirche", x: 189.7, y: 352.3, rot: -1.368, s: 2.4, r: 25 }, /* Christus König Kirche */
-      { type: "kirche", x: 232.8, y: 107.4, rot: 0.155, s: 2.4, r: 25 }, /* Friedenskirche */
-      { type: "kirche", x: 170.7, y: 1240.1, rot: 2.531, s: 2.4, r: 25 } /* Neuapostolische Kirche */
+      { type: "mosque", x: 1085.2, y: 625.0, rot: -2.468, s: 2.6, r: 40, label: "Fatih-Moschee" }, /* Fatih-Sultan-Mehmed-Moschee */
+      { type: "mosque", x: 762.8, y: 299.8, rot: -0.415, s: 2.6, r: 40, label: "DITIB-Moschee" }, /* DITIB-Moschee Abdulhamit Han */
+      { type: "rathaus", x: 523.2, y: 1004.5, rot: 3.022, s: 2.2, r: 40, label: "Rathaus" }, /* Rathaus I */
+      { type: "markt", x: 293.6, y: 842.6, rot: 1.879, s: 2.0, r: 45, label: "Kaufland" }, /* Kaufland am Berliner Platz */
+      { type: "arena", x: 83.8, y: 666.8, rot: 2.173, s: 0.8, r: 70, label: "Stimberg-Stadion" }, /* Stimberg-Stadion */
+      { type: "headframe", x: 640.9, y: 703.8, rot: 0.003, s: 3.0, r: 30, label: "Zeche Ewald, Schacht 3" }, /* Zeche Ewald Fortsetzung, Schacht 3 */
+      { type: "headframe", x: 560.2, y: 718.5, rot: -0.157, s: 3.0, r: 30, label: "Zeche Ewald, Schacht 1" }, /* Zeche Ewald Fortsetzung, Schacht 1 Grevel */
+      { type: "kirche", x: 329.8, y: 955.7, rot: 2.345, s: 2.4, r: 25, label: "Johanneskirche" }, /* Johanneskirche */
+      { type: "kirche", x: 1145.7, y: 726.1, rot: -2.518, s: 2.4, r: 25, label: "St. Marien" }, /* St. Marien Kirche */
+      { type: "kirche", x: 189.7, y: 352.3, rot: -1.368, s: 2.4, r: 25, label: "Christus-König-Kirche" }, /* Christus König Kirche */
+      { type: "kirche", x: 232.8, y: 107.4, rot: 0.155, s: 2.4, r: 25, label: "Friedenskirche" }, /* Friedenskirche */
+      { type: "kirche", x: 170.7, y: 1240.1, rot: 2.531, s: 2.4, r: 25, label: "Neuapostolische Kirche" } /* Neuapostolische Kirche */
     ]
   }
   // @@ende oer
@@ -15324,6 +15324,7 @@ class TrackSceneUI {
     this.standZones = [];
     this.lmZones = Geo3D.landmarkZones(look.landmarks, geom);
     this.crowdPeople = [];
+    this.labels = [];
     this._buildStands();
     this._buildPits();
     this._buildTrackside();
@@ -16764,6 +16765,40 @@ class TrackSceneUI {
     }
   }
 
+  // ---------- Namensschilder an den Wahrzeichen (S-W13) ----------
+  static labelAlpha(d){
+    if (typeof d !== "number" || !(d >= 0)) return 0;   // NaN, negativ, Text
+    return d <= 120 ? 1 : d >= 420 ? 0 : (420 - d) / 300;
+  }
+  // Schild als Bild: heller Text auf dunklem, abgerundetem Feld; der Text wird verkleinert, bis er passt
+  static labelCanvas(text){
+    const c = document.createElement("canvas"); c.width = 512; c.height = 96;
+    const g = c.getContext("2d");
+    g.fillStyle = "rgba(14,22,32,0.88)"; g.beginPath(); g.roundRect(2, 2, 508, 92, 22); g.fill();
+    let px = 46; g.font = "bold " + px + "px sans-serif";
+    while (px > 14 && g.measureText(text).width > 512 * 0.86){ px -= 2; g.font = "bold " + px + "px sans-serif"; }
+    g.fillStyle = "#ffffff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text, 256, 50);
+    return c;
+  }
+  static get LABEL_HEIGHT(){ return { mosque: 46, rathaus: 40, markt: 22, arena: 26, headframe: 60, kirche: 44 }; }
+  _addLabel(lm, h){
+    const tex = new THREE.CanvasTexture(TrackSceneUI.labelCanvas(lm.label));
+    tex.colorSpace = THREE.SRGBColorSpace; this._keep(tex);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }); this._keep(mat);
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(44, 44 * 96 / 512, 1);
+    sprite.position.set(lm.x, h + (TrackSceneUI.LABEL_HEIGHT[lm.type] || 40) * (lm.s || 1) + 6, lm.y);
+    this.group.add(sprite);
+    this.labels.push({ sprite });
+  }
+  updateLabels(camera){
+    const c = camera.position;
+    for (const l of this.labels){
+      const p = l.sprite.position, a = TrackSceneUI.labelAlpha(Math.hypot(c.x - p.x, c.y - p.y, c.z - p.z));
+      l.sprite.visible = a >= 0.02; l.sprite.material.opacity = a;
+    }
+  }
+
   // ---------- Wahrzeichen an festen Stellen (Heimat-Cup) ----------
   _buildLandmarks(){
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), sc = new THREE.Vector3();
@@ -16773,6 +16808,7 @@ class TrackSceneUI {
       // Brücke: auf die Ufer an beiden Enden setzen (lokale x-Achse nach Drehung um y: (cos, -sin))
       const ends = lm.span ? Math.min(...[-1, 1].map(k => this.heightAt(lm.x + Math.cos(lm.rot || 0) * k * lm.span, lm.y - Math.sin(lm.rot || 0) * k * lm.span))) - 9 * (lm.s || 1) : null;
       const h = ends != null ? ends : lm.h != null ? lm.h : Math.min(...[[0, 0], [-r, -r], [r, -r], [r, r], [-r, r]].map(([a, b]) => this.heightAt(lm.x + a, lm.y + b)));
+      if (lm.label) this._addLabel(lm, h);
       q.setFromAxisAngle(up, lm.rot || 0);
       m4.compose(v.set(lm.x, h - 0.3, lm.y), q, sc.set(lm.s || 1, lm.s || 1, lm.s || 1));
       for (const part of this.kit.decorParts(lm.type, true)){
@@ -17037,6 +17073,7 @@ class TrackSceneUI {
     this._updateCrowd(view, time);
     this.windU.uTime.value = time;
     this._updateMarshals(view, time, dt);
+    if (camera && this.labels.length) this.updateLabels(camera);
     this._updateStart(view, time, dt);
     this._updateLife(view, time, dt);
     // Blitzboxen drehen und schweben, nach dem Einsammeln wachsen sie wieder heran

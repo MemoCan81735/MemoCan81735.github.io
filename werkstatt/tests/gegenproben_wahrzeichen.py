@@ -15,7 +15,13 @@ FEHLER = [
     ('Uhrzeit in der Ausgabe', BAUE, "'abbildung': abb,", "'abbildung': abb, 'zeit': __import__('time').strftime('%H:%M:%S'),", PY, 'w_fehler'),
     ('Typprüfung aus', BAUE, "if w.get('typ') not in TYPEN:", 'if False:', PY, 'w_fehler'),
     ('Bautyp rathaus fehlt im Spiel', SEITE, 'case "rathaus": {', 'case "rathausX": {', JS, 'w_typen'),
-    ('Eine Moschee fehlt im Spiel-Eintrag', SEITE, '      { type: "mosque", x: 762.8, y: 299.8, rot: -0.415, s: 2.6, r: 40 }, /* DITIB-Moschee Abdulhamit Han */\n', '', JS, 'w_einbau'),
+    ('Eine Moschee fehlt im Spiel-Eintrag', SEITE, '      { type: "mosque", x: 762.8, y: 299.8, rot: -0.415, s: 2.6, r: 40, label: "DITIB-Moschee" }, /* DITIB-Moschee Abdulhamit Han */\n', '', JS, 'w_einbau'),
+    ('Längenprüfung der Anzeige aus', BAUE, "3 <= len(w['anzeige']) <= 24", 'True', PY, 'w_anzeige'),
+    ('Label fehlt im Spiel-Eintrag', SEITE, 'rot: -0.415, s: 2.6, r: 40, label: "DITIB-Moschee" }', 'rot: -0.415, s: 2.6, r: 40 }', JS, 'w_label_einbau'),
+    ('Schilder nie ausgeblendet', SEITE, 'return d <= 120 ? 1 : d >= 420 ? 0 : (420 - d) / 300;', 'return 1;', JS, 'w_label_alpha'),
+    ('Ungültiger Abstand sichtbar', SEITE, 'if (typeof d !== "number" || !(d >= 0)) return 0;', '', JS, 'w_label_alpha'),
+    ('Text ohne Verkleinern', SEITE, 'while (px > 14 && g.measureText(text).width > 512 * 0.86)', 'while (false)', JS, 'w_label_text'),
+    ('Ferne Schilder bleiben sichtbar', SEITE, 'l.sprite.visible = a >= 0.02;', 'l.sprite.visible = true;', JS, 'w_label_szene'),
 ]
 env = dict(os.environ)
 env.setdefault('NODE_PATH', subprocess.run(['npm', 'root', '-g'], capture_output=True, text=True).stdout.strip())

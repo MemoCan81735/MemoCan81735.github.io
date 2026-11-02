@@ -112,6 +112,28 @@ def _():
             soll = math.atan2(n[0] - w['x'] * K, n[1] - w['y'] * K)
             pruefe(abs((w['rot'] - soll + math.pi) % (2 * math.pi) - math.pi) <= 0.05, f'{w["name"]}: Vorderseite zeigt nicht zur Fahrbahn')
 
+@test('w_anzeige')
+def _():
+    with tempfile.TemporaryDirectory() as tmp:
+        r, z = bau(tmp)
+        pruefe(r.returncode == 0, 'Bauen schlug fehl: ' + r.stderr[-300:])
+        s = lade(z); an = [w.get('anzeige') for w in s['wahrzeichen']]
+        pruefe(all(isinstance(a, str) and 3 <= len(a) <= 24 for a in an), 'Anzeige fehlt oder falsch lang: ' + str(an))
+        pruefe(len(set(an)) == len(an), 'Anzeigen nicht eindeutig')
+    def setze(i, v): return lambda a: a['wahrzeichen'][i].update(anzeige=v)
+    ok = [('3 Zeichen', setze(0, 'Abc')), ('24 Zeichen', setze(0, 'A' * 24))]
+    for name, fa in ok:
+        with tempfile.TemporaryDirectory() as tmp:
+            r, z = bau(tmp, fa)
+            pruefe(r.returncode == 0, f'{name} abgelehnt: ' + r.stderr[-200:])
+    schlecht = [('2 Zeichen', setze(0, 'Ab')), ('25 Zeichen', setze(0, 'A' * 25)), ('leer', setze(0, '')), ('Zahl', setze(0, 5)),
+                ('Name zu lang ohne Anzeige', lambda a: a['wahrzeichen'][0].pop('anzeige', None) or a['wahrzeichen'][0].update(name='N' * 30))]
+    for name, fa in schlecht:
+        with tempfile.TemporaryDirectory() as tmp:
+            r, z = bau(tmp, fa)
+            pruefe(r.returncode == 1 and 'Anzeige' in r.stderr, f'{name}: Rückgabewert {r.returncode}, Meldung: {r.stderr[-200:]}')
+            pruefe('Traceback' not in r.stderr and not os.path.exists(z), f'{name}: unklare Meldung oder Ausgabedatei')
+
 @test('w_fehler')
 def _():
     faelle = [
