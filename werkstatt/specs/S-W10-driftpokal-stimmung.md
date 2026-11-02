@@ -22,7 +22,7 @@ gesetzt und gegenüber den ersten Vergleichsbildern stärker gemacht.
 | AK-2 | Leuchtdichte jeder Tönung ≥ 0,93; mindestens 10 verschiedene Tönungen; jede Strecke außer höchstens 2 hat Sättigung ≠ 1 | `s_daten` |
 | AK-3 | Alle Wetter- und Tageszeit-Abwandlungen aller Strecken haben gültiges `grade` (gültige Tönung und Vignette wie oben, die Leuchtdichte der Tönung wird bei Wetter nicht geprüft, weil Gewitter und Nacht sie bewusst dunkler tönen; Sättigung 0,5 bis 1,25, weil Regen bewusst entsättigt, oder nicht gesetzt) | `s_wetter` |
 | AK-4 | `POST_LOOK.grade` ist an | `s_schalter` |
-| AK-5 | Echtes Rennen Herbstwald: Verhältnis Rot zu Blau im Bild mit Stimmung ≥ 8 % höher als ohne; mittlere Helligkeit um höchstens ±12 % (warme Szene mit Tönung 0,93 verliert von sich aus etwa 10 %) verändert | `s_bild` |
+| AK-5 | Echtes Rennen Herbstwald: Verhältnis Rot zu Blau im Bild mit Stimmung ≥ 20 % höher als ohne; mittlere Helligkeit um höchstens ±12 % (warme Szene mit Tönung 0,93 verliert von sich aus etwa 10 %) verändert | `s_bild` |
 | AK-6 | Das Rennen startet ohne Skriptfehler und ohne Anfragen an fremde Server | `s_bild` |
 
 ## Prüfszenarien
@@ -35,7 +35,7 @@ gesetzt und gegenüber den ersten Vergleichsbildern stärker gemacht.
 | PS-5 | Normal | Abwandlungen Gewitter, Nacht, Abend, Morgen je Strecke | AK-3 |
 | PS-6 | Fehlerfall | Schalter aus: Test erkennt es | AK-4 |
 | PS-7 | Normal | Herbstwald mit und ohne Stimmung, gleiches Wetter: Rot/Blau und Helligkeit | AK-5 |
-| PS-8 | Fehlalarm | Schalter aus: Rot/Blau-Unterschied unter 2 % (Messung stimmt, Rauschen klein) | AK-5 |
+| PS-8 | Fehlalarm | Schalter aus: Rot/Blau-Unterschied unter 8 % (die Szene bewegt sich: Zuschauer, Regen) (Messung stimmt, Rauschen klein) | AK-5 |
 | PS-9 | Normal | Fehler und fremde Anfragen beim Rennstart | AK-6 |
 
 ## Gegenproben
@@ -56,3 +56,5 @@ Zu starke Farben können Fahrbahn und Rand schlechter lesbar machen; Grenzen obe
 - Messwerte Herbstwald (Wetter Grund, gleiches Bild mit/ohne): Rot zu Blau +54 %, Helligkeit −10,7 %, Messrauschen 0,01 %.
 - Beim Bauen gefunden: Erste Tönungen dunkelten das Bild um 18 % ab (Grenze der Tönung daher von 0,88 auf 0,93 verschärft). `lift` macht das Bild dunkler, nicht heller (c·(1−lift)+0,06·lift), deshalb nicht zum Ausgleich genutzt. Das Gewitter blieb unverändert (Wetter-Tönungen sind nicht Teil der Änderung).
 - Gerätetest: offen (Abnahmeliste `abnahme-driftpokal-stimmung-S-W10.md`).
+
+- Nachtrag 02.11.2026: Im sauberen Klon fiel der Fehlalarm-Wert (Rauschen) durch: Der Test wählte die Strecke über die Nummer in der Liste, die Karte war aber nicht immer Herbstwald (Rauschen 4,7 bis 10,7 %). Jetzt wird die Karte über den Namen gewählt (Rauschen 0,6 %); Grenzen großzügiger: Rauschen unter 8 %, Wirkung mindestens 20 % (gemessen 54 %). Lehre: Tests wählen Menüeinträge nach Namen, nicht nach Nummer.

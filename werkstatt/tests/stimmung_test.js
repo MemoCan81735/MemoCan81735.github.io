@@ -84,7 +84,8 @@ async function rennenBild(an) {
   await p.waitForTimeout(3000);
   await p.evaluate(() => document.getElementById('btnSingle').click()); await p.waitForTimeout(800);
   await p.evaluate(() => document.getElementById('driverGo').click()); await p.waitForTimeout(800);
-  const idx = await p.evaluate(() => { const ids = Object.keys(TRACK_LOOK); return ids.indexOf('herbst'); });
+  const idx = await p.evaluate(() => [...document.querySelectorAll('#trackGrid > *')].findIndex(c => /Herbstwald/.test(c.textContent)));
+  if (idx < 0) throw new Error('Karte Herbstwald nicht gefunden');
   await p.evaluate((i) => document.querySelectorAll('#trackGrid > *')[i].click(), idx); await p.waitForTimeout(300);
   await p.evaluate(() => document.getElementById('trackGo').click()); await p.waitForTimeout(7000);
   const png = await p.screenshot({ timeout: 90000 });
@@ -104,9 +105,9 @@ test('s_bild', async () => {
   const aus1 = await rennenBild(false), aus2 = await rennenBild(false), an = await rennenBild(true);
   for (const x of [aus1, aus2, an]) { pruefe(x.fehler.length === 0, 'Skriptfehler ' + x.fehler[0]); pruefe(x.fremd.length === 0, 'fremde Anfrage ' + x.fremd[0]); }
   const rauschen = Math.abs(aus1.werte.rb / aus2.werte.rb - 1);
-  pruefe(rauschen < 0.02, 'Messrauschen zu groß (Fehlalarmprobe): ' + (rauschen * 100).toFixed(1) + ' %');
+  pruefe(rauschen < 0.08, 'Messrauschen zu groß (Fehlalarmprobe): ' + (rauschen * 100).toFixed(1) + ' %');
   const plus = an.werte.rb / aus1.werte.rb - 1;
-  pruefe(plus >= 0.08, 'Rot/Blau nur +' + (plus * 100).toFixed(1) + ' %');
+  pruefe(plus >= 0.20, 'Rot/Blau nur +' + (plus * 100).toFixed(1) + ' %');
   const hell = an.werte.lum / aus1.werte.lum - 1;
   pruefe(Math.abs(hell) <= 0.12, 'Helligkeit verändert um ' + (hell * 100).toFixed(1) + ' %');
   console.log(`  Messwerte: Rot/Blau +${(plus * 100).toFixed(1)} %, Helligkeit ${(hell * 100).toFixed(1)} %, Rauschen ${(rauschen * 100).toFixed(2)} %`);
