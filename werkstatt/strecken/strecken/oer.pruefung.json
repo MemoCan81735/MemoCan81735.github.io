@@ -1,0 +1,43 @@
+{
+ "id": "oer",
+ "karts": 6,
+ "finished": 6,
+ "walls": 0,
+ "bestLap": 21.72,
+ "bestLapMax": 22.78,
+ "rennen_s": 78.4,
+ "laenge": 3879,
+ "par": 77,
+ "laeufe": [
+  {
+   "walls": 0,
+   "karts": 6,
+   "finished": 6,
+   "bestLap": 21.93,
+   "sekunden": 78.4,
+   "wetter": "basis",
+   "nass": true,
+   "laenge": 3879
+  },
+  {
+   "walls": 0,
+   "karts": 6,
+   "finished": 6,
+   "bestLap": 21.72,
+   "sekunden": 78.1,
+   "wetter": "basis",
+   "nass": true,
+   "laenge": 3879
+  },
+  {
+   "walls": 0,
+   "karts": 6,
+   "finished": 6,
+   "bestLap": 22.78,
+   "sekunden": 81.6,
+   "wetter": "basis",
+   "nass": true,
+   "laenge": 3879
+  }
+ ]
+}

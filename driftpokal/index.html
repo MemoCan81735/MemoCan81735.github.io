@@ -5587,7 +5587,7 @@ const CHALLENGE_DEFS = {
   herbst: { par: 118.5, skill: "shortcut" }, stadt: { par: 110, skill: "cleanWin" }, vulkan: { par: 94, skill: "startWin" },
   hafen: { par: 95, skill: "tricks" }, koenig: { par: 85.5, skill: "slip" }, seen: { par: 106.5, skill: "shortcut" },
   caycuma: { par: 87, skill: "superTurbo" }, erken: { par: 85, skill: "cleanWin" }, muenchen: { par: 85.5, skill: "startWin" },
-  blaubeuren: { par: 88.5, skill: "shortcut" }, ulm: { par: 105, skill: "tricks" }
+  blaubeuren: { par: 88.5, skill: "shortcut" }, ulm: { par: 105, skill: "tricks" }, /* @@strecke oer */oer: { par: 77, skill: "slip" }/* @@ende oer */
 };
 const SKILL_RULES = {
   tricks: { n: 3 },          // drei Tricks mit Landeschub in einem Rennen
@@ -5828,7 +5828,20 @@ const TRACK_DEFS = [
     ice: [],
     ramps: [{ f: 0.13 }],
     shortcuts: [{ width: 24, pts: [[780, 715], [755, 698], [741, 669], [736, 633], [739, 595], [751, 557], [769, 526], [794, 503], [824, 495]] }]
+  },
+  // @@strecke oer
+  {
+    // Oer-Runde aus echten Straßen (OpenStreetMap, Stand 2026-11-02), erzeugt von werkstatt/strecken, nicht von Hand ändern
+    id: "oer", width: 70, offroad: 26, grip: 1,
+    points: [[403,891],[349,771],[284,657],[208,548],[145,433],[131,308],[259,275],[391,267],[520,294],[644,339],[765,390],
+             [890,435],[1021,449],[1062,529],[964,618],[903,733],[877,862],[790,928],[658,935],[527,928]],
+    itemRows: [0.2, 0.5, 0.8],
+    pads: [{ f: 0.35, lat: 0 }],
+    ice: [],
+    ramps: [{ f: 0.12 }],
+    shortcuts: []
   }
+  // @@ende oer
 ];
 
 const ITEM_TYPES = ["turbo", "oil", "orb", "shield"];
@@ -5845,7 +5858,7 @@ const CUP_DEFS = [
   { id: "sonne", tracks: ["wiese", "duene", "frost"] },
   { id: "mond", tracks: ["herbst", "stadt", "vulkan"] },
   { id: "stern", tracks: ["hafen", "koenig", "seen"] },
-  { id: "heimat", tracks: ["caycuma", "erken", "muenchen"] },
+  { id: "heimat", tracks: ["caycuma", "erken", "muenchen", "oer"] },
   { id: "schwaben", tracks: ["blaubeuren", "ulm"] }
 ];
 
@@ -5894,9 +5907,10 @@ const WEATHER_RULES = deepFreeze({
     herbst: ["morgen", "gewitter"], stadt: ["regennacht"], vulkan: ["nacht"],
     hafen: ["abend", "gewitter", "nacht"], koenig: ["morgen", "abend", "gewitter"], seen: ["morgen", "abend", "gewitter"],
     caycuma: ["abend", "gewitter", "nacht"], erken: ["abend", "nacht"], muenchen: ["abend", "gewitter", "nacht"],
-    blaubeuren: ["morgen", "abend", "gewitter"], ulm: ["morgen", "abend", "gewitter", "nacht"]
+    blaubeuren: ["morgen", "abend", "gewitter"], ulm: ["morgen", "abend", "gewitter", "nacht"],
+    /* @@strecke oer */oer: ["abend", "nacht"]/* @@ende oer */
   },
-  wetKinds: ["gewitter", "regennacht"], dryKinds: ["abend", "morgen"], wetBase: ["erken"],
+  wetKinds: ["gewitter", "regennacht"], dryKinds: ["abend", "morgen"], wetBase: ["erken", "oer"],
   wetGrip: 0.9,
   // Einstellung: Zufall, immer Grundstimmung oder eine feste Stimmung (wo es sie nicht gibt: Grundstimmung)
   choices: ["zufall", "basis", "abend", "morgen", "gewitter", "nacht"]
@@ -9493,7 +9507,26 @@ const TRACK_LOOK = {
     decor: [["snowpine", 6], ["snowman", 2], ["icerock", 3]], sprinkle: "sparkle",
     ground: "snow", offroadKind: "snow", wall: "snowbank", sun: { az: 2.9, el: 0.42 },
     hemi: ["#e3ecff", "#a9b8cf"], rock: "#6d7a8c", high: "#f4f8ff", sunColor: "#fff6ec"
+  },
+  // @@strecke oer
+  oer: {
+    grade: { tint: "#eef0e6", sat: 0.9, vignette: 0.36 },
+    ads: ["GLÜCKAUF GRILL", "HAARD BÄCKER", "STIMBERG SPRUDEL", "SCHLÄGEL & EISEN", "KOHLENPOTT KAFFEE", "DRIFTPOKAL"],
+    crowd: { flag: "oe", shirts: ["#111111", "#c8102e", "#f6c700"], caps: ["#111111", "#c8102e"], seats: ["#c8102e", "#1a1a1a", "#f6c700"], flags: 0.12, share: 0.55 },
+    name: "Oer-Runde", sub: "Echte Straßen · © OpenStreetMap-Mitwirkende",
+    outside: ["#6b9a4a", 16], offroad: ["#557f3c", 14], road: ["#55585f", 9],
+    wallA: "#23262e", wallB: "#f2f2f2", curbA: "#ffffff", curbB: "#d9352a",
+    skyTop: "#6f8099", skyHorizon: "#d8dde3", fog: "#c9d0d8", cloud: "#eef1f4",
+    far: "#6f7f78", near: "#4d6e3e", relief: "hills",
+    decor: [["pine", 4], ["birch", 4], ["house", 3], ["tree", 1], ["bush", 1]], sprinkle: "flowers",
+    ground: "grass", offroadKind: "grass", wall: "barrier", sun: { az: 2.2, el: 0.5 },
+    hemi: ["#e4e9ef", "#4d6a44"], rock: "#7a756c", high: "#4f6e40", sunColor: "#f1efe8",
+    light: { sun: 1.4, hemi: 1.0, env: 0.95, exposure: 1.05 },
+    stands: 2, rain: true,     // Ruhrgebiet: es regnet, Asphalt nass und spiegelnd
+    housePalette: ["#9a4b38", "#8a3f2f", "#b0614a", "#7d3a2c", "#a8573f"],
+    landmarks: []
   }
+  // @@ende oer
 };
 
 // Neue Strecken: Herbstwald (Abendsonne, nasses Laub), Neonstadt (Nacht), Vulkaninsel (Dämmerung, Lava)
@@ -12332,6 +12365,7 @@ class ScreensUI {
       const first = TRACK_LOOK[cup.tracks[0]];
       b.style.setProperty("--t1", first.skyTop); b.style.setProperty("--t2", TRACK_LOOK[cup.tracks[cup.tracks.length - 1]].near);
       const maps = document.createElement("div"); maps.className = "cup-maps";
+      maps.style.gridTemplateColumns = "repeat(" + Math.max(3, cup.tracks.length) + ", minmax(0, 1fr))";   // vier Strecken (Heimat-Cup) bleiben in einer Reihe
       for (const id of cup.tracks){
         const cv = document.createElement("canvas"); cv.width = 120; cv.height = 120;
         TrackMapUI.draw(cv.getContext("2d"), app.getTrackGeometry(app.getTrackVariant(id)), 120, 10);

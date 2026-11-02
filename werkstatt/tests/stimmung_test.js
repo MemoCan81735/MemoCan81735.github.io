@@ -41,7 +41,7 @@ test('s_daten', async () => {
     for (const id of ids) { const g = TRACK_LOOK[id].grade; for (const f of window.__gueltig(g)) fehler.push(id + ': ' + f); if (g) { tints.add(String(g.tint).toLowerCase()); if (g.sat === 1 || g.sat == null) satEins++; } }
     return { n: ids.length, fehler, verschieden: tints.size, satEins };
   });
-  pruefe(r.n === 14, 'Strecken: ' + r.n);
+  pruefe(r.n >= 14, "Strecken: " + r.n);
   pruefe(r.fehler.length === 0, r.fehler.join('; '));
   pruefe(r.verschieden >= 10, 'verschiedene Tönungen ' + r.verschieden);
   pruefe(r.satEins <= 2, 'Strecken mit Sättigung 1: ' + r.satEins);

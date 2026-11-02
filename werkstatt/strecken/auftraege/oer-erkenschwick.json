@@ -1,0 +1,27 @@
+{
+  "id": "oer-erkenschwick",
+  "name": "Oer-Erkenschwick Runde",
+  "start": "Berliner Platz",
+  "bbox": [
+    51.625,
+    7.225,
+    51.675,
+    7.305
+  ],
+  "strassen": [
+    "Berliner Platz",
+    "Stimbergstraße",
+    "Klein-Erkenschwicker-Straße",
+    "Bergstraße",
+    "Holtgarde",
+    "Werderstraße",
+    "Im Buschkamp",
+    "Ludwigstraße"
+  ],
+  "hinweis": "Runde ab und bis Berliner Platz, Reihenfolge der Straßen wie vom Betreiber genannt (02.11.2026); Verbindungsstücke aus dem Straßennetz",
+  "strecke": {
+    "id": "oer",
+    "name": "Oer-Runde",
+    "sub": "Echte Straßen · © OpenStreetMap-Mitwirkende"
+  }
+}
