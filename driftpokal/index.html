@@ -16812,7 +16812,7 @@ class TrackSceneUI {
   // ---------- Namensschilder an den Wahrzeichen (S-W13) ----------
   static labelAlpha(d){
     if (typeof d !== "number" || !(d >= 0)) return 0;   // NaN, negativ, Text
-    return d <= 120 ? 1 : d >= 420 ? 0 : (420 - d) / 300;
+    return d <= 220 ? 1 : d >= 650 ? 0 : (650 - d) / 430;
   }
   // Schild als Bild: heller Text auf dunklem, abgerundetem Feld; der Text wird verkleinert, bis er passt
   static labelCanvas(text){
@@ -16830,7 +16830,7 @@ class TrackSceneUI {
     tex.colorSpace = THREE.SRGBColorSpace; this._keep(tex);
     const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }); this._keep(mat);
     const sprite = new THREE.Sprite(mat);
-    sprite.scale.set(44, 44 * 96 / 512, 1);
+    sprite.scale.set(96, 96 * 96 / 512, 1);
     sprite.position.set(lm.x, h + (TrackSceneUI.LABEL_HEIGHT[lm.type] || 40) * (lm.s || 1) + 6, lm.y);
     this.group.add(sprite);
     this.labels.push({ sprite });

@@ -91,7 +91,7 @@ test('w_label_einbau', async () => {
 
 test('w_label_alpha', async () => {
   const p = await seite();
-  const a = await p.evaluate(() => [0, 120, 270, 420, 1000, NaN, -5, 'x', null].map(d => TrackSceneUI.labelAlpha(d)));
+  const a = await p.evaluate(() => [0, 220, 435, 650, 1000, NaN, -5, 'x', null].map(d => TrackSceneUI.labelAlpha(d)));
   const soll = [1, 1, 0.5, 0, 0, 0, 0, 0, 0];
   soll.forEach((v, i) => pruefe(typeof a[i] === 'number' && Math.abs(a[i] - v) <= 0.01, `alpha-Fall ${i}: ${a[i]} statt ${v}`));
   await p.context().close();
@@ -109,8 +109,11 @@ test('w_label_szene', async () => {
     const w = eval(code.oer), lm = w.look.landmarks, out = { n: w.labels.length, hoch: w.labels.every((l, i) => l.sprite.position.y > 5), andere: eval(code.erken).labels.length };
     const cam = (d) => ({ position: new THREE.Vector3(lm[0].x + d, 40, lm[0].y) });
     const l0 = w.labels[0];
+    out.px = l0.sprite.scale.y / (2 * 150 * Math.tan(26 * Math.PI / 180)) * 412;   // Höhe des Schilds in Pixeln bei 150 Einheiten, Bildhöhe 412
+    out.pxfern = l0.sprite.scale.y / (2 * 400 * Math.tan(26 * Math.PI / 180)) * 412;
+    w.updateLabels(cam(400)); out.mitte = l0.sprite.visible;
     w.updateLabels(cam(60)); out.nah = [l0.sprite.visible, l0.sprite.material.opacity];
-    w.updateLabels(cam(600)); out.fern = l0.sprite.visible;
+    w.updateLabels(cam(900)); out.fern = l0.sprite.visible;
     w.updateLabels(cam(60)); out.nah2 = [l0.sprite.visible, l0.sprite.material.opacity];
     return out;
   }, { oer: szene('oer'), erken: szene('erken') });
@@ -119,6 +122,8 @@ test('w_label_szene', async () => {
   pruefe(r.andere === 0, 'Schilder in Strecke erken: ' + r.andere);
   pruefe(r.nah[0] === true && Math.abs(r.nah[1] - 1) < 0.01, 'nah nicht voll sichtbar ' + r.nah);
   pruefe(r.fern === false, 'fern nicht ausgeblendet');
+  pruefe(r.px >= 40, `Schild bei 150 Einheiten nur ${r.px.toFixed(0)} px hoch`);
+  pruefe(r.mitte === true && r.pxfern >= 15, `bei 400 Einheiten: sichtbar ${r.mitte}, ${r.pxfern.toFixed(0)} px`);
   pruefe(JSON.stringify(r.nah) === JSON.stringify(r.nah2), 'Wiederholung weicht ab');
   await p.context().close();
 });
