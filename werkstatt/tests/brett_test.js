@@ -205,6 +205,7 @@ test('stufen_fehlerquote', async () => {
     const folge = () => { let s = 3; const f = () => (s = (s * 16807) % 2147483647) / 2147483647; c.setZufall(f); return Array.from({ length: 20 }, () => c._entscheideFehler()).join(); };
     if (folge() !== folge()) out.push('nicht wiederholbar');
     // Mühle und Reversi: Zufallszug gültig
+    window.__brett.muehle.ui._uebungUeberspringen(); // S-W15: Übung beim ersten Start pausiert den Computer
     const mu = window.__brett.muehle.control; mu.setMode(true); mu.handlePointClick(0); mu.setDifficulty('leicht'); mu.setZufall(() => 0);
     const vorher = mu.getBoardState().filter(Boolean).length; await mu.performAiAction();
     if (mu.getBoardState().filter(Boolean).length !== vorher + 1) out.push('Mühle Zufallszug nicht gesetzt');
