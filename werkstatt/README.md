@@ -12,3 +12,11 @@ Prüfungen, bevor etwas auf die Seite kommt (Shift Left):
 - `teilen.js` im Hauptordner ist der gemeinsame Baustein zum Teilen von Ergebnissen.
 
 Specs: `werkstatt/specs/`. Symbole: `bilder/symbole/`.
+
+## Erlebnis prüfen (Pflicht bei sichtbaren Änderungen, seit 04.11.2026)
+Shift Left fängt technische Fehler; Fehler im Erlebnis (zu schwach, nicht lesbar, nicht wie das Original) fielen bisher erst am Handy auf. Deshalb:
+1. **Aus Spielersicht prüfen:** Vor dem Veröffentlichen mindestens ein Bild aus dem laufenden Spiel (Spielerkamera, Handyformat), auf dem die Änderung zu sehen ist, selbst ansehen und der Meldung beilegen. Einzelvorschauen ersetzen das nicht. Ohne dieses Bild ist die Änderung nicht fertig.
+2. **Wahrnehmung als Zahl in die Spec:** Für alles Sichtbare messbare Kriterien aus Spielersicht (Mindestgröße in Pixeln bei festem Abstand, Kontrast, Sichtdauer, Sekunden bis zum Wow-Moment), mit Test.
+3. **Vorher zeigen:** Bei sichtbaren Änderungen mit Geschmacksfrage zwei oder drei Varianten als Bild zur Auswahl vorlegen, bevor gebaut wird; bis zur Antwort an der empfohlenen weiterarbeiten.
+4. **Nächsten Schritt mitdenken:** Naheliegende Erweiterungen (bei Nachbauten echter Orte: Namen, echte Formen, Details) selbst anbieten oder in die Spec aufnehmen, statt auf die Nachfrage zu warten.
+5. **Spiele-Maßstab:** Jede Spiel-Spec prüft die zehn Merkmale aus `/mnt/project-files/docs/allgemein/spiele-qualitaet.md`.
