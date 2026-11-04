@@ -15369,6 +15369,7 @@ class TrackSceneUI {
     this.lmZones = Geo3D.landmarkZones(look.landmarks, geom);
     this.crowdPeople = [];
     this.labels = [];
+    this.beacons = [];
     this._buildStands();
     this._buildPits();
     this._buildTrackside();
@@ -16830,10 +16831,20 @@ class TrackSceneUI {
     tex.colorSpace = THREE.SRGBColorSpace; this._keep(tex);
     const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }); this._keep(mat);
     const sprite = new THREE.Sprite(mat);
-    sprite.scale.set(96, 96 * 96 / 512, 1);
-    sprite.position.set(lm.x, h + (TrackSceneUI.LABEL_HEIGHT[lm.type] || 40) * (lm.s || 1) + 6, lm.y);
+    sprite.scale.set(150, 150 * 96 / 512, 1);   // S-W16: größer, aus der Ferne lesbar
+    const oben = h + (TrackSceneUI.LABEL_HEIGHT[lm.type] || 40) * (lm.s || 1) + 6;
+    sprite.position.set(lm.x, oben, lm.y);
     this.group.add(sprite);
     this.labels.push({ sprite });
+    // S-W16: gelbe Leuchtsäule vom Boden bis zum Schild, sichtbar aus der Ferne
+    const hoehe = Math.max(1, oben - h);
+    const saeulenGeo = this._keep(new THREE.CylinderGeometry(2.2, 2.2, hoehe, 8));
+    const saeulenMat = this._keep(new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.85, depthWrite: false, fog: false }));
+    const saeule = new THREE.Mesh(saeulenGeo, saeulenMat);
+    saeule.position.set(lm.x, h + hoehe / 2, lm.y);
+    saeule.userData = { oben, hoehe, boden: h };
+    this.group.add(saeule);
+    this.beacons.push(saeule);
   }
   updateLabels(camera){
     const c = camera.position;
@@ -16841,6 +16852,10 @@ class TrackSceneUI {
       const p = l.sprite.position, a = TrackSceneUI.labelAlpha(Math.hypot(c.x - p.x, c.y - p.y, c.z - p.z));
       l.sprite.visible = a >= 0.02; l.sprite.material.opacity = a;
     }
+    this.labels.forEach((l, i) => {
+      const b = this.beacons[i]; if (!b) return;
+      b.visible = l.sprite.visible; b.material.opacity = 0.85 * l.sprite.material.opacity;
+    });
   }
 
   // ---------- Wahrzeichen an festen Stellen (Heimat-Cup) ----------
