@@ -1,4 +1,4 @@
-// S-W15: Alpenetappe auf der Seite. Aufruf: NODE_PATH=$(npm root -g) node werkstatt/tests/etappe_test.js [Ordner]
+// S-W17: Alpenetappe auf der Seite. Aufruf: NODE_PATH=$(npm root -g) node werkstatt/tests/etappe_test.js [Ordner]
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 const wurzel = path.resolve(process.argv[2] || path.join(__dirname, '../..'));

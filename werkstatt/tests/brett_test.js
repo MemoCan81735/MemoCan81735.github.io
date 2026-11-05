@@ -145,7 +145,7 @@ test('zurueck_knopf_ui', async () => {
 test('stufen_tabelle', async () => {
   const p = await seite();
   const r = await p.evaluate(() => {
-    const T = { connect4: [2, 4, 6], othello: [1, 3, 4], mangala: [2, 5, 8] };
+    const T = { connect4: [2, 4, 6], othello: [1, 3, 4], mangala: [2, 5, 8], muehle: [1, 2, 4] };
     const F = { tictactoe: [0.45, 0.15, 0], connect4: [0.25, 0.05, 0], othello: [0.3, 0.05, 0], muehle: [0.4, 0.15, 0], mangala: [0.25, 0.05, 0] };
     const out = [];
     for (const [s, f] of Object.entries(F)) {
@@ -205,8 +205,9 @@ test('stufen_fehlerquote', async () => {
     const folge = () => { let s = 3; const f = () => (s = (s * 16807) % 2147483647) / 2147483647; c.setZufall(f); return Array.from({ length: 20 }, () => c._entscheideFehler()).join(); };
     if (folge() !== folge()) out.push('nicht wiederholbar');
     // Mühle und Reversi: Zufallszug gültig
+    window.__brett.muehle.ui._uebungUeberspringen(); // S-W15: Übung beim ersten Start pausiert den Computer
     const mu = window.__brett.muehle.control; mu.setMode(true); mu.handlePointClick(0); mu.setDifficulty('leicht'); mu.setZufall(() => 0);
-    const vorher = mu.getBoardState().filter(Boolean).length; mu.performAiAction();
+    const vorher = mu.getBoardState().filter(Boolean).length; await mu.performAiAction();
     if (mu.getBoardState().filter(Boolean).length !== vorher + 1) out.push('Mühle Zufallszug nicht gesetzt');
     const ot = window.__brett.othello.control; ot.setMode(true); const [a, b] = ot.getValidMoves()[0]; ot.playerMove(a, b);
     ot.setDifficulty('leicht'); ot.setZufall(() => 0); const oz = await ot.computeAiMove();
@@ -336,6 +337,7 @@ test('animation_klassen', async () => {
     if (document.querySelectorAll('#maboard .neu').length < 2) out.push('Mangala neu < 2');
     // Mühle: gesetzter Stein
     document.querySelector('.tabBtn[data-tab=muehle]').click();
+    if (g.muehle.ui.uebung.aktiv()) g.muehle.ui._uebungUeberspringen(); // S-W15: Übung beim ersten Start
     g.muehle.ui.handlePointClick(5);
     if (document.querySelectorAll('#mupoints .neu').length !== 1) out.push('Mühle neu != 1');
     return out;

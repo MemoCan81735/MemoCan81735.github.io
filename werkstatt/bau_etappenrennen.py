@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Baut etappenrennen/index.html aus dem Prototyp (S-W15): Grundgerüst, lokales three.js, keine Prüfhaken, Zurück-Link."""
+"""Baut etappenrennen/index.html aus dem Prototyp (S-W17): Grundgerüst, lokales three.js, keine Prüfhaken, Zurück-Link."""
 import re, shutil, sys
 quelle = sys.argv[1]
 t = open(quelle, encoding="utf-8").read()

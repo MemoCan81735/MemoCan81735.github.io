@@ -1,10 +1,14 @@
-# S-W15: Alpenetappe (Radrennen) auf die Spieleseite
+# S-W17: Alpenetappe (Radrennen) auf die Spieleseite
 
 **Status:** gebaut, freigegeben am 05.11.2026, 04:53
 <!-- Freigabe durch den Betreiber im Projekt-Thread: Frage "Kannst du das auch publizieren?" zur Alpenetappe (Fassung 8c) -->
 
 ## Anlass
 Der Betreiber will das überarbeitete Radrennen (Sog und Schleuder, Tagesrennen, Geist) auch auf der öffentlichen Seite spielen lassen.
+
+## Anwendungsfälle
+- U-1: Der Spieler öffnet die Startseite, tippt auf die Karte Alpenetappe, sieht das Startmenü und fährt los.
+- U-2: Der Spieler tippt auf "Alle Spiele" und kommt zur Startseite zurück.
 
 ## Umfang
 - Neuer Ordner `etappenrennen/` mit `index.html`, `three.min.js` (r128, lokal), `manifest.webmanifest`; Symbole `bilder/symbole/etappenrennen-192.png` und `-512.png`, Kartenbild `bilder/etappenrennen.jpg`, Karte in der Rubrik Rennspiele.
@@ -31,3 +35,34 @@ Der Betreiber will das überarbeitete Radrennen (Sog und Schleuder, Tagesrennen,
 
 ## Gegenproben
 Siehe `seite_pruefen.py --gegenproben` (Netzadresse, Zurück-Link weg). Zusätzlich: Prüfhaken im Test wieder einbauen muss AK-3 rot machen.
+
+## Technisches Design
+- Schnittstellen: keine neuen; `bau_etappenrennen.py` macht aus der Prototyp-Datei die Seite.
+- Datenformat: Speicherschlüssel `etappenrennen.*` mit Formatversion wie im Prototyp (S-006 der App).
+- Alternativen: (a) Prototyp unverändert kopieren (verworfen: Netzadresse für three.js, Prüfhaken, kein Startmenü); (b) Bauskript (gewählt, wiederholbar).
+- Entscheidung: (b). Beim Laden zeichnet das Spiel ein Bild und öffnet dann das Startmenü.
+- Design-Review: Eigenprüfung gegen Spec und Regeln der Seite (fremde Server, Anonymität, Zurück-Link). Keine unabhängige Prüfung durch einen zweiten Agenten, weil die Spiellogik unverändert aus dem geprüften Prototyp kommt.
+
+## Querschnitt
+- Datenschutz: keine fremden Server, keine Cookies, Speicherung nur lokal (Bestzeit, Rundfahrt, Tagesrennen).
+- Sicherheit: keine Eingabe außer Tippen; kein Netzverkehr.
+- Barrierefreiheit: Knöpfe mindestens 44 px hoch, Bewegung folgt `prefers-reduced-motion`.
+- Leistung: Messwert auf dem Handy offen (Gerätetest), hier nur Container mit Software-Darstellung.
+
+## Kritische Testfälle
+- PS-1: kein fremder Host, keine Prüfhaken, Bild verändert sich nach Start
+- PS-3: Speicher gesperrt, Spiel läuft trotzdem
+
+## Clean Code
+- Clean Code: Prüfergebnis: neue Dateien sind das Bauskript (unter 30 Zeilen) und der Test (unter 40 Zeilen); die Spieldatei bleibt eine HTML-Datei (Ausnahme für Spieldateien, siehe `werkstatt/README.md`).
+
+## E2E
+| Schritt | Test |
+| --- | --- |
+| U-1 | `etappe_test.js` (PS-1, PS-3) |
+| U-2 | `seite_handy.js` (D4_zurueck_sichtbar) |
+
+## Dokumentation
+- Aktualisiert: werkstatt/specs/S-W17-alpenetappe.md
+- Aktualisiert: werkstatt/tests/etappe_test.js
+- Aktualisiert: index.html

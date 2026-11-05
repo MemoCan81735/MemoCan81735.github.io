@@ -40,7 +40,7 @@
     --c4-slot: min(42px, 10.8vw);
     --ot-cell: min(38px, 10.3vw);
     --ch-square: min(38px, 10.6vw);
-    --mu-board: min(260px, 76vw);
+    --mu-board: min(340px, 84vw);
     --ma-pit: min(42px, 9vw);
     --ma-store: min(52px, 12vw);
   }
@@ -398,12 +398,14 @@
 
   /* --- Mühle (Nine Men's Morris) --- */
   #mustatus {
-    font-size: 0.9rem;
     font-weight: 500;
+    line-height: 1.35;
     margin-bottom: 16px;
-    min-height: 36px;
-    max-width: 280px;
+    min-height: 40px;
+    max-width: min(380px, 94vw);
+    font-size: 0.85rem;
     text-align: center;
+    white-space: pre-line;
     color: var(--ios-secondary-label);
   }
   #muboard {
@@ -418,32 +420,75 @@
   #mulines { position: absolute; inset: 0; width: 100%; height: 100%; }
   .mu-line { stroke: var(--line-color); stroke-width: 1.5; }
   #mupoints { position: absolute; inset: 0; width: 100%; height: 100%; }
+  /* S-W15: Tippfläche 44 px, Stein 34 px, Markierungen als eigene Ebenen */
   .mu-point {
     position: absolute;
-    width: 24px;
-    height: 24px;
+    width: 44px;
+    height: 44px;
     transform: translate(-50%, -50%);
     border-radius: 50%;
-    border: 2px solid var(--border-muted);
-    background: var(--surface-muted);
+    border: 0;
+    background: transparent;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .mu-point::before {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; box-sizing: border-box;
+    transform: translate(-50%, -50%); border-radius: 50%; background: var(--line-color);
   }
   .mu-point:active { transform: translate(-50%, -50%) scale(0.88); }
-  .mu-point.b { background: radial-gradient(circle at 35% 30%, #5a5a5a, #0d0d0d); border-color: #0d0d0d; }
-  .mu-point.w { background: radial-gradient(circle at 35% 30%, #ffffff, #d5d5d5); border-color: var(--border-muted); }
-  .mu-point.selected { box-shadow: 0 0 0 3px var(--ios-blue); }
-  .mu-point.valid-dest { box-shadow: 0 0 0 3px rgba(52,199,89,0.65); }
-  .mu-point.removable { box-shadow: 0 0 0 3px var(--ios-red); }
+  .mu-point.b::before, .mu-point.w::before { width: 34px; height: 34px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+  .mu-point.b::before { background: radial-gradient(circle at 35% 30%, #5a5a5a, #0d0d0d); border: 2px solid #0d0d0d; }
+  .mu-point.w::before { background: radial-gradient(circle at 35% 30%, #ffffff, #d5d5d5); border: 2px solid #9a9aa0; }
+  .mu-point.ziel::before { width: 26px; height: 26px; background: rgba(52,199,89,0.22); border: 4px solid #34c759; animation: muPuls 1.2s ease-in-out infinite; }
+  .mu-point.drohung:not(.ziel)::before { width: 26px; height: 26px; background: transparent; border: 3px dashed #ff9500; }
+  .mu-point.ziehbar::after, .mu-point.selected::after, .mu-point.removable::after {
+    content: ''; position: absolute; inset: 1px; border-radius: 50%; border: 3px solid #0a84ff; pointer-events: none;
+  }
+  .mu-point.selected::after { border-width: 4px; box-shadow: 0 0 10px rgba(10,132,255,0.8); }
+  .mu-point.removable::after { border-color: var(--ios-red); }
+  .mu-schild { position: absolute; right: -2px; top: -4px; width: 16px; height: 19px; background: #5ac8fa; pointer-events: none;
+    clip-path: polygon(50% 0, 100% 16%, 100% 55%, 50% 100%, 0 55%, 0 16%); }
+  .mu-warn { position: absolute; right: -4px; top: -6px; width: 20px; height: 20px; border-radius: 50%; background: #ff9500; color: #fff;
+    font: 700 14px/20px system-ui, sans-serif; text-align: center; pointer-events: none; }
+  .mu-muehle { stroke: #ffd60a; stroke-width: 2.4; stroke-linecap: round; }
+  .mu-blase { position: absolute; transform: translate(-50%, 30px); background: #34c759; color: #fff; font-weight: 700; font-size: 0.8rem;
+    padding: 6px 10px; border-radius: 12px; white-space: nowrap; pointer-events: none; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+  .mu-blase.oben { transform: translate(-50%, calc(-100% - 28px)); }
+  @keyframes muPuls { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.18); } }
 
   #mucounters {
     display: flex;
-    gap: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
     margin-top: 14px;
     font-size: 0.75rem;
     color: var(--ios-secondary-label);
   }
+  .mu-vorrat { display: flex; align-items: center; gap: 3px; min-height: 16px; }
+  .mu-vorrat-name { width: 92px; }
+  .mu-stein { width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box; }
+  .mu-stein.w { background: #fff; border: 1.5px solid #9a9aa0; }
+  .mu-stein.b { background: #1c1c1e; border: 1.5px solid #0d0d0d; }
+
+  /* S-W15: Übung und Regelkarten */
+  .mu-uebung { width: min(372px, 92vw); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--ios-card); border: 2px solid #34c759; border-radius: 16px; padding: 8px 10px 8px 14px; margin-bottom: 10px; }
+  .mu-uebung[hidden], .mu-hilfe[hidden] { display: none; }
+  .mu-uebung-titel { font-weight: 700; font-size: 0.9rem; color: var(--ios-label); }
+  .mu-hilfe { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,0.45); display: flex; justify-content: center; align-items: flex-start;
+    overflow-y: auto; padding: 16px; box-sizing: border-box; }
+  .mu-hilfe-inhalt { background: var(--surface); color: var(--ios-label); border-radius: 20px; padding: 14px 16px; width: 100%; max-width: 380px; box-sizing: border-box; }
+  .mu-hilfe-inhalt h2 { margin: 2px 0 6px; font-size: 1.1rem; }
+  .mu-karte { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-muted); }
+  .mu-karte svg { flex: 0 0 84px; width: 84px; height: 84px; }
+  .mu-karte h3 { margin: 0 0 3px; font-size: 0.95rem; }
+  .mu-karte p { margin: 0; font-size: 0.82rem; line-height: 1.35; color: var(--ios-secondary-label); }
+  .mu-hilfe-knoepfe { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+  @media (prefers-reduced-motion: reduce) { .mu-point.ziel::before { animation: none; } }
 
   /* --- Schach --- */
   #chstatus {
@@ -786,7 +831,12 @@
 
 <div id="muehle-view" class="tab-content">
   <h1>Mühle</h1>
-  <div id="mustatus">Schwarz ist dran – noch 9 Steine zu setzen</div>
+  <div id="muuebung" class="mu-uebung" hidden>
+    <span class="mu-uebung-titel"></span>
+    <button type="button" class="action secondary klein mu-ueberspringen">Überspringen</button>
+    <button type="button" class="action klein mu-los" hidden>Los geht's</button>
+  </div>
+  <div id="mustatus">Weiß: Setze auf einen grünen Punkt (noch 9 Steine)</div>
   <div id="muboard">
     <div class="mu-board-wrap">
       <svg id="mulines" viewBox="0 0 100 100"></svg>
@@ -794,7 +844,8 @@
     </div>
   </div>
   <div id="mucounters">
-    <span>Zu setzen: Schwarz <span id="muplaceB">9</span> · Weiß <span id="muplaceW">9</span></span>
+    <div class="mu-vorrat" id="muvorratW"><span class="mu-vorrat-name">Vorrat Weiß</span></div>
+    <div class="mu-vorrat" id="muvorratB"><span class="mu-vorrat-name">Vorrat Schwarz</span></div>
   </div>
 
   <div id="mucontrols">
@@ -807,10 +858,12 @@
   </div>
 
   <div id="mustats">
-    <div class="stat"><span class="stat-value" id="mustatB">0</span><span class="stat-label">Siege Schwarz</span></div>
     <div class="stat"><span class="stat-value" id="mustatW">0</span><span class="stat-label">Siege Weiß</span></div>
+    <div class="stat"><span class="stat-value" id="mustatB">0</span><span class="stat-label">Siege Schwarz</span></div>
+    <div class="stat"><span class="stat-value" id="mustatDraw">0</span><span class="stat-label">Unentschieden</span></div>
   </div>
   <button class="linkBtn" id="muresetStatsBtn">Statistik zurücksetzen</button>
+  <div id="muhilfe" class="mu-hilfe" hidden role="dialog" aria-label="Mühle-Regeln"></div>
 </div>
 
 <div id="schule-view" class="tab-content">
@@ -1864,6 +1917,143 @@ const AIEngines = {
     };
 
     return minimax(board, aiPlayer, depth, -Infinity, Infinity).move;
+  },
+
+  /* Mühle (S-W15): Alpha-Beta über ganze Züge (Setzen oder Ziehen, bei
+     einer Mühle samt Wegnahme). stand = Spielstand wie MuehleEntity.toJSON().
+     Tiefe in Halbzügen; knotenMax begrenzt die Rechenarbeit (statt einer
+     Uhr): wird die Grenze überschritten, gilt das Ergebnis der letzten
+     vollständig gerechneten Tiefe. Liefert {setzen}|{von,nach} mit
+     optional {entfernen}, oder {entfernen} bei offener Wegnahme. */
+  muehle(stand, spieler, tiefe, knotenMax) {
+    const MILLS = [], ADJ = Array.from({ length: 24 }, () => []);
+    const link = (a, b) => { ADJ[a].push(b); ADJ[b].push(a); };
+    for (let r = 0; r < 3; r++) {
+      const o = r * 8;
+      MILLS.push([o, o + 1, o + 2], [o + 2, o + 3, o + 4], [o + 4, o + 5, o + 6], [o + 6, o + 7, o]);
+      for (let i = 0; i < 8; i++) link(o + i, o + ((i + 1) % 8));
+    }
+    for (const p of [1, 3, 5, 7]) { MILLS.push([p, 8 + p, 16 + p]); link(p, 8 + p); link(8 + p, 16 + p); }
+    const AN = Array.from({ length: 24 }, () => []);
+    MILLS.forEach(m => m.forEach(i => AN[i].push(m)));
+    const gegner = p => (p === 'W' ? 'B' : 'W');
+    const inMuehle = (c, i, p) => AN[i].some(m => c[m[0]] === p && c[m[1]] === p && c[m[2]] === p);
+    const nehmbar = (c, p) => {
+      const alle = [], frei = [];
+      for (let i = 0; i < 24; i++) if (c[i] === p) { alle.push(i); if (!inMuehle(c, i, p)) frei.push(i); }
+      return frei.length ? frei : alle;
+    };
+    const zuege = (s) => {
+      const p = s.p, o = gegner(p), c = s.c, out = [];
+      if (s.pend) { for (const r of nehmbar(c, o)) out.push({ entfernen: r }); return out; }
+      const mit = (basis, ziel) => {
+        if (s.on[o] > 0 && inMuehle(c, ziel, p)) { for (const r of nehmbar(c, o)) out.push({ ...basis, entfernen: r }); }
+        else out.push(basis);
+      };
+      if (s.ph === 'placing') {
+        for (let i = 0; i < 24; i++) if (c[i] === null) { c[i] = p; mit({ setzen: i }, i); c[i] = null; }
+      } else {
+        const springt = s.on[p] === 3;
+        for (let von = 0; von < 24; von++) {
+          if (c[von] !== p) continue;
+          const ziele = springt ? [...Array(24).keys()].filter(i => c[i] === null) : ADJ[von].filter(i => c[i] === null);
+          for (const nach of ziele) { c[von] = null; c[nach] = p; mit({ von, nach }, nach); c[nach] = null; c[von] = p; }
+        }
+      }
+      // Züge mit Wegnahme zuerst (stabile Sortierung: sonst feste Reihenfolge der Punkte)
+      return out.sort((a, b) => (a.entfernen === undefined) - (b.entfernen === undefined));
+    };
+    const fuehreAus = (s, z) => {
+      const c = s.c.slice(), set = { W: s.set.W, B: s.set.B }, on = { W: s.on.W, B: s.on.B }, p = s.p, o = gegner(p);
+      let ph = s.ph;
+      if (z.setzen !== undefined) { c[z.setzen] = p; set[p]--; on[p]++; if (set.W === 0 && set.B === 0) ph = 'moving'; }
+      else if (z.von !== undefined) { c[z.von] = null; c[z.nach] = p; }
+      if (z.entfernen !== undefined) { c[z.entfernen] = null; on[o]--; }
+      return { c, p: o, set, on, ph, pend: false };
+    };
+    const kannZiehen = (s, p) => {
+      if (s.on[p] === 3) return s.c.includes(null);
+      for (let i = 0; i < 24; i++) if (s.c[i] === p && ADJ[i].some(n => s.c[n] === null)) return true;
+      return false;
+    };
+    const sieger = (s) => {
+      if (s.ph !== 'moving' || s.pend) return null;
+      if (s.on.W < 3) return 'B';
+      if (s.on.B < 3) return 'W';
+      return kannZiehen(s, s.p) ? null : gegner(s.p);
+    };
+    const drohungen = (s, x) => {
+      const springt = s.set[x] > 0 || s.on[x] === 3, c = s.c, gesehen = [];
+      for (const m of MILLS) {
+        let eigene = 0, frei = -1, leer = 0;
+        for (const i of m) { if (c[i] === x) eigene++; else if (c[i] === null) { leer++; frei = i; } }
+        if (eigene !== 2 || leer !== 1 || gesehen.includes(frei)) continue;
+        if (springt || ADJ[frei].some(n => c[n] === x && !m.includes(n))) gesehen.push(frei);
+      }
+      return gesehen.length;
+    };
+    const beweglich = (s, x) => {
+      if (s.on[x] === 3) return 0;
+      let n = 0;
+      for (let i = 0; i < 24; i++) if (s.c[i] === x) for (const k of ADJ[i]) if (s.c[k] === null) n++;
+      return n;
+    };
+    // Bewertung aus Sicht von x (S-W15, Rechenmodell)
+    const bewerte = (s, x) => {
+      const y = gegner(x);
+      let w = 100 * ((s.on[x] + s.set[x]) - (s.on[y] + s.set[y]));
+      for (const m of MILLS) { const a = s.c[m[0]]; if (a && a === s.c[m[1]] && a === s.c[m[2]]) w += a === x ? 8 : -8; }
+      w += 3 * (drohungen(s, x) - drohungen(s, y));
+      if (s.ph === 'moving') w += beweglich(s, x) - beweglich(s, y);
+      return w;
+    };
+    // Wiederholung (S-W15): Zähler wie in der Entity; dritte gleiche Ziehstellung = Unentschieden (Wert 0).
+    // Eine Wegnahme macht frühere Stellungen unerreichbar, der Zweig zählt dann neu.
+    const schluessel = s => s.c.map(x => x || '-').join('') + s.p;
+    const kind = (s, z, hist) => {
+      const k = fuehreAus(s, z), h = z.entfernen !== undefined ? new Map() : hist;
+      let key = null;
+      if (k.ph === 'moving') { key = schluessel(k); h.set(key, (h.get(key) || 0) + 1); }
+      return { k, h, key };
+    };
+    let knoten = 0, abbruch = false;
+    const suche = (s, d, a, b, ply, hist, key) => {
+      if (++knoten > knotenMax) { abbruch = true; return 0; }
+      const ende = sieger(s);
+      if (ende) return ende === s.p ? 100000 - ply : ply - 100000;
+      if (key !== null && hist.get(key) >= 3) return 0;
+      if (d === 0) return bewerte(s, s.p);
+      let best = -Infinity;
+      for (const z of zuege(s)) {
+        const { k, h, key: kk } = kind(s, z, hist);
+        const v = -suche(k, d - 1, -b, -a, ply + 1, h, kk);
+        if (kk !== null) h.set(kk, h.get(kk) - 1);
+        if (abbruch) return 0;
+        if (v > best) best = v;
+        if (v > a) a = v;
+        if (a >= b) break;
+      }
+      return best;
+    };
+    const start = { c: stand.cells.slice(), p: stand.currentPlayer, set: { ...stand.piecesToPlace }, on: { ...stand.piecesOnBoard }, ph: stand.phase, pend: !!stand.pendingRemoval };
+    if (start.p !== spieler) return null;
+    const alle = zuege(start);
+    if (!alle.length) return null;
+    const wurzel = new Map(Object.entries(stand.stellungen || {}));
+    let bester = alle[0];
+    for (let d = 1; d <= tiefe; d++) {
+      let a = -Infinity, bz = null;
+      for (const z of alle) {
+        const { k, h, key } = kind(start, z, wurzel);
+        const v = -suche(k, d - 1, -Infinity, -a, 1, h, key);
+        if (key !== null) h.set(key, h.get(key) - 1);
+        if (abbruch) break;
+        if (v > a) { a = v; bz = z; }
+      }
+      if (abbruch) break;
+      bester = bz;
+    }
+    return bester;
   }
 };
 
@@ -1891,7 +2081,8 @@ class AIStrategy {
           ${AIEngines.tictactoe.toString()},
           ${AIEngines.connect4.toString()},
           ${AIEngines.othello.toString()},
-          ${AIEngines.mangala.toString()}
+          ${AIEngines.mangala.toString()},
+          ${AIEngines.muehle.toString()}
         };
         self.onmessage = (e) => {
           const { id, engine, args } = e.data;
@@ -2572,9 +2763,11 @@ class MangalaControl extends GameControl {
 
 /* ============================================================
    MÜHLE (Nine Men's Morris) — viertes Spiel, gleiches BCE-Muster
-   Deutlich komplexer: drei Phasen (Setzen, Ziehen, Fliegen bei
+   Deutlich komplexer: drei Phasen (Setzen, Ziehen, Springen bei
    3 Steinen), Mühlen bilden entfernt einen gegnerischen Stein,
    Verlust bei <3 Steinen oder wenn kein Zug mehr möglich ist.
+   S-W15: Weiß beginnt, dritte Wiederholung einer Stellung in der
+   Ziehphase ist unentschieden, Drohungen für die Lernhilfe.
    ============================================================ */
 
 /* --- ENTITY: reine Spielregeln --- */
@@ -2628,7 +2821,7 @@ class MuehleEntity {
 
   reset() {
     this.cells = Array(24).fill(null);
-    this.currentPlayer = 'B';
+    this.currentPlayer = 'W';      // S-W15: Weiß beginnt
     this.piecesToPlace = { B: 9, W: 9 };
     this.piecesOnBoard = { B: 0, W: 0 };
     this.phase = 'placing'; // 'placing' | 'moving'
@@ -2636,9 +2829,32 @@ class MuehleEntity {
     this.lastMillLine = null;
     this.finished = false;
     this.winner = null;
+    this.stellungen = {};          // S-W15: Zähler je Stellung (Ziehphase), für das Unentschieden
   }
 
   _opponent(p) { return p === 'B' ? 'W' : 'B'; }
+
+  // S-W15: Punkte, auf denen Spieler s im nächsten eigenen Zug eine Mühle schließen kann.
+  drohungen(s) {
+    const out = [];
+    const springt = this.piecesToPlace[s] > 0 || this.piecesOnBoard[s] === 3;
+    for (const m of MuehleEntity.MILLS) {
+      const frei = m.filter(i => this.cells[i] === null);
+      if (frei.length !== 1 || m.filter(i => this.cells[i] === s).length !== 2) continue;
+      const p = frei[0];
+      if (out.includes(p)) continue;
+      if (springt || MuehleEntity.ADJACENCY[p].some(n => this.cells[n] === s && !m.includes(n))) out.push(p);
+    }
+    return out.sort((a, b) => a - b);
+  }
+
+  // S-W15: Stein steht in einer Mühle und darf nicht genommen werden.
+  istGeschuetzt(index) {
+    const p = this.cells[index];
+    return !!p && this._isPartOfMill(index, p) && !this._allInMills(p);
+  }
+
+  _stellungsSchluessel() { return this.cells.map(c => c || '-').join('') + this.currentPlayer; }
 
   isFlyingPhase(player) {
     return this.phase === 'moving' && this.piecesOnBoard[player] === 3;
@@ -2707,7 +2923,7 @@ class MuehleEntity {
     if (this.piecesToPlace.B === 0 && this.piecesToPlace.W === 0) this.phase = 'moving';
 
     const mills = this._millsThrough(index, player);
-    if (mills.length > 0) {
+    if (mills.length > 0 && this.piecesOnBoard[this._opponent(player)] > 0) {
       this.pendingRemoval = true;
       this.lastMillLine = [...new Set(mills.flat())];
     } else {
@@ -2723,7 +2939,7 @@ class MuehleEntity {
     this.cells[from] = null;
 
     const mills = this._millsThrough(to, player);
-    if (mills.length > 0) {
+    if (mills.length > 0 && this.piecesOnBoard[this._opponent(player)] > 0) {
       this.pendingRemoval = true;
       this.lastMillLine = [...new Set(mills.flat())];
     } else {
@@ -2739,12 +2955,17 @@ class MuehleEntity {
     this.piecesOnBoard[opp]--;
     this.pendingRemoval = false;
     this.lastMillLine = null;
+    this.stellungen = {};          // nach einer Wegnahme kehrt keine frühere Stellung wieder
     this._advanceTurn();
     return this._checkGameState();
   }
 
   _advanceTurn() {
     this.currentPlayer = this._opponent(this.currentPlayer);
+    if (this.phase !== 'moving' || this.finished) return;
+    const k = this._stellungsSchluessel();
+    this.stellungen[k] = (this.stellungen[k] || 0) + 1;
+    if (this.stellungen[k] >= 3) { this.finished = true; this.winner = 'Draw'; }
   }
 
   _hasAnyMove(player) {
@@ -2788,7 +3009,8 @@ class MuehleEntity {
       pendingRemoval: this.pendingRemoval,
       lastMillLine: this.lastMillLine,
       finished: this.finished,
-      winner: this.winner
+      winner: this.winner,
+      stellungen: { ...this.stellungen }
     };
   }
 
@@ -2802,9 +3024,10 @@ class MuehleEntity {
     this.lastMillLine = data.lastMillLine;
     this.finished = data.finished;
     this.winner = data.winner;
+    this.stellungen = (data.stellungen && typeof data.stellungen === 'object') ? { ...data.stellungen } : {};
   }
 
-  // Für die 1-Zug-Voraussicht der KI: vollständige Kopie des
+  // Für die Voraussicht der KI: vollständige Kopie des
   // Spielzustands, auf der probeweise Aktionen ausgeführt werden
   // können, ohne den echten Zustand zu verändern.
   clone() {
@@ -2818,6 +3041,7 @@ class MuehleEntity {
     copy.lastMillLine = this.lastMillLine;
     copy.finished = this.finished;
     copy.winner = this.winner;
+    copy.stellungen = { ...this.stellungen };
     return copy;
   }
 }
@@ -2839,6 +3063,18 @@ class MuehleBoundary extends GameBoundary {
 
   getValidPlacements() { return this._entity.getValidPlacements(); }
   getValidMovePairs(player) { return this._entity.getValidMovePairs(player); }
+
+  // S-W15: Lernhilfe und Markierungen
+  getDrohungen(spieler) { return this._entity.drohungen(spieler); }
+  istGeschuetzt(index) { return this._entity.istGeschuetzt(index); }
+  getZiehbare(spieler) { return [...new Set(this._entity.getValidMovePairs(spieler).map(p => p[0]))].sort((a, b) => a - b); }
+  // Vollständige Mühlenlinien, die zur zuletzt gebildeten Mühle gehören
+  getMuehlenLinien() {
+    const l = this._entity.lastMillLine, c = this._entity.cells;
+    if (!l) return [];
+    return MuehleEntity.MILLS.filter(m => m.every(i => l.includes(i)) && c[m[0]] && c[m[0]] === c[m[1]] && c[m[0]] === c[m[2]]);
+  }
+  getSuchStand() { return this._entity.toJSON(); }
 
   getRemovableIndices() {
     const board = this._entity.cells;
@@ -2879,40 +3115,66 @@ class MuehleBoundary extends GameBoundary {
   }
 }
 
-/* --- CONTROL: Ablauf, Auswahl-Interaktion, 1-Zug-Heuristik-KI ---
-   Anmerkung zur KI: echtes Minimax wäre bei Mühle wegen der drei
-   Phasen (Setzen/Ziehen/Fliegen) + Mühlen-Entfernung deutlich
-   aufwändiger als bei den anderen Spielen. Die KI hier bewertet
-   daher jede mögliche Aktion nur einen Zug voraus (Stein-Vorteil,
-   Bonus für eine gebildete Mühle) — spielt solide, aber nicht
-   perfekt. */
+/* --- CONTROL: Ablauf, Auswahl-Interaktion, Computer ---
+   S-W15: Der Computer rechnet mit AIEngines.muehle (Alpha-Beta über ganze
+   Züge, im Web Worker). Ein Zug mit Mühle besteht aus zwei Aktionen;
+   die geplante Wegnahme wird gemerkt und als zweite Aktion ausgeführt. */
 class MuehleControl extends GameControl {
   static STUFEN = {
-    leicht: { fehler: 0.4 },
-    mittel: { fehler: 0.15 },
-    stark:  { fehler: 0 }
+    leicht: { tiefe: 1, fehler: 0.4 },
+    mittel: { tiefe: 2, fehler: 0.15 },
+    stark:  { tiefe: 4, fehler: 0 }
   };
+  static KNOTEN = 60000;   // Rechengrenze je Zug (gemessen, siehe S-W15 Ergebnis)
+  static TIPP_TIEFE = 2;
+  // Unveränderliche Brett-Topologie für die Darstellung (die UI liest sie hier, nicht in der Entity)
+  static NACHBARN = MuehleEntity.ADJACENCY;
+  static LAGE = MuehleEntity.POSITIONS;
 
-  constructor(boundary) {
-    super(boundary, 'W');
+  constructor(boundary, aiStrategy = null) {
+    super(boundary, 'B', aiStrategy);   // S-W15: Weiß (Mensch) beginnt, der Computer spielt Schwarz
     this.selected = null;
+    this._plan = null;
+    this._partie = 0;                  // zählt Neustarts, damit ein später Rechenergebnis verfällt
     this.setDifficulty('mittel');
   }
 
-  _nachZurueck() { this.selected = null; }
+  _nachZurueck() { this.selected = null; this._plan = null; this._partie++; }
 
-  // Tipp: dieselbe 1-Zug-Bewertung wie die KI, aber für den Spieler am Zug.
-  _tippFuer(spieler) {
-    if (this.boundary.isPendingRemoval()) return { entfernen: this._chooseBestRemoval(spieler) };
-    if (this.boundary.getPhase() === 'placing') return { setzen: this._chooseBestPlacement(spieler) };
-    const paar = this._chooseBestMove(spieler);
-    return paar ? { von: paar[0], nach: paar[1] } : null;
+  // S-W15: Solange die UI pausiert (Übung, Karten), wird ein fertig gerechneter Zug verworfen und später neu gerechnet.
+  setPause(an) { this._pause = !!an; }
+
+  _rechne(spieler, tiefe) {
+    const stand = this.boundary.getSuchStand();
+    const args = [stand, spieler, tiefe, MuehleControl.KNOTEN];
+    return this.aiStrategy ? this.aiStrategy.chooseMove('muehle', args) : Promise.resolve(AIEngines.muehle(...args));
   }
 
-  // Überschreibt die Basisklasse: zusätzlich Auswahl zurücksetzen.
+  // Tipp: erste Aktion des besten Zugs für den Spieler am Zug.
+  async _tippFuer(spieler) {
+    const z = await this._rechne(spieler, MuehleControl.TIPP_TIEFE);
+    if (!z) return null;
+    if (this.boundary.isPendingRemoval()) return { entfernen: z.entfernen };
+    if (z.setzen !== undefined) return { setzen: z.setzen };
+    return { von: z.von, nach: z.nach };
+  }
+
   restartGame() {
     super.restartGame();
+    this.aiPlayer = 'B';
     this.selected = null;
+    this._plan = null;
+    this._partie++;
+  }
+  setMode(vsAI) { this.aiPlayer = 'B'; super.setMode(vsAI); }
+
+  // Vor S-W15 spielte der Computer Weiß. Ein alter Computer-Spielstand (ohne Zähler "stellungen") behält das bis zum Neustart.
+  async restoreGame() {
+    const data = await this.boundary.loadGame();
+    const ok = await super.restoreGame();
+    this.aiPlayer = ok && data && data.vsAI && data.entity && !('stellungen' in data.entity) ? 'W' : 'B';
+    this.selected = null; this._plan = null; this._partie++;
+    return ok;
   }
 
   getPhase() { return this.boundary.getPhase(); }
@@ -2922,6 +3184,7 @@ class MuehleControl extends GameControl {
   isFlyingPhase(player) { return this.boundary.isFlyingPhase(player); }
   canRemove(index) { return this.boundary.canRemove(index); }
   getSelected() { return this.selected; }
+  getDrohungen(spieler) { return this.boundary.getDrohungen(spieler); }
 
   getValidDestinations() {
     if (this.selected === null) return [];
@@ -2931,6 +3194,23 @@ class MuehleControl extends GameControl {
     }
     const board = this.boundary.getBoardState();
     return this.boundary.getAdjacent(this.selected).filter(n => board[n] === null);
+  }
+
+  // S-W15: was die UI markiert (nur Daten, keine Darstellung)
+  ansicht(lernen) {
+    const brett = this.boundary.getBoardState(), p = this.boundary.getCurrentPlayer(), o = p === 'B' ? 'W' : 'B';
+    const ende = this.boundary.isGameOver(), mensch = !ende && !this.isAiTurn();
+    const pend = this.boundary.isPendingRemoval(), phase = this.boundary.getPhase();
+    const v = { brett, selected: this.selected, ziele: [], ziehbar: [], nehmbar: [], geschuetzt: [], drohung: [], muehlen: this.boundary.getMuehlenLinien() };
+    if (pend) {
+      for (let i = 0; i < 24; i++) if (brett[i] === o && this.boundary.istGeschuetzt(i)) v.geschuetzt.push(i);
+      if (mensch) v.nehmbar = this.boundary.getRemovableIndices();
+    } else if (mensch) {
+      if (phase === 'placing') v.ziele = this.boundary.getValidPlacements();
+      else { v.ziehbar = this.boundary.getZiehbare(p); v.ziele = this.getValidDestinations(); }
+      if (lernen) v.drohung = this.boundary.getDrohungen(o);
+    }
+    return v;
   }
 
   // Zentrale Klick-Interpretation: UI liefert nur den Punktindex,
@@ -2964,89 +3244,116 @@ class MuehleControl extends GameControl {
     if (!this.boundary.canMoveTo(this.selected, index)) return { invalid: true };
     const from = this.selected;
     this.selected = null;
-    this._merke();
-    const result = this.boundary.move(from, index);
-    if (result) {
-      this.boundary.recordResult(result.winner);
-      this.boundary.clearSavedGame();
-    } else {
-      this._persistGame();
-    }
-    return { invalid: false, result };
+    return this._executeMove(() => true, () => this.boundary.move(from, index));
   }
 
-  // Führt genau eine KI-Aktion aus (Platzieren/Ziehen/Entfernen).
-  // Die UI ruft das ggf. mehrfach hintereinander auf, falls die KI
-  // durch eine Mühle direkt im Anschluss noch entfernen darf.
-  performAiAction() {
-    let result = null;
-    const fehler = this._entscheideFehler();
-    this._merke();
-    if (this.boundary.isPendingRemoval()) {
-      const i = fehler ? this._zufallsZug(this.boundary.getRemovableIndices()) : this._chooseBestRemoval();
-      result = this.boundary.removePiece(i);
-    } else if (this.boundary.getPhase() === 'placing') {
-      const i = fehler ? this._zufallsZug(this.boundary.getValidPlacements()) : this._chooseBestPlacement();
-      result = this.boundary.place(i);
-    } else {
-      const [from, to] = fehler ? this._zufallsZug(this.boundary.getValidMovePairs(this.aiPlayer)) : this._chooseBestMove();
-      result = this.boundary.move(from, to);
+  // Führt genau eine Computer-Aktion aus (Setzen/Ziehen/Wegnehmen).
+  // Die UI ruft das erneut auf, solange der Computer am Zug ist
+  // (nach einer Mühle folgt die geplante Wegnahme).
+  async performAiAction() {
+    if (this._pause || !this.isAiTurn()) return { invalid: true };
+    if (this._aiLaeuft) return { invalid: true };   // die laufende Rechnung meldet sich mit "erneut", falls sie verfällt
+    this._aiLaeuft = true;
+    try {
+      const partie = this._partie, pend = this.boundary.isPendingRemoval();
+      let z;
+      if (pend && this._plan !== null && this.boundary.canRemove(this._plan)) z = { entfernen: this._plan };
+      else if (this._entscheideFehler()) z = this._zufallsAktion();
+      else z = await this._rechne(this.aiPlayer, this.searchDepth);
+      this._plan = null;
+      // Verfallen (Neustart, Zug zurück, Pause): nichts ausführen; die UI stößt neu an, wenn der Computer dran ist
+      if (partie !== this._partie || this._pause || !this.isAiTurn() || !z) return { invalid: true, erneut: true };
+      let erste;
+      if (pend) erste = () => this.boundary.removePiece(z.entfernen);
+      else if (z.setzen !== undefined) erste = () => this.boundary.place(z.setzen);
+      else erste = () => this.boundary.move(z.von, z.nach);
+      const ok = pend ? this.boundary.canRemove(z.entfernen)
+        : z.setzen !== undefined ? this.boundary.canPlaceAt(z.setzen) : this.boundary.canMoveTo(z.von, z.nach);
+      const r = this._executeMove(() => ok, erste);
+      if (!r.invalid && !pend && this.boundary.isPendingRemoval() && z.entfernen !== undefined) this._plan = z.entfernen;
+      return r;
+    } finally {
+      this._aiLaeuft = false;
     }
-    if (result) {
-      this.boundary.recordResult(result.winner);
-      this.boundary.clearSavedGame();
-    } else {
-      this._persistGame();
-    }
-    return result;
   }
 
-  _scoreSnapshot(snap, spieler = this.aiPlayer) {
-    const opponent = spieler === 'B' ? 'W' : 'B';
-    if (snap.finished) {
-      if (snap.winner === spieler) return 100000;
-      if (snap.winner === opponent) return -100000;
-    }
-    let score = (snap.piecesOnBoard[spieler] || 0) - (snap.piecesOnBoard[opponent] || 0);
-    if (snap.pendingRemoval) score += 5; // KI hat gerade eine Mühle gebildet
-    return score;
+  // Fehlerzug (Stufen leicht/mittel): zufällige gültige Aktion
+  _zufallsAktion() {
+    if (this.boundary.isPendingRemoval()) return { entfernen: this._zufallsZug(this.boundary.getRemovableIndices()) };
+    if (this.boundary.getPhase() === 'placing') return { setzen: this._zufallsZug(this.boundary.getValidPlacements()) };
+    const paar = this._zufallsZug(this.boundary.getValidMovePairs(this.aiPlayer));
+    return paar ? { von: paar[0], nach: paar[1] } : null;
+  }
+}
+
+/* S-W15: Übung beim ersten Start. Fünf feste Stellungen mit je einem
+   Zielpunkt; läuft auf einer eigenen Boundary (eigene Entity), die echte
+   Partie bleibt unberührt. */
+class MuehleUebungControl {
+  static SCHRITTE = [
+    { titel: 'Setzen', text: 'Jeder hat 9 Steine, Weiß beginnt. Setze deinen Stein auf den leuchtenden Punkt.',
+      W: [], B: [], set: { W: 9, B: 9 }, ziel: 1, gut: 'Gut! So setzt ihr abwechselnd alle Steine.' },
+    { titel: 'Mühle', text: 'Drei eigene Steine in einer Linie sind eine Mühle. Setze den dritten Stein.',
+      W: [0, 2], B: [9, 20], set: { W: 7, B: 7 }, ziel: 1, gut: 'Mühle! Nimm einen Stein von Schwarz.' },
+    { titel: 'Wegnehmen', text: 'Nach einer Mühle nimmst du einen Stein von Schwarz. Steine mit Schild stehen in einer Mühle und sind geschützt.',
+      W: [0, 1, 2], B: [8, 9, 10, 20], set: { W: 6, B: 5 }, pend: true, ziel: 20, gut: 'Weg ist er! Schwarz hat jetzt einen Stein weniger.' },
+    { titel: 'Ziehen', text: 'Sind alle Steine gesetzt, wird gezogen: ein Stein auf einen freien Nachbarpunkt. Dein Stein ist schon gewählt.',
+      W: [7, 12, 21, 22], B: [2, 4, 13, 18], set: { W: 0, B: 0 }, gewaehlt: 7, ziel: 0, gut: 'Richtig gezogen! Nur entlang der Linien.' },
+    { titel: 'Springen', text: 'Mit nur noch 3 Steinen darfst du springen: auf jeden freien Punkt. Dein Stein ist gewählt.',
+      W: [7, 12, 21], B: [2, 4, 13, 18, 20], set: { W: 0, B: 0 }, gewaehlt: 21, ziel: 1, gut: 'Gesprungen! Wer nur noch 2 Steine hat, verliert.' }
+  ];
+
+  constructor(boundary) { this.boundary = boundary; this.nr = -1; this.selected = null; this.geloest = false; }
+
+  starte() { this.nr = 0; this._lade(); }
+  beende() { this.nr = -1; this.selected = null; }
+  aktiv() { return this.nr >= 0 && this.nr < MuehleUebungControl.SCHRITTE.length; }
+  fertig() { return this.nr >= MuehleUebungControl.SCHRITTE.length; }
+  anzahl() { return MuehleUebungControl.SCHRITTE.length; }
+  schritt() { return this.aktiv() ? { nr: this.nr + 1, ...MuehleUebungControl.SCHRITTE[this.nr] } : null; }
+  istGeloest() { return this.geloest; }
+  getBoardState() { return this.boundary.getBoardState(); }
+  getSelected() { return this.selected; }
+  getPiecesToPlace(p) { return this.boundary.getPiecesToPlace(p); }
+
+  _lade() {
+    const s = MuehleUebungControl.SCHRITTE[this.nr];
+    const cells = Array(24).fill(null);
+    s.W.forEach(i => cells[i] = 'W'); s.B.forEach(i => cells[i] = 'B');
+    this.boundary.restoreEntity({ cells, currentPlayer: 'W', piecesToPlace: { ...s.set },
+      piecesOnBoard: { W: s.W.length, B: s.B.length }, phase: (s.set.W || s.set.B) ? 'placing' : 'moving',
+      pendingRemoval: !!s.pend, lastMillLine: s.pend ? [0, 1, 2] : null, finished: false, winner: null, stellungen: {} });
+    this.selected = s.gewaehlt ?? null;
+    this.geloest = false;
   }
 
-  _chooseBestPlacement(spieler = this.aiPlayer) {
-    const options = this.boundary.getValidPlacements();
-    let best = options[0], bestScore = -Infinity;
-    for (const idx of options) {
-      const snap = this.boundary.simulatePlace(idx);
-      if (!snap) continue;
-      const score = this._scoreSnapshot(snap, spieler);
-      if (score > bestScore) { bestScore = score; best = idx; }
-    }
-    return best;
+  // Nur der Zielpunkt zählt; alles andere ist ein Hinweis ohne Wirkung.
+  tippe(index) {
+    if (!this.aktiv() || this.geloest) return { invalid: true };
+    const s = MuehleUebungControl.SCHRITTE[this.nr];
+    if (index !== s.ziel) return { invalid: true, hinweis: true };
+    if (this.boundary.isPendingRemoval()) this.boundary.removePiece(index);
+    else if (this.boundary.getPhase() === 'placing') this.boundary.place(index);
+    else { this.boundary.move(this.selected, index); this.selected = null; }
+    this.geloest = true;
+    return { invalid: false };
   }
 
-  _chooseBestMove(spieler = this.aiPlayer) {
-    const pairs = this.boundary.getValidMovePairs(spieler);
-    let best = pairs[0], bestScore = -Infinity;
-    for (const pair of pairs) {
-      const snap = this.boundary.simulateMove(pair[0], pair[1]);
-      if (!snap) continue;
-      const score = this._scoreSnapshot(snap, spieler);
-      if (score > bestScore) { bestScore = score; best = pair; }
-    }
-    return best;
+  // Nächster Schritt; liefert true, wenn die Übung damit geschafft ist.
+  weiter() {
+    if (!this.aktiv()) return this.fertig();
+    this.nr++;
+    if (this.aktiv()) this._lade();
+    return this.fertig();
   }
 
-  _chooseBestRemoval(spieler = this.aiPlayer) {
-    const options = this.boundary.getRemovableIndices();
-    let best = options[0], bestScore = -Infinity;
-    for (const idx of options) {
-      const snap = this.boundary.simulateRemove(idx);
-      if (!snap) continue;
-      // leichte Präferenz, gut vernetzte gegnerische Steine zu entfernen
-      const score = this._scoreSnapshot(snap, spieler) + MuehleEntity.ADJACENCY[idx].length * 0.1;
-      if (score > bestScore) { bestScore = score; best = idx; }
-    }
-    return best;
+  ansicht() {
+    const s = MuehleUebungControl.SCHRITTE[this.nr], b = this.boundary;
+    const v = { brett: b.getBoardState(), selected: this.selected, ziele: [], ziehbar: [], nehmbar: [], geschuetzt: [], drohung: [], muehlen: b.getMuehlenLinien() };
+    if (!s) return v;
+    if (b.isPendingRemoval()) for (let i = 0; i < 24; i++) if (v.brett[i] === 'B' && b.istGeschuetzt(i)) v.geschuetzt.push(i);
+    if (!this.geloest) v.ziele = [s.ziel];
+    return v;
   }
 }
 
@@ -3695,42 +4002,49 @@ class OthelloUI extends GameUI {
   }
 }
 
-/* --- MuehleUI: eigene DOM-Schicht, spricht nur mit MuehleControl.
-     Das Brett ist kein Raster, sondern ein Graph aus 24 Punkten;
-     die Linien werden einmalig als SVG anhand der Adjazenzliste
-     gezeichnet, die Punkte bei jedem render() neu aufgebaut. --- */
+/* --- MuehleUI: eigene DOM-Schicht, spricht nur mit MuehleControl
+     und MuehleUebungControl. Das Brett ist ein Graph aus 24 Punkten;
+     die Linien werden einmalig als SVG gezeichnet, die Punkte bei jedem
+     render() neu. S-W15: Übung, Regelkarten, Markierungen, Klartext. --- */
 class MuehleUI extends GameUI {
+  static FARBE = { W: 'Weiß', B: 'Schwarz' };
+
   constructor(control) {
     super(control, {
       statusId: 'mustatus',
       resetBtnId: 'muresetBtn',
       modeName: 'mumode',
       resetStatsBtnId: 'muresetStatsBtn',
-      statEls: { B: 'mustatB', W: 'mustatW' }
+      statEls: { B: 'mustatB', W: 'mustatW', draws: 'mustatDraw' }
     });
     this.pointsEl = document.getElementById('mupoints');
     this.linesSvg = document.getElementById('mulines');
-    this.placeBEl = document.getElementById('muplaceB');
-    this.placeWEl = document.getElementById('muplaceW');
+    this.vorratEl = { W: document.getElementById('muvorratW'), B: document.getElementById('muvorratB') };
+    this.uebungEl = document.getElementById('muuebung');
+    this.hilfeEl = document.getElementById('muhilfe');
+    this.uebung = MuehleUI.neueUebung ? MuehleUI.neueUebung() : null;
 
     this.buildLines();
+    this._baueMuehleKnoepfe();
+    this._baueHilfe();
+    this.uebungEl.querySelector('.mu-ueberspringen').addEventListener('click', () => this._uebungUeberspringen());
+    this.uebungEl.querySelector('.mu-los').addEventListener('click', () => this._uebungLos());
+    if (this.uebung && !(GameUI.einst && GameUI.einst.muehleEinfuehrung())) this._starteUebung();
     this.init();
   }
 
   // Zeichnet die Verbindungslinien des Bretts einmalig anhand der
-  // Adjazenzliste der Entity (wir greifen hier bewusst nur auf
-  // statische, unveränderliche Topologie-Daten zu, keinen
-  // Spielzustand).
+  // statischen Topologie (kein Spielzustand).
   buildLines() {
     const ns = 'http://www.w3.org/2000/svg';
     const seen = new Set();
-    MuehleEntity.ADJACENCY.forEach((neighbors, i) => {
+    MuehleControl.NACHBARN.forEach((neighbors, i) => {
       neighbors.forEach(j => {
         const key = i < j ? `${i}-${j}` : `${j}-${i}`;
         if (seen.has(key)) return;
         seen.add(key);
-        const [x1, y1] = MuehleEntity.POSITIONS[i];
-        const [x2, y2] = MuehleEntity.POSITIONS[j];
+        const [x1, y1] = MuehleControl.LAGE[i];
+        const [x2, y2] = MuehleControl.LAGE[j];
         const line = document.createElementNS(ns, 'line');
         line.setAttribute('x1', (x1 / 6) * 100);
         line.setAttribute('y1', (y1 / 6) * 100);
@@ -3740,62 +4054,249 @@ class MuehleUI extends GameUI {
         this.linesSvg.appendChild(line);
       });
     });
+    this.muehlenG = document.createElementNS(ns, 'g');
+    this.linesSvg.appendChild(this.muehlenG);
+  }
+
+  _baueMuehleKnoepfe() {
+    const leiste = this.resetBtn.parentElement;
+    this.hilfeBtn = document.createElement('button');
+    this.hilfeBtn.type = 'button'; this.hilfeBtn.className = 'action secondary klein mu-hilfe-knopf';
+    this.hilfeBtn.textContent = '?'; this.hilfeBtn.setAttribute('aria-label', 'Regeln');
+    this.hilfeBtn.addEventListener('click', () => this._hilfeOeffnen());
+    leiste.appendChild(this.hilfeBtn);
+    this.lernenBtn = document.createElement('button');
+    this.lernenBtn.type = 'button'; this.lernenBtn.className = 'action secondary klein lernen-knopf';
+    this.lernenBtn.addEventListener('click', () => this.setzeLernen(!this._lernen()));
+    leiste.appendChild(this.lernenBtn);
+    this._lernenKnopf();
+  }
+
+  _lernen() { return GameUI.einst ? GameUI.einst.lernen(this.spiel) : true; }
+  setzeLernen(an) {
+    if (GameUI.einst) GameUI.einst.setzeLernen(this.spiel, an);
+    this._lernenKnopf();
+    this.render();
+  }
+  _lernenKnopf() { this.lernenBtn.textContent = this._lernen() ? 'Lernhilfe an' : 'Lernhilfe aus'; }
+
+  // Mini-Brett für die Regelkarten (statische Topologie, feste Beispielstellung)
+  static miniBrett({ W = [], B = [], linie = null, ziele = [], schild = [] }) {
+    const P = i => MuehleControl.LAGE[i].map(v => 8 + v * 14);
+    let s = '<svg viewBox="0 0 100 100" aria-hidden="true">';
+    const seen = new Set();
+    MuehleControl.NACHBARN.forEach((n, i) => n.forEach(j => {
+      const k = i < j ? `${i}-${j}` : `${j}-${i}`; if (seen.has(k)) return; seen.add(k);
+      const [a, b] = P(i), [c, d] = P(j); s += `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#b8b8bd" stroke-width="1.5"/>`;
+    }));
+    if (linie) { const [a, b] = P(linie[0]), [c, d] = P(linie[2]); s += `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#ffd60a" stroke-width="5" stroke-linecap="round"/>`; }
+    for (let i = 0; i < 24; i++) { const [x, y] = P(i); s += `<circle cx="${x}" cy="${y}" r="2.5" fill="#b8b8bd"/>`; }
+    ziele.forEach(i => { const [x, y] = P(i); s += `<circle cx="${x}" cy="${y}" r="5.5" fill="none" stroke="#34c759" stroke-width="2.5"/>`; });
+    W.forEach(i => { const [x, y] = P(i); s += `<circle cx="${x}" cy="${y}" r="6.5" fill="#fff" stroke="#9a9aa0" stroke-width="1.5"/>`; });
+    B.forEach(i => { const [x, y] = P(i); s += `<circle cx="${x}" cy="${y}" r="6.5" fill="#1c1c1e"/>`; });
+    schild.forEach(i => { const [x, y] = P(i); s += `<path d="M${x + 4} ${y - 9} l4 1.5 v4 l-4 4.5 l-4 -4.5 v-4 z" fill="#5ac8fa"/>`; });
+    return s + '</svg>';
+  }
+
+  _baueHilfe() {
+    const karte = (titel, text, brett) => `<div class="mu-karte">${MuehleUI.miniBrett(brett)}<div><h3>${titel}</h3><p>${text}</p></div></div>`;
+    this.hilfeEl.innerHTML = `<div class="mu-hilfe-inhalt"><h2>So geht Mühle</h2>`
+      + karte('1. Setzen', 'Jeder hat 9 Steine, Weiß beginnt. Abwechselnd setzt ihr einen Stein auf einen freien Punkt.', { W: [0, 13], B: [4], ziele: [1, 7] })
+      + karte('2. Mühle', 'Drei eigene Steine in einer Linie sind eine Mühle. Dann nimmst du einen Stein des Gegners weg. Steine in einer Mühle sind geschützt (Schild), außer alle stehen in Mühlen.', { W: [0, 1, 2], B: [8, 9, 10, 20], linie: [0, 1, 2], schild: [8, 9, 10] })
+      + karte('3. Ziehen und Springen', 'Sind alle gesetzt, ziehst du einen Stein zum freien Nachbarpunkt. Mit nur 3 Steinen darfst du auf jeden freien Punkt springen. Wer 2 Steine hat oder nicht ziehen kann, verliert. Kommt dieselbe Stellung dreimal vor: unentschieden.', { W: [7], B: [6], ziele: [0, 15] })
+      + `<div class="mu-hilfe-knoepfe"><button type="button" class="action secondary klein mu-hilfe-uebung">Übung wiederholen</button>`
+      + `<button type="button" class="action klein mu-hilfe-schliessen">Schließen</button></div></div>`;
+    this.hilfeEl.querySelector('.mu-hilfe-schliessen').addEventListener('click', () => this._hilfeSchliessen());
+    this.hilfeEl.querySelector('.mu-hilfe-uebung').addEventListener('click', () => { this.hilfeEl.hidden = true; this._starteUebung(); });
+    this.hilfeEl.addEventListener('click', (e) => { if (e.target === this.hilfeEl) this._hilfeSchliessen(); });
+  }
+
+  _hilfeOeffnen() { this.hilfeEl.hidden = false; this._pausiert(); }
+  _hilfeSchliessen() { this.hilfeEl.hidden = true; this._weiterNachPause(); }
+
+  // --- Übung ---
+  _starteUebung() {
+    clearTimeout(this._uebungTimer);
+    this._uebungGeschafft = false;
+    this._uebungStatus = null;
+    this.uebung.starte();
+    this._pausiert();
+    this.render();
+  }
+  _speichereEinfuehrung() { if (GameUI.einst) GameUI.einst.setzeMuehleEinfuehrung(); }
+  _uebungUeberspringen() {
+    clearTimeout(this._uebungTimer);
+    this.uebung.beende();
+    this._uebungGeschafft = false;
+    this._uebungStatus = null;
+    this._speichereEinfuehrung();
+    this.render();
+    this._weiterNachPause();
+  }
+  _uebungLos() {
+    this._uebungGeschafft = false;
+    this.render();
+    this._weiterNachPause();
+  }
+  _uebungTipp(index) {
+    const r = this.uebung.tippe(index);
+    if (r.invalid) {
+      if (r.hinweis) { this._uebungStatus = 'Nicht dort: tippe auf den leuchtenden Punkt.'; this.render(); }
+      return;
+    }
+    this._uebungStatus = this.uebung.schritt().gut;
+    this._animieren = true;
+    try { this.render(); } finally { this._animieren = false; }
+    this._rueckmeldung(null, true);
+    clearTimeout(this._uebungTimer);
+    this._uebungTimer = setTimeout(() => this._uebungWeiter(), 1500);
+  }
+  _uebungWeiter() {
+    clearTimeout(this._uebungTimer);
+    this._uebungStatus = null;
+    if (this.uebung.weiter()) {
+      this.uebung.beende();
+      this._uebungGeschafft = true;
+      this._speichereEinfuehrung();
+      if (typeof konfetti === 'function') konfetti();
+    }
+    this.render();
+  }
+  _uebungZeigen() {
+    const aktiv = this.uebung && this.uebung.aktiv();
+    this.uebungEl.hidden = !(aktiv || this._uebungGeschafft);
+    if (this.uebungEl.hidden) return;
+    const titel = this.uebungEl.querySelector('.mu-uebung-titel');
+    if (aktiv) { const s = this.uebung.schritt(); titel.textContent = `Übung ${s.nr} von ${this.uebung.anzahl()}: ${s.titel}`; }
+    else titel.textContent = 'Geschafft! Jetzt eine echte Partie.';
+    this.uebungEl.querySelector('.mu-ueberspringen').hidden = !aktiv;
+    this.uebungEl.querySelector('.mu-los').hidden = aktiv;
+  }
+
+  _pausiert() {
+    const p = !!(this.uebung && this.uebung.aktiv()) || !!this._uebungGeschafft || !this.hilfeEl.hidden;
+    this.control.setPause(p);
+    return p;
+  }
+  _weiterNachPause() {
+    if (!this._pausiert() && this.control.isAiTurn()) setTimeout(() => this.runAiTurn(), this.aiDelayMs);
+  }
+  async runAiTurn() {
+    if (this._pausiert()) return;   // Computer wartet, bis Übung oder Karten zu sind
+    const outcome = await this.performAiMove();
+    if (outcome.invalid) { if (outcome.erneut) this._weiterNachPause(); return; }
+    this.afterMove(outcome.result);
+  }
+
+  _knoepfeAktualisieren() {
+    super._knoepfeAktualisieren();
+    if (this.uebung && this.uebung.aktiv()) {
+      if (this.undoBtn) this.undoBtn.disabled = true;
+      if (this.tippBtn) this.tippBtn.disabled = true;
+    }
   }
 
   render() {
-    const board = this.control.getBoardState();
-    const selected = this.control.getSelected();
-    const phase = this.control.getPhase();
-    const pending = this.control.isPendingRemoval();
-    const gameOver = this.control.isGameOver();
-    const currentPlayer = this.control.getCurrentPlayer();
-    const opponent = currentPlayer === 'B' ? 'W' : 'B';
-    const showHints = !gameOver && !this.control.isAiTurn();
+    const ueb = !!(this.uebung && this.uebung.aktiv());
+    const q = ueb ? this.uebung : this.control;
+    const v = ueb ? this.uebung.ansicht() : this.control.ansicht(this._lernen());
+    const S = k => new Set(v[k]);
+    const ziele = S('ziele'), ziehbar = S('ziehbar'), nehmbar = S('nehmbar'), geschuetzt = S('geschuetzt'), drohung = S('drohung');
 
-    const validDestSet = (showHints && phase === 'moving' && selected !== null)
-      ? new Set(this.control.getValidDestinations())
-      : new Set();
-
-    const { neu } = this._aenderungen(board);
+    const { neu } = this._aenderungen(v.brett);
     this.pointsEl.innerHTML = '';
-    board.forEach((val, i) => {
-      const [x, y] = MuehleEntity.POSITIONS[i];
+    v.brett.forEach((val, i) => {
+      const [x, y] = MuehleControl.LAGE[i];
       const btn = document.createElement('button');
       let cls = 'mu-point' + (val ? ' ' + val.toLowerCase() : '');
       if (val && neu.has(i)) cls += ' neu';
-      if (i === selected) cls += ' selected';
-      if (validDestSet.has(i)) cls += ' valid-dest';
-      if (showHints && phase === 'placing' && val === null) cls += ' valid-dest';
-      if (showHints && pending && val === opponent && this.control.canRemove(i)) cls += ' removable';
+      if (i === v.selected) cls += ' selected';
+      else if (ziehbar.has(i)) cls += ' ziehbar';
+      if (ziele.has(i)) cls += ' ziel';
+      if (nehmbar.has(i)) cls += ' removable';
+      if (geschuetzt.has(i)) cls += ' geschuetzt';
+      if (drohung.has(i)) cls += ' drohung';
       btn.className = cls;
+      btn.type = 'button';
+      btn.setAttribute('aria-label', `Punkt ${i + 1}` + (val ? (val === 'W' ? ', weiß' : ', schwarz') : ', frei'));
+      if (geschuetzt.has(i)) btn.insertAdjacentHTML('beforeend', '<span class="mu-schild"></span>');
+      if (drohung.has(i)) btn.insertAdjacentHTML('beforeend', '<span class="mu-warn">!</span>');
       btn.style.left = ((x / 6) * 100) + '%';
       btn.style.top = ((y / 6) * 100) + '%';
       btn.addEventListener('click', () => this.handlePointClick(i));
       this.pointsEl.appendChild(btn);
     });
-
-    if (!gameOver) {
-      this.statusEl.textContent = this._buildStatusText(currentPlayer, phase, pending);
+    if (ueb && v.ziele.length === 1) {
+      const [x, y] = MuehleControl.LAGE[v.ziele[0]];
+      const blase = document.createElement('div');
+      blase.className = 'mu-blase' + (y >= 4 ? ' oben' : '');
+      blase.textContent = 'Hier tippen';
+      blase.style.left = ((x / 6) * 100) + '%';
+      blase.style.top = ((y / 6) * 100) + '%';
+      this.pointsEl.appendChild(blase);
     }
-    this.placeBEl.textContent = this.control.getPiecesToPlace('B');
-    this.placeWEl.textContent = this.control.getPiecesToPlace('W');
+    this._zeichneMuehlen(v.muehlen);
+
+    if (ueb) this.statusEl.textContent = this._uebungStatus || this.uebung.schritt().text;
+    else if (!this.control.isGameOver()) {
+      let text = this._buildStatusText(this.control.getCurrentPlayer(), this.control.getPhase(), this.control.isPendingRemoval());
+      if (v.drohung.length) text += `\nAchtung: ${MuehleUI.FARBE[this.control.getCurrentPlayer() === 'W' ? 'B' : 'W']} droht eine Mühle (!)`;
+      this.statusEl.textContent = text;
+    }
+    for (const s of ['W', 'B']) {
+      const el = this.vorratEl[s], n = q.getPiecesToPlace(s);
+      el.querySelectorAll('.mu-stein, .mu-vorrat-leer').forEach(e => e.remove());
+      for (let k = 0; k < n; k++) el.insertAdjacentHTML('beforeend', `<span class="mu-stein ${s.toLowerCase()}"></span>`);
+      if (!n) el.insertAdjacentHTML('beforeend', '<span class="mu-vorrat-leer">alle gesetzt</span>');
+    }
+    this._uebungZeigen();
+  }
+
+  _zeichneMuehlen(linien) {
+    const ns = 'http://www.w3.org/2000/svg';
+    this.muehlenG.innerHTML = '';
+    for (const m of linien) {
+      // Endpunkte der Linie: die beiden am weitesten entfernten Punkte
+      const P = m.map(i => MuehleControl.LAGE[i]);
+      let best = [P[0], P[1]], d = -1;
+      for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) {
+        const dd = (P[a][0] - P[b][0]) ** 2 + (P[a][1] - P[b][1]) ** 2;
+        if (dd > d) { d = dd; best = [P[a], P[b]]; }
+      }
+      const l = document.createElementNS(ns, 'line');
+      l.setAttribute('x1', best[0][0] / 6 * 100); l.setAttribute('y1', best[0][1] / 6 * 100);
+      l.setAttribute('x2', best[1][0] / 6 * 100); l.setAttribute('y2', best[1][1] / 6 * 100);
+      l.setAttribute('class', 'mu-muehle');
+      this.muehlenG.appendChild(l);
+    }
   }
 
   renderGameOver(result) {
     this.render();
-    const name = result.winner === 'B' ? 'Schwarz' : 'Weiß';
-    this.statusEl.textContent = `${name} gewinnt! 🎉`;
+    const F = MuehleUI.FARBE;
+    if (result.winner === 'Draw') { this.statusEl.textContent = 'Unentschieden: Dieselbe Stellung kam dreimal vor.'; return; }
+    const verlierer = result.winner === 'W' ? 'B' : 'W';
+    const grund = this.control.getPiecesOnBoard(verlierer) < 3 ? `${F[verlierer]} hat nur noch 2 Steine.` : `${F[verlierer]} kann nicht mehr ziehen.`;
+    let kopf;
+    if (this.control.vsAI) kopf = result.winner === this.control.aiPlayer ? 'Der Computer gewinnt.' : 'Du gewinnst! 🎉';
+    else kopf = `${F[result.winner]} gewinnt! 🎉`;
+    this.statusEl.textContent = `${kopf}\n${grund}`;
   }
 
+  // Klartext je Zustand (S-W15, AK-4): was ist jetzt zu tun?
   _buildStatusText(player, phase, pending) {
-    const name = player === 'B' ? 'Schwarz' : 'Weiß';
-    if (pending) return `${name}: Mühle! Gegnerischen Stein zum Entfernen wählen`;
-    if (phase === 'placing') return `${name} ist dran – noch ${this.control.getPiecesToPlace(player)} Steine zu setzen`;
-    if (this.control.isFlyingPhase(player)) return `${name} ist dran (Fliegen: freie Zugwahl, nur noch 3 Steine)`;
-    return `${name} ist dran – Stein wählen und ziehen`;
+    if (this.control.isAiTurn()) return 'Der Computer (Schwarz) überlegt …';
+    const F = MuehleUI.FARBE, o = player === 'W' ? 'B' : 'W';
+    const du = this.control.vsAI && player !== this.control.aiPlayer;
+    const vor = du ? '' : `${F[player]}: `;
+    if (pending) return `Mühle! ${vor}Nimm einen Stein von ${F[o]} (rot umrandet).`;
+    if (phase === 'placing') { const n = this.control.getPiecesToPlace(player); return `${vor}Setze auf einen grünen Punkt (noch ${n} ${n === 1 ? 'Stein' : 'Steine'})`; }
+    if (this.control.getSelected() !== null) return `${vor}Tippe auf einen grünen Punkt.`;
+    if (this.control.isFlyingPhase(player)) return `${vor}Springen: Du darfst auf jeden freien Punkt. Erst Stein, dann Ziel tippen.`;
+    return `${vor}Ziehen: Tippe einen Stein mit blauem Ring, dann einen grünen Punkt.`;
   }
 
-  _feldElemente() { return this.pointsEl.children; }
+  _feldElemente() { return this.pointsEl.querySelectorAll('.mu-point'); }
   _tippFelder(zug) {
     if (zug.setzen !== undefined) return [zug.setzen];
     if (zug.entfernen !== undefined) return [zug.entfernen];
@@ -3803,18 +4304,18 @@ class MuehleUI extends GameUI {
   }
 
   handlePointClick(index) {
-    if (this.control.isAiTurn()) return;
+    if (this.uebung && this.uebung.aktiv()) return this._uebungTipp(index);
+    if (this._uebungGeschafft) this._uebungLos();
+    if (this._pausiert() || this.control.isAiTurn()) return;
     const outcome = this.control.handlePointClick(index);
     if (outcome.invalid) return;
     this.afterMove(outcome.result);
   }
 
-  // Die KI kann pro Zug mehrere Aktionen brauchen (z.B. Ziehen und
-  // danach, weil eine Mühle entstand, sofort noch Entfernen) — der
-  // geerbte afterMove-Ablauf ruft runAiTurn erneut auf, solange
-  // isAiTurn() true bleibt, wodurch die Aktionen verkettet werden.
+  // Ein Computerzug kann zwei Aktionen haben (Ziehen, dann Wegnehmen);
+  // afterMove ruft runAiTurn erneut auf, solange der Computer am Zug ist.
   performAiMove() {
-    return { invalid: false, result: this.control.performAiAction() };
+    return this.control.performAiAction();
   }
 }
 
@@ -4906,15 +5407,17 @@ class EinstellungenBoundary {
       if (d && typeof d === 'object' && d.formatversion === EinstellungenBoundary.FORMAT) {
         return { ton: d.ton !== false, stufen: (d.stufen && typeof d.stufen === 'object') ? { ...d.stufen } : {},
           ansicht: (d.ansicht && typeof d.ansicht === 'object') ? { ...d.ansicht } : {},
-          lernen: (d.lernen && typeof d.lernen === 'object') ? { ...d.lernen } : {} };
+          lernen: (d.lernen && typeof d.lernen === 'object') ? { ...d.lernen } : {},
+          muehleEinfuehrung: d.muehleEinfuehrung === true };
       }
     } catch (e) { /* kaputte Daten: Standardwerte */ }
-    return { ton: true, stufen: {}, ansicht: {}, lernen: {} };
+    return { ton: true, stufen: {}, ansicht: {}, lernen: {}, muehleEinfuehrung: false };
   }
   speichere(e) {
     try {
       this._speicher.setItem(EinstellungenBoundary.SCHLUESSEL,
-        JSON.stringify({ formatversion: EinstellungenBoundary.FORMAT, ton: e.ton, stufen: e.stufen, ansicht: e.ansicht, lernen: e.lernen }));
+        JSON.stringify({ formatversion: EinstellungenBoundary.FORMAT, ton: e.ton, stufen: e.stufen, ansicht: e.ansicht, lernen: e.lernen,
+          muehleEinfuehrung: e.muehleEinfuehrung === true }));
     } catch (err) { /* Speicher voll oder gesperrt: Einstellung gilt nur bis zum Neuladen */ }
   }
 }
@@ -4931,6 +5434,9 @@ class EinstellungenControl {
   // Lernhilfe (S-W07): nur ein gespeichertes false schaltet sie aus
   lernen(spiel) { return this._e.lernen[spiel] !== false; }
   setzeLernen(spiel, an) { this._e.lernen[spiel] = !!an; this._b.speichere(this._e); }
+  // S-W15: Mühle-Übung gesehen (gilt bei gesperrtem Speicher nur bis zum Neuladen)
+  muehleEinfuehrung() { return this._e.muehleEinfuehrung === true; }
+  setzeMuehleEinfuehrung() { this._e.muehleEinfuehrung = true; this._b.speichere(this._e); }
 }
 
 /* Klang (UI): eigene Töne per WebAudio, keine Tondateien. */
@@ -5126,12 +5632,13 @@ wireGame({
   controlExtraArgs: [aiStrategy]
 });
 
+// S-W15: Übung auf eigener Entity, hier zusammengesetzt (die UI kennt nur Controls)
+MuehleUI.neueUebung = () => new MuehleUebungControl(new MuehleBoundary(new MuehleEntity(), new StatsEntity(), null));
 wireGame({
   dbName: 'muehleDB',
   EntityCls: MuehleEntity, BoundaryCls: MuehleBoundary,
-  ControlCls: MuehleControl, UICls: MuehleUI
-  // Mühle hat keine geteilte AIStrategy — ihre 1-Zug-Heuristik
-  // läuft synchron in der Control, siehe dortiger Kommentar.
+  ControlCls: MuehleControl, UICls: MuehleUI,
+  controlExtraArgs: [aiStrategy]
 });
 
 wireGame({
