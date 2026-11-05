@@ -15,10 +15,10 @@ import shutil
 import sys
 import tempfile
 
-SEITEN = ["index.html", "driftpokal/index.html", "luftdrift/index.html", "brettspiele/index.html"]
+SEITEN = ["index.html", "driftpokal/index.html", "luftdrift/index.html", "etappenrennen/index.html", "brettspiele/index.html"]
 SPIELE = SEITEN[1:]
 # Fremde Bibliotheken: E-Mail-Adressen der Autoren in deren Lizenztexten sind erlaubt.
-FREMD = ("brettspiele/lib/", "luftdrift/three.min.js")
+FREMD = ("brettspiele/lib/", "luftdrift/three.min.js", "etappenrennen/three.min.js")
 # Autoren-Adressen aus eingebetteten fremden Bibliotheken (FXAA-Shader in three.js im Driftpokal).
 ERLAUBTE_EMAILS = {"biro@archilogic.com", "gameworks@nvidia.com"}
 # Gesperrte Wörter nur als SHA-256 (klein geschrieben), damit sie nicht selbst auf der Seite stehen.
