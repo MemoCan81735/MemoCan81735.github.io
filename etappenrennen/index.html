@@ -1,0 +1,668 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d8b11a">
+<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/etappenrennen-192.png">
+<link rel="apple-touch-icon" href="../bilder/symbole/etappenrennen-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Alpenetappe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: eine Bildschirmhöhe, Spielfeld oben, Bedienleiste unten; Töne wie Asphalt, Trikot und Höhenprofil-Papier */
+:root{--bg:#e9e6dc;--fg:#1e1d19;--mut:#6b675b;--road:#8d8a80;--line:#f3efe2;--lane:#a39f93;--grass:#9cab6a;--panel:#f6f3ea;--acc:#d8b11a;--you:#d9321e;--good:#3d8b4a;--bad:#b4381f;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17181a;--fg:#ece9df;--mut:#9a968a;--road:#4a4b4f;--line:#c9c4b4;--lane:#5e5f63;--grass:#3f4a2e;--panel:#232427;--acc:#e3c238;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17181a;--fg:#ece9df;--mut:#9a968a;--road:#4a4b4f;--line:#c9c4b4;--lane:#5e5f63;--grass:#3f4a2e;--panel:#232427;--acc:#e3c238;color-scheme:dark}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden;padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px));touch-action:none;-webkit-user-select:none;user-select:none}
+#spiel{position:relative;flex:1;min-height:0}
+#c{display:block;width:100%;height:100%}
+#profil{position:absolute;left:16px;right:16px;top:72px;height:46px;width:calc(100% - 32px);pointer-events:none}
+#hud{position:absolute;inset:0;pointer-events:none;font-variant-numeric:tabular-nums}
+.ecke{position:absolute;background:color-mix(in srgb,var(--panel) 82%,transparent);border-radius:8px;padding:6px 9px;font-size:13px;line-height:1.25}
+#links{left:max(10px,env(safe-area-inset-left,0px));top:10px}#rechts{right:max(10px,env(safe-area-inset-right,0px));top:10px;text-align:right}
+.gross{font-size:26px;font-weight:700;font-family:var(--mono)}
+.klein{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+#reserve{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(70%,320px);height:14px;background:color-mix(in srgb,var(--panel) 80%,transparent);border-radius:7px;overflow:hidden}
+#reserve i{display:block;height:100%;background:var(--good);width:100%}
+#meldung{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);text-align:center;font-weight:700;font-size:22px;text-shadow:0 1px 0 var(--bg)}
+#leiste{background:var(--panel);padding:8px max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:9px 12px;background:var(--fg);color:var(--bg);cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#leiste{flex-direction:column;align-items:stretch}
+#info{display:flex;justify-content:space-between;align-items:center;color:var(--mut);gap:8px}
+#menue{background:transparent;color:var(--fg);padding:4px 8px}
+#tasten{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:8px}
+.lenk{font-size:26px;padding:16px 0;background:color-mix(in srgb,var(--fg) 85%,transparent)}
+.lenk.an{background:var(--acc);color:var(--fg)}
+#angriff{background:var(--you);color:#fff;padding:16px 0;font-size:17px}
+#angriff:disabled{opacity:.45}
+label{display:flex;gap:4px;align-items:center;color:var(--mut)}
+select,input[type=range]{font:inherit}
+#einst{position:absolute;inset:0;z-index:5;background:var(--bg);overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+#einst h1{font-size:20px;margin:0;text-wrap:balance}
+#einst p{margin:0;max-width:60ch;line-height:1.45}
+.zeile{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;max-width:420px}
+.zeile input{width:100%}
+.zeile output{font-family:var(--mono);min-width:5ch;text-align:right}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px}td,th{text-align:left;padding:2px 10px 2px 0}th{color:var(--mut);font-weight:600}
+/* Fassung 8: Effekte und Bedienung */
+#linien,#konf{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#blitz{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#blitz.an{animation:blitz .7s ease-out}
+@keyframes blitz{0%{opacity:.9}100%{opacity:0}}
+#zaehler{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);font-size:84px;font-weight:800;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 24px rgba(255,200,80,.8);pointer-events:none;font-family:var(--sans)}
+body.boost #spiel::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 90px 24px rgba(255,170,40,.55)}
+#sog{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);width:min(70%,320px);display:flex;gap:8px;align-items:center;font-size:11px;letter-spacing:.08em;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+#sog span{flex:1;height:10px;border-radius:5px;background:rgba(0,0,0,.35);overflow:hidden}
+#sog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5ad1ff,#ffd23f);border-radius:5px}
+#sog.voll i{background:#ffd23f;box-shadow:0 0 12px #ffd23f}
+#tasten{grid-template-columns:.7fr 1.2fr 1.2fr .7fr}
+#antritt,#schleuder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 0;font-size:15px;letter-spacing:.04em;touch-action:none;user-select:none}
+#antritt{background:var(--you);color:#fff}#antritt.an{filter:brightness(1.3);transform:scale(.97)}
+#schleuder{background:#2b2d33;color:#8a8d96}
+#schleuder.bereit{background:linear-gradient(135deg,#ffd23f,#ff8a1f);color:#2b1a00;animation:puls .5s infinite alternate}
+@keyframes puls{from{transform:scale(1)}to{transform:scale(1.05)}}
+small{font-size:10px;font-weight:500;opacity:.8}
+#einst>h1,#einst>p,#einst>.zeile{display:none}
+#einst.zeig>h1,#einst.zeig>p{display:block}#einst.zeig>.zeile{display:grid}
+#ergebnis{order:-2}#einst>div:has(#start){order:-1}
+#einst{background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(6px)}
+#einst button{min-width:96px}
+#einst:has(#ergebnis:not([hidden])) #start{display:none}#einst:has(#ergebnis[hidden]) #nochmal{display:none}#nochmal{order:-1}
+button{min-height:44px}#einst button{min-height:48px}#menue{min-width:64px}
+#antritt,#schleuder{min-height:56px}
+@media (prefers-reduced-motion:reduce){#blitz.an{animation:none}#schleuder.bereit{animation:none}}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div id="spiel">
+  <canvas id="c"></canvas>
+  <canvas id="profil"></canvas><canvas id="linien"></canvas><canvas id="konf"></canvas><div id="blitz"></div>
+  <div id="hud">
+    <div class="ecke" id="links"><div class="klein">Tempo</div><div class="gross" id="hTempo">0</div><div class="klein">km/h · <span id="hSteig">0 %</span></div></div>
+    <div class="ecke" id="rechts"><div class="klein">Leistung</div><div class="gross" id="hWatt">250</div><div class="klein">Watt · <span id="hPos">1./20</span> · <span id="hZeit">0:00</span></div></div>
+    <div id="reserve"><i id="hRes"></i></div>
+    <div id="meldung" hidden></div><div id="zaehler" hidden></div><div id="sog"><b>SOG</b><span><i id="sogfuell"></i></span></div>
+  </div>
+  <div id="einst" hidden>
+    <div id="ergebnis" hidden></div><a class="ng-zurueck" href="../" style="display:inline-flex;align-items:center;min-height:44px;color:inherit;font:600 14px system-ui,sans-serif;text-decoration:none">← Alle Spiele</a><h1>Alpenetappe</h1>
+    <p>Lenken: ◀ ▶ oder Daumen ziehen. Das Tempo regelt sich selbst und hält das Hinterrad. Im Windschatten lädt der SOG-Balken; ist er voll, zündest du die SCHLEUDER. ANTRITT gedrückt halten kostet Reserve, loslassen füllt sie wieder. 2 km Alpenetappe mit Gipfelsprint.</p>
+    <div class="zeile"><label for="eModus">Modus</label><select id="eModus"><option value="einzel">Einzelne Etappe</option><option value="tour">Rundfahrt, 3 Etappen</option></select></div>
+    <div class="zeile"><label for="eStrecke">Strecke</label><select id="eStrecke"><option value="alpen" selected>Alpenetappe, 2 km</option><option value="flach">Flach, 3 km</option><option value="huegel">Hügel, 4 km</option><option value="berg">Berg, 5 km</option><option value="mess">Messstrecke S-001, 5 km</option></select></div>
+    
+    <div class="zeile"><label for="eGegner">Gegner <output id="oGegner">19</output></label><input type="range" id="eGegner" min="0" max="29" step="1" value="19"></div>
+    <div class="zeile"><label for="eStaerke">Gegnerstärke <output id="oStaerke">235</output> W</label><input type="range" id="eStaerke" min="200" max="300" step="5" value="235"></div>
+    <div class="zeile"><label for="eTon">Ton</label><input type="checkbox" id="eTon" checked></div>
+    <div class="zeile" hidden><label for="eAuto">Autopilot</label><input type="checkbox" id="eAuto"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="start">Spielen</button><button id="teilen" hidden>Teilen</button><button id="tag" style="background:var(--acc);color:#1b1b1f">Tagesrennen</button><button id="einstBtn" style="background:transparent;color:var(--fg);border:1px solid var(--mut)">Einstellungen</button><button id="nochmal" style="background:var(--you);color:#fff">Nochmal</button><button id="tourReset" hidden style="background:transparent;color:var(--fg);border:1px solid var(--mut)">Rundfahrt zurücksetzen</button></div>
+    <div id="tourStand" class="klein" hidden></div>
+    
+  </div>
+</div>
+<div id="leiste">
+  <div id="info"><span id="hInfo">Windschatten <b id="hWind">0 %</b> · Rückstand <b id="hGap">0 m</b><b id="hAus"></b></span><button id="menue">Menü</button></div>
+  <div id="tasten"><button id="lenkL" class="lenk" aria-label="Nach links">◀</button><button id="antritt">ANTRITT<small>halten</small></button><button id="schleuder" disabled>SCHLEUDER<small>Sog voll</small></button><button id="lenkR" class="lenk" aria-label="Nach rechts">▶</button></div>
+</div>
+<script src="three.min.js"></script>
+<script>
+'use strict';
+// ---------- Rechenmodell nach S-001 (reine Funktionen) ----------
+let SEED=12345,TAG=false,ABZUG=20;const Z=3,INTRO=1.6,SCHL_DAUER=10,SCHL_P=900,SCHL_KICK=3.5,ANTRITT_P=700,BEST_KEY='etappenrennen.best',BEST_FV=2;
+const K={m:83,g:9.81,crr:0.004,rho:1.225,cda:0.32,pDauer:250,rMax:20000,pMax:900,dt:1/60,halb:1.5,sitz:0.6}; // halb: halbe Straßenbreite in m, sitz: seitlicher Mindestabstand
+function kraefte(v,steig,w){const th=Math.atan(steig);return K.m*K.g*(Math.sin(th)+K.crr*Math.cos(th))+0.5*K.rho*K.cda*(1-w)*v*v}
+function schritt(f,steig,w,dt){ // f: {v,x,res,pIn} -> ändert v,x,res,p
+  let p=Number.isFinite(f.pIn)?Math.min(K.pMax,Math.max(0,f.pIn)):0;
+  if(f.res<=0&&p>K.pDauer)p=K.pDauer;
+  const bedarf=(p-K.pDauer)*dt;
+  if(bedarf>0&&bedarf>f.res){p=K.pDauer+f.res/dt;f.res=0}else if(bedarf>0)f.res-=bedarf;else f.res=Math.min(K.rMax,f.res+0.5*-bedarf);
+  const a=(p/Math.max(f.v,1)-kraefte(f.v,steig,w))/K.m;
+  f.v=Math.max(0,f.v+a*dt);f.x+=f.v*dt;f.p=p;
+}
+function sogSchritt(s,w,dt){return Math.max(0,Math.min(1,w>=0.15?s+dt/15:s-dt/40))}
+function zeitlupe(rest){return rest<25?0.35:1}
+function windschatten(d,q){if(d<=0||d>3||q>0.6)return 0;return d<=1?0.3:0.3*(3-d)/2}
+// ---------- Strecken ----------
+// kurven: [von m, bis m, Krümmung 1/m (+ links, - rechts)]; sprint und berg: Streckenmeter der Wertungstore
+const STRECKEN={
+ flach:{name:'Flach',pts:[[0,0],[3000,0]],kurven:[[400,700,1/120],[1100,1300,-1/80],[1900,2200,1/100]],sprint:[1500],berg:[]},
+ huegel:{name:'Hügel',pts:[[0,0],[800,0],[1400,30],[2000,10],[2600,60],[3200,0],[4000,0]],kurven:[[300,600,-1/90],[1500,1900,1/70],[2100,2300,-1/60],[2900,3300,1/110]],sprint:[1000,3600],berg:[1400,2600]},
+ berg:{name:'Berg',pts:[[0,0],[1000,0],[3000,180],[4000,80],[5000,0]],kurven:[[1200,1500,1/60],[1700,1900,-1/40],[2100,2400,1/50],[2600,2800,-1/45],[3300,3600,-1/70],[4200,4500,1/90]],sprint:[800],berg:[3000]},
+ alpen:{name:'Alpenetappe',pts:[[0,0],[300,0],[1100,56],[1500,56]],kurven:[[340,497,1/50],[620,777,-1/50],[860,1017,1/50]],sprint:[250],berg:[1100]},
+ mess:{name:'Messstrecke S-001',pts:[[0,0],[1500,0],[2500,80],[3500,0],[5000,0]],kurven:[],sprint:[],berg:[]}};
+for(const k in STRECKEN)STRECKEN[k].id=k;
+function kruemmung(st,x){for(const [a,b,k] of st.kurven)if(x>=a&&x<=b)return k;return 0}
+// Mittellinie: alle 2 m Punkt (X, Z) und Richtung th, aus der Krümmung integriert
+function mittellinie(st,L){const M=[{X:0,Z:0,th:0}];let X=0,Z=0,th=0;for(let x=2;x<=L;x+=2){th+=kruemmung(st,x)*2;X+=Math.cos(th)*2;Z+=Math.sin(th)*2;M.push({X,Z,th})}return M}
+function weltPos(M,x,z){const i=Math.max(0,Math.min(M.length-1,Math.floor(x/2))),m=M[i],r=x-i*2;return {X:m.X+Math.cos(m.th)*r-Math.sin(m.th)*z,Z:m.Z+Math.sin(m.th)*r+Math.cos(m.th)*z,th:m.th}}
+function steigung(pts,x){for(let i=1;i<pts.length;i++){if(x<=pts[i][0]){const [x0,h0]=pts[i-1],[x1,h1]=pts[i];return (h1-h0)/(x1-x0)}}return 0}
+function hoehe(pts,x){for(let i=1;i<pts.length;i++){if(x<=pts[i][0]){const [x0,h0]=pts[i-1],[x1,h1]=pts[i];return h0+(h1-h0)*(x-x0)/(x1-x0)}}return pts[pts.length-1][1]}
+// ---------- Zufall hineingereicht ----------
+function rng(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+// ---------- Rundfahrt (3 Etappen, Speicherstand im Browser mit Formatversion) ----------
+const TOUR_ETAPPEN=['flach','huegel','berg'],TOUR_KEY='etappenrennen.tour',TOUR_FV=1;
+let TOUR=null;
+function tourLaden(){try{const t=JSON.parse(localStorage.getItem(TOUR_KEY)||'null');if(t&&t.formatversion===TOUR_FV&&Array.isArray(t.fahrer)&&Number.isInteger(t.etappe)&&t.etappe>=0&&t.etappe<=3&&t.fahrer.length===t.n+1)TOUR=t;else TOUR=null}catch(e){TOUR=null}}
+function tourSpeichern(){try{if(TOUR)localStorage.setItem(TOUR_KEY,JSON.stringify(TOUR));else localStorage.removeItem(TOUR_KEY)}catch(e){}}
+function tourNeu(n,ps){const rand=rng(777);TOUR={formatversion:TOUR_FV,etappe:0,n,ps,fahrer:[]};
+  for(let i=0;i<=n;i++){const spieler=i===0;TOUR.fahrer.push({id:i,name:teamName(i),farbe:TEAMS[teamVon(i)].farbe,staerke:spieler?K.pDauer:ps+Math.round((rand()-0.5)*40),mut:rand(),zeit:0,sprintP:0,bergP:0,etappen:[]})}
+  tourSpeichern()}
+function trikots(){ // Rangfolge: Gelb (Zeit), Grün (Sprintpunkte), Gepunktet (Bergpunkte); Trikots nach Etappe 1 und 2 sichtbar
+  if(!TOUR||TOUR.etappe===0)return {};
+  const F=TOUR.fahrer,gelb=[...F].sort((a,b)=>a.zeit-b.zeit)[0];
+  const gruen=[...F].filter(f=>f!==gelb).sort((a,b)=>b.sprintP-a.sprintP||a.zeit-b.zeit)[0];
+  const berg=[...F].filter(f=>f!==gelb&&f!==gruen).sort((a,b)=>b.bergP-a.bergP||a.zeit-b.zeit)[0];
+  const t={};if(gelb)t[gelb.id]='gelb';if(gruen&&gruen.sprintP>0)t[gruen.id]='gruen';if(berg&&berg.bergP>0)t[berg.id]='berg';return t}
+function tourAnzeige(){const tour=$('eModus').value==='tour';$('tourReset').hidden=!(tour&&TOUR);$('tourStand').hidden=!tour;$('eStrecke').disabled=tour;$('eGegner').disabled=tour&&!!TOUR;$('eStaerke').disabled=tour&&!!TOUR;
+  if(tour){if(TOUR&&TOUR.etappe>=3){$('start').textContent='Neue Rundfahrt';$('tourStand').textContent='Rundfahrt beendet.'}
+    else{const e=(TOUR?TOUR.etappe:0)+1;$('start').textContent='Etappe '+e+' von 3 starten';$('eStrecke').value=TOUR_ETAPPEN[e-1];$('tourStand').textContent=TOUR?'Gespeicherter Stand: '+TOUR.etappe+' von 3 Etappen gefahren.':'Etappen: Flach 3 km, Hügel 4 km, Berg 5 km. Der Stand wird im Browser gespeichert.'}}
+  else $('start').textContent='Spielen'}
+// ---------- Bestzeit und Geist (Speicher mit Formatversion, R-07); Zeiten in Rechensekunden ----------
+function bestLaden(){try{const e=JSON.parse(localStorage.getItem(BEST_KEY)||'null');
+  if(e&&e.formatversion===BEST_FV&&e.strecke==='alpen'&&Number.isFinite(e.zeit)&&e.zeit>0&&Array.isArray(e.geist)&&e.geist.every(Number.isFinite))return e}catch(x){}return null}
+function bestSpeichern(strecke,zeit,geist){try{const alt=bestLaden();if(alt&&alt.strecke===strecke&&alt.zeit<=zeit)return false;
+  localStorage.setItem(BEST_KEY,JSON.stringify({formatversion:BEST_FV,strecke,zeit,geist}));return true}catch(x){return false}}
+// ---------- Schleuder und Antritt ----------
+function schleuder(){if(!R||R.intro||R.auto)return false;const sp=R.fahrer[0];if(sp.ziel!=null||sp.sog<1||R.t<sp.schleuderBis)return false;
+  sp.sog=0;sp.v+=SCHL_KICK;sp.schleuderBis=R.t+SCHL_DAUER;R.ton.push('schleuder');R.hinweis={text:'SCHLEUDER!',bis:R.t+6};try{navigator.vibrate&&navigator.vibrate(40)}catch(x){}return true}
+function antritt(an){if(R&&!R.auto&&!R.intro)R.fahrer[0].halte=!!an}
+// ---------- Tagesrennen und Teilen ----------
+function tagSeed(d){return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate()}
+function tagSpeichern(zeit){try{const k='etappenrennen.tag';let e=null;try{e=JSON.parse(localStorage.getItem(k)||'null')}catch(x){}if(e&&e.formatversion===1&&e.seed===SEED&&Number.isFinite(e.zeit)&&e.zeit<=zeit)return;localStorage.setItem(k,JSON.stringify({formatversion:1,seed:SEED,zeit}))}catch(x){}}
+function teilText(sp){if(sp.ziel==null)return '';const d=String(SEED);return `Alpenetappe${TAG?' · Tagesrennen '+d.slice(6)+'.'+d.slice(4,6)+'.':''}: ${fmt(sp.ziel)} s, Platz ${platz(sp)} von ${R.fahrer.length}. Schaffst du es besser? ${location.href.split('#')[0]}`}
+function teilen(){const t=window.__teiltext||'';if(!t)return;try{if(navigator.share){navigator.share({text:t}).catch(()=>{});return}}catch(x){}try{navigator.clipboard.writeText(t);const b=$('teilen');b.textContent='Kopiert';setTimeout(()=>b.textContent='Teilen',1500)}catch(x){}}
+// ---------- Fortschritt zum Behalten: Sterne (Zeit in Rechensekunden) und Goldtrikot bei 3 Sternen ----------
+const FORT_KEY='etappenrennen.fortschritt',STERN2=82,STERN3=80;
+function sterneFuer(zeitRechen){const z=zeitRechen/Z;return z<=STERN3?3:z<=STERN2?2:1}
+function fortLaden(){try{const e=JSON.parse(localStorage.getItem(FORT_KEY)||'null');if(e&&e.formatversion===1&&Number.isInteger(e.sterne)&&e.sterne>=0&&e.sterne<=3)return e}catch(x){}return {formatversion:1,sterne:0}}
+function fortSpeichern(st){try{if(st>fortLaden().sterne)localStorage.setItem(FORT_KEY,JSON.stringify({formatversion:1,sterne:st}))}catch(x){}}
+
+// ---------- Rennen ----------
+let R=null,anim=0,letzt=0;
+const $=id=>document.getElementById(id);
+// Teams: 5 Teams, Fahrer i gehört zu Team i % 5; Team 0 ist deins (rot)
+const TEAMS=[{name:'Rot',farbe:'#d9321e'},{name:'Blau',farbe:'#1f6fb2'},{name:'Türkis',farbe:'#2a9d8f'},{name:'Violett',farbe:'#7b2cbf'},{name:'Orange',farbe:'#f08c2e'}];
+function teamVon(i){return i%TEAMS.length}
+function teamName(i){if(i===0)return 'Du';const t=teamVon(i);return TEAMS[t].name+' '+(Math.floor(i/TEAMS.length)+(t===0?0:1))}
+const FARBEN=['#1f6fb2','#2a9d8f','#e76f51','#8a5cf6','#f4a261','#264653','#9b2226','#606c38','#bc6c25','#4361ee','#e9c46a','#7b2cbf','#0096c7','#6a994e','#b5838d','#3a5a40','#ff7f51','#5f0f40','#118ab2','#ef476f'];
+function neuesRennen(){
+  const tour=$('eModus').value==='tour';
+  if(tour&&(!TOUR||TOUR.etappe>=3))tourNeu(+$('eGegner').value,+$('eStaerke').value);
+  const st=STRECKEN[tour?TOUR_ETAPPEN[TOUR.etappe]:$('eStrecke').value],n=tour?TOUR.n:+$('eGegner').value,ps=tour?TOUR.ps:(TAG?235:+$('eStaerke').value)+(TAG?(SEED%7)*5-5:0),rand=rng(SEED+(tour?TOUR.etappe:0));
+  const fahrer=[],trik=tour?trikots():{};
+  for(let i=0;i<=n;i++){
+    const spieler=i===0,reihe=spieler?Math.floor(n/3):Math.floor((i-1)/3),sp=spieler?1:(i-1)%3; // Spieler startet hinten in der Mitte
+    const z0=(sp-1)*1.0;
+    fahrer.push({id:i,spieler,team:teamVon(i),name:teamName(i),farbe:TEAMS[teamVon(i)].farbe,
+      x:-reihe*1.2-(spieler?1.2:0),z:z0,zZiel:z0,vz:0,lehn:0,rempler:0,v:0,res:K.rMax,pIn:spieler?K.pDauer:ps,p:0,w:0,
+      staerke:tour?TOUR.fahrer[i].staerke:spieler?K.pDauer:ps+Math.round((rand()-0.5)*40),mut:tour?TOUR.fahrer[i].mut:rand(),trikot:trik[i]||(spieler&&fortLaden().sterne>=3?'gelb':null),sog:0,schleuderBis:-1,halte:false,ziel:null,angriffBis:-1,
+      mess:{imWind:0,schritte:0,pSum:0,wechsel:0,rempler:0},sprintP:0,bergP:0});
+  }
+  // Kapitän je KI-Team = stärkster Fahrer; Ausreißer: 2 bis 3 mutige Helfer fremder Teams, Start zwischen 300 und 800 m
+  for(let t=1;t<TEAMS.length;t++){const tf=fahrer.filter(f=>f.team===t);if(tf.length){const k=tf.reduce((a,b)=>b.staerke>a.staerke?b:a);k.kapitaen=true}}
+  const kand=fahrer.filter(f=>!f.spieler&&f.team!==0&&!f.kapitaen).sort((a,b)=>b.mut-a.mut);
+  const anz=Math.min(kand.length,2+Math.floor(rand()*2)),ausStart=300+rand()*500;
+  kand.slice(0,anz).forEach(f=>{f.ausreisser=true;f.ausStart=ausStart+rand()*40});
+  const laenge=st.pts[st.pts.length-1][0];
+  R={st,pts:st.pts,laenge,M:mittellinie(st,laenge+220),tore:[...st.sprint.map(x=>({art:'Sprint',x,punkte:[6,4,2],wer:[]})),...st.berg.map(x=>({art:'Berg',x,punkte:[5,3,1],wer:[]}))].sort((a,b)=>a.x-b.x),fahrer,t:0,rand,fertig:false,tempo:Z,intro:true,rt:0,zielRt:null,geistAuf:[],geistBest:TAG?null:bestLaden(),tag:TAG,auto:$('eAuto').checked,tour,ton:[],jagd:false,
+     touch:null,ereignis:[]};
+}
+function frei(f,alle,z,dxMax){return !alle.some(o=>o!==f&&o.ziel==null&&Math.abs(o.x-f.x)<dxMax&&Math.abs(o.z-z)<K.sitz*1.1)}
+function kiEntscheidung(f,alle,t){
+  // Leistung: Dauerleistung, am Berg etwas mehr, Schlusssprint, Angriff mit Wahrscheinlichkeit
+  const steig=steigung(R.pts,f.x),rest=R.laenge-f.x;
+  let p=f.staerke;
+  if(steig>0.03)p+=40*(f.res/K.rMax);
+  if(rest<300)p=f.staerke+120+f.mut*280;
+  else if(t<f.angriffBis)p=600;
+  else if(steig>0.04&&f.res>K.rMax*0.6&&R.rand()<0.0008)f.angriffBis=t+8;
+  if(f.res<K.rMax*0.15&&rest>=300)p=Math.min(p,f.staerke-30);
+  // Ausreißer: Angriff ab ausStart, danach gemeinsam vorn bleiben, solange die Kraft reicht
+  if(f.ausreisser&&rest>=300){
+    if(f.x>=f.ausStart&&!f.ausLos){f.ausLos=true;f.angriffBis=t+15;f.zZiel=K.halb-0.5;if(!R.ausGemeldet){R.ausGemeldet=true;R.hinweis={text:'Ausreißer greifen an!',bis:t+2.5};R.ton.push('angriff')}}
+    if(f.ausLos&&t>=f.angriffBis)p=f.res>K.rMax*0.25?f.staerke+50:f.staerke-10;
+  }
+  // Helfer deines Teams: im Feld fahren sie normal und halten sich in deiner Nähe; im Finale (letzte 1200 m) fahren sie dich an der Seite nach vorn
+  const sp=R.fahrer[0];
+  if(f.team===0&&!f.spieler&&sp.ziel==null&&!R.auto&&!f.leer){
+    if(f.res<K.rMax*0.12){f.leer=true;f.zZiel=(f.z>=0?1:-1)*(K.halb-0.3);if(!R.leerGemeldet){R.leerGemeldet=true;R.hinweis={text:'Ein Helfer ist leer',bis:t+2}}}
+    const k=Math.floor(f.id/TEAMS.length)-1;
+    if(rest<1200&&rest>=250&&!f.leer){
+      if(R.anfahrtZ==null){const links=alle.filter(o=>o.z<0&&o.x>sp.x&&o.x<sp.x+30).length,rechts=alle.filter(o=>o.z>0&&o.x>sp.x&&o.x<sp.x+30).length;R.anfahrtZ=(links<=rechts?-1:1)*(K.halb-0.45);R.hinweis={text:'Deine Helfer fahren dich nach vorn',bis:t+2.5}}
+      const zielX=sp.x+0.9*(k+1);
+      if(f.x<sp.x+0.4&&Math.abs(f.z-sp.z)<K.sitz)f.zZiel=sp.z+(sp.z>0?-0.75:0.75);else f.zZiel=R.anfahrtZ;
+      const vRef=Math.max(f.v,(R.feldV||f.v)+2.2),abst=Math.max(-3,Math.min(3,zielX-f.x));
+      f.pIn=Math.max(150,Math.min(f.staerke+250,kraefte(vRef,steigung(R.pts,f.x),f.w)*vRef+abst*60+(vRef-f.v)*300));return;
+    }
+  }
+  // Jagd: liegt eine Ausreißergruppe vorn, machen Helfer an der Spitze des Feldes Tempo
+  if(R.jagd&&!f.ausreisser&&!f.kapitaen&&f.team!==0){const vorneFrei=!alle.some(o=>o!==f&&!o.ausreisser&&o.x>f.x&&o.x-f.x<4);if(vorneFrei)p=Math.max(p,f.staerke+70)}
+  // Am Hinterrad bleiben: Abstand 0,8 m halten, dabei Kraft sparen
+  const vor=alle.filter(o=>o!==f&&o.ziel==null&&o.x>f.x&&o.x-f.x<4).sort((a,b)=>a.x-b.x);
+  const vorne=vor.find(o=>Math.abs(o.z-f.z)<K.sitz); // der, dem ich direkt folge
+  const tor=R.tore.find(o=>o.x>f.x&&o.x-f.x<250&&o.wer.length<3);
+  if(tor&&f.mut>0.4&&f.res>K.rMax*0.25)p=Math.max(p,f.staerke+250*f.mut);
+  const angriff=t<f.angriffBis||rest<300||!!tor||(f.ausLos&&rest>=300);
+  if(vorne&&!angriff){
+    const d=vorne.x-f.x,dv=vorne.v-f.v;
+    const regel=(d-0.8)*120+dv*300; // W: positiv = aufschließen
+    p=Math.min(f.staerke+150,Math.max(60,vorne.p*0.75+regel));
+    // Blockiert von einem Langsameren: daneben Platz suchen und vorbei
+    if(dv<-0.8&&d<1.6&&f.res>K.rMax*0.3&&R.rand()<0.08){
+      for(const z of [f.z+K.sitz*1.3,f.z-K.sitz*1.3]){if(Math.abs(z)<=K.halb-0.25&&frei(f,alle,z,2.5)){f.zZiel=z;p=f.staerke+120;break}}
+    }
+  }else if(!vorne){
+    // Kein Hinterrad: nächstes in Reichweite anvisieren (auch den Spieler), sonst Mitte
+    const kand=vor.find(o=>o.v>=f.v-1.5&&Math.abs(o.z-f.z)<1.4);
+    if(kand&&R.rand()<0.1&&frei(f,alle,kand.z,1.5))f.zZiel=kand.z;
+  }
+  if(angriff){ // beim Angriff freie Bahn suchen
+    if(vorne&&vorne.x-f.x<2&&R.rand()<0.1){for(const z of [f.z+K.sitz*1.3,f.z-K.sitz*1.3]){if(Math.abs(z)<=K.halb-0.25&&frei(f,alle,z,2.5)){f.zZiel=z;break}}}
+  }
+  f.pIn=p;
+}
+// Spieler: Tempo-Automatik (Hinterrad halten, sonst ans Feld heranfahren), Lenktasten, sanfter Zug in den Windschatten
+function spielerAutomatik(sp,F,t){
+  const rest=R.laenge-sp.x;
+  if(R.lenk)sp.zZiel=sp.z+R.lenk*0.6;
+  const vor=F.filter(o=>o!==sp&&o.ziel==null&&o.x>sp.x&&o.x-sp.x<6).sort((a,b)=>a.x-b.x);
+  const vorne=vor.find(o=>Math.abs(o.z-sp.z)<K.sitz);
+  if(!R.lenk&&!R.touch){ // Magnet: liegt ein Hinterrad knapp daneben, sanft einscheren
+    const nah=vor.find(o=>o.x-sp.x<4&&Math.abs(o.z-sp.z)<0.9&&frei(sp,F,o.z,0.8));
+    if(nah&&!vorne)sp.zZiel+=(nah.z-sp.zZiel)*0.05;
+  }
+  if(!R.lenk&&!R.touch&&t<sp.angriffBis&&vorne&&vorne.x-sp.x<2.5){ // im Angriff an Langsameren automatisch vorbei
+    for(const z of [sp.z+K.sitz*1.3,sp.z-K.sitz*1.3]){if(Math.abs(z)<=K.halb-0.25&&frei(sp,F,z,2.5)){sp.zZiel=z;break}}}
+  const lahm=vorne&&(vorne.leer||vorne.res<K.rMax*0.15||(R.feldV&&vorne.v<R.feldV-1.2&&vorne.x-sp.x<1.6));
+  if(lahm&&!R.lenk&&!R.touch&&sp.res>K.rMax*0.15){for(const z of [sp.z+0.8,sp.z-0.8]){if(Math.abs(z)<=K.halb-0.25&&frei(sp,F,z,2)){sp.zZiel=z;break}}}
+  if(!R.lenk&&!R.touch&&R.anfahrtZ!=null&&rest>300&&t>=sp.angriffBis&&frei(sp,F,R.anfahrtZ,0.7))sp.zZiel+=(R.anfahrtZ-sp.zZiel)*0.06;
+  let p;
+  if(t<sp.angriffBis)p=K.pMax;
+  else if(vorne&&!lahm){const d=vorne.x-sp.x,dv=vorne.v-sp.v;p=Math.min(K.pDauer+150,Math.max(60,vorne.p*0.75+(d-0.8)*120+dv*300))}
+  else{const vorn=Math.max(...F.filter(o=>o!==sp).map(o=>o.x));p=vorn-sp.x>3&&sp.res>K.rMax*0.3?K.pDauer+60:K.pDauer} // Lücke zufahren, wenn die Reserve reicht
+  if(steigung(R.pts,sp.x)>0.03&&sp.res>K.rMax*0.4&&!vorne)p=Math.max(p,K.pDauer+40);
+  if(rest<250&&sp.res>K.rMax*0.05&&t>=sp.angriffBis)p=Math.max(p,K.pDauer+230); // Schlusssprint von selbst
+  if(rest<240&&rest>200&&!R.angriffTipp&&t>=sp.angriffBis){R.angriffTipp=true;R.hinweis={text:'Letzte 250 m: ANTRITT halten!',bis:t+6};R.ton.push('angriff')}
+  p=Math.max(60,p-ABZUG);
+  if(R.t<sp.schleuderBis)p=SCHL_P;else if(sp.halte)p=ANTRITT_P;
+  sp.pIn=p;
+}
+function simSchritt(dt){
+  const F=R.fahrer,t=R.t;
+  for(const f of F){if(!f.spieler||R.auto)kiEntscheidung(f,F,t)}
+  const sp=F[0];
+  if(!R.auto)spielerAutomatik(sp,F,t);
+  if(Math.floor(t*4)!==Math.floor((t-dt)*4)){ // viermal je Sekunde: Abstand Ausreißer zum Feld
+    // Bezugstempo für deine Helfer: Tempo des Hauptfelds (ohne Ausreißer); liegt das Feld vor euch, etwas schneller zum Aufschließen
+    const haupt=F.filter(o=>o.team!==0&&!o.ausLos&&o.ziel==null).sort((a,b)=>a.v-b.v);
+    const vorFeld=haupt.filter(o=>o.x>=sp.x-2&&o.x<sp.x+60).sort((a,b)=>a.v-b.v);
+    if(haupt.length){const vMed=(vorFeld.length?vorFeld[Math.floor(vorFeld.length/2)]:haupt[Math.floor(haupt.length/2)]).v,hinterster=Math.min(...haupt.map(o=>o.x)),spitze=Math.max(...F.filter(o=>o.team===0&&!o.spieler&&o.ziel==null).map(o=>o.x),sp.x);
+      const luecke=hinterster-spitze;R.feldV=vMed+(luecke>1?Math.min(2.5,luecke*0.12):0)}else R.feldV=null;
+    const aus=F.filter(f=>f.ausLos&&f.ziel==null),feld=F.filter(f=>!f.ausLos&&f.ziel==null);
+    if(aus.length&&feld.length&&!F.some(f=>f.ziel!=null)){const vA=Math.max(...aus.map(f=>f.x)),feldX=feld.map(f=>f.x).sort((a,b)=>b-a)[Math.min(3,feld.length-1)];
+      R.ausVorsprung=(vA-feldX)/Math.max(5,sp.v);R.ausAnz=aus.filter(f=>f.x>feldX+5).length;R.jagd=R.ausAnz>0&&(feldX/R.laenge>0.45||R.ausVorsprung>25)}
+    else{R.ausAnz=0;R.jagd=false}}
+  // Seitwärts: Ziel weich anfahren (höchstens 2 m/s), Lehnwinkel aus Querbeschleunigung
+  for(const f of F){ if(f.ziel!=null)continue;
+    f.zZiel=Math.max(-K.halb+0.25,Math.min(K.halb-0.25,f.zZiel));
+    const vzZiel=Math.max(-2,Math.min(2,(f.zZiel-f.z)*4));
+    const vzAlt=f.vz;f.vz+=(vzZiel-f.vz)*Math.min(1,dt*8);
+    if(Math.abs(f.vz)>0.3&&Math.abs(vzAlt)<=0.3)f.mess.wechsel++;
+    f.z+=f.vz*dt;f.lehn=-(f.vz-vzAlt)/dt*0.08-f.vz*0.12;
+    if(f.rempler>0)f.rempler-=dt;
+  }
+  // Rempler: zu nah nebeneinander -> auseinanderdrücken, beide verlieren Tempo
+  for(let i=0;i<F.length;i++)for(let j=i+1;j<F.length;j++){const a=F[i],b=F[j];if(a.ziel!=null||b.ziel!=null)continue;
+    const dx=Math.abs(a.x-b.x),dz=b.z-a.z;
+    if(dx<0.55&&Math.abs(dz)<K.sitz*0.8){const s=Math.sign(dz||(R.rand()-0.5));const schub=(K.sitz*0.8-Math.abs(dz))*0.7;
+      a.z-=s*schub;b.z+=s*schub;a.zZiel=a.z-s*0.15;b.zZiel=b.z+s*0.15;a.vz=b.vz=0;
+      if(a.rempler<=0&&b.rempler<=0){a.v*=0.97;b.v*=0.97;a.rempler=b.rempler=0.6;a.mess.rempler++;b.mess.rempler++;if(a.spieler||b.spieler){R.hinweis={text:'Rempler!',bis:t+1.0};R.ton.push('rempler')}}}}
+  // Windschatten und Schritt
+  for(const f of F){
+    if(f.ziel!=null)continue;
+    let w=0;for(const o of F){if(o===f)continue;const d=o.x-f.x;const q=Math.abs(o.z-f.z);const ww=windschatten(d,q);if(ww>w)w=ww}
+    f.w=w;f.mess.schritte++;if(w>0)f.mess.imWind++;
+    const steig=steigung(R.pts,f.x),x0=f.x,t0=t;
+    const schl=f.spieler&&t<f.schleuderBis;
+    if(f.spieler&&!R.auto&&!schl)f.sog=sogSchritt(f.sog,w,dt);
+    let res0=0;if(schl){res0=f.res;f.res=K.rMax*2;w=Math.max(w,0.3);f.w=w}
+    schritt(f,steig,w,dt);if(schl)f.res=res0;f.mess.pSum+=f.p;
+    // Auffahren: gleiche Spur, Mindestabstand 0,5 m
+    for(const o of F){if(o===f||o.ziel!=null||Math.abs(o.z-f.z)>=K.sitz)continue;if(o.x>x0&&f.x>o.x-0.5){f.x=o.x-0.5;f.v=Math.min(f.v,o.v)}}
+    const k=Math.abs(kruemmung(R.st,f.x));if(k>0){const vmax=Math.sqrt(5.5/k);if(f.v>vmax){f.v=vmax;if(f.spieler)R.hinweis={text:'Kurve',bis:t+0.3}}}
+    for(const o of R.tore){if(x0<o.x&&f.x>=o.x&&o.wer.length<3){o.wer.push(f);const pk=o.punkte[o.wer.length-1];if(o.art==='Sprint')f.sprintP+=pk;else f.bergP+=pk;if(f.spieler)R.ton.push('tor');if(f.spieler)R.hinweis={text:o.art+': '+o.wer.length+'. Platz, +'+pk,bis:t+2}}}
+    if(f.x>=R.laenge&&f.ziel==null){const anteil=(R.laenge-x0)/Math.max(1e-9,f.x-x0);f.ziel=Math.round((t0+anteil*dt)*100)/100;f.x=R.laenge}
+  }
+  R.t+=dt;
+  if(sp.ziel==null&&Math.floor(R.t*4)!==Math.floor((R.t-dt)*4))R.geistAuf.push(Math.round(sp.x*10)/10);
+  if(R.t>1800&&!R.fertig){R.fertig=true;ende()}
+}
+function platz(f){return R.fahrer.filter(o=>o.ziel!=null?(f.ziel==null||o.ziel<f.ziel):(f.ziel==null&&o.x>f.x)).length+1}
+function fmt(s){s/=Z;const m=Math.floor(s/60),r=s-m*60;return m+':'+(r<10?'0':'')+r.toFixed(r>=60?0:1)}
+function ende(){
+  tonEreignisse();
+  const F=R.fahrer,sp=F[0];
+  const rang=[...F].sort((a,b)=>(a.ziel??1e9)-(b.ziel??1e9)||b.x-a.x);
+  rang.slice(0,3).forEach((f,i)=>f.sprintP+=[15,12,10][i]);
+  const gruen=[...F].sort((a,b)=>b.sprintP-a.sprintP)[0],punkt=[...F].sort((a,b)=>b.bergP-a.bergP)[0];
+  const z=rang.slice(0,6).map((f,i)=>`<tr><td>${i+1}.</td><td style="color:${f.farbe}">■ ${f.name}</td><td>${f.ziel!=null?fmt(f.ziel):'('+Math.round(R.laenge-f.x)+' m zurück)'}</td></tr>`).join('');
+  const w=Math.round(100*sp.mess.imWind/Math.max(1,sp.mess.schritte)),pm=Math.round(sp.mess.pSum/Math.max(1,sp.mess.schritte));
+  const sieger=rang[0];
+  $('ergebnis').innerHTML=`<h1>Platz ${platz(sp)} von ${F.length}</h1><table><tr><th>Platz</th><th>Fahrer</th><th>Zeit</th></tr>${z}</table>
+   <p style="margin:8px 0 0">Grünes Trikot: <b style="color:${gruen.farbe}">${gruen.name}</b> (${gruen.sprintP} P.) · Bergtrikot: <b style="color:${punkt.farbe}">${punkt.name}</b> (${punkt.bergP} P.) · du: ${sp.sprintP} Sprint-, ${sp.bergP} Bergpunkte</p>
+   <p class="klein" style="margin-top:8px">Messwerte: Strecke ${R.st.name}, ${R.laenge} m · deine Zeit ${sp.ziel!=null?fmt(sp.ziel):'nicht im Ziel'} · Sieger ${fmt(sieger.ziel)} · Spieltempo ×${R.tempo} · Mittel ${pm} W · ${w} % im Windschatten · ${sp.mess.wechsel} Seitenwechsel · ${sp.mess.rempler} Rempler · Reserve ${Math.round(sp.res/1000)} kJ</p>`;
+  if(R.tour&&TOUR){ // Zeiten und Punkte in die Rundfahrt übernehmen; wer nicht im Ziel ist, bekommt Restweg mit 8 m/s
+    const letzte=Math.max(...F.filter(f=>f.ziel!=null).map(f=>f.ziel));
+    F.forEach(f=>{const tf=TOUR.fahrer[f.id];const z=f.ziel!=null?f.ziel:letzte+(R.laenge-f.x)/8;tf.zeit+=z;tf.sprintP+=f.sprintP;tf.bergP+=f.bergP;tf.etappen.push(Math.round(z*100)/100)});
+    TOUR.etappe++;tourSpeichern();
+    const G=[...TOUR.fahrer].sort((a,b)=>a.zeit-b.zeit),ich=G.findIndex(f=>f.id===0)+1,tk=trikots(),tn={gelb:'Gelb',gruen:'Grün',berg:'Berg'};
+    const zeilen=G.slice(0,6).map((f,i)=>`<tr><td>${i+1}.</td><td style="color:${f.farbe}">■ ${f.name}${tk[f.id]?' ('+tn[tk[f.id]]+')':''}</td><td>${i===0?fmt(f.zeit):'+'+(f.zeit-G[0].zeit).toFixed(1)+' s'}</td><td>${f.sprintP}</td><td>${f.bergP}</td></tr>`).join('');
+    $('ergebnis').innerHTML+=`<h1 style="margin-top:12px">${TOUR.etappe>=3?'Rundfahrt beendet: Gesamtplatz '+ich:'Gesamtwertung nach Etappe '+TOUR.etappe+': Platz '+ich}</h1><table><tr><th>Platz</th><th>Fahrer</th><th>Gesamt</th><th>Sprint</th><th>Berg</th></tr>${zeilen}</table>`;
+    window.__tour=JSON.parse(JSON.stringify(TOUR));
+  }
+  if(sp.ziel!=null&&!R.auto&&R.st.id==='alpen'&&R.tag)tagSpeichern(sp.ziel);
+  if(sp.ziel!=null&&!R.auto&&R.st.id==='alpen'&&!R.tag){const alt=R.geistBest,neu=bestSpeichern('alpen',sp.ziel,R.geistAuf),stn=sterneFuer(sp.ziel),vorher=fortLaden().sterne;fortSpeichern(stn);
+    $('ergebnis').insertAdjacentHTML('afterbegin',`<p class="gross" style="color:#d8b11a;font-size:34px">${'★'.repeat(stn)}${'☆'.repeat(3-stn)}</p>${stn===3&&vorher<3?'<p><b>Goldtrikot freigeschaltet!</b> Ab jetzt fährst du in Gold.</p>':''}<h1>${neu?'Neue Bestzeit! '+fmt(sp.ziel)+' s':fmt(sp.ziel)+' s'}</h1><p class="klein">${alt?'Bestzeit bisher '+fmt(alt.zeit)+' s'+(neu?' · '+((alt.zeit-sp.ziel)/Z).toFixed(1)+' s schneller':' · '+((sp.ziel-alt.zeit)/Z).toFixed(1)+' s langsamer'):'Erste Fahrt gespeichert, nächstes Mal fährt dein Geist mit'}</p>`)}
+  $('ergebnis').hidden=false;$('einst').hidden=false;$('einst').classList.remove('zeig');$('teilen').hidden=sp.ziel==null;window.__teiltext=teilText(sp);$('start').textContent='Spielen';tourAnzeige();tonStop();
+  window.__ergebnis={tag:R.tag,seed:SEED,zeitRechen:sp.ziel,platz:platz(sp),zeit:sp.ziel,sieger:sieger.ziel,laenge:R.laenge,strecke:R.st.name,tempo:R.tempo,imWind:w,pMittel:pm,wechsel:sp.mess.wechsel,rempler:sp.mess.rempler,sprintP:sp.sprintP,bergP:sp.bergP,n:F.length,ziel:F.filter(f=>f.ziel!=null).length};
+}
+// ---------- 3D-Welt (Three.js): x = Strecke, y = Höhe, z = seitlich ----------
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const cv=$('c'),SPURB=1.2; // sichtbare Spurbreite in m (Rechnung bleibt bei 0,8 m)
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputEncoding=THREE.sRGBEncoding;
+const szene=new THREE.Scene();szene.fog=new THREE.Fog(0xf3dcb8,140,1300);
+const kamera=new THREE.PerspectiveCamera(60,1,0.3,2000);
+szene.add(new THREE.HemisphereLight(0xcfe3ff,0x5b7a3a,0.85));const sonne=new THREE.DirectionalLight(0xffe2b0,1.25);sonne.position.set(-60,45,40);szene.add(sonne);
+// Stil "Plakat bei Abendsonne": warmer Dunst, kühle Berge, goldenes Licht (ein Farbklang für alles)
+const himmelTex=(()=>{const c=document.createElement('canvas');c.width=512;c.height=256;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,256);
+  g.addColorStop(0,'#2a5cae');g.addColorStop(0.35,'#6aa0da');g.addColorStop(0.5,'#f3dcb8');g.addColorStop(1,'#f3dcb8');x.fillStyle=g;x.fillRect(0,0,512,256);
+  x.fillStyle='rgba(255,246,230,0.55)';for(let i=0;i<26;i++){const cx=(i*97)%512,cy=70+((i*53)%50),r=14+(i*7)%22;x.beginPath();x.ellipse(cx,cy,r*2.2,r*0.55,0,0,7);x.fill()}
+  const t=new THREE.CanvasTexture(c);t.wrapS=THREE.RepeatWrapping;return t})();
+const himmel=new THREE.Mesh(new THREE.SphereGeometry(1500,24,14),new THREE.MeshBasicMaterial({map:himmelTex,side:THREE.BackSide,fog:false,depthWrite:false}));himmel.renderOrder=-2;szene.add(himmel);
+const sonnenTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');const g=x.createRadialGradient(64,64,2,64,64,64);g.addColorStop(0,'rgba(255,250,225,1)');g.addColorStop(0.25,'rgba(255,214,140,0.7)');g.addColorStop(1,'rgba(255,170,60,0)');x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c)})();
+const sonneSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:sonnenTex,transparent:true,fog:false,depthWrite:false,opacity:0.8,blending:THREE.AdditiveBlending}));sonneSprite.scale.set(420,420,1);sonneSprite.renderOrder=-1;szene.add(sonneSprite);
+
+let welt=null,figuren=[],abschnitte=[],geistFig=null;
+function groesse(){const r=cv.parentElement.getBoundingClientRect();for(const id of ['linien','konf']){const c=$(id);c.width=r.width;c.height=r.height}renderer.setSize(r.width,r.height,false);kamera.aspect=r.width/r.height;kamera.updateProjectionMatrix();const pf=$('profil'),pr=pf.getBoundingClientRect();pf.width=pr.width*2;pf.height=pr.height*2}
+addEventListener('resize',groesse);groesse();
+function band(pts,L,breite,farbe,schritt,textur,x0=-100){ // Straßen- oder Wiesenband entlang Mittellinie und Höhenprofil
+  const n=Math.ceil((L-x0)/schritt)+1,pos=[],uv=[],idx=[];
+  for(let i=0;i<=n;i++){const x=Math.min(L,x0+i*schritt),y=hoehe(pts,x),a=weltPos(R.M,x,-breite/2),b=weltPos(R.M,x,breite/2);pos.push(a.X,y,a.Z,b.X,y,b.Z);uv.push(0,x/8,1,x/8);if(i<n){const k=i*2;idx.push(k,k+1,k+2,k+1,k+3,k+2)}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
+  const m=new THREE.MeshLambertMaterial(textur?{map:textur}:{color:farbe});return new THREE.Mesh(g,m);
+}
+function strassenTextur(){const c=document.createElement('canvas');c.width=96;c.height=256;const x=c.getContext('2d');x.fillStyle='#5c5d60';x.fillRect(0,0,96,256);x.fillStyle='#e8e4d6';x.fillRect(0,0,3,256);x.fillRect(93,0,3,256);x.fillStyle='#cfcab8';for(const lx of [32,64])for(let y=0;y<256;y+=64)x.fillRect(lx-1,y,2,28);const t=new THREE.CanvasTexture(c);t.wrapS=THREE.ClampToEdgeWrapping;t.wrapT=THREE.RepeatWrapping;return t}
+// ---------- Fahrer mit Rennrad: Gelenke, Kurbel, Speichen. Lokale Achsen: x vorn, y oben, z seitlich ----------
+const GEO={rohr:new THREE.CylinderGeometry(1,1,1,6,1,true),glied:new THREE.CylinderGeometry(1,0.85,1,10,1,true),kugel:new THREE.SphereGeometry(1,12,8),
+  reifen:new THREE.TorusGeometry(0.335,0.022,6,24),felge:new THREE.TorusGeometry(0.30,0.012,4,24),nabe:new THREE.CylinderGeometry(0.03,0.03,0.1,8),
+  helm:new THREE.SphereGeometry(1,12,6,0,Math.PI*2,0,Math.PI*0.55),schuh:new THREE.BoxGeometry(0.2,0.06,0.08),schatten:new THREE.CircleGeometry(1,20)};
+GEO.helm.scale(1.25,1,1);
+GEO.speichen=(()=>{const v=[];for(let i=0;i<16;i++){const a=i/16*Math.PI*2;v.push(0,0,i%2?0.02:-0.02,Math.cos(a)*0.3,Math.sin(a)*0.3,0)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));return g})();
+const SCHATTEN_TEX=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const gr=x.createRadialGradient(32,32,2,32,32,32);gr.addColorStop(0,'rgba(0,0,0,0.45)');gr.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c)})();
+const _a=new THREE.Vector3(),_b=new THREE.Vector3(),_d=new THREE.Vector3(),_up=new THREE.Vector3(0,1,0);
+function zwischen(m,a,b,r){ // Zylinder m von Punkt a nach b mit Radius r ausrichten
+  _d.subVectors(b,a);const l=_d.length();m.position.addVectors(a,b).multiplyScalar(0.5);m.quaternion.setFromUnitVectors(_up,_d.divideScalar(l||1));m.scale.set(r,l,r)}
+function trikotTextur(){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.fillStyle='#f7f7f2';x.fillRect(0,0,64,64);x.fillStyle='#d9321e';for(let i=0;i<4;i++)for(let j=0;j<4;j++){x.beginPath();x.arc(8+i*16+(j%2)*8,8+j*16,5,0,Math.PI*2);x.fill()}return new THREE.CanvasTexture(c)}
+const TRIKOT={gelb:()=>new THREE.MeshLambertMaterial({color:0xf4d03f}),gruen:()=>new THREE.MeshLambertMaterial({color:0x2e8b57}),berg:()=>new THREE.MeshLambertMaterial({map:trikotTextur()})};
+const RAD_P={hinten:new THREE.Vector3(-0.5,0.335,0),vorn:new THREE.Vector3(0.5,0.335,0),tretlager:new THREE.Vector3(-0.08,0.29,0),
+  sattel:new THREE.Vector3(-0.27,0.93,0),steuer:new THREE.Vector3(0.38,0.86,0),lenker:new THREE.Vector3(0.47,0.88,0),sitzrohrOben:new THREE.Vector3(-0.22,0.83,0)};
+function figur(farbe,trikot){
+  const g=new THREE.Group(),c=new THREE.Color(farbe);
+  const M={trikot:trikot&&TRIKOT[trikot]?TRIKOT[trikot]():new THREE.MeshLambertMaterial({color:c}),
+    hose:new THREE.MeshLambertMaterial({color:0x1d1e22}),haut:new THREE.MeshLambertMaterial({color:0xe8c39e}),
+    rahmen:new THREE.MeshLambertMaterial({color:c.clone().lerp(new THREE.Color(0xffffff),0.35)}),gummi:new THREE.MeshLambertMaterial({color:0x1a1a1a}),
+    alu:new THREE.MeshLambertMaterial({color:0xb8bcc4}),helm:new THREE.MeshLambertMaterial({color:c.clone().lerp(new THREE.Color(0xffffff),0.6)}),
+    speiche:new THREE.LineBasicMaterial({color:0x9a9ea6}),schatten:new THREE.MeshBasicMaterial({map:SCHATTEN_TEX,transparent:true,depthWrite:false})};
+  const detail=[];const mesh=(geo,mat)=>{const m=new THREE.Mesh(geo,mat);g.add(m);return m};
+  // Schatten am Boden
+  const sch=mesh(GEO.schatten,M.schatten);sch.rotation.x=-Math.PI/2;sch.scale.set(0.9,0.45,1);sch.position.y=0.01;
+  // Räder: Reifen, Felge, Speichen, Nabe (drehen sich)
+  const raeder=[RAD_P.hinten,RAD_P.vorn].map(pos=>{const r=new THREE.Group();r.position.copy(pos);
+    const fe=new THREE.Mesh(GEO.felge,M.alu),sp=new THREE.LineSegments(GEO.speichen,M.speiche);r.add(new THREE.Mesh(GEO.reifen,M.gummi),fe,sp);const n=new THREE.Mesh(GEO.nabe,M.alu);n.rotation.x=Math.PI/2;r.add(n);detail.push(fe,sp,n);g.add(r);return r});
+  // Rahmen: Diamant aus Rohren
+  const rohr=(a,b,r,mat=M.rahmen)=>{const m=mesh(GEO.rohr,mat);zwischen(m,a,b,r);if(r<0.015)detail.push(m)};
+  const P=RAD_P,ob=new THREE.Vector3(0.36,0.78,0);
+  rohr(P.tretlager,P.sitzrohrOben,0.022);rohr(P.sitzrohrOben,ob,0.02);rohr(P.tretlager,ob.clone().add(new THREE.Vector3(0.01,-0.08,0)),0.026);
+  for(const z of [-0.05,0.05]){rohr(P.hinten.clone().setZ(z),P.tretlager,0.012);rohr(P.hinten.clone().setZ(z),P.sitzrohrOben,0.012);rohr(P.vorn.clone().setZ(z),ob.clone().add(new THREE.Vector3(0.03,-0.1,0)),0.012,M.alu)}
+  rohr(ob,P.steuer,0.024);rohr(P.sitzrohrOben,P.sattel,0.012,M.alu);
+  const sattel=mesh(GEO.kugel,M.gummi);sattel.position.copy(P.sattel).add(new THREE.Vector3(0.02,0.02,0));sattel.scale.set(0.13,0.025,0.05);
+  rohr(P.steuer,P.lenker,0.014,M.alu);
+  const lenk=mesh(GEO.rohr,M.alu);lenk.position.copy(P.lenker);lenk.rotation.x=Math.PI/2;lenk.scale.set(0.012,0.4,0.012);
+  for(const z of [-0.2,0.2]){const bg=mesh(GEO.rohr,M.gummi);detail.push(bg);zwischen(bg,P.lenker.clone().setZ(z),P.lenker.clone().add(new THREE.Vector3(0.06,-0.12,z)),0.014)}
+  // Fahrer: Teile als Zylinder und Kugeln, Stellung wird je Bild gerechnet
+  const teil=(geo,mat)=>mesh(geo,mat);
+  const T={rumpf:teil(GEO.glied,M.trikot),becken:teil(GEO.kugel,M.hose),brust:teil(GEO.kugel,M.trikot),hals:teil(GEO.rohr,M.haut),kopf:teil(GEO.kugel,M.haut),helm:teil(GEO.helm,M.helm),
+    beine:[0,1].map(()=>({ober:teil(GEO.glied,M.hose),unter:teil(GEO.glied,M.haut),knie:teil(GEO.kugel,M.haut),schuh:teil(GEO.schuh,M.gummi)})),
+    arme:[0,1].map(()=>({ober:teil(GEO.glied,M.trikot),unter:teil(GEO.glied,M.haut),ellbogen:teil(GEO.kugel,M.haut),hand:teil(GEO.kugel,M.gummi)})),
+    kurbeln:[0,1].map(()=>teil(GEO.rohr,M.alu)),blatt:teil(GEO.felge,M.alu)};
+  T.blatt.position.copy(P.tretlager).setZ(0.07);T.blatt.scale.set(0.35,0.35,1.5);
+  for(const L of T.beine)detail.push(L.knie,L.schuh);for(const A of T.arme)detail.push(A.ellbogen,A.hand);detail.push(...T.kurbeln,T.blatt,T.hals);
+  g.userData={T,raeder,M,mats:Object.values(M),detail,fern:false};return g}
+// Zwei-Gelenk-Kette: von a nach b mit Längen l1, l2, Knie zeigt in Richtung knick
+function kette(a,b,l1,l2,knick,out){_d.subVectors(b,a);let d=Math.min(_d.length(),l1+l2-1e-3);_d.normalize();
+  const x=(l1*l1-l2*l2+d*d)/(2*d),h=Math.sqrt(Math.max(0,l1*l1-x*x));const seit=_b.copy(knick).addScaledVector(_d,-knick.dot(_d)).normalize();
+  return out.copy(a).addScaledVector(_d,x).addScaledVector(seit,h)}
+const _h=new THREE.Vector3(),_s=new THREE.Vector3(),_f=new THREE.Vector3(),_k=new THREE.Vector3(),_e=new THREE.Vector3(),_hand=new THREE.Vector3(),_kopf=new THREE.Vector3(),_vorn=new THREE.Vector3(1,0,0),_unten=new THREE.Vector3(-0.6,-1,0);
+function pose(g,kurbel,wiege,raddreh,wackel){const {T,raeder}=g.userData,P=RAD_P;
+  raeder.forEach(r=>r.rotation.z=-raddreh);
+  // Becken über dem Sattel, im Wiegetritt höher und weiter vorn, seitlich pendelnd
+  _h.set(-0.25+wiege*0.2,1.0+wiege*0.16,Math.sin(kurbel)*0.05*wiege);
+  _s.set(0.26+wiege*0.08,1.24+wiege*0.12,Math.sin(kurbel)*0.03*wiege+wackel);
+  zwischen(T.rumpf,_h,_s,0.15);T.rumpf.scale.z=0.11;
+  T.becken.position.copy(_h);T.becken.scale.set(0.15,0.12,0.14);T.brust.position.copy(_s);T.brust.scale.set(0.13,0.12,0.16);
+  _kopf.copy(_s).add(_a.set(0.14,0.13,0));zwischen(T.hals,_s,_kopf,0.045);T.kopf.position.copy(_kopf);T.kopf.scale.setScalar(0.1);
+  T.helm.position.copy(_kopf).add(_a.set(-0.01,0.02,0));T.helm.scale.setScalar(0.12);T.helm.rotation.z=-0.25;
+  [0,1].forEach(i=>{const z=i?0.11:-0.11,a=kurbel+i*Math.PI;
+    _f.set(P.tretlager.x+Math.cos(a)*0.17,P.tretlager.y+Math.sin(a)*0.17,z*1.25);
+    zwischen(T.kurbeln[i],_a.copy(P.tretlager).setZ(z*0.75),_f,0.012);
+    const hip=_b.copy(_h).setZ(z);const hipC=hip.clone();
+    kette(hipC,_f,0.46,0.46,_vorn,_k);
+    const L=T.beine[i];zwischen(L.ober,hipC,_k,0.075);zwischen(L.unter,_k,_f,0.055);L.knie.position.copy(_k);L.knie.scale.setScalar(0.06);
+    L.schuh.position.copy(_f).add(_a.set(0.04,-0.01,0));L.schuh.rotation.z=-0.15;
+    const sh=_a.copy(_s).setZ(z*1.6).clone();_hand.copy(P.lenker).add(_e.set(0.05,-0.04,i?0.2:-0.2));
+    kette(sh,_hand,0.3,0.3,_unten,_e);const A=T.arme[i];zwischen(A.ober,sh,_e,0.05);zwischen(A.unter,_e,_hand,0.04);A.ellbogen.position.copy(_e);A.ellbogen.scale.setScalar(0.042);
+    A.hand.position.copy(_hand);A.hand.scale.setScalar(0.04)});
+}
+function bauWelt(){
+  if(welt)szene.remove(welt);welt=new THREE.Group();figuren=[];
+  const L=R.laenge,pts=R.pts;
+  welt.add(band(pts,L+200,3*SPURB,null,2,strassenTextur()));
+  const wiese=band(pts,L+200,R.st.id==='alpen'?64:90,R.st.id==='alpen'?0x6f9a45:0x7da351,5);wiese.position.y=-0.03;welt.add(wiese);
+  // Bäume als Instanzen (ein Zeichenaufruf je Teil): Stamm, zwei runde Kronen-Lagen
+  const rnd=rng(7),baeume=[];
+  for(let x=20;x<L+150;x+=9){for(const seite of [-1,1]){if(rnd()<0.25)continue;const z=seite*(4.5+rnd()*28),w=weltPos(R.M,x,z);baeume.push({x,X:w.X,Y:hoehe(pts,x),Z:w.Z,h:3+rnd()*4,r:1.3+rnd()*1.1,t:rnd()})}}
+  // in Abschnitte zu 250 m geteilt, damit nur Bäume in Sichtweite gezeichnet werden
+  const stammGeo=new THREE.CylinderGeometry(0.12,0.2,1,5,1,true),kroneGeo=new THREE.IcosahedronGeometry(1,1),stammM=new THREE.MeshLambertMaterial({color:0x6b4a2b}),kroneM=new THREE.MeshLambertMaterial({color:0xffffff});
+  const mtx=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),ps=new THREE.Vector3(),gruen=[0x3f7a3a,0x4d8a3f,0x2f6a35,0x5c9447].map(c=>new THREE.Color(c));
+  abschnitte=[];
+  for(let von=0;von<L+150;von+=250){const teil=baeume.filter(b=>b.x>=von&&b.x<von+250);if(!teil.length)continue;
+    const stammI=new THREE.InstancedMesh(stammGeo,stammM,teil.length),kroneI=new THREE.InstancedMesh(kroneGeo,kroneM,teil.length*2);stammI.frustumCulled=kroneI.frustumCulled=false;
+    teil.forEach((b,i)=>{mtx.compose(ps.set(b.X,b.Y+b.h*0.4,b.Z),q.identity(),sc.set(1,b.h*0.8,1));stammI.setMatrixAt(i,mtx);
+      for(let j=0;j<2;j++){mtx.compose(ps.set(b.X+(j?0.3:-0.2),b.Y+b.h*(0.85+j*0.32),b.Z+(j?-0.2:0.25)),q.setFromAxisAngle(_up,b.t*6+j),sc.set(b.r*(1-j*0.3),b.r*(1.15-j*0.3),b.r*(1-j*0.3)));kroneI.setMatrixAt(i*2+j,mtx);kroneI.setColorAt(i*2+j,gruen[Math.floor((b.t*7+j)%4)])}});
+    welt.add(stammI,kroneI);abschnitte.push({von,bis:von+250,teile:[stammI,kroneI]})}
+  const pf=new THREE.MeshLambertMaterial({color:0xf0ede2});
+  for(let x=100;x<=L;x+=100){const y=hoehe(pts,x),w=weltPos(R.M,x,2.2);const m=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.0,0.3),pf);m.position.set(w.X,y+0.5,w.Z);m.rotation.y=-w.th;welt.add(m)}
+  // Tore: Ziel rot, Sprint grün, Berg weiß-rot gepunktet
+  const torBauen=(x,farbe,text)=>{const y=hoehe(pts,x),w=weltPos(R.M,x,0),tor=new THREE.Group();for(const z of [-2.2,2.2]){const s=new THREE.Mesh(new THREE.BoxGeometry(0.2,5,0.2),pf);s.position.set(0,2.5,z);tor.add(s)}
+    const q=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.8,4.6),new THREE.MeshLambertMaterial({color:farbe}));q.position.set(0,5,0);tor.add(q);tor.position.set(w.X,y,w.Z);tor.rotation.y=-w.th;welt.add(tor)};
+  torBauen(L,0xd9321e);for(const o of R.tore)torBauen(o.x,o.art==='Sprint'?0x2e8b57:0xe8e4d6);
+  // Zuschauer an Anstiegen: Körper und Kopf als Instanzen, bunte Kleidung, winkend über der Zeit
+  const zus=[];for(let x=10;x<L;x+=2.2){if((steigung(pts,x)<0.03&&x<L-160&&!R.tore.some(o=>Math.abs(o.x-x)<60))||rnd()<0.35)continue;for(const seite of [-1,1]){if(rnd()<0.3)continue;const w=weltPos(R.M,x,seite*(2.4+rnd()*0.9));zus.push({X:w.X,Y:hoehe(pts,x),Z:w.Z,h:1.55+rnd()*0.3,f:rnd()})}}
+  const kl=[0xe63946,0xf1c453,0x2a9d8f,0x457b9d,0xffffff,0xf4a261,0x8338ec].map(c=>new THREE.Color(c));
+  // Mensch aus Beinen (dunkel), Oberkörper (bunt, oben breiter), Kopf; jeder Zweite hat die Arme oben
+  const n=Math.max(1,zus.length),armGeo=new THREE.CylinderGeometry(0.045,0.045,0.55,5,1,true);
+  const zB=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.13,0.11,1,6,1,true),new THREE.MeshLambertMaterial({color:0x2b2d33}),n);
+  const zK=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.2,0.15,1,8),new THREE.MeshLambertMaterial({color:0xffffff}),n);
+  const zH=new THREE.InstancedMesh(new THREE.SphereGeometry(0.14,8,6),new THREE.MeshLambertMaterial({color:0xe8c39e}),n);
+  const zA=new THREE.InstancedMesh(armGeo,new THREE.MeshLambertMaterial({color:0xe8c39e}),n*2);
+  zus.forEach((z,i)=>{const beinH=z.h*0.47,kH=z.h*0.36;
+    mtx.compose(ps.set(z.X,z.Y+beinH/2,z.Z),q.identity(),sc.set(1,beinH,1));zB.setMatrixAt(i,mtx);
+    mtx.compose(ps.set(z.X,z.Y+beinH+kH/2,z.Z),q.identity(),sc.set(1,kH,1));zK.setMatrixAt(i,mtx);zK.setColorAt(i,kl[Math.floor(z.f*kl.length)]);
+    mtx.compose(ps.set(z.X,z.Y+beinH+kH+0.14,z.Z),q.identity(),sc.set(1,1,1));zH.setMatrixAt(i,mtx);
+    const hoch=z.f>0.5;for(let j=0;j<2;j++){const sx=(j?1:-1)*0.24;mtx.compose(ps.set(z.X+sx*0.3,z.Y+beinH+kH+(hoch?0.2:-0.2),z.Z+sx),q.setFromAxisAngle(_a.set(1,0,0),(j?-1:1)*(hoch?0.4:0.15)),sc.set(1,1,1));zA.setMatrixAt(i*2+j,mtx)}});
+  zB.count=zK.count=zH.count=zus.length;zA.count=zus.length*2;welt.add(zB,zK,zH,zA);
+  // Berge am Horizont: weiche Kegel mit heller Spitze, Dunst durch Nebel
+  const bergM=new THREE.MeshLambertMaterial({color:0x6a82ae}),schnee=new THREE.MeshLambertMaterial({color:0xf2f4f7});
+  const mid=R.M[Math.floor(R.M.length/2)];
+  for(let i=0;i<26;i++){const a=rnd()*Math.PI*2,r=480+rnd()*330,h=140+rnd()*200,br=200+rnd()*170;const b=new THREE.Mesh(new THREE.ConeGeometry(br,h,32,1),bergM);b.position.set(mid.X+Math.cos(a)*r,h/2-30,mid.Z+Math.sin(a)*r);welt.add(b);
+    if(h>250){const sp=new THREE.Mesh(new THREE.ConeGeometry(br*0.22,h*0.22,32,1),schnee);sp.position.set(b.position.x,h-30-h*0.11+1,b.position.z);welt.add(sp)}}
+  for(const f of R.fahrer){const g=figur(f.farbe,f.trikot);welt.add(g);figuren.push(g)}
+  geistFig=null;if(R.geistBest&&!R.auto){geistFig=figur('#9ad1ff',null);for(const m of geistFig.userData.mats){m.transparent=true;m.opacity=0.38;m.depthWrite=false}welt.add(geistFig)}
+  zielBanner(L);fackelnBauen(zus);
+  szene.add(welt);
+  const sp=R.fahrer[0],w0=weltPos(R.M,sp.x-5.5,0);kamera.position.set(w0.X,hoehe(pts,sp.x)+2.5,w0.Z);
+}
+// ---------- Kamera: Hubschrauber-Anflug, Verfolger mit Tempo-Gefühl, Zielfoto-Umkreisung ----------
+const _cp=new THREE.Vector3(),_cl=new THREE.Vector3(),_hp=new THREE.Vector3(),_hl=new THREE.Vector3();
+let kamBack=5.5,kamFov=58;
+function glatt(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)}
+function kameraFuehren(sp){
+  const pts=R.pts,h=hoehe(pts,sp.x),st=steigung(pts,sp.x),boost=R.t<sp.schleuderBis;
+  kamBack+=((boost?7.2:5.5)-kamBack)*0.08;kamFov+=((58+Math.min(14,sp.v*0.45)+(boost?9:0))-kamFov)*0.12;
+  const wackel=(boost?0.07:sp.p>600?0.02:0)*Math.sin(R.rt*53);
+  const hinten=weltPos(R.M,sp.x-kamBack,sp.z*SPURB*0.6),vorn=weltPos(R.M,sp.x+6,sp.z*SPURB*0.4-sp.vz*0.3);
+  _cp.set(hinten.X,Math.max(h+2.5-st*3,hoehe(pts,Math.max(0,sp.x-kamBack))+1.4),hinten.Z);
+  _cl.set(vorn.X,hoehe(pts,sp.x+6)+0.9+wackel,vorn.Z);
+  kamera.laufX=sp.x-kamBack;
+  if(sp.ziel!=null&&R.zielRt!=null){ // Zielfoto: Kamera kreist von vorn um den Fahrer
+    const a=R.rt-R.zielRt,w=weltPos(R.M,sp.x,sp.z*SPURB),ang=w.th-0.5+a*0.7;
+    kamera.position.set(w.X+Math.cos(ang)*5.5,h+1.5+a*0.2,w.Z+Math.sin(ang)*5.5);kamera.lookAt(w.X,h+1.15,w.Z);kamera.fov=50;kamera.updateProjectionMatrix();return}
+  if(R.intro){ // Anflug aus 55 m Höhe vor dem Feld nach hinten ins Verfolgerbild
+    const e=glatt(R.rt/INTRO),hv=weltPos(R.M,sp.x+45,22),lv=weltPos(R.M,sp.x+8,0);
+    _hp.set(hv.X,hoehe(pts,sp.x+45)+55,hv.Z);_hl.set(lv.X,hoehe(pts,sp.x+8)+1,lv.Z);
+    kamera.position.lerpVectors(_hp,_cp,e);_cl.lerpVectors(_hl,_cl,e);kamera.fov=50+8*e;kamera.updateProjectionMatrix();kamera.lookAt(_cl);return}
+  kamera.position.copy(_cp);kamera.fov=kamFov;kamera.updateProjectionMatrix();kamera.lookAt(_cl);
+  himmel.position.copy(kamera.position);
+}
+// Sonne und Himmel folgen der Kamera
+function sonneFolgt(){himmel.position.copy(kamera.position);const d=_hl.set(0,0,-1).applyQuaternion(kamera.quaternion);d.y=0;if(d.lengthSq()<1e-4)d.set(1,0,0);d.normalize();
+  const r=_hp.set(-d.z,0,d.x);sonneSprite.position.copy(kamera.position).addScaledVector(d,1100).addScaledVector(r,380);sonneSprite.position.y=kamera.position.y+330}
+// ---------- Geist: beste Fahrt als Schemen ----------
+function geistZeichnen(sp){if(!geistFig||!R.geistBest)return;const g=R.geistBest.geist,i=R.t*4,k=Math.floor(i);
+  if(k>=g.length-1){geistFig.visible=false;return}
+  const x=g[k]+(g[k+1]-g[k])*(i-k),w=weltPos(R.M,x,0.9*SPURB);geistFig.position.set(w.X,hoehe(R.pts,x),w.Z);geistFig.rotation.order='YZX';geistFig.rotation.y=-w.th;geistFig.rotation.z=Math.atan(steigung(R.pts,x));
+  geistFig.visible=Math.abs(x-sp.x)<120&&x>sp.x-8;if(geistFig.visible)pose(geistFig,x*2.2,0,x/0.335,0)}
+// ---------- Rauchfackeln der Fans ----------
+let fackeln=null;const fackelPos=[];
+const rauchTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const g=x.createRadialGradient(32,32,2,32,32,32);g.addColorStop(0,'rgba(255,255,255,0.9)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c)})();
+function fackelnBauen(zus){fackelPos.length=0;const farben=[[1,.25,.2],[.3,.9,.4],[1,1,1],[1,.6,.15]],pos=[],col=[];
+  zus.forEach((z,i)=>{if(i%9!==0)return;const f=farben[(i/9|0)%4];for(let k=0;k<7;k++){fackelPos.push({X:z.X,Y:z.Y,Z:z.Z,ph:k/7,s:0.6+(k%3)*0.2});pos.push(z.X,z.Y,z.Z);col.push(f[0],f[1],f[2])}});
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  fackeln=new THREE.Points(g,new THREE.PointsMaterial({size:4.2,map:rauchTex,vertexColors:true,transparent:true,opacity:0.55,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}));fackeln.frustumCulled=false;welt.add(fackeln)}
+function fackelnZeichnen(sp){if(!fackeln)return;const p=fackeln.geometry.attributes.position.array,t=R.rt*0.35;
+  for(let i=0;i<fackelPos.length;i++){const f=fackelPos[i],u=(t*f.s+f.ph)%1;p[i*3]=f.X+Math.sin(u*5+i)*1.2;p[i*3+1]=f.Y+1.6+u*5;p[i*3+2]=f.Z+Math.cos(u*4+i)*1.2}
+  fackeln.geometry.attributes.position.needsUpdate=true}
+function zielBanner(L){const c=document.createElement('canvas');c.width=512;c.height=96;const x=c.getContext('2d');
+  for(let i=0;i<32;i++)for(let j=0;j<6;j++){x.fillStyle=(i+j)%2?'#fff':'#1b1b1f';x.fillRect(i*16,j*16,16,16)}
+  x.fillStyle='rgba(217,50,30,0.92)';x.fillRect(120,18,272,60);x.fillStyle='#fff';x.font='bold 46px sans-serif';x.textAlign='center';x.fillText('ZIEL',256,64);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(4.5,0.85),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));
+  const w=weltPos(R.M,L,0);m.position.set(w.X,hoehe(R.pts,L)+5,w.Z);m.rotation.y=-w.th-Math.PI/2;welt.add(m)}
+// ---------- Bildschirmeffekte: Tempolinien, Konfetti ----------
+const lin=$('linien'),lx=lin.getContext('2d'),kf=$('konf'),kx=kf.getContext('2d');let konf=[];
+function konfettiStart(){const W=kf.width||400,H=kf.height||700,farben=['#ffd23f','#d9321e','#fff','#2a9d8f','#1f6fb2','#f08c2e'];
+  for(let i=0;i<220;i++)konf.push({x:Math.random()*W,y:-Math.random()*H*0.5,vx:(Math.random()-0.5)*90,vy:120+Math.random()*220,r:Math.random()*6,vr:(Math.random()-0.5)*9,c:farben[i%6],s:4+Math.random()*5})}
+function konfettiStop(){konf=[];kx.clearRect(0,0,kf.width,kf.height)}
+function effekte(sp,real){sonneFolgt();
+  const W=lin.width,H=lin.height;lx.clearRect(0,0,W,H);const boost=R.t<sp.schleuderBis,st=Math.max(0,Math.min(1,(sp.v-12)/14))+(boost?0.8:0);
+  if(st>0.02&&!R.intro&&sp.ziel==null){const cx=W/2,cy=H*0.42,r0=Math.min(W,H)*0.3;lx.lineWidth=boost?2.4:1.6;
+    for(let i=0;i<34;i++){const a=i*2.399+Math.floor(R.rt*9+i*0.37)*0.51,ph=((R.rt*(boost?3.2:1.8)+i*0.137)%1),r1=r0+ph*Math.max(W,H)*0.55,len=(8+ph*70)*(0.4+st);
+      lx.strokeStyle=`rgba(255,255,255,${(0.1+0.32*st)*(1-ph*0.5)})`;lx.beginPath();lx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);lx.lineTo(cx+Math.cos(a)*(r1+len),cy+Math.sin(a)*(r1+len));lx.stroke()}}
+  if(konf.length||kx.__voll){kx.clearRect(0,0,kf.width,kf.height);for(const k of konf){k.x+=k.vx*real;k.y+=k.vy*real;k.r+=k.vr*real;kx.save();kx.translate(k.x,k.y);kx.rotate(k.r);kx.fillStyle=k.c;kx.fillRect(-k.s/2,-k.s/4,k.s,k.s/2);kx.restore()}
+    konf=konf.filter(k=>k.y<kf.height+20)}}
+
+const tmpV=new THREE.Vector3();
+function zeichne(real=0.016){
+  if(!welt)bauWelt();
+  const sp=R.fahrer[0],pts=R.pts;
+  for(const a of abschnitte){const an=a.bis>sp.x-30&&a.von<sp.x+650;if(a.teile[0].visible!==an)for(const t of a.teile)t.visible=an}
+  R.fahrer.forEach((f,i)=>{const g=figuren[i],u=g.userData,w=weltPos(R.M,f.x,f.z*SPURB);g.position.set(w.X,hoehe(pts,f.x),w.Z);g.rotation.order='YZX';g.rotation.y=-w.th;
+    const wiege=f.p>450?Math.min(1,(f.p-450)/250):0; // Wiegetritt ab 450 W
+    const kurbel=f.x*2.2; // Kurbelwinkel aus Weg (Übersetzung grob)
+    g.rotation.z=Math.atan(steigung(pts,f.x));g.rotation.x=Math.max(-0.35,Math.min(0.35,f.lehn))+wiege*0.14*Math.sin(kurbel);
+    const nah=Math.abs(f.x-sp.x)<40; // Gelenke nur in der Nähe rechnen (spart Rechenzeit)
+    if(nah||!u.posiert){pose(g,kurbel,wiege,f.x/0.335,f.rempler>0?Math.sin(f.rempler*20)*0.06:0);u.posiert=true}
+    g.visible=f.x>sp.x-8&&f.x<sp.x+250;
+    const fern=Math.abs(f.x-sp.x)>25;if(fern!==u.fern){u.fern=fern;for(const m of u.detail)m.visible=!fern}
+    // Fahrer zwischen Kamera und Spieler als Schemen, sonst verdecken sie das Bild (Abstand in Streckenmetern)
+    const blend=f.spieler||f.x>=sp.x-0.3?1:Math.max(0,Math.min(0.3,(f.x-(sp.x-5.5+1.2))/3*0.3));
+    if(blend!==u.blend){u.blend=blend;for(const m of u.mats){if(m===u.M.schatten)continue;m.transparent=blend<1;m.opacity=blend;m.depthWrite=blend>=1}}
+  });
+  kameraFuehren(sp);if(R.fr===1)kamera.erste=kamera.position.y;geistZeichnen(sp);fackelnZeichnen(sp);
+  renderer.render(szene,kamera);effekte(sp,real);
+  // Höhenprofil als Zusatz oben
+  const pc=$('profil'),px=pc.getContext('2d'),W=pc.width,H=pc.height;px.clearRect(0,0,W,H);px.fillStyle='rgba(0,0,0,0.3)';px.fillRect(0,0,W,H);
+  const hmax=Math.max(1,...pts.map(p=>p[1]));px.beginPath();px.moveTo(0,H);for(const [x,y] of pts)px.lineTo(W*x/R.laenge,H-H*0.9*y/hmax);px.lineTo(W,H);px.closePath();px.fillStyle='rgba(243,239,226,0.85)';px.fill();
+  for(const o of R.tore){px.fillStyle=o.art==='Sprint'?'#2e8b57':'#b4381f';px.fillRect(W*o.x/R.laenge-1,0,2,H)}
+  for(const f of R.fahrer){const x=W*Math.min(1,Math.max(0,f.x/R.laenge));px.fillStyle=f.farbe;px.fillRect(x-2,f.spieler?-2:4,f.spieler?6:3,f.spieler?H+4:H-4)}
+}
+// ---------- HUD und Schleife ----------
+let AC=null,TON=null;
+function tonStart(){if(!$('eTon').checked){if(AC)AC.suspend();return}
+  try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();
+    const len=AC.sampleRate*2,buf=AC.createBuffer(1,len,AC.sampleRate),d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+    const rausch=()=>{const q=AC.createBufferSource();q.buffer=buf;q.loop=true;q.start();return q};
+    const haupt=AC.createGain();haupt.gain.value=0.7;haupt.connect(AC.destination);
+    const wF=AC.createBiquadFilter();wF.type='bandpass';wF.Q.value=0.6;const wG=AC.createGain();wG.gain.value=0;rausch().connect(wF);wF.connect(wG);wG.connect(haupt);
+    const zF=AC.createBiquadFilter();zF.type='bandpass';zF.frequency.value=1100;zF.Q.value=1.2;const zG=AC.createGain();zG.gain.value=0;rausch().connect(zF);zF.connect(zG);zG.connect(haupt);
+    TON={haupt,wF,wG,zG,buf,naechsterKlick:0}}
+    AC.resume()}catch(e){AC=null;TON=null}}
+function piep(freq,dauer,start=0,typ='triangle',laut=0.25){if(!TON)return;const o=AC.createOscillator(),g=AC.createGain(),t0=AC.currentTime+start;o.type=typ;o.frequency.value=freq;g.gain.setValueAtTime(laut,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+dauer);o.connect(g);g.connect(TON.haupt);o.start(t0);o.stop(t0+dauer+0.05)}
+function tonEreignisse(){if(!R)return;const ev=R.ton.splice(0);if(!TON||!$('eTon').checked)return;
+  for(const e of ev){if(e==='tor'){piep(880,0.15);piep(1320,0.25,0.12)}else if(e==='rempler'){piep(90,0.18,0,'sine',0.5)}else if(e==='angriff'){piep(660,0.12);piep(660,0.12,0.18)}else if(e==='ziel'){piep(523,0.2);piep(659,0.2,0.18);piep(784,0.45,0.36)}}}
+function tonBild(){ // je Bild: Fahrtwind nach Tempo (im Windschatten leiser), Zuschauer am Anstieg, Freilauf-Klicken ohne Treten
+  tonEreignisse();if(!TON||!$('eTon').checked||!R||R.fertig)return;const sp=R.fahrer[0],t=AC.currentTime;
+  TON.wF.frequency.setTargetAtTime(300+sp.v*45,t,0.1);TON.wG.gain.setTargetAtTime(Math.min(0.35,0.0018*sp.v*sp.v)*(1-sp.w*1.5),t,0.15);
+  const zus=steigung(R.pts,sp.x)>0.03||R.tore.some(o=>Math.abs(o.x-sp.x)<60);TON.zG.gain.setTargetAtTime(zus?0.12+0.05*Math.sin(t*3):0,t,0.4);
+  if(sp.p<80&&sp.v>3&&t>TON.naechsterKlick){const q=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=3000;q.buffer=TON.buf;g.gain.setValueAtTime(0.15,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.02);q.connect(f);f.connect(g);g.connect(TON.haupt);q.start(t,Math.random(),0.03);TON.naechsterKlick=t+1/(sp.v*1.2)}}
+function tonStop(){if(TON){TON.wG.gain.value=0;TON.zG.gain.value=0}}
+function hud(){
+  const sp=R.fahrer[0];$('hTempo').textContent=(sp.v*3.6).toFixed(0);$('hWatt').textContent=Math.round(sp.p);
+  const st=steigung(R.pts,sp.x);$('hSteig').textContent=(st*100).toFixed(0)+' %';
+  $('hPos').textContent=platz(sp)+'./'+R.fahrer.length;$('hZeit').textContent=fmt(R.t);
+  $('hRes').style.width=(100*sp.res/K.rMax).toFixed(1)+'%';$('hRes').style.background=sp.res<K.rMax*0.2?css('--bad'):css('--good');
+  $('hWind').textContent=Math.round(sp.w*100)+' %';
+  $('hAus').textContent=R.ausAnz>0?` · Ausreißer: ${R.ausAnz}, ${Math.round(R.ausVorsprung)} s vorn`:'';
+  const vorn=Math.max(...R.fahrer.map(f=>f.x));$('hGap').textContent=Math.round(vorn-sp.x)+' m';
+  const bereit=sp.sog>=1&&R.t>=sp.schleuderBis&&!R.auto,aktiv=R.t<sp.schleuderBis;$('sogfuell').style.width=(sp.sog*100).toFixed(0)+'%';$('sog').classList.toggle('voll',bereit);
+  $('schleuder').disabled=!bereit;$('schleuder').classList.toggle('bereit',bereit);document.body.classList.toggle('boost',aktiv);
+  const zz=$('zaehler');if(R.intro){const rest=INTRO-R.rt;zz.textContent=rest<1.5?String(Math.max(1,Math.ceil(rest/0.5))):'';zz.hidden=rest>=1.5}else if(R.rt-INTRO<0.8){zz.textContent='LOS!';zz.hidden=false}else zz.hidden=true;
+  const nah=R.tore.find(o=>o.x>sp.x&&o.x-sp.x<300&&o.wer.length<3);
+  if(nah&&!(R.hinweis&&R.t<R.hinweis.bis))R.hinweis={text:nah.art+' in '+Math.ceil((nah.x-sp.x)/50)*50+' m',bis:R.t+0.05};
+  const m=$('meldung');if(R.hinweis&&R.t<R.hinweis.bis){m.textContent=R.hinweis.text;m.hidden=false}else m.hidden=true;
+}
+function schleife(ts){
+  if(!R||R.fertig){anim=0;return}
+  R.fr=(R.fr||0)+1;const roh=R.fr<=1?0:(ts-letzt)/1000||0,real=Math.min(0.1,roh);letzt=ts;R.rt+=Math.min(0.5,roh);const sp=R.fahrer[0];
+  if(R.intro){if(R.rt>=INTRO){R.intro=false;R.ton.push('start')}}
+  else{
+    let sim=real*R.tempo*(sp.ziel==null?zeitlupe(R.laenge-sp.x):zeitlupe(0));const dt=K.dt;
+    while(sim>0){simSchritt(Math.min(dt,sim));sim-=dt;if(R.t>1800)break}
+    if(sp.ziel!=null&&R.zielRt==null){R.zielRt=R.rt;konfettiStart();R.ton.push('ziel');R.hinweis=null;$('blitz').classList.remove('an');void $('blitz').offsetWidth;$('blitz').classList.add('an')}
+    if((R.zielRt!=null&&R.rt-R.zielRt>2.5)||R.t>1800){R.fertig=true;ende()}
+  }
+  zeichne(real);hud();tonBild();if(!R.fertig)anim=requestAnimationFrame(schleife);else anim=0;
+}
+// ---------- Eingabe: ein Daumen ----------
+const spiel=$('spiel');
+spiel.addEventListener('pointerdown',e=>{if(R&&R.intro){R.intro=false;return}if(!AC)tonStart();if(!R||R.fertig||!$('einst').hidden)return;R.touch={x:e.clientX,z:R.fahrer[0].zZiel};spiel.setPointerCapture(e.pointerId)});
+spiel.addEventListener('pointermove',e=>{if(!R||!R.touch)return;const sp=R.fahrer[0];const dx=e.clientX-R.touch.x;
+  sp.zZiel=R.touch.z+dx/60; // 60 Pixel je Meter seitlich, stufenlos
+});
+spiel.addEventListener('pointerup',()=>{if(R)R.touch=null});
+for(const [id,r] of [['lenkL',-1],['lenkR',1]]){const b=$(id);
+  const an=e=>{e.preventDefault();if(R){R.lenk=r;b.classList.add('an')}},aus=()=>{if(R&&R.lenk===r)R.lenk=0;b.classList.remove('an')};
+  b.addEventListener('pointerdown',an);b.addEventListener('pointerup',aus);b.addEventListener('pointerleave',aus);b.addEventListener('pointercancel',aus)}
+addEventListener('keydown',e=>{if(!R)return;if(e.key==='ArrowLeft')R.lenk=-1;else if(e.key==='ArrowRight')R.lenk=1;else if(e.key===' ')antritt(true);else if(e.key==='s')schleuder()});
+addEventListener('keyup',e=>{if(e.key===' ')antritt(false);if(R&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))R.lenk=0});
+{const b=$('antritt'),an=e=>{e.preventDefault();antritt(true);b.classList.add('an')},aus=()=>{antritt(false);b.classList.remove('an')};
+  b.addEventListener('pointerdown',an);b.addEventListener('pointerup',aus);b.addEventListener('pointerleave',aus);b.addEventListener('pointercancel',aus);
+  $('schleuder').addEventListener('pointerdown',e=>{e.preventDefault();schleuder()})}
+$('eModus').addEventListener('change',tourAnzeige);$('tourReset').addEventListener('click',()=>{TOUR=null;tourSpeichern();tourAnzeige()});tourLaden();tourAnzeige();
+$('menue').addEventListener('click',()=>{tonStop();if(R){R.fertig=true;cancelAnimationFrame(anim);anim=0}$('einst').hidden=false;$('start').textContent='Spielen'});
+function starten(schnell,tag){tonStart();cancelAnimationFrame(anim);TAG=!!tag;SEED=TAG?tagSeed(new Date()):12345;neuesRennen();if(schnell===true){R.intro=false;R.rt=INTRO}welt&&szene.remove(welt);welt=null;konfettiStop();document.body.classList.remove('boost');$('einst').hidden=true;$('ergebnis').hidden=true;$('meldung').hidden=true;letzt=performance.now();anim=requestAnimationFrame(schleife)}
+$('start').addEventListener('click',starten);$('nochmal').addEventListener('click',()=>starten(true,TAG));$('tag').addEventListener('click',()=>starten(false,true));$('einstBtn').addEventListener('click',()=>$('einst').classList.toggle('zeig'));$('teilen').addEventListener('click',teilen);
+for(const [id,out,f] of [['eGegner','oGegner',v=>v],['eStaerke','oStaerke',v=>v]])$(id).addEventListener('input',e=>$(out).textContent=f(e.target.value));
+
+tourLaden();tourAnzeige();starten();requestAnimationFrame(()=>requestAnimationFrame(()=>$('menue').click()));
+
+</script>
