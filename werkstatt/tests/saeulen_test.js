@@ -83,6 +83,33 @@ test('s16_schild_gross', async () => {
   await p.context().close();
 });
 
+// Nachtrag 05.11.2026 (Befund vom Handy: "Die Schilder sind zu hoch im Quermodus")
+test('s16_schild_hoehe', async () => {
+  const p = await seite();
+  const r = await p.evaluate((code) => {
+    const w = eval(code.oer), box = new THREE.Box3(), c = new THREE.Vector3();
+    return w.look.landmarks.map((lm, i) => {
+      let top = -1e9;
+      for (const m of w.group.children) {
+        if (!m.isMesh || w.beacons.includes(m)) continue;
+        box.setFromObject(m); box.getCenter(c);
+        if (Math.hypot(c.x - lm.x, c.z - lm.y) < 60 && box.max.y > top) top = box.max.y;
+      }
+      const s = w.labels[i].sprite, boden = w.beacons[i].userData.boden;
+      return { name: lm.label, mitte: s.position.y - boden, halb: s.scale.y / 2, dach: top - boden };
+    });
+  }, { oer: szene('oer') });
+  // Querformat 915 x 412, Blickwinkel 50 Grad, Kamera 150 Einheiten entfernt, 10 über dem Boden, waagrecht:
+  // oberer Bildrand liegt 10 + 150 * tan(25 Grad) = 79,9 über dem Boden
+  const rand = 10 + 150 * Math.tan(25 * Math.PI / 180);
+  for (const v of r) {
+    pruefe(v.mitte <= 60.01, `${v.name}: Schildmitte ${v.mitte.toFixed(1)} über dem Boden (höchstens 60)`);
+    pruefe(v.mitte + v.halb < rand, `${v.name}: Schild ragt im Querformat bei 150 Einheiten aus dem Bild`);
+    if (v.dach + 20 <= 60) pruefe(Math.abs(v.mitte - (v.dach + 20)) < 0.6, `${v.name}: Schild nicht 20 über dem Dach (${v.mitte.toFixed(1)} statt ${(v.dach + 20).toFixed(1)})`);
+  }
+  await p.context().close();
+});
+
 (async () => {
   const srv = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1'], { cwd: ordner, stdio: 'ignore' });
   await new Promise(r => setTimeout(r, 800));

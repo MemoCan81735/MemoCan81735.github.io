@@ -16825,14 +16825,15 @@ class TrackSceneUI {
     g.fillStyle = "#ffffff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text, 256, 50);
     return c;
   }
-  static get LABEL_HEIGHT(){ return { mosque: 46, rathaus: 40, markt: 22, arena: 26, headframe: 60, kirche: 44 }; }
-  _addLabel(lm, h){
+  // Schildmitte 20 über dem höchsten Teil des Bauwerks, höchstens 60 über dem Boden (S-W16 Nachtrag: Querformat)
+  static labelLift(h, top){ return h + Math.min(Number.isFinite(top) ? top - h + 20 : 60, 60); }
+  _addLabel(lm, h, top){
     const tex = new THREE.CanvasTexture(TrackSceneUI.labelCanvas(lm.label));
     tex.colorSpace = THREE.SRGBColorSpace; this._keep(tex);
     const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }); this._keep(mat);
     const sprite = new THREE.Sprite(mat);
     sprite.scale.set(150, 150 * 96 / 512, 1);   // S-W16: größer, aus der Ferne lesbar
-    const oben = h + (TrackSceneUI.LABEL_HEIGHT[lm.type] || 40) * (lm.s || 1) + 6;
+    const oben = TrackSceneUI.labelLift(h, top);
     sprite.position.set(lm.x, oben, lm.y);
     this.group.add(sprite);
     this.labels.push({ sprite });
@@ -16867,17 +16868,19 @@ class TrackSceneUI {
       // Brücke: auf die Ufer an beiden Enden setzen (lokale x-Achse nach Drehung um y: (cos, -sin))
       const ends = lm.span ? Math.min(...[-1, 1].map(k => this.heightAt(lm.x + Math.cos(lm.rot || 0) * k * lm.span, lm.y - Math.sin(lm.rot || 0) * k * lm.span))) - 9 * (lm.s || 1) : null;
       const h = ends != null ? ends : lm.h != null ? lm.h : Math.min(...[[0, 0], [-r, -r], [r, -r], [r, r], [-r, r]].map(([a, b]) => this.heightAt(lm.x + a, lm.y + b)));
-      if (lm.label) this._addLabel(lm, h);
       q.setFromAxisAngle(up, lm.rot || 0);
       m4.compose(v.set(lm.x, h - 0.3, lm.y), q, sc.set(lm.s || 1, lm.s || 1, lm.s || 1));
       if (lm.foot) m4.compose(v, q, sc.set(1, 1, 1));   // echter Grundriss: schon in Welteinheiten
+      let top = -Infinity;   // höchster Punkt des Bauwerks, für die Höhe des Schilds
       for (const part of lm.foot ? KitUI.footParts(lm.type, lm.foot) : this.kit.decorParts(lm.type, true)){
         const mesh = new THREE.Mesh(part.geo, this._decorMaterial(part.key));
         this._keep(part.geo);
         mesh.applyMatrix4(m4);
         mesh.castShadow = lm.type !== "slagheap"; mesh.receiveShadow = true;
         this.group.add(mesh);
+        if (lm.label){ mesh.geometry.computeBoundingBox(); top = Math.max(top, mesh.geometry.boundingBox.clone().applyMatrix4(m4).max.y); }
       }
+      if (lm.label) this._addLabel(lm, h, top);
     }
   }
 

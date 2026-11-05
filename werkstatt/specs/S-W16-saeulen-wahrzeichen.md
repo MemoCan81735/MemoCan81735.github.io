@@ -36,6 +36,7 @@ Die Wahrzeichen der Oer-Runde (S-W12) sind aus dem Rennen kaum zu finden. Die Sc
 | AK-2 | Jede Säule steht am Standort des Wahrzeichens, auf dem Boden des Wahrzeichens, und reicht mindestens bis zur Unterkante des Schildes (Toleranz 0,01) | `s16_saeulen_hoehe` |
 | AK-3 | Deckkraft Säule = 0,85 bei Abstand 60; Mitte (400) zwischen 0,3 und 0,85 und sichtbar; bei 900 unsichtbar und gleich dem Schild | `s16_saeulen_alpha` |
 | AK-4 | Jedes Schild ist mindestens 140 Einheiten breit (vorher 96) | `s16_schild_gross` |
+| AK-6 | Schildmitte 20 über dem höchsten Teil des Bauwerks (±0,6), höchstens 60 über dem Boden; im Querformat (915 × 412, Blickwinkel 50°, Kamera 150 entfernt, 10 hoch, waagrecht) liegt das Schild ganz unter dem oberen Bildrand (79,9) | `s16_schild_hoehe` |
 | AK-5 | Bestehende Schild-Tests aus S-W13 und die Wahrzeichen-Tests aus S-W12 bis S-W14 bleiben grün | `wahrzeichen_test.js` |
 
 ## Prüfszenarien
@@ -45,9 +46,12 @@ Die Wahrzeichen der Oer-Runde (S-W12) sind aus dem Rennen kaum zu finden. Die Sc
 | PS-2 | Grenzwert | Abstand 60 (voll), 400 (Mitte), 900 (aus) | AK-3 |
 | PS-3 | Fehlalarm | Strecke erken: keine Säule, Schilder unverändert | AK-1 |
 | PS-4 | Normal | Schildbreite 150 je Schild | AK-4 |
+| PS-6 | Grenzwert | Hohe Bauwerke (Fördergerüst 169, Moschee 52): Schild wird bei 60 gedeckelt | AK-6 |
+| PS-7 | Normal | Niedriges Bauwerk (Kaufland 18): Schild 20 über dem Dach | AK-6 |
 | PS-5 | Wiederholbarkeit | Zweimal aktualisieren ergibt dasselbe | AK-3 |
 
 ## Gegenproben
+- Verstoß (Nachtrag): Schild ohne Höchstgrenze; Schild wieder nach Typhöhe. Beide machen `s16_schild_hoehe` rot.
 - Verstoß: Säule fehlt; Säule steht in der Luft; Säule endet unter dem Schild; Säule ohne Ausblenden; Schild wieder 96 breit. Jede muss ihren Test rot machen (`werkstatt/tests/gegenproben_saeulen.py`).
 - Fehlalarm: PS-3 (erken bleibt ohne Säulen).
 
@@ -80,3 +84,11 @@ Die Wahrzeichen der Oer-Runde (S-W12) sind aus dem Rennen kaum zu finden. Die Sc
 - Tests: 4 von 4 grün, alle vorher rot (`saeulen_test.js`). S-W12 bis S-W14 (`wahrzeichen_test.js`) grün.
 - Gegenproben: 5 von 5 erkannt.
 - Offen: Abnahme am Handy (Sicht aus der Ferne, Lesbarkeit der Schilder).
+
+## Nachtrag (05.11.2026): Schilder im Querformat zu hoch
+- Befund vom Handy (Betreiber, 05.11.2026): "Die Schilder sind zu hoch im quer modus".
+- Ursache (gemessen): Die Schildhöhe kam aus einer Tabelle je Typ mal Größe `s` (Moschee 46 × 2,6 + 6 = 126 über dem Boden). Seit S-W14 stehen Moscheen, Kirchen, Rathaus und Kaufland aber mit echtem Grundriss im Maßstab 1 und sind nur 18 bis 52 hoch. Die Schilder schwebten 32 bis 75 Einheiten über dem Dach und lagen im Querformat (Blickwinkel 50° statt 68° hochkant) oft über dem Bildrand.
+- Änderung: `TrackSceneUI.labelLift`: Schildmitte 20 über dem höchsten Teil des gebauten Bauwerks, höchstens 60 über dem Boden. Die Säule reicht weiter bis zum Schild. Die Tabelle `LABEL_HEIGHT` ist entfallen.
+- Messwerte (Schildmitte über dem Boden, vorher → nachher): Moscheen 125,6 → 60; Kirchen 111,6 → 60 (Dach 47,7); Rathaus 94 → 60 (Dach 45,7); Kaufland 50 → 38,2; Fördergerüste 186 → 60 (Gerüst 169, das Schild steht vor dem Gerüst).
+- Tests: `s16_schild_hoehe` vorher rot (Moschee 125,6), danach grün; alle Säulen- und Wahrzeichentests grün; Gegenproben 7 von 7.
+- Kleine Korrektur (etwa 15 Zeilen), keine neue Funktion, daher Nachtrag statt eigener Spec.

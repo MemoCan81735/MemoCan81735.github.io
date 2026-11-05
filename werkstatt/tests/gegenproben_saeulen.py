@@ -11,6 +11,8 @@ FEHLER = [
     ('Säule steht in der Luft', SEITE, 'saeule.position.set(lm.x, h + hoehe / 2, lm.y);', 'saeule.position.set(lm.x, h + hoehe / 2 + 20, lm.y);', JS, 's16_saeulen_hoehe'),
     ('Säule endet unter dem Schild', SEITE, 'const hoehe = Math.max(1, oben - h);', 'const hoehe = Math.max(1, oben - h - 15);', JS, 's16_saeulen_hoehe'),
     ('Säule ohne Ausblenden', SEITE, 'b.visible = l.sprite.visible; b.material.opacity = 0.85 * l.sprite.material.opacity;', 'b.visible = true; b.material.opacity = 0.85;', JS, 's16_saeulen_alpha'),
+    ('Schild ohne Höchstgrenze', SEITE, 'return h + Math.min(Number.isFinite(top) ? top - h + 20 : 60, 60);', 'return h + (Number.isFinite(top) ? top - h + 20 : 60);', JS, 's16_schild_hoehe'),
+    ('Schild wieder nach Typhöhe', SEITE, 'const oben = TrackSceneUI.labelLift(h, top);', 'const oben = h + 46 * (lm.s || 1) + 6;', JS, 's16_schild_hoehe'),
     ('Schild wieder klein', SEITE, 'sprite.scale.set(150, 150 * 96 / 512, 1);', 'sprite.scale.set(96, 96 * 96 / 512, 1);', JS, 's16_schild_gross'),
 ]
 env = dict(os.environ)
