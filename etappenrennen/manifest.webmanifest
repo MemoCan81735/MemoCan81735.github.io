@@ -1,6 +1,6 @@
 {
- "name": "Alpenetappe",
- "short_name": "Etappe",
+ "name": "Kleine Rundfahrt",
+ "short_name": "Rundfahrt",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
