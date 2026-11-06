@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2a2430">
+<meta name="description" content="Ebru: türkische Marmorierkunst auf Wasser malen, direkt im Browser.">
+<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/ebru-192.png">
+<link rel="apple-touch-icon" href="../bilder/symbole/ebru-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Ebru Malerei</title>
+<style>
+:root{--grund:#2a2430;--leiste:#1d1822;--text:#f6efe6;--akzent:#e8869f;--knopf:#3a3342;--aktiv:#5a4a63;--rand:#4b4254}
+@media (prefers-color-scheme: light){:root{--grund:#e9e1d4}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--grund);color:var(--text);font:600 14px system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:560px;margin:0 auto}
+#flaeche{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#hinweis{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:13px;color:#fff;text-shadow:0 1px 3px #000;pointer-events:none;transition:opacity .6s;z-index:4}
+#leiste{background:var(--leiste);padding:6px 8px calc(6px + env(safe-area-inset-bottom));display:grid;gap:6px}
+.zeile{display:flex;gap:6px;align-items:center}
+button{font:inherit;color:var(--text);background:var(--knopf);border:1px solid var(--rand);border-radius:12px;min-height:48px;min-width:48px;padding:0 6px;flex:1}
+button[aria-pressed=true]{background:var(--aktiv);border-color:var(--akzent)}
+button.farbe{flex:0 0 52px;min-width:52px;border-radius:50%;height:48px;border:3px solid transparent;padding:0}
+button.farbe[aria-pressed=true]{border-color:#fff}
+button.welt{flex:0 0 48px;padding:0}
+.trenner{flex:1}
+body.ergebnis .malen{display:none} body:not(.ergebnis) .fertig{display:none}
+button.gross{background:var(--akzent);color:#2a1a20;min-height:54px}
+button.schild{position:absolute;left:8px;top:8px;flex:none;min-height:44px;background:rgba(29,24,34,.82);font-size:13px;padding:0 12px;z-index:2}
+#musterliste{position:absolute;inset:0;background:rgba(20,16,24,.97);display:flex;flex-direction:column;justify-content:center;gap:8px;padding:24px;z-index:3}
+#musterliste[hidden],#galerie[hidden],button[hidden]{display:none}
+#galerie{position:absolute;inset:0;background:#1d1822;display:flex;flex-direction:column;gap:10px;padding:16px;z-index:3;overflow:auto}
+#galerie .raster{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#galerie .kachel{position:relative;display:flex;flex-direction:column;gap:4px;font-size:12px}
+#galerie .kachel img{width:100%;aspect-ratio:1/2;object-fit:cover;border-radius:8px;background:#000}
+#galerie .bildknopf{position:static;padding:0;border:0;background:none;min-height:0;border-radius:8px;flex:none}
+#galerie img.gross{width:100%;max-height:calc(100% - 70px);object-fit:contain;border-radius:8px;flex:1;min-height:0}
+#galerie .kachel button:not(.bildknopf){position:absolute;right:2px;top:2px;min-width:44px;min-height:44px;flex:none;border-radius:50%;background:rgba(29,24,34,.8)}
+#musterliste button{flex:none;text-align:left;display:flex;justify-content:space-between;align-items:center}
+#musterliste .titel{font-size:16px;margin:0 0 6px}
+#hinweis.fest{background:rgba(29,24,34,.78);padding:8px 10px;margin:0 8px;border-radius:10px;bottom:8px;font-size:14px}
+#licht{position:absolute;inset:-35%;pointer-events:none;mix-blend-mode:normal;z-index:1;background:radial-gradient(28% 18% at 35% 38%,rgba(255,255,255,.4),rgba(255,255,255,0) 70%),radial-gradient(24% 15% at 62% 55%,rgba(255,255,255,.35),rgba(255,255,255,0) 70%),radial-gradient(30% 12% at 48% 72%,rgba(255,255,255,.3),rgba(255,255,255,0) 70%),radial-gradient(30% 20% at 58% 30%,rgba(70,45,25,.07),rgba(70,45,25,0) 70%),radial-gradient(26% 16% at 38% 64%,rgba(70,45,25,.06),rgba(70,45,25,0) 70%);animation:licht 11s ease-in-out infinite alternate}
+@keyframes licht{0%{transform:translate(-6%,-4%) rotate(0deg)}50%{transform:translate(5%,3%) rotate(4deg)}100%{transform:translate(-2%,6%) rotate(-3deg)}}
+body.ergebnis #licht{display:none}
+@media (prefers-reduced-motion: reduce){#hinweis{transition:none}#licht{display:none;animation:none}}
+a.ng-zurueck{position:absolute;right:8px;top:8px;z-index:2;display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border-radius:12px;background:rgba(29,24,34,.82);color:#f6efe6;font:600 13px system-ui,sans-serif;text-decoration:none}
+body.ergebnis a.ng-zurueck{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+ <div id="flaeche"><canvas id="c" aria-label="Wasserbecken"></canvas><div id="licht" aria-hidden="true"></div><div id="hinweis" role="status"></div><a class="ng-zurueck" href="../">← Spiele</a><button id="musterwahl" class="schild malen">★ Muster</button><div id="musterliste" hidden></div><div id="galerie" class="ueber" hidden></div></div>
+ <div id="leiste">
+  <div class="zeile malen" id="farben"></div>
+  <div class="zeile malen"><button data-w="tropfen" aria-pressed="true">Tropfen</button><button data-w="spritzen" aria-pressed="false">Spritzen</button><button data-w="stab" aria-pressed="false">Stäbchen</button><button data-w="kamm" aria-pressed="false">Kamm</button></div>
+  <div class="zeile malen"><button id="zurueck">Zurück</button><button id="leeren">Neu</button><button id="ton" aria-pressed="true">Ton</button><button id="abdruck" class="gross">Abdruck</button></div>
+  <div class="zeile fertig"><button id="teilen" class="gross">Teilen / Speichern</button><button id="video" hidden>Video</button><button id="neu">Neues Becken</button><button data-galerie="auf">Meine Bilder</button></div>
+ </div>
+</div>
+<script>
+globalThis.Ebru = {};
+(function(){
+// Entity: Becken, Farbwelten, Linienzüge (Polygone). Reine Daten und Rechnung, kein Plattformzugriff (R-02, R-04).
+(function (g) {
+  const BREITE = 400;                 // Einheiten; 1 Einheit = 1 CSS-Pixel bei 400 Pixel Anzeigebreite
+  const PIXELDICHTE_S24 = 3.5;        // Gerätepixel je Einheit auf dem Galaxy S24+
+  const STANDARD_WELT = 'C';
+  const PALETTEN = {
+    A: { name: 'Klassisch', wasser: '#f4ecd8', papier: '#faf5e6', farben: ['#1b2a6b', '#c0272d', '#e3b23c', '#1aa6a6'] },
+    B: { name: 'Erde', wasser: '#f3ead6', papier: '#f8f1e0', farben: ['#a8421f', '#6b7a3a', '#efe2c4', '#16264a'] },
+    C: { name: 'Pastell', wasser: '#fff6e6', papier: '#fffaf0', farben: ['#e8869f', '#c4ecd8', '#8a74d0', '#8cc4f4'] },
+  };
+
+  function neuesBecken(hoehe) { return { breite: BREITE, hoehe, polys: [], welt: STANDARD_WELT, verlauf: [] }; }
+
+  function kreis(cx, cy, r, farbe) {
+    const n = Math.max(48, Math.ceil(2 * Math.PI * r / 4)), p = new Float64Array(n * 2);
+    for (let i = 0; i < n; i++) { const a = 2 * Math.PI * i / n; p[2 * i] = cx + r * Math.cos(a); p[2 * i + 1] = cy + r * Math.sin(a); }
+    return { farbe, p };
+  }
+  function flaeche(poly) {
+    const p = poly.p, n = p.length / 2; let s = 0;
+    for (let i = 0; i < n; i++) { const j = (i + 1) % n; s += p[2 * i] * p[2 * j + 1] - p[2 * j] * p[2 * i + 1]; }
+    return Math.abs(s) / 2;
+  }
+  function knoten(b) { let n = 0; for (const q of b.polys) n += q.p.length / 2; return n; }
+  function kopiePolys(polys) { return polys.map(q => ({ farbe: q.farbe, p: q.p.slice() })); }
+  function kopie(b) { return { breite: b.breite, hoehe: b.hoehe, polys: kopiePolys(b.polys), welt: b.welt, verlauf: [] }; }
+  // Prüfsumme: FNV-1a über Farbe, Länge und alle Koordinaten auf 1/1000 gerundet, in Reihenfolge der Linienzüge. Die Farbwelt zählt nicht (nur Form).
+  function pruefsumme(b) {
+    let h = 0x811c9dc5;
+    const mix = v => { h ^= v & 0xff; h = Math.imul(h, 0x01000193); h ^= (v >>> 8) & 0xff; h = Math.imul(h, 0x01000193); h ^= (v >>> 16) & 0xff; h = Math.imul(h, 0x01000193); h ^= (v >>> 24) & 0xff; h = Math.imul(h, 0x01000193); };
+    for (const q of b.polys) { mix(q.farbe | 0); mix(q.p.length); for (let i = 0; i < q.p.length; i++) mix(Math.round(q.p[i] * 1000) | 0); }
+    return h >>> 0;
+  }
+  function leuchtdichte(hex) { const v = parseInt(hex.slice(1), 16); return (0.2126 * ((v >> 16) & 255) + 0.7152 * ((v >> 8) & 255) + 0.0722 * (v & 255)) / 255; }
+  function streuung(a) { let m = 0; for (const v of a) m += v; m /= a.length; let q = 0; for (const v of a) q += (v - m) ** 2; return Math.sqrt(q / a.length); }
+  // Papierkörnung: Werte um 128, Zufall wird hineingereicht (rnd liefert [0,1)).
+  function papierRauschen(rnd, w, h) { const a = new Uint8Array(w * h); for (let i = 0; i < a.length; i++) a[i] = 128 + Math.round((rnd() - 0.5) * 20); return a; }
+
+  g.Ebru.entity = { BREITE, PIXELDICHTE_S24, STANDARD_WELT, PALETTEN, neuesBecken, kreis, flaeche, knoten, kopie, kopiePolys, pruefsumme, leuchtdichte, streuung, papierRauschen };
+})(globalThis);
+
+})();
+
+(function(){
+// Control: Strömung der Kitre um bewegte Zinken (S-002). Reine Funktionen, keine Zeit, kein Zufall (R-02, R-04).
+// Stromfunktion psi = L * Phi(n) * G(s) * W(x, y); Geschwindigkeit u = (dpsi/dn) * m - (dpsi/ds) * nvec ist exakt divergenzfrei (Fläche bleibt).
+//   n: Abstand quer zur Zugrichtung, s: längs (0 = Zinke, negativ = dahinter)
+//   f(n) = Phi'(n) = c [exp(-(n/a)^2) - k exp(-(n/b)^2)], k = a/b, c = 1/(1-k): f(0) = 1 (Farbe an der Zinke wandert mit), Integral 0 (Rückstrom seitlich)
+//   G(s): 1 hinter der Zinke bis zum Nachlauf D, 0 davor, weiche Kanten der Breite sigma
+//   W(x, y): 0 am Beckenrand, 1 ab RANDZONE Einheiten (Rand hält das Wasser, kein Durchfluss)
+(function (g) {
+  const SQP = Math.sqrt(Math.PI), RANDZONE = 10;
+  // Tafeln für erf und exp(-x²) (Schritt 1/500), lineare Zwischenwerte; Fehler unter 1e-5
+  const TS = 500, ERF = new Float64Array(6 * TS + 2), GAU = new Float64Array(6 * TS + 2);
+  function erfGenau(x) { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; }
+  for (let i = 0; i < ERF.length; i++) { ERF[i] = erfGenau(i / TS); GAU[i] = Math.exp(-((i / TS) ** 2)); }
+  function tafel(T, ax) { if (ax >= 6) return T[6 * TS]; const u = ax * TS, i = u | 0; return T[i] + (T[i + 1] - T[i]) * (u - i); }
+  function erf(x) { return x >= 0 ? tafel(ERF, x) : -tafel(ERF, -x); }
+  function gau(x) { return tafel(GAU, Math.abs(x)); }
+  function rampe(t) { if (t <= 0) return [0, 0]; if (t >= RANDZONE) return [1, 0]; const q = t / RANDZONE; return [3 * q * q - 2 * q * q * q, (6 * q - 6 * q * q) / RANDZONE]; }
+  // Zinkenart: a = Breite der Mitnahme, rueck = Rückstrombreite in a, nachlauf = D, schritt = Teilschrittlänge. f und Phi als Tafel über n (Schritt 1/50).
+  function art(a, rueck, nachlauf, schritt) {
+    const b = rueck * a, k = a / b, c = 1 / (1 - k), grenze = 3 * b, m = Math.ceil(grenze * 50) + 2, F = new Float64Array(m), P = new Float64Array(m);
+    for (let i = 0; i < m; i++) { const n = i / 50; F[i] = c * (gau(n / a) - k * gau(n / b)); P[i] = c * (a * SQP / 2 * erf(n / a) - k * b * SQP / 2 * erf(n / b)); }
+    return { a, b, k, c, sig: a, D: nachlauf, schritt, grenze, F, P };
+  }
+
+  // Geschwindigkeit am Punkt (px, py) für alle Zinken eines Teilschritts. Alle Zinken eines Schritts haben dieselbe Richtung (m) und dasselbe L, D;
+  // z = { mx, my, L, D, cx0, cy0 (Zugmitte), versatz: [..], cx/cy: Zinkenorte }. Längsanteil G(s) wird je Punkt einmal gerechnet.
+  function geschwindigkeit(px, py, z, p, breite, hoehe) {
+    const [x1, dx1] = rampe(px), [x2, dx2] = rampe(breite - px), [y1, dy1] = rampe(py), [y2, dy2] = rampe(hoehe - py);
+    const W = x1 * x2 * y1 * y2; if (W === 0) return null;
+    const Wx = (dx1 * x2 - x1 * dx2) * y1 * y2, Wy = (dy1 * y2 - y1 * dy2) * x1 * x2, Wn = -Wx * z.my + Wy * z.mx, Ws = Wx * z.mx + Wy * z.my;
+    const s = (px - z.cx0) * z.mx + (py - z.cy0) * z.my; // gleich für alle Zinken
+    if (s > 3 * p.sig || s < -z.D - 3 * p.sig) return null;
+    const g1 = 0.5 * (1 + erf(-s / p.sig)), g2 = 0.5 * (1 + erf((s + z.D) / p.sig)), G = g1 * g2;
+    const Gs = (-gau(s / p.sig) * g2 + g1 * gau((s + z.D) / p.sig)) / (p.sig * SQP);
+    let sf = 0, sPhi = 0, getroffen = false;
+    const n0 = -(px - z.cx0) * z.my + (py - z.cy0) * z.mx, grenze = p.grenze; // n je Zinke = n0 - Versatz (parallele Zinken)
+    for (const o of z.versatz) {
+      const n = n0 - o; if (n > grenze || n < -grenze) continue;
+      getroffen = true; const an = n < 0 ? -n : n, u = an * 50, i = u | 0, w = u - i;
+      sf += p.F[i] + (p.F[i + 1] - p.F[i]) * w; const ph = p.P[i] + (p.P[i + 1] - p.P[i]) * w; sPhi += n < 0 ? -ph : ph;
+    }
+    if (!getroffen) return null;
+    const dn = z.L * (sf * G * W + sPhi * G * Wn), ds = z.L * (sPhi * Gs * W + sPhi * G * Ws);
+    return [dn * z.mx + ds * z.my, dn * z.my - ds * z.mx];
+  }
+  // Ein Teilschritt (Runge-Kutta 2) für alle Knoten; Knoten außerhalb des Wirkbereichs werden übersprungen.
+  function teilschritt(b, z, p) {
+    let minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+    const rr = Math.max(p.grenze, z.D + 3 * p.sig);
+    for (let k = 0; k < z.cx.length; k++) { minx = Math.min(minx, z.cx[k]); maxx = Math.max(maxx, z.cx[k]); miny = Math.min(miny, z.cy[k]); maxy = Math.max(maxy, z.cy[k]); }
+    minx -= rr; maxx += rr; miny -= rr; maxy += rr;
+    for (const q of b.polys) {
+      const pp = q.p;
+      for (let i = 0; i < pp.length; i += 2) { // q.bewegt merkt bewegte Linienzüge, nur diese werden danach verfeinert
+        const x = pp[i], y = pp[i + 1]; if (x < minx || x > maxx || y < miny || y > maxy) continue;
+        const v1 = geschwindigkeit(x, y, z, p, b.breite, b.hoehe); if (!v1 || Math.abs(v1[0]) + Math.abs(v1[1]) < 1e-6) continue;
+        const v2 = geschwindigkeit(x + v1[0] / 2, y + v1[1] / 2, z, p, b.breite, b.hoehe) || [0, 0];
+        q.bewegt = true; pp[i] = Math.min(b.breite, Math.max(0, x + v2[0])); pp[i + 1] = Math.min(b.hoehe, Math.max(0, y + v2[1]));
+      }
+    }
+  }
+  // Zug von (x0,y0) nach (x1,y1) mit Zinken-Versätzen quer zur Richtung; zug.weg = bisher zurückgelegter Weg (Nachlauf).
+  function zugSchritt(b, x0, y0, x1, y1, versatze, p, zug, nachher) {
+    const len = Math.hypot(x1 - x0, y1 - y0); if (len < 1e-9) return;
+    const n = Math.ceil(len / p.schritt), L = len / n, mx = (x1 - x0) / len, my = (y1 - y0) / len;
+    for (let k = 1; k <= n; k++) {
+      zug.weg += L; const cx = x0 + mx * L * k, cy = y0 + my * L * k, D = Math.min(p.D, zug.weg);
+      teilschritt(b, { mx, my, L, D, cx0: cx, cy0: cy, versatz: versatze, cx: versatze.map(o => cx - my * o), cy: versatze.map(o => cy + mx * o) }, p);
+      nachher(b);
+    }
+  }
+  g.Ebru.stroemung = { art, geschwindigkeit, zugSchritt, erf, RANDZONE };
+})(globalThis);
+
+})();
+
+(function(){
+// Control: Marmorieren (Tropfen, Stäbchen, Kamm), Rückgängig, Qualitätsstufe. Reine Funktionen; Zeit und Zufall kommen von außen (R-02).
+(function (g) {
+  const E = g.Ebru.entity, St = g.Ebru.stroemung;
+  const KNOTEN_MAX = 40000, RADIUS_MIN = 18, RADIUS_MAX = 34, UNDO_TIEFE = 10, KANTE_TROPFEN = 6, KANTE_STROM = 3;
+  const fin = (...v) => v.every(Number.isFinite);
+  const klemme = (v, a, b) => Math.min(b, Math.max(a, v));
+  const farbIdx = f => (Number.isFinite(f) ? klemme(Math.round(f), 0, 3) : 0);
+
+  function begrenzeRadius(r) { return Number.isFinite(r) ? klemme(r, RADIUS_MIN, RADIUS_MAX) : (RADIUS_MIN + RADIUS_MAX) / 2; }
+  function radiusWaehlen(rnd) { return RADIUS_MIN + rnd() * (RADIUS_MAX - RADIUS_MIN); }
+
+  function verfeinern(p, KANTE_MAX) { // Kanten über KANTE_MAX teilen (Tropfen 6, Strömung 3 Einheiten) (höchstens 4 Durchgänge)
+    for (let durchgang = 0; durchgang < 4; durchgang++) {
+      const n = p.length / 2; let neu = 0;
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n; if (Math.hypot(p[2 * j] - p[2 * i], p[2 * j + 1] - p[2 * i + 1]) > KANTE_MAX) neu++; }
+      if (!neu) return p;
+      const q = new Float64Array((n + neu) * 2); let k = 0;
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n; q[k++] = p[2 * i]; q[k++] = p[2 * i + 1];
+        if (Math.hypot(p[2 * j] - p[2 * i], p[2 * j + 1] - p[2 * i + 1]) > KANTE_MAX) { q[k++] = (p[2 * i] + p[2 * j]) / 2; q[k++] = (p[2 * i + 1] + p[2 * j + 1]) / 2; }
+      }
+      p = q;
+    }
+    return p;
+  }
+  function vereinfachen(b) { // Knotenlimit: kleinste Dreiecksflächen zuerst entfernen, nie zwei benachbarte
+    for (let runde = 0; runde < 6 && E.knoten(b) > KNOTEN_MAX; runde++) {
+      const flaechen = [];
+      for (const q of b.polys) { const p = q.p, n = p.length / 2; q.a = new Float64Array(n); for (let i = 0; i < n; i++) { const a = (i + n - 1) % n, c = (i + 1) % n; q.a[i] = Math.abs((p[2 * i] - p[2 * a]) * (p[2 * c + 1] - p[2 * a + 1]) - (p[2 * c] - p[2 * a]) * (p[2 * i + 1] - p[2 * a + 1])) / 2; flaechen.push(q.a[i]); } }
+      flaechen.sort((x, y) => x - y);
+      const ziel = Math.floor(KNOTEN_MAX * 0.85), weg = flaechen.length - ziel, schwelle = flaechen[Math.min(flaechen.length - 1, Math.max(0, weg * 2))];
+      for (const q of b.polys) {
+        const n = q.p.length / 2; if (n <= 8) { delete q.a; continue; }
+        const aus = []; let letzteWeg = false;
+        for (let i = 0; i < n; i++) { const entf = q.a[i] <= schwelle && !letzteWeg && aus.length > 0 && (n - (i - aus.length)) > 8; if (!entf) { aus.push(2 * i); } letzteWeg = entf; }
+        const r = new Float64Array(aus.length * 2); aus.forEach((o, k) => { r[2 * k] = q.p[o]; r[2 * k + 1] = q.p[o + 1]; }); q.p = r; delete q.a;
+      }
+    }
+  }
+  function abschluss(b) { for (const q of b.polys) q.p = verfeinern(q.p, KANTE_TROPFEN); if (E.knoten(b) > KNOTEN_MAX) vereinfachen(b); }
+
+  // Tropfen nach Lu u. a.: Punkt P wird zu C + (P-C)·sqrt(1 + r²/|P-C|²); der neue Tropfen ist ein Kreis mit Radius r.
+  function tropfen(b, x, y, r, farbe) {
+    if (!fin(x, y, r) || r <= 0 || r > 200) return false;
+    const cx = klemme(x, 0, b.breite), cy = klemme(y, 0, b.hoehe), r2 = r * r;
+    for (const q of b.polys) {
+      const p = q.p;
+      for (let i = 0; i < p.length; i += 2) {
+        const dx = p[i] - cx, dy = p[i + 1] - cy, d2 = dx * dx + dy * dy;
+        if (d2 < 1e-9) { p[i] = cx + r; p[i + 1] = cy; continue; }
+        const f = Math.sqrt(1 + r2 / d2); p[i] = cx + dx * f; p[i + 1] = cy + dy * f;
+      }
+    }
+    b.polys.push(E.kreis(cx, cy, r, farbIdx(farbe))); abschluss(b); return true;
+  }
+
+  // Stäbchen und Kamm: flächentreue Strömung (S-002, stroemung.js). zug = Zustand je Fingerzug (neuerZug), sonst ein eigener Zug.
+  const STAB = St.art(12, 2.5, 40, 4), KAMM = St.art(6, 1.5, 24, 4);
+  function neuerZug() { return { weg: 0 }; }
+  function nachTeilschritt(b) { for (const q of b.polys) if (q.bewegt) { q.p = verfeinern(q.p, KANTE_STROM); delete q.bewegt; } }
+  function weg(b, x0, y0, x1, y1, versatze, p, zug) {
+    if (!fin(x0, y0, x1, y1)) return false;
+    let len = Math.hypot(x1 - x0, y1 - y0); if (len < 1e-9) return true;
+    if (len > 1200) { x1 = x0 + (x1 - x0) * 1200 / len; y1 = y0 + (y1 - y0) * 1200 / len; }
+    St.zugSchritt(b, x0, y0, x1, y1, versatze, p, zug || neuerZug(), nachTeilschritt);
+    if (E.knoten(b) > KNOTEN_MAX) vereinfachen(b); return true;
+  }
+  function schiebeWeg(b, x0, y0, x1, y1, zug) { return weg(b, x0, y0, x1, y1, [0], STAB, zug); }
+  function kammWeg(b, x0, y0, x1, y1, zinken, abstand, zug) {
+    if (!fin(zinken, abstand)) return false; const z = klemme(Math.round(zinken), 1, 12);
+    return weg(b, x0, y0, x1, y1, Array.from({ length: z }, (_, k) => (k - (z - 1) / 2) * abstand), KAMM, zug);
+  }
+
+  function farbeAn(b, x, y) { // oberste Farbe an dem Punkt, -1 für Wasser
+    for (let k = b.polys.length - 1; k >= 0; k--) {
+      const p = b.polys[k].p, n = p.length / 2; let in_ = false;
+      for (let i = 0, j = n - 1; i < n; j = i++) { const yi = p[2 * i + 1], yj = p[2 * j + 1]; if ((yi > y) !== (yj > y) && x < (p[2 * j] - p[2 * i]) * (y - yi) / (yj - yi) + p[2 * i]) in_ = !in_; }
+      if (in_) return b.polys[k].farbe;
+    }
+    return -1;
+  }
+  function streifen(b, y, x0, x1, schritt) { let n = 0, vor = -1; for (let x = x0; x <= x1; x += schritt) { const c = farbeAn(b, x, y); if (c >= 0 && c !== vor) n++; vor = c; } return n; }
+
+  function merke(b) { b.verlauf.push({ polys: E.kopiePolys(b.polys) }); if (b.verlauf.length > UNDO_TIEFE) b.verlauf.shift(); }
+  function rueckgaengig(b) { if (!b.verlauf.length) return false; b.polys = b.verlauf.pop().polys; return true; }
+
+  // Autotropfen: Plan aus Zeitpunkt, Ort, Endradius; Zustand zur Zeit t (Sekunden) aus dem Anfangszustand, ohne Seiteneffekt.
+  // Serpme (S-005): kleine Tropfen entlang der Bahn wie vom Rosshaarpinsel. Dichte 0,3 je Einheit, Radius 3 bis 9, seitlich bis 18 Einheiten.
+  // zug.rest trägt den Bruchteil über die Stücke, damit schnelle und langsame Finger gleich viele Tropfen setzen. Rückgabe [[x, y, r], ...].
+  const SPRITZ_DICHTE = 0.3, SPRITZ_BREITE = 18;
+  function spritzPunkte(rnd, x0, y0, x1, y1, zug, breite, hoehe) {
+    if (!fin(x0, y0, x1, y1)) return null;
+    const L = Math.hypot(x1 - x0, y1 - y0), punkte = []; if (L < 1e-9) return punkte;
+    const nx = -(y1 - y0) / L, ny = (x1 - x0) / L; let s = zug.rest || 0;
+    for (s += SPRITZ_DICHTE * L; s >= 1; s -= 1) {
+      const u = rnd(), q = (rnd() * 2 - 1) * SPRITZ_BREITE, r = 3 + 6 * rnd() * rnd();
+      punkte.push([klemme(x0 + (x1 - x0) * u + nx * q, 0, breite), klemme(y0 + (y1 - y0) * u + ny * q, 0, hoehe), r]);
+    }
+    zug.rest = s; return punkte;
+  }
+  // Vorführung (S-005): Geisterstäbchen zieht von 85 Einheiten über dem Ringmittelpunkt bis 95 darunter (Herz, Hatip), nach den Autotropfen.
+  function vorfuehrungFuer(plan) { const l = plan[plan.length - 1], x = plan[0].x, y = plan[0].y; return { t: l.t + l.dauer + 0.2, x, y0: y - 85, y1: y + 95, dauer: 1.8 }; }
+  function planAutoTropfen(rnd, breite, hoehe) {
+    const x = breite / 2 + (rnd() - 0.5) * 40, y = hoehe * 0.42 + (rnd() - 0.5) * 40;
+    return [{ t: 1.0, rEnde: 60, farbe: 0 }, { t: 2.2, rEnde: 44, farbe: 1 }, { t: 3.4, rEnde: 30, farbe: 2 }, { t: 4.6, rEnde: 18, farbe: 3 }].map(e => ({ ...e, x, y, dauer: 1.5 }));
+  }
+  function autoZustand(basis, plan, t) {
+    const b = E.kopie(basis);
+    for (const e of plan) {
+      if (t < e.t) break;
+      const p = Math.min(1, (t - e.t) / e.dauer), r = e.rEnde * (1 - Math.pow(1 - p, 3));
+      if (r > 0.5) tropfen(b, e.x, e.y, p >= 1 ? e.rEnde : r, e.farbe);
+    }
+    return b;
+  }
+
+  function qualitaetNach(stufe, bildMs) { return Number.isFinite(bildMs) && bildMs > 33.5 ? Math.max(0, stufe - 1) : stufe; }
+  function aufloesung(stufe, dpr) { return [0.5, 0.75, 1][klemme(stufe, 0, 2)] * Math.min(Number.isFinite(dpr) ? dpr : 1, 2); }
+  function bildSchritt(ms) { return Number.isFinite(ms) ? klemme(ms, 0, 100) : 0; }
+
+  g.Ebru.control = { KNOTEN_MAX, RADIUS_MIN, RADIUS_MAX, UNDO_TIEFE, neuerZug, begrenzeRadius, radiusWaehlen, tropfen, schiebeWeg, kammWeg, farbeAn, streifen, merke, rueckgaengig, spritzPunkte, vorfuehrungFuer, planAutoTropfen, autoZustand, qualitaetNach, aufloesung, bildSchritt };
+})(globalThis);
+
+})();
+
+(function(){
+// Control: Anleitungsmodus (S-003). Muster als Daten, Tagesmuster aus dem Tag (hineingereicht, R-02), Vorbild und Vergleich.
+// Koordinaten der Muster relativ zur Mitte (x 0 = Beckenmitte, y 0 = 45 % der Höhe), in Einheiten.
+(function (g) {
+  const C = g.Ebru.control, E = g.Ebru.entity;
+  const T = (x, y, r, farbe, text) => ({ art: 'tropfen', x, y, r, farbe, text });
+  const Z = (werkzeug, punkte, text) => ({ art: 'zug', werkzeug, punkte, text });
+  const spirale = () => Array.from({ length: 61 }, (_, i) => { const a = i * Math.PI / 12, r = 92 - 88 * i / 60; return [r * Math.cos(a), r * Math.sin(a)]; }); // 2,5 Windungen von außen nach innen
+  const nelke = () => Array.from({ length: 8 }, (_, k) => { const a = k * Math.PI / 4; return Z('stab', [[78 * Math.cos(a), 78 * Math.sin(a)], [22 * Math.cos(a), 22 * Math.sin(a)]], 'Stäbchen von außen zur Mitte ziehen'); });
+  const zickzack = () => { const p = []; for (let i = 0; i < 9; i++) p.push([i % 2 ? 120 : -120, -150 + i * 37.5]); return p; };
+  const MUSTER = [
+    { id: 'herz', name: 'Herz (Hatip)', schritte: [T(0, 0, 60, 0, 'Großer Tropfen in die Mitte'), T(0, 0, 44, 1, 'Tropfen in die Mitte'), T(0, 0, 30, 2, 'Tropfen in die Mitte'), T(0, 0, 18, 3, 'Kleiner Tropfen in die Mitte'), Z('stab', [[0, -85], [0, 95]], 'Stäbchen von oben nach unten durch die Mitte')] },
+    { id: 'tulpe', name: 'Tulpe (Lale)', schritte: [T(0, 0, 55, 0, 'Großer Tropfen'), T(0, 0, 38, 3, 'Tropfen hinein'), T(0, 0, 22, 2, 'Kleiner Tropfen hinein'), Z('stab', [[0, 110], [0, -30]], 'Stäbchen von unten in die Blüte'), Z('stab', [[-34, -78], [-8, -22]], 'Linkes Blatt nach innen ziehen'), Z('stab', [[34, -78], [8, -22]], 'Rechtes Blatt nach innen ziehen')] },
+    { id: 'nelke', name: 'Nelke (Karanfil)', schritte: [T(0, 0, 50, 0, 'Großer Tropfen'), T(0, 0, 34, 2, 'Tropfen hinein'), T(0, 0, 18, 1, 'Kleiner Tropfen hinein'), ...nelke()] },
+    { id: 'nest', name: 'Nachtigallennest (Bülbül yuvası)', schritte: [T(-64, 0, 34, 0, 'Tropfen links'), T(0, 0, 34, 1, 'Tropfen in die Mitte'), T(64, 0, 34, 2, 'Tropfen rechts'), T(0, -62, 30, 3, 'Tropfen oben'), T(0, 62, 30, 3, 'Tropfen unten'), Z('stab', spirale(), 'Stäbchen in einer Spirale von außen nach innen')] },
+    { id: 'gelgit', name: 'Gelgit (Wellen)', schritte: [T(-60, -80, 46, 0, 'Tropfen oben links'), T(60, -80, 46, 1, 'Tropfen oben rechts'), T(-60, 20, 46, 2, 'Tropfen links'), T(60, 20, 46, 3, 'Tropfen rechts'), T(0, -30, 40, 1, 'Tropfen in die Mitte'), Z('stab', zickzack(), 'Stäbchen im Zickzack nach unten')] },
+  ];
+  const MINDESTANTEIL = 0.5;
+  function tagesMuster(tag) { return Number.isFinite(tag) ? ((Math.floor(tag) % MUSTER.length) + MUSTER.length) % MUSTER.length : 0; }
+  function schritteFuer(m, breite, hoehe) {
+    const cx = breite / 2, cy = hoehe * 0.45;
+    return m.schritte.map(s => {
+      if (s.art === 'tropfen') return { ...s, x: cx + s.x, y: cy + s.y };
+      const punkte = s.punkte.map(([x, y]) => [cx + x, cy + y]); let laenge = 0;
+      for (let i = 1; i < punkte.length; i++) laenge += Math.hypot(punkte[i][0] - punkte[i - 1][0], punkte[i][1] - punkte[i - 1][1]);
+      return { ...s, punkte, laenge };
+    });
+  }
+  // Zug in Stücken von 10 Einheiten, wie ein Finger ihn liefert
+  function zugAusfuehren(b, sch) {
+    const zug = C.neuerZug(), p = sch.punkte;
+    for (let i = 1; i < p.length; i++) {
+      const [ax, ay] = p[i - 1], [bx, by] = p[i], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 10));
+      for (let k = 0; k < n; k++) {
+        const x0 = ax + (bx - ax) * k / n, y0 = ay + (by - ay) * k / n, x1 = ax + (bx - ax) * (k + 1) / n, y1 = ay + (by - ay) * (k + 1) / n;
+        sch.werkzeug === 'kamm' ? C.kammWeg(b, x0, y0, x1, y1, 9, 14, zug) : C.schiebeWeg(b, x0, y0, x1, y1, zug);
+      }
+    }
+  }
+  function vorbild(m, breite, hoehe) {
+    const b = E.neuesBecken(hoehe);
+    for (const s of schritteFuer(m, breite, hoehe)) if (s.art === 'tropfen') C.tropfen(b, s.x, s.y, s.r, s.farbe); else zugAusfuehren(b, s);
+    return b;
+  }
+  // Anteil gleicher Farbe in Prozent; gezählt werden nur Rasterpunkte (alle 5 Einheiten), an denen eines der Becken Farbe hat
+  function aehnlichkeit(a, b) {
+    let gleich = 0, n = 0;
+    for (let y = 2.5; y < a.hoehe; y += 5) for (let x = 2.5; x < a.breite; x += 5) {
+      const fa = C.farbeAn(a, x, y), fb = C.farbeAn(b, x, y); if (fa < 0 && fb < 0) continue; n++; if (fa === fb) gleich++;
+    }
+    return n ? 100 * gleich / n : 0;
+  }
+  function sterne(p) { return !Number.isFinite(p) ? 0 : p >= 85 ? 3 : p >= 70 ? 2 : p >= 50 ? 1 : 0; }
+  g.Ebru.anleitung = { MUSTER, MINDESTANTEIL, tagesMuster, schritteFuer, vorbild, aehnlichkeit, sterne };
+  Object.assign(C, { MUSTER, tagesMuster, schritteFuer, vorbild, aehnlichkeit, sterne });
+})(globalThis);
+
+})();
+
+(function(){
+// Control: Galerie "Meine Bilder" (S-006, A-16). Reine Funktionen über ein Datenobjekt; Speicher und Zeit kommen von außen (R-02).
+// Format (R-07): { version: 1, bilder: [{ zeit, muster, sterne, bild }], sterne: { musterId: 0..3 } }, neuestes Bild zuerst.
+(function (g) {
+  const VERSION = 1, MAX_BILDER = 12, MAX_BILD_ZEICHEN = 200000;
+  const gutesBild = b => typeof b === 'string' && b.startsWith('data:image/jpeg;base64,') && b.length <= MAX_BILD_ZEICHEN; // nur JPEG-Vorschauen (Spec)
+  const id = m => (typeof m === 'string' && /^[a-z]{1,20}$/.test(m) ? m : null);
+  const stern = n => (Number.isFinite(n) ? Math.min(3, Math.max(0, Math.round(n))) : null);
+  function leer() { return { version: VERSION, bilder: [], sterne: {} }; }
+  function sauber(e) { return e && gutesBild(e.bild) && Number.isFinite(e.zeit) ? { zeit: e.zeit, muster: id(e.muster), sterne: stern(e.sterne), bild: e.bild } : null; }
+  function lesen(text) {
+    let roh; try { roh = JSON.parse(text); } catch (e) { return leer(); }
+    if (!roh || roh.version !== VERSION || !Array.isArray(roh.bilder)) return leer(); // andere Version: verwerfen (R-07)
+    const g2 = leer(); g2.bilder = roh.bilder.map(sauber).filter(Boolean).slice(0, MAX_BILDER);
+    if (roh.sterne && typeof roh.sterne === 'object') for (const [k, v] of Object.entries(roh.sterne)) if (id(k) && stern(v) !== null) g2.sterne[k] = stern(v);
+    return g2;
+  }
+  function schreiben(gal) { return JSON.stringify({ version: VERSION, bilder: gal.bilder, sterne: gal.sterne }); }
+  function hinzufuegen(gal, e) { const s = sauber(e); if (!s) return false; gal.bilder.unshift(s); gal.bilder.length = Math.min(gal.bilder.length, MAX_BILDER); return true; }
+  function sterneMerken(gal, m, n) { const k = id(m), v = stern(n); if (!k || v === null) return false; gal.sterne[k] = Math.max(gal.sterne[k] || 0, v); return true; }
+  function loeschen(gal, i) { if (!Number.isInteger(i) || i < 0 || i >= gal.bilder.length) return false; gal.bilder.splice(i, 1); return true; }
+  function alleLoeschen(gal) { gal.bilder = []; gal.sterne = {}; }
+  function dateiName(zeit, versatzMin) { /* S-009: Name aus der Abdruckzeit, Ortszeit-Versatz in Minuten kommt hinein (R-02) */
+    if (!Number.isFinite(zeit)) return 'ebru.jpg';
+    const d = new Date(zeit + (Number.isFinite(versatzMin) ? versatzMin : 0) * 60000), z = n => String(n).padStart(2, '0');
+    return 'ebru-' + d.getUTCFullYear() + '-' + z(d.getUTCMonth() + 1) + '-' + z(d.getUTCDate()) + '-' + z(d.getUTCHours()) + z(d.getUTCMinutes()) + '.jpg';
+  }
+  g.Ebru.galerie = { VERSION, MAX_BILDER, MAX_BILD_ZEICHEN, leer, lesen, schreiben, hinzufuegen, sterneMerken, loeschen, alleLoeschen, dateiName };
+})(globalThis);
+
+})();
+
+(function(){
+// Control: Melodieregeln für die Ney-Begleitmusik (S-007). Zufall kommt hinein (R-02); WebAudio liegt in Boundary ton.js.
+// Hicaz auf D: D, Es, Fis, G, A, B, C, D (Verhältnisse zum Grundton, gleichstufig gerundet).
+(function (g) {
+  const HICAZ = [1, 1.0595, 1.2599, 1.3348, 1.4983, 1.5874, 1.7818, 2];
+  const SCHLUSS = [0, 4, 7], MIN_PAUSE = 2;
+  function phrase(rnd, vorige) {
+    for (let versuch = 0; versuch < 8; versuch++) {
+      const n = 4 + Math.min(3, Math.floor(rnd() * 4)), toene = []; let st = [4, 3, 5, 7, 2][Math.min(4, Math.floor(rnd() * 5))];
+      for (let i = 0; i < n; i++) {
+        if (i === n - 1) { const vor = i ? toene[i - 1].stufe : st; st = SCHLUSS.reduce((a, b) => (Math.abs(b - vor) < Math.abs(a - vor) ? b : a)); } // nächster Schlusston zum vorigen Ton, höchstens 2 Stufen
+        toene.push({ stufe: st, dauer: Math.round((0.6 + 1.8 * rnd() * (i === n - 1 ? 1 : 0.6)) * 100) / 100 });
+        const schritt = [-2, -1, -1, 1, 1, 2][Math.min(5, Math.floor(rnd() * 6))]; st = Math.min(7, Math.max(0, st + schritt));
+      }
+      toene[n - 1].dauer = Math.max(toene[n - 1].dauer, 1.2);
+      const p = { toene, pause: Math.round((MIN_PAUSE + 2 * rnd()) * 100) / 100 };
+      if (!vorige || JSON.stringify(p.toene) !== JSON.stringify(vorige.toene)) return p;
+    }
+    return { toene: [{ stufe: 4, dauer: 1 }, { stufe: 3, dauer: 0.8 }, { stufe: 2, dauer: 0.8 }, { stufe: 1, dauer: 0.8 }, { stufe: 0, dauer: 2 }], pause: 3 };
+  }
+  g.Ebru.musik = { HICAZ, phrase };
+})(globalThis);
+
+})();
+
+(function(){
+// Control: Rechenregeln für Wow-Funktionen (S-008). Zufall kommt hinein (R-02); Aufnahme liegt in Boundary video.js.
+(function (g) {
+  const ENDBILDER = 30, SPUR_ABSTAND = 25, FEIER_STERNE = 40;
+  /* Bildfolge für den Zeitraffer: n gesammelte Bilder auf 4 bis 10 s Film bei fps, erstes und letztes Bild bleiben. */
+  function zeitrafferPlan(n, fps) {
+    if (!Number.isFinite(n) || n < 2 || !Number.isFinite(fps) || fps <= 0) return [];
+    const dauer = Math.min(10, Math.max(4, n / 15)), F = Math.round(dauer * fps), plan = [];
+    for (let i = 0; i < F; i++) plan.push(Math.round(i * (n - 1) / (F - 1)));
+    return plan;
+  }
+  /* Liste auf höchstens max Einträge kürzen: jedes k-te behalten, das letzte immer. */
+  function ausduennen(liste, max) {
+    if (liste.length <= max) return liste.slice();
+    const k = Math.ceil(liste.length / (max - 1)), aus = [];
+    for (let i = 0; i < liste.length - 1; i += k) aus.push(liste[i]);
+    aus.push(liste[liste.length - 1]);
+    return aus;
+  }
+  /* Bild an die Sammlung hängen; über max wird ausgedünnt (S-008 PS-3: langes Malen sprengt den Speicher nicht) */
+  function anhaengen(liste, bild, max) { const l = liste.concat([bild]); return l.length > max ? ausduennen(l, max) : l; }
+  /* Punkte alle 25 Einheiten entlang der Strecke; zug.rest trägt die schon gelaufene Strecke ins nächste Stück. */
+  function spurPunkte(x0, y0, x1, y1, zug) {
+    if (![x0, y0, x1, y1].every(Number.isFinite)) return [];
+    const dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy), aus = [];
+    let rest = Number.isFinite(zug.rest) ? zug.rest : 0, d = SPUR_ABSTAND - rest;
+    while (d <= l + 1e-9) { const t = l ? d / l : 0; aus.push([x0 + dx * t, y0 + dy * t]); d += SPUR_ABSTAND; }
+    zug.rest = l - (d - SPUR_ABSTAND);
+    return aus;
+  }
+  /* Fallende Sterne nur bei 3 Sternen; Verzug bis 0,5 s, Fallzeit 0,6 bis 1,0 s. */
+  function sternfeier(sterne, rnd, breite, hoehe) {
+    if (sterne !== 3) return [];
+    const aus = [];
+    for (let i = 0; i < FEIER_STERNE; i++) aus.push({ x: rnd() * breite, y0: -10 - rnd() * 40, y1: hoehe * (0.3 + 0.65 * rnd()), groesse: 8 + rnd() * 9, verzug: rnd() * 0.5, fall: 0.6 + rnd() * 0.4, dreh: rnd() * 6.28 });
+    return aus;
+  }
+  g.Ebru.wow = { ENDBILDER, SPUR_ABSTAND, MAX_BILDER: 240, zeitrafferPlan, ausduennen, anhaengen, spurPunkte, sternfeier };
+})(globalThis);
+
+})();
+
+(function(){
+// Control: Sitzung (Phase, Werkzeug, Autotropfen, Abdruck, Farbwelt, Ton-Freigabe). Zeit kommt als Parameter (R-02).
+(function (g) {
+  const E = g.Ebru.entity, C = g.Ebru.control, A = g.Ebru.anleitung;
+  const KAMM = { zinken: 9, abstand: 14 }, ABDRUCK_MS = 2500, AUFGEHEN_S = 0.8, TOENE = ['tropfen', 'papier', 'wasser', 'stab', 'glocke'];
+
+  function neueSitzung(breite, hoehe) {
+    return { breite, hoehe, becken: E.neuesBecken(hoehe), phase: 'malen', plan: null, planStart: 0, basis: null, jetzt: 0, abdruckStart: 0, werkzeug: 'tropfen', farbe: 0, beruehrt: false, tonStufe: 2, tonAn: true }; // tonStufe: 2 Ton + Musik, 0 Stumm, 1 Nur Ton (S-007)
+  }
+  // Vorführung: Geisterstäbchen, stückweise je Bild (kein Neurechnen ab Basis); jede Eingabe beendet sie über abschliessen
+  function planeVorfuehrung(s, v) { s.vorfuehrung = { ...v, zug: C.neuerZug(), y: v.y0 }; }
+  function vorfuehrungSchritt(s, sek) {
+    const v = s.vorfuehrung; if (!v || s.plan || sek < v.t) return;
+    const ziel = v.y0 + (v.y1 - v.y0) * Math.min(1, (sek - v.t) / v.dauer);
+    if (ziel > v.y) { C.schiebeWeg(s.becken, v.x, v.y, v.x, ziel, v.zug); v.y = ziel; }
+    if (ziel >= v.y1) s.vorfuehrung = null;
+  }
+  function startePlan(s, plan, t0) { s.plan = plan; s.planStart = t0; s.basis = E.kopie(s.becken); }
+  function zeit(s, sek) {
+    s.planJetzt = sek; if (!s.plan) return;
+    const verlauf = s.becken.verlauf, welt = s.becken.welt;
+    s.becken = C.autoZustand(s.basis, s.plan, sek - s.planStart); s.becken.verlauf = verlauf; s.becken.welt = welt;
+    const letzte = s.plan[s.plan.length - 1]; if (sek - s.planStart >= letzte.t + letzte.dauer) s.plan = null;
+  }
+  function bildZeit(s, dtMs) { s.jetzt += C.bildSchritt(dtMs); zeit(s, s.jetzt / 1000); vorfuehrungSchritt(s, s.jetzt / 1000); return s.jetzt; }
+  // Laufende Animation sofort zu Ende rechnen (vor jedem neuen Schritt)
+  function abschliessen(s) { // Vorführung beenden, begonnene Tropfen fertig setzen, noch nicht begonnene Autotropfen verwerfen
+    s.vorfuehrung = null; if (!s.plan) return; const jetzt = (s.planJetzt || 0) - s.planStart, begonnen = s.plan.filter(e => e.t <= jetzt);
+    if (begonnen.length) { s.plan = begonnen; const l = begonnen[begonnen.length - 1]; zeit(s, s.planStart + l.t + l.dauer); } s.plan = null; }
+  // Getippter Tropfen geht in AUFGEHEN_S auf (S-002); im ersten Bild (1/60 s) schon sichtbar.
+  function tippen(s, x, y, farbe, rnd) {
+    if (s.phase !== 'malen' || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    const sch = schritt(s); if (sch && sch.art !== 'tropfen') return false;
+    abschliessen(s); merke(s); if (sch) { farbe = sch.farbe; weiter(s); }
+    const t = s.jetzt / 1000, r = sch ? sch.r : C.radiusWaehlen(rnd), cx = Math.min(s.breite, Math.max(0, x)), cy = Math.min(s.hoehe, Math.max(0, y));
+    startePlan(s, [{ t, x: cx, y: cy, rEnde: r, dauer: AUFGEHEN_S, farbe }], 0); zeit(s, t + 1 / 60); return true;
+  }
+  // Fingerzug mit Stäbchen oder Kamm: Zustand (zurückgelegter Weg) liegt in der Sitzung, nicht in der UI (R-03)
+  function zugBeginnen(s) { if (s.phase !== 'malen') return false; abschliessen(s); merke(s); s.zug = C.neuerZug(); return true; }
+  function zugWeiter(s, x0, y0, x1, y1, rnd) {
+    if (s.phase !== 'malen' || !s.zug) return false;
+    if (s.werkzeug === 'spritzen') { const p = C.spritzPunkte(rnd, x0, y0, x1, y1, s.zug, s.breite, s.hoehe); if (!p) return false; for (const [x, y, r] of p) C.tropfen(s.becken, x, y, r, s.farbe); return true; }
+    return s.werkzeug === 'kamm' ? C.kammWeg(s.becken, x0, y0, x1, y1, KAMM.zinken, KAMM.abstand, s.zug) : C.schiebeWeg(s.becken, x0, y0, x1, y1, s.zug);
+  }
+  function zugEnde(s) {
+    const sch = schritt(s); if (sch && sch.art === 'zug' && s.zug && s.werkzeug === sch.werkzeug && s.zug.weg >= A.MINDESTANTEIL * sch.laenge) weiter(s);
+    s.zug = null;
+  }
+  // Anleitung (S-003): Schrittnummer liegt mit im Verlauf, damit Zurück Bild und Schritt gemeinsam zurücksetzt
+  // Jeder Verlaufseintrag merkt den ganzen Anleitungsstand (Muster, Schritt, Ergebnis oder keine Anleitung), damit Zurück beides gemeinsam herstellt
+  function merke(s) { C.merke(s.becken); const a = s.anleitung; s.becken.verlauf[s.becken.verlauf.length - 1].anl = a ? { muster: a.muster, schritt: a.schritt, ergebnis: a.ergebnis } : null; }
+  function schritt(s) { return s.anleitung && !s.anleitung.ergebnis ? s.anleitung.schritte[s.anleitung.schritt] : null; }
+  function setzeSchritt(s) { const sch = schritt(s); if (sch) { s.werkzeug = sch.art === 'tropfen' ? 'tropfen' : sch.werkzeug; if (sch.art === 'tropfen') s.farbe = sch.farbe; } }
+  function weiter(s) {
+    const a = s.anleitung; a.schritt++;
+    if (a.schritt < a.schritte.length) { setzeSchritt(s); return; }
+    abschliessen(s); const v = A.vorbild(A.MUSTER[a.muster], s.breite, s.hoehe), prozent = A.aehnlichkeit(s.becken, v);
+    a.ergebnis = { prozent, sterne: A.sterne(prozent) };
+  }
+  function anleitungStarten(s, nr) {
+    if (!A.MUSTER[nr]) return false; neuesBecken(s);
+    s.anleitung = { muster: nr, schritt: 0, schritte: A.schritteFuer(A.MUSTER[nr], s.breite, s.hoehe), ergebnis: null }; setzeSchritt(s); return true;
+  }
+  function anleitungEnde(s) { s.anleitung = null; }
+  function abdruckStarten(s, jetztMs) { if (s.phase !== 'malen') return false; abschliessen(s); s.phase = 'abdruck'; s.abdruckStart = jetztMs; return true; }
+  function abdruckFortschritt(s, jetztMs) {
+    if (s.phase === 'malen') return 0; if (s.phase === 'ergebnis') return 1;
+    const p = Math.min(1, Math.max(0, (jetztMs - s.abdruckStart) / ABDRUCK_MS)); if (p >= 1) s.phase = 'ergebnis'; return p;
+  }
+  function weltWechseln(s, welt) { if (s.phase !== 'malen' || !E.PALETTEN[welt]) return false; s.becken.welt = welt; return true; }
+  function neuesBecken(s) { abschliessen(s); merke(s); s.becken.polys = []; s.phase = 'malen'; s.plan = null; } // Zurück holt das alte Muster
+  function rueckgaengig(s) {
+    if (s.phase !== 'malen') return false; const p = s.plan, e = s.becken.verlauf[s.becken.verlauf.length - 1]; s.plan = null;
+    const ok = C.rueckgaengig(s.becken); if (!ok && p) s.plan = p;
+    if (ok && e && e.anl !== undefined) {
+      const a = e.anl; s.anleitung = a ? { muster: a.muster, schritt: a.schritt, schritte: A.schritteFuer(A.MUSTER[a.muster], s.breite, s.hoehe), ergebnis: a.ergebnis } : null; setzeSchritt(s);
+    }
+    return ok;
+  }
+  function beruehrt(s) { s.beruehrt = true; s.vorfuehrung = null; } // jede Berührung beendet die Vorführung (A-14)
+  function tonUmschalten(s) { s.tonStufe = s.tonStufe === 2 ? 0 : s.tonStufe === 0 ? 1 : 2; s.tonAn = s.tonStufe > 0; return s.tonAn; }
+  function musikAn(s) { return s.beruehrt && s.tonStufe === 2; }
+  function tonFuer(s, name) { return s.beruehrt && s.tonAn && TOENE.includes(name) ? name : null; }
+
+  g.Ebru.sitzung = { KAMM, planeVorfuehrung, anleitungStarten, anleitungEnde, schritt, musikAn, ABDRUCK_MS, AUFGEHEN_S, abschliessen, zugBeginnen, zugWeiter, zugEnde, neueSitzung, startePlan, zeit, bildZeit, tippen, abdruckStarten, abdruckFortschritt, weltWechseln, neuesBecken, rueckgaengig, beruehrt, tonUmschalten, tonFuer };
+})(globalThis);
+
+})();
+
+(function(){
+// Boundary: Ton über WebAudio. Der AudioContext wird erst nach der ersten Berührung erzeugt; ohne Audio bleibt alles stumm und nutzbar.
+(function (g) {
+  function erzeuge(AudioCtx) {
+    let ctx = null, rausch = null, wasser = null;
+    function holen() {
+      if (!AudioCtx) return null;
+      if (!ctx) { try { ctx = new AudioCtx(); } catch (e) { ctx = null; return null; } }
+      if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) { /* stumm */ } }
+      return ctx;
+    }
+    function puffer(c) {
+      if (rausch) return rausch;
+      rausch = c.createBuffer(1, c.sampleRate * 2, c.sampleRate); const d = rausch.getChannelData(0);
+      let letzt = 0; for (let i = 0; i < d.length; i++) { letzt = letzt * 0.96 + (Math.random() * 2 - 1) * 0.04; d[i] = letzt * 6; }
+      return rausch;
+    }
+    function ton(c, f0, f1, dauer, vol, art) {
+      const o = c.createOscillator(), v = c.createGain(), t = c.currentTime;
+      o.type = art || 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dauer);
+      v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(vol, t + 0.01); v.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+      o.connect(v).connect(c.destination); o.start(t); o.stop(t + dauer + 0.05);
+    }
+    function raunen(c, dauer, vol, filterTyp, freq) {
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), v = c.createGain(), t = c.currentTime;
+      s.buffer = puffer(c); f.type = filterTyp; f.frequency.value = freq;
+      v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(vol, t + dauer * 0.3); v.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+      s.connect(f).connect(v).connect(c.destination); s.start(t); s.stop(t + dauer + 0.05);
+    }
+    const klaenge = {
+      tropfen(c) { ton(c, 780, 260, 0.22, 0.22); ton(c, 1560, 520, 0.12, 0.05); },
+      stab(c, st) { raunen(c, 0.18, 0.05 + 0.1 * Math.min(1, st || 0.3), 'bandpass', 500 + 800 * Math.min(1, st || 0.3)); },
+      papier(c) { raunen(c, 2.2, 0.16, 'highpass', 1800); },
+      glocke(c) { ton(c, 1318.5, 1316, 1.6, 0.12); ton(c, 1975.5, 1972, 1.1, 0.05); ton(c, 2637, 2630, 0.7, 0.03); }, // Sternfeier S-008: E6 mit Obertönen
+      wasser(c) { raunen(c, 1.6, 0.04, 'lowpass', 400); },
+    };
+    // Ney-Begleitmusik (S-007): Phrasen kommen aus Control (musik.phrase), hier nur Klang und Zeitplan
+    let musikAn = false, naechste = 0, takt = null, vorige = null, gespielt = 0, hall = null, grund = null, bus = null; // bus: Summe der Musik, Stumm trennt ihn sofort
+    const GRUND = 146.83; // D3
+    function hallWeg(c) {
+      if (hall) return hall; if (!bus) { bus = c.createGain(); bus.connect(c.destination); } const d = c.createDelay(1), fb = c.createGain(), lp = c.createBiquadFilter(), aus = c.createGain();
+      d.delayTime.value = 0.35; fb.gain.value = 0.35; lp.type = 'lowpass'; lp.frequency.value = 1800; aus.gain.value = 0.5;
+      d.connect(lp).connect(fb).connect(d); lp.connect(aus).connect(bus); hall = d; return hall;
+    }
+    function ney(c, f, t, dauer) {
+      const o = c.createOscillator(), v = c.createGain(), vib = c.createOscillator(), vt = c.createGain(), hauch = c.createBufferSource(), hf = c.createBiquadFilter(), hv = c.createGain();
+      o.type = 'sine'; o.frequency.value = f; vib.frequency.value = 5; vt.gain.value = f * 0.004; vib.connect(vt).connect(o.frequency);
+      v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(0.05, t + 0.25); v.gain.setValueAtTime(0.05, t + Math.max(0.3, dauer - 0.3)); v.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+      hauch.buffer = puffer(c); hf.type = 'bandpass'; hf.frequency.value = f * 2; hf.Q.value = 2; hv.gain.setValueAtTime(0.0001, t); hv.gain.exponentialRampToValueAtTime(0.012, t + 0.12); hv.gain.exponentialRampToValueAtTime(0.002, t + dauer);
+      o.connect(v); hauch.connect(hf).connect(hv); const h = hallWeg(c); for (const q of [v, hv]) { q.connect(bus); q.connect(h); }
+      for (const q of [o, vib, hauch]) { q.start(t); q.stop(t + dauer + 0.05); } gespielt++;
+    }
+    function planen(phraseFn, HICAZ) {
+      const c = holen(); if (!c || !musikAn) return;
+      if (!grund) { grund = c.createOscillator(); const gv = c.createGain(); grund.frequency.value = GRUND / 2; gv.gain.value = 0.012; hallWeg(c); grund.connect(gv).connect(bus); grund.start(); grund.gv = gv; }
+      if (naechste < c.currentTime) naechste = c.currentTime + 0.3;
+      while (naechste < c.currentTime + 4) { const p = phraseFn(vorige); vorige = p; for (const tn of p.toene) { ney(c, GRUND * 2 * HICAZ[tn.stufe], naechste, tn.dauer); naechste += tn.dauer * 0.92; } naechste += p.pause; }
+    }
+    function musik(an, phraseFn, HICAZ) {
+      if (an === musikAn) return; musikAn = an;
+      if (an) { planen(phraseFn, HICAZ); takt = setInterval(() => planen(phraseFn, HICAZ), 1000); }
+      else { clearInterval(takt); takt = null; naechste = 0; if (grund) { try { grund.stop(); } catch (e) { /* schon aus */ } grund = null; } if (bus) { bus.disconnect(); bus = null; hall = null; } }
+    }
+    const verlauf = []; // Namen gespielter Klänge (höchstens 50, für Tests)
+    return { freischalten: holen, musik, gespielt: () => gespielt, klaenge: () => verlauf.slice(), spielen(name, staerke) { const c = holen(); if (c && klaenge[name]) { klaenge[name](c, staerke); verlauf.push(name); if (verlauf.length > 50) verlauf.shift(); } } };
+  }
+  g.Ebru.boundary = g.Ebru.boundary || {}; g.Ebru.boundary.ton = { erzeuge };
+})(globalThis);
+
+})();
+
+(function(){
+// Boundary: kurze Vibration (S-005, A-11). Fehlt navigator.vibrate oder wirft es, passiert nichts.
+(function (g) {
+  function erzeuge(nav) {
+    return { kurz() { try { if (nav && typeof nav.vibrate === 'function') nav.vibrate(12); } catch (e) { /* Gerät ohne Vibration */ } } };
+  }
+  g.Ebru.boundary = g.Ebru.boundary || {}; g.Ebru.boundary.haptik = { erzeuge };
+})(globalThis);
+
+})();
+
+(function(){
+// Boundary: localStorage (S-006). Jeder Zugriff in try/catch: privater Modus, voller oder gesperrter Speicher dürfen nichts brechen.
+(function (g) {
+  function erzeuge(fenster) {
+    const ls = () => { try { return fenster.localStorage || null; } catch (e) { return null; } };
+    return {
+      lesen(schluessel) { try { const l = ls(); return l ? l.getItem(schluessel) : null; } catch (e) { return null; } },
+      schreiben(schluessel, text) { try { const l = ls(); if (!l) return false; l.setItem(schluessel, text); return true; } catch (e) { return false; } },
+    };
+  }
+  g.Ebru.boundary = g.Ebru.boundary || {}; g.Ebru.boundary.speicher = { erzeuge };
+})(globalThis);
+
+})();
+
+(function(){
+// Boundary: Bild (PNG) oder Video teilen oder herunterladen (nur auf Tippen des Nutzers).
+(function (g) {
+  function alsBlob(canvas) { return new Promise(ok => canvas.toBlob(b => ok(b), 'image/png')); }
+  async function teilen(canvas, name) { const blob = await alsBlob(canvas); return blob ? teileBlob(blob, name, 'Mein Ebru') : 'fehler'; }
+  async function teileBlob(blob, name, titel) {
+    try { // Im Artifact-Betrachter darf nur die Fähigkeit "downloads" Dateien anbieten; sonst Teilen oder Download wie im Browser
+      const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
+      if (dl) { try { await dl.save({ filename: name, data: blob }); return 'geladen'; } catch (e) { return e && e.code === 'declined' ? 'abgebrochen' : 'fehler'; } }
+    } catch (e) { /* ohne Fähigkeit weiter */ }
+    try {
+      const datei = new File([blob], name, { type: blob.type });
+      if (navigator.canShare && navigator.canShare({ files: [datei] })) { await navigator.share({ files: [datei], title: titel }); return 'geteilt'; }
+    } catch (e) { if (e && e.name === 'AbortError') return 'abgebrochen'; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); return 'geladen';
+  }
+  async function teileDatenUrl(url, name) { /* S-009: gespeicherte data:-Adresse als Datei teilen */
+    try { const blob = await (await fetch(url)).blob(); return teileBlob(blob, name, 'Mein Ebru'); } catch (e) { return 'fehler'; }
+  }
+  g.Ebru.boundary = g.Ebru.boundary || {}; g.Ebru.boundary.export = { teilen, teileBlob, teileDatenUrl, alsBlob };
+})(globalThis);
+
+})();
+
+(function(){
+// Boundary: Zeitraffer-Video mit MediaRecorder und canvas.captureStream (S-008). Ohne diese Fähigkeiten: kann() ist false.
+(function (g) {
+  function typ() {
+    const MR = g.MediaRecorder; if (!MR || !MR.isTypeSupported) return null;
+    for (const t of ['video/mp4;codecs=avc1', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4']) if (MR.isTypeSupported(t)) return t;
+    return null;
+  }
+  function kann() { return !!(typ() && g.HTMLCanvasElement && g.HTMLCanvasElement.prototype.captureStream); }
+  function alsJpeg(canvas, q) { return new Promise(ok => { try { canvas.toBlob(b => ok(b), 'image/jpeg', q); } catch (e) { ok(null); } }); }
+  async function bildLaden(blob) { /* liefert { bild, frei() } zum Zeichnen; gibt Blob-Adressen wieder frei */
+    if (g.createImageBitmap) { const b = await g.createImageBitmap(blob); return { bild: b, frei: () => b.close && b.close() }; }
+    const url = URL.createObjectURL(blob), i = new Image(); i.src = url;
+    try { await i.decode(); } finally { URL.revokeObjectURL(url); }
+    return { bild: i, frei: () => {} };
+  }
+  const warte = ms => new Promise(ok => setTimeout(ok, Math.max(0, ms)));
+  /* Zeichnet anzahl Bilder über zeichneBild(i) (darf ein Promise liefern) in Echtzeit bei fps auf und liefert { blob, endung }. */
+  async function aufnehmen(canvas, zeichneBild, anzahl, fps) {
+    const t = typ(); if (!t || anzahl < 1) return null;
+    await zeichneBild(0);
+    const strom = canvas.captureStream(fps), rec = new g.MediaRecorder(strom, { mimeType: t, videoBitsPerSecond: 2500000 }), teile = [];
+    rec.ondataavailable = e => { if (e.data && e.data.size) teile.push(e.data); };
+    const fertig = new Promise(ok => { rec.onstop = ok; rec.onerror = ok; });
+    rec.start(500); const start = performance.now();
+    try { for (let i = 0; i < anzahl; i++) { await zeichneBild(i); await warte(start + (i + 1) * 1000 / fps - performance.now()); } }
+    finally { /* auch bei Fehler im Zeichnen: Aufnahme beenden, Strom freigeben, höchstens 2 s auf das Ende warten */
+      try { if (rec.state !== 'inactive') rec.stop(); } catch (e) { /* schon aus */ }
+      await Promise.race([fertig, warte(2000)]); strom.getTracks().forEach(s => s.stop());
+    }
+    const art = t.split(';')[0];
+    return { blob: new Blob(teile, { type: art }), endung: art === 'video/mp4' ? 'mp4' : 'webm' };
+  }
+  g.Ebru.boundary = g.Ebru.boundary || {}; g.Ebru.boundary.video = { kann, aufnehmen, alsJpeg, bildLaden };
+})(globalThis);
+
+})();
+
+(function(){
+// UI: Zeichnen von Becken, Papier und Ergebniskarte auf Canvas 2D. Liest keinen Zustand aus der Oberfläche zurück (R-03).
+(function (g) {
+  const E = g.Ebru.entity;
+  function kachel(rnd) {
+    const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), d = x.createImageData(128, 128), r = E.papierRauschen(rnd, 128, 128);
+    for (let i = 0; i < r.length; i++) { const v = Math.max(0, Math.min(255, 238 + (r[i] - 128) * 1.6)); d.data[4 * i] = v; d.data[4 * i + 1] = v - 2; d.data[4 * i + 2] = v - 6; d.data[4 * i + 3] = 255; }
+    x.putImageData(d, 0, 0); return c;
+  }
+  function koerner(ctx, w, h, k, alpha) { // Papierkörnung über alles legen
+    ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = alpha; ctx.fillStyle = ctx.createPattern(k, 'repeat'); ctx.fillRect(0, 0, w, h); ctx.restore();
+  }
+  function farben(ctx, b, kante) {
+    const pal = E.PALETTEN[b.welt];
+    for (const q of b.polys) {
+      const p = q.p, n = p.length / 2; if (n < 3) continue;
+      ctx.beginPath(); ctx.moveTo(p[0], p[1]); for (let i = 1; i < n; i++) ctx.lineTo(p[2 * i], p[2 * i + 1]); ctx.closePath();
+      ctx.fillStyle = pal.farben[q.farbe]; ctx.fill();
+      if (kante) { ctx.strokeStyle = 'rgba(40,25,30,0.22)'; ctx.lineWidth = 0.7; ctx.stroke(); }
+    }
+  }
+  // Becken in Einheiten zeichnen; scale = Gerätepixel je Einheit. wasser=false lässt den Grund durchsichtig (für den Abdruck).
+  function becken(ctx, b, scale, k, wasser) {
+    const pal = E.PALETTEN[b.welt], W = b.breite, H = b.hoehe;
+    ctx.save(); ctx.scale(scale, scale);
+    ctx.fillStyle = wasser ? pal.wasser : pal.papier; ctx.fillRect(0, 0, W, H);
+    farben(ctx, b, true);
+    if (wasser) { const gr = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, H * 0.75); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(60,70,90,0.18)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); }
+    ctx.restore();
+  }
+  function fallender(ctx, scale, x, y, r, farbe) { ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = farbe; ctx.globalAlpha = 0.95; ctx.fill(); ctx.restore(); }
+  // Werkzeug unter dem Finger (S-004): Zinken quer zur Zugrichtung (mx, my), Steg dahinter; Einheiten, scale = Gerätepixel je Einheit.
+  function werkzeug(ctx, scale, x, y, mx, my, zinken, abstand, alpha) {
+    const nx = -my, ny = mx, h = (zinken - 1) / 2 * abstand;
+    ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.globalAlpha = alpha || 0.8;
+    if (zinken > 1) { ctx.beginPath(); ctx.moveTo(x - nx * h - mx * 14, y - ny * h - my * 14); ctx.lineTo(x + nx * h - mx * 14, y + ny * h - my * 14); ctx.strokeStyle = '#6b4a35'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke(); }
+    if (zinken === 1) { ctx.beginPath(); ctx.moveTo(x - mx * 34, y - my * 34); ctx.lineTo(x, y); ctx.strokeStyle = '#6b4a35'; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke(); } // Stäbchen mit Schaft
+    for (let k = 0; k < zinken; k++) {
+      const o = k * abstand - h, zx = x + nx * o, zy = y + ny * o;
+      if (zinken > 1) { ctx.beginPath(); ctx.moveTo(zx - mx * 14, zy - my * 14); ctx.lineTo(zx, zy); ctx.strokeStyle = '#6b4a35'; ctx.lineWidth = 1.6; ctx.stroke(); }
+      ctx.beginPath(); ctx.arc(zx, zy, zinken > 1 ? 2.2 : 3.2, 0, 7); ctx.fillStyle = '#3a2a22'; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 0.8; ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // Wasserwelle um einen Tropfen (S-005): heller Ring, Radius 14 bis 28, blendet in 0,5 s aus; u = 0 bis 1
+  function welle(ctx, scale, x, y, u, klein) { /* klein: Spurwelle hinter dem Werkzeug (S-008), Radius 4 bis 14, schwächer */
+    const r0 = klein ? 4 : 14, alpha = klein ? 0.45 : 0.7;
+    ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.beginPath(); ctx.arc(x, y, r0 + (klein ? 10 : 14) * u, 0, 7);
+    ctx.strokeStyle = 'rgba(255,255,255,' + (alpha * (1 - u)).toFixed(3) + ')'; ctx.lineWidth = (klein ? 1.5 : 2.5) * (1 - u) + 0.5; ctx.stroke(); ctx.restore();
+  }
+  // Goldener Stern der Sternfeier (S-008), fünf Zacken
+  function stern(ctx, scale, x, y, r, dreh, alpha) {
+    ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.translate(x, y); ctx.rotate(dreh); ctx.beginPath();
+    for (let i = 0; i < 10; i++) { const w = i * Math.PI / 5 - Math.PI / 2, q = i % 2 ? r * 0.45 : r; ctx.lineTo(Math.cos(w) * q, Math.sin(w) * q); }
+    ctx.closePath(); ctx.globalAlpha = alpha; ctx.fillStyle = '#f5c542'; ctx.shadowColor = 'rgba(255,220,120,0.9)'; ctx.shadowBlur = 8; ctx.fill(); ctx.restore();
+  }
+  // Ziel eines Anleitungsschritts (S-003): gestrichelter Kreis für Tropfen, gestrichelte Linie mit Pfeilspitze für Züge
+  function ziel(ctx, scale, sch) {
+    ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.setLineDash([6, 5]); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const pfad = () => { ctx.beginPath(); if (sch.art === 'tropfen') ctx.arc(sch.x, sch.y, sch.r, 0, 7); else { ctx.moveTo(sch.punkte[0][0], sch.punkte[0][1]); for (const [x, y] of sch.punkte.slice(1)) ctx.lineTo(x, y); } };
+    pfad(); ctx.strokeStyle = 'rgba(40,25,30,0.55)'; ctx.lineWidth = 4; ctx.stroke(); pfad(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+    if (sch.art === 'zug') { const p = sch.punkte, [ax, ay] = p[p.length - 2], [bx, by] = p[p.length - 1], w = Math.atan2(by - ay, bx - ax); ctx.setLineDash([]); ctx.beginPath();
+      ctx.moveTo(bx - 12 * Math.cos(w - 0.5), by - 12 * Math.sin(w - 0.5)); ctx.lineTo(bx, by); ctx.lineTo(bx - 12 * Math.cos(w + 0.5), by - 12 * Math.sin(w + 0.5)); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p[0][0], p[0][1], 4, 0, 7); ctx.fillStyle = '#ffffff'; ctx.fill(); }
+    ctx.restore();
+  }
+  // Blatt Papier im Becken: y = obere Kante in Einheiten.
+  function blatt(ctx, b, scale, y, k, alpha) {
+    ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.globalAlpha = alpha; ctx.fillStyle = E.PALETTEN[b.welt].papier; ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+    ctx.fillRect(-4, y, b.breite + 8, b.hoehe); ctx.restore();
+  }
+  // Ergebniskarte: Papier mit dem Abdruck auf einem Tisch; w mal h Gerätepixel, Rand 6 % der Breite.
+  function karte(ctx, b, w, h, k) {
+    const m = Math.round(w * 0.06), iw = w - 2 * m, ih = h - 2 * m, s = Math.min(iw / b.breite, ih / b.hoehe), kw = b.breite * s, kh = b.hoehe * s, x0 = (w - kw) / 2, y0 = (h - kh) / 2;
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#d9cfc0'; ctx.fillRect(0, 0, w, h);
+    ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = m * 0.5; ctx.shadowOffsetY = m * 0.2; ctx.fillStyle = E.PALETTEN[b.welt].papier; ctx.fillRect(m * 0.6, m * 0.6, w - 1.2 * m, h - 1.2 * m); ctx.restore();
+    ctx.save(); ctx.translate(x0, y0); becken(ctx, b, s, k, false); ctx.restore();
+    koerner(ctx, w, h, k, 0.5);
+  }
+  g.Ebru.ui = g.Ebru.ui || {}; g.Ebru.ui.zeichnen = { kachel, koerner, becken, fallender, werkzeug, welle, stern, ziel, blatt, karte };
+})(globalThis);
+
+})();
+
+(function(){
+// UI: Galerie "Meine Bilder" (S-006). Daten und Regeln in Control (Ebru.galerie), Speicher (Boundary) wird hineingereicht.
+// Liest nichts aus dem DOM zurück (R-03): Quelle der Wahrheit ist das Galerie-Objekt.
+(function (g) {
+  const G = g.Ebru.galerie, SCHLUESSEL = 'ebru.galerie';
+  function erzeuge(speicher, el, teilen, versatz) { /* teilen(datenUrl, name) aus Boundary, versatz() = Ortszeit-Versatz in Minuten (S-009) */
+    let daten = G.lesen(speicher.lesen(SCHLUESSEL)), gross = -1; // gross: Index der Großansicht, -1 = Kacheln (UI-Zustand, R-03)
+    function sichern() { // voller Speicher: Kopie um das älteste Bild kürzen und noch einmal; klappt nichts, bleibt die Sitzung unverändert
+      const probe = G.lesen(G.schreiben(daten));
+      for (let i = 0; i <= G.MAX_BILDER; i++) { if (speicher.schreiben(SCHLUESSEL, G.schreiben(probe))) { daten = probe; return true; } if (!probe.bilder.length) return false; probe.bilder.pop(); }
+      return false;
+    }
+    function vorschau(karte) {
+      const W = 480, H = 960, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'), s = Math.max(W / karte.width, H / karte.height);
+      x.drawImage(karte, (W - karte.width * s) / 2, (H - karte.height * s) / 2, karte.width * s, karte.height * s);
+      const url = c.toDataURL('image/jpeg', 0.82); return url.length <= G.MAX_BILD_ZEICHEN ? url : c.toDataURL('image/jpeg', 0.6); // S-009: 480 × 960
+    }
+    function abdruck(karte, muster, sterne, zeit) { G.hinzufuegen(daten, { zeit, muster, sterne, bild: vorschau(karte) }); return sichern(); }
+    function sterneMerken(id, n) { if (G.sterneMerken(daten, id, n)) sichern(); }
+    const knopf = (text, attr, wert) => { const b = document.createElement('button'); b.dataset[attr] = wert; b.append(text); return b; };
+    function zeigen(auf, sternText, namen) {
+      el.hidden = !auf; if (!auf) { gross = -1; return; }
+      if (gross >= 0 && daten.bilder[gross]) { // Großansicht (S-009)
+        const b = daten.bilder[gross], img = document.createElement('img'); img.src = b.bild; img.alt = 'Bild ' + (gross + 1) + ' groß'; img.className = 'gross';
+        const unten = document.createElement('div'); unten.className = 'zeile'; const tk = knopf('Teilen', 'galerie', 'teilen'); tk.className = 'gross'; unten.append(tk, knopf('Zurück', 'galerie', 'raster'));
+        el.replaceChildren(img, unten); return;
+      }
+      gross = -1; const kopf = document.createElement('p'); kopf.className = 'titel'; kopf.append('Meine Bilder (' + daten.bilder.length + ' von ' + G.MAX_BILDER + ')');
+      const raster = document.createElement('div'); raster.className = 'raster';
+      daten.bilder.forEach((b, i) => {
+        const k = document.createElement('div'); k.className = 'kachel'; const bk = knopf('', 'gross', i); bk.className = 'bildknopf'; bk.setAttribute('aria-label', 'Bild ' + (i + 1) + ' groß ansehen');
+        const img = document.createElement('img'); img.src = b.bild; img.alt = 'Bild ' + (i + 1); bk.append(img);
+        const t = document.createElement('span'); t.append(b.muster && namen[b.muster] ? namen[b.muster] + ' ' + sternText(b.sterne || 0) : 'Frei gemalt');
+        k.append(bk, t, knopf('✕', 'loesch', i)); raster.append(k);
+      });
+      if (!daten.bilder.length) { const l = document.createElement('p'); l.append('Noch keine Bilder. Mach einen Abdruck!'); raster.append(l); }
+      const unten = document.createElement('div'); unten.className = 'zeile'; unten.append(knopf('Alle löschen', 'galerie', 'alle'), knopf('Schließen', 'galerie', 'zu'));
+      el.replaceChildren(kopf, raster, unten);
+    }
+    function klick(b) { // true, wenn neu gezeichnet werden muss
+      if (b.dataset.gross !== undefined) { gross = +b.dataset.gross; return true; }
+      if (b.dataset.galerie === 'raster') { gross = -1; return true; }
+      if (b.dataset.galerie === 'teilen') { const bild = daten.bilder[gross]; if (bild) teilen(bild.bild, G.dateiName(bild.zeit, versatz())); return true; }
+      if (b.dataset.loesch !== undefined) { G.loeschen(daten, +b.dataset.loesch); sichern(); return true; }
+      if (b.dataset.galerie === 'alle') { G.alleLoeschen(daten); sichern(); return true; }
+      return false;
+    }
+    return { abdruck, sterneMerken, zeigen, klick, sterne: id => daten.sterne[id] || 0, anzahl: () => daten.bilder.length };
+  }
+  g.Ebru.ui = g.Ebru.ui || {}; g.Ebru.ui.galerie = { erzeuge };
+})(globalThis);
+
+})();
+
+(function(){
+// UI: Eingaben, Bildschleife und Leiste. Quelle der Wahrheit ist die Sitzung (Control); die UI liest nichts aus dem DOM zurück (R-03).
+// Zusammenbau (Composition Root): hier werden Ton und Export (Boundary) an die Sitzung gereicht.
+(function (g) {
+  const E = g.Ebru.entity, C = g.Ebru.control, W = g.Ebru.wow, S = g.Ebru.sitzung, Z = g.Ebru.ui.zeichnen, B = g.Ebru.boundary;
+  const $ = id => document.getElementById(id), cv = $('c'), ctx = cv.getContext('2d'), hinweis = $('hinweis');
+  const rnd = () => Math.random(), ton = B.ton.erzeuge(window.AudioContext || window.webkitAudioContext), haptik = B.haptik.erzeuge(navigator);
+  const galerie = g.Ebru.ui.galerie.erzeuge(B.speicher.erzeuge(window), document.getElementById('galerie'),
+    async (url, name) => { if (teiltGerade) return; teiltGerade = true; const r = await B.export.teileDatenUrl(url, name); teiltGerade = false; zeigeHinweis(r === 'geladen' ? 'Bild geladen' : r === 'geteilt' ? 'Geteilt' : 'Nicht geteilt', 2500); }, () => -new Date().getTimezoneOffset()); let gespeichert = false, sterneGemerkt = null, teiltGerade = false;
+  const ruhig = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); let wellen = []; // Wasserwellen (nur Anzeige, S-005)
+  const flaeche = $('flaeche'); let cssW = 400, cssH = 800, scale = 1, stufe = 2, s = null, korn = null, ergebnisKarte = null;
+  // S-008: Spur hinter dem Werkzeug, Sternfeier, Bildsammler für den Zeitraffer (nur im Arbeitsspeicher)
+  let vorfZuletzt = false, geistGemalt = false, spurZug = {}, spurGesamt = 0, feier = null, feierT0 = 0, feiern = 0, bilder = [], bilderRunde = 0, letzteSammlung = 0, veraendert = false, klein = null, video = null, videoLaeuft = false;
+  let angezeigt = false, dirty = true, letzte = performance.now(), summe = 0, anzahl = 0, fpsWert = 0, zeiger = null, letzterStab = 0, letzterTon = 0, planTon = 0, hinweisAus = 0;
+
+  function groesse() {
+    const r = flaeche.getBoundingClientRect(); cssW = Math.max(200, Math.round(r.width)); cssH = Math.max(300, Math.round(r.height));
+    const dpr = C.aufloesung(stufe, window.devicePixelRatio || 1); cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr); scale = cv.width / E.BREITE; dirty = true;
+  }
+  function neu() {
+    groesse(); s = S.neueSitzung(E.BREITE, Math.round(E.BREITE * cssH / cssW));
+    const plan = C.planAutoTropfen(rnd, s.breite, s.hoehe); S.startePlan(s, plan, 0); S.planeVorfuehrung(s, C.vorfuehrungFuer(plan)); planTon = 0; wellen = []; ergebnisKarte = null; angezeigt = false; bilderNeu(); zeigeHinweis('Tippe aufs Wasser oder zieh mit dem Finger', 6000); dirty = true; leiste();
+  }
+  function welle(x, y, kl) { if (ruhig) return; wellen.push({ x, y, t0: performance.now(), kl: !!kl }); if (kl) spurGesamt++; }
+  function bilderNeu() { bilder = []; bilderRunde++; video = null; letzteSammlung = 0; }
+  function sammeln(jetzt) { /* alle 0,25 s ein kleines JPEG des Beckens, höchstens 240 (danach ausgedünnt) */
+    letzteSammlung = jetzt; veraendert = false; const w = 360, h = Math.round(w * cv.height / cv.width / 2) * 2, runde = bilderRunde;
+    if (!klein) klein = document.createElement('canvas'); if (klein.width !== w || klein.height !== h) { klein.width = w; klein.height = h; }
+    klein.getContext('2d').drawImage(cv, 0, 0, w, h);
+    B.video.alsJpeg(klein, 0.8).then(b => { if (b && runde === bilderRunde) bilder = W.anhaengen(bilder, b, W.MAX_BILDER); });
+  }
+  async function videoMachen() { /* erster Tipp erstellt, zweiter teilt (Teilen braucht eine frische Berührung) */
+    if (videoLaeuft) return;
+    if (video) { const r = await B.export.teileBlob(video.blob, 'ebru.' + video.endung, 'Mein Ebru'); zeigeHinweis(r === 'geladen' ? 'Video geladen' : r === 'geteilt' ? 'Geteilt' : 'Nicht geteilt', 2500); return; }
+    videoLaeuft = true; leiste(); zeigeHinweis('Video wird erstellt …', 20000);
+    const liste = bilder.slice(), karte = ergebnisKarte, plan = W.zeitrafferPlan(liste.length, 30), vc = document.createElement('canvas'), vx = vc.getContext('2d'), runde = bilderRunde;
+    vc.width = 360; vc.height = Math.round(360 * karte.height / karte.width / 2) * 2; let gezeigt = -1;
+    const zeichne = async i => {
+      if (runde !== bilderRunde) throw new Error('abgebrochen'); /* Neues Becken: Aufnahme sofort beenden */
+      if (i >= plan.length) { if (gezeigt !== -2) { gezeigt = -2; vx.drawImage(karte, 0, 0, vc.width, vc.height); } return; }
+      if (plan[i] !== gezeigt) { gezeigt = plan[i]; const b = await B.video.bildLaden(liste[gezeigt]); vx.drawImage(b.bild, 0, 0, vc.width, vc.height); b.frei(); }
+    };
+    let erg = null; try { erg = await B.video.aufnehmen(vc, zeichne, plan.length + W.ENDBILDER, 30); } catch (e) { erg = null; }
+    videoLaeuft = false; if (runde !== bilderRunde) { zeigeHinweis('Video abgebrochen', 1500); leiste(); return; }
+    video = erg && erg.blob.size ? erg : null; leiste(); zeigeHinweis(video ? 'Video fertig: tippe „Video teilen“' : 'Video ging nicht', 4000);
+  }
+  // Anleitung (S-003): Schild oben links, Musterliste, Schritttext unten; Tag aus dem Datum (R-02: hier in der UI erzeugt und hineingereicht)
+  const heute = () => { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); };
+  const tagNr = () => C.tagesMuster(heute()), sternText = n => '★'.repeat(n) + '☆'.repeat(3 - n);
+  let listeOffen = false, farbenGebaut = false, warAnleitung = false; // UI-Zustand im Code, nicht aus dem DOM gelesen (R-03)
+  function musterListe(auf) {
+    const l = $('musterliste'); listeOffen = auf; l.hidden = !auf; if (!auf) return;
+    const kopf = document.createElement('p'); kopf.className = 'titel'; kopf.append('Muster nachmalen');
+    const knoepfe = C.MUSTER.map((m, i) => { const b = document.createElement('button'); b.dataset.muster = i; const n = document.createElement('span'), st = document.createElement('span'); n.append(m.name + (i === tagNr() ? ' · heute' : '')); st.append(sternText(galerie.sterne(m.id))); b.append(n, st); return b; });
+    const frei = document.createElement('button'); frei.dataset.muster = 'frei'; frei.append('Frei malen'); const gal = document.createElement('button'); gal.dataset.galerie = 'auf'; gal.append('Meine Bilder (' + galerie.anzahl() + ')'); l.replaceChildren(kopf, ...knoepfe, frei, gal);
+  }
+  function anleitungText() {
+    const a = s.anleitung; hinweis.classList.toggle('fest', !!a); if (!a) { if (warAnleitung) hinweis.style.opacity = 0; warAnleitung = false; return; } warAnleitung = true;
+    if (a.ergebnis && sterneGemerkt !== a.ergebnis) { sterneGemerkt = a.ergebnis; galerie.sterneMerken(C.MUSTER[a.muster].id, a.ergebnis.sterne);
+      if (a.ergebnis.sterne === 3) { spiele('glocke'); feiern++; if (!ruhig) { feier = W.sternfeier(3, rnd, s.breite, s.hoehe); feierT0 = performance.now(); } } }
+    const t = a.ergebnis ? sternText(a.ergebnis.sterne) + ' ' + Math.round(a.ergebnis.prozent) + ' % wie das Vorbild. Abdruck tippen' : 'Schritt ' + (a.schritt + 1) + ' von ' + a.schritte.length + ': ' + a.schritte[a.schritt].text;
+    hinweis.replaceChildren(document.createTextNode(t)); hinweis.style.opacity = 1; hinweisAus = 0;
+  }
+  function zeigeHinweis(t, ms) { hinweis.replaceChildren(document.createTextNode(t)); hinweis.style.opacity = 1; hinweisAus = performance.now() + ms; }
+  function pos(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * E.BREITE, (e.clientY - r.top) / r.width * E.BREITE]; }
+
+  function leiste() {
+    const pal = E.PALETTEN[s.becken.welt], fz = $('farben');
+    if (!farbenGebaut) { farbenGebaut = true;
+      for (let i = 0; i < 4; i++) { const b = document.createElement('button'); b.className = 'farbe'; b.dataset.f = i; b.setAttribute('aria-label', 'Farbe ' + (i + 1)); fz.appendChild(b); }
+      const lk = document.createElement('span'); lk.className = 'trenner'; fz.appendChild(lk);
+      for (const w of ['A', 'B', 'C']) { const b = document.createElement('button'); b.className = 'welt'; b.dataset.welt = w; b.append(w); b.setAttribute('aria-label', 'Farbwelt ' + E.PALETTEN[w].name); fz.appendChild(b); }
+    }
+    fz.querySelectorAll('.farbe').forEach((b, i) => { b.style.background = pal.farben[i]; b.setAttribute('aria-pressed', String(s.farbe === i)); });
+    fz.querySelectorAll('.welt').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.welt === s.becken.welt)));
+    document.querySelectorAll('[data-w]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.w === s.werkzeug)));
+    $('ton').setAttribute('aria-pressed', String(s.tonAn)); $('ton').replaceChildren(document.createTextNode(['Stumm', 'Nur Ton', 'Ton + Musik'][s.tonStufe]));
+    ton.musik(S.musikAn(s), vor => g.Ebru.musik.phrase(rnd, vor), g.Ebru.musik.HICAZ); $('zurueck').disabled = !s.becken.verlauf.length;
+    const vk = $('video'); vk.hidden = !(B.video.kann() && (bilder.length >= 2 || video)); vk.disabled = videoLaeuft; vk.replaceChildren(document.createTextNode(videoLaeuft ? 'Video …' : video ? 'Video teilen' : 'Video'));
+    document.body.classList.toggle('ergebnis', s.phase === 'ergebnis'); dirty = true;
+    $('musterwahl').replaceChildren(document.createTextNode(s.anleitung ? '★ ' + C.MUSTER[s.anleitung.muster].name : '★ Tagesmuster: ' + C.MUSTER[tagNr()].name.split(' (')[0])); anleitungText();
+  }
+  function spiele(name, st) { if (S.tonFuer(s, name)) ton.spielen(name, st); }
+
+  cv.addEventListener('contextmenu', e => e.preventDefault());
+  cv.addEventListener('pointerdown', e => {
+    if (zeiger !== null || s.phase !== 'malen') return; zeiger = e.pointerId; try { cv.setPointerCapture(e.pointerId); } catch (fehler) { /* Zeiger schon weg: weiter ohne Fang */ }
+    S.beruehrt(s); ton.freischalten(); if (!s.anleitung) hinweis.style.opacity = 0; const [x, y] = pos(e);
+    if (s.werkzeug === 'tropfen') { if (S.tippen(s, x, y, s.farbe, rnd)) { spiele('tropfen'); planTon = 1; welle(x, y); haptik.kurz(); } zeiger = null; leiste(); return; }
+    S.zugBeginnen(s); spurZug = {}; s.letzt = [x, y]; s.ziel = null; s.richtung = [0, 1]; leiste();
+  });
+  cv.addEventListener('pointermove', e => {
+    if (e.pointerId !== zeiger || !s.letzt) return; s.ziel = pos(e); // gerechnet wird einmal je Bild in zugRechnen (Ereignisse zusammengefasst)
+  });
+  function zugRechnen() {
+    if (!s.letzt || !s.ziel) return; const [x0, y0] = s.letzt, [x, y] = s.ziel, d = Math.hypot(x - x0, y - y0); if (d < 2) return;
+    S.zugWeiter(s, x0, y0, x, y, rnd); if (s.phase === 'malen') for (const [px, py] of W.spurPunkte(x0, y0, x, y, spurZug)) welle(px, py, true); s.letzt = [x, y]; s.richtung = [(x - x0) / d, (y - y0) / d]; dirty = true;
+    const jetzt = performance.now(); if (jetzt - letzterStab > 140) { letzterStab = jetzt; spiele('stab', d / 20); }
+  }
+  const ende = e => { if (e.pointerId === zeiger) { zugRechnen(); zeiger = null; s.letzt = null; s.ziel = null; S.zugEnde(s); leiste(); } };
+  cv.addEventListener('pointerup', ende); cv.addEventListener('pointercancel', ende);
+
+  document.addEventListener('click', async e => {
+    if (e.target.id === 'musterliste') { musterListe(false); return; }
+    const b = e.target.closest('button'); if (!b) return; S.beruehrt(s); ton.freischalten();
+    if (b.dataset.galerie !== undefined || b.dataset.loesch !== undefined || b.dataset.gross !== undefined) { if (b.dataset.galerie === 'auf') musterListe(false); galerie.klick(b); galerie.zeigen(b.dataset.galerie !== 'zu', sternText, Object.fromEntries(C.MUSTER.map(m => [m.id, m.name.split(' (')[0]]))); return; }
+    if (b.id === 'musterwahl') { musterListe(!listeOffen); return; }
+    if (b.dataset.muster !== undefined) { musterListe(false); if (b.dataset.muster === 'frei') S.anleitungEnde(s); else S.anleitungStarten(s, +b.dataset.muster); wellen = []; leiste(); return; }
+    if (b.dataset.w) { s.werkzeug = b.dataset.w; leiste(); }
+    else if (b.dataset.f !== undefined) { s.farbe = +b.dataset.f; leiste(); }
+    else if (b.dataset.welt) { if (S.weltWechseln(s, b.dataset.welt)) leiste(); }
+    else if (b.id === 'zurueck') { S.rueckgaengig(s); leiste(); }
+    else if (b.id === 'leeren') { S.neuesBecken(s); wellen = []; bilderNeu(); leiste(); }
+    else if (b.id === 'ton') { S.tonUmschalten(s); leiste(); }
+    else if (b.id === 'abdruck') { if (S.abdruckStarten(s, performance.now())) { gespeichert = false; spiele('papier'); leiste(); } }
+    else if (b.id === 'neu') { S.neuesBecken(s); ergebnisKarte = null; angezeigt = false; bilderNeu(); leiste(); }
+    else if (b.id === 'video') videoMachen();
+    else if (b.id === 'teilen') { const r = await B.export.teilen(exportBild(), 'ebru.png'); zeigeHinweis(r === 'geladen' ? 'Bild geladen' : r === 'geteilt' ? 'Geteilt' : 'Nicht geteilt', 2500); }
+  });
+
+  function exportBild() {
+    const w = 800, h = Math.max(1400, Math.round(w * s.hoehe / s.breite + w * 0.12)), c = document.createElement('canvas'); c.width = w; c.height = h;
+    Z.karte(c.getContext('2d'), s.becken, w, h, korn); return c;
+  }
+  function malen(jetzt) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (s.phase === 'malen') {
+      Z.becken(ctx, s.becken, scale, korn, true);
+      if (s.plan) { const t = s.jetzt / 1000, p0 = s.plan[0]; if (t > p0.t - 0.55 && t < p0.t) { const u = (t - (p0.t - 0.55)) / 0.55; Z.fallender(ctx, scale, p0.x, -10 + (p0.y + 10) * u * u, 7, E.PALETTEN[s.becken.welt].farben[0]); } }
+      Z.koerner(ctx, cv.width, cv.height, korn, 0.1);
+      const jetztW = performance.now(); const dauer = w => (w.kl ? 400 : 500); wellen = wellen.filter(w => jetztW - w.t0 < dauer(w)); for (const w of wellen) Z.welle(ctx, scale, w.x, w.y, (jetztW - w.t0) / dauer(w), w.kl);
+      geistGemalt = !!(s.vorfuehrung && s.jetzt / 1000 >= s.vorfuehrung.t); if (geistGemalt) Z.werkzeug(ctx, scale, s.vorfuehrung.x, s.vorfuehrung.y, 0, 1, 1, 0, 0.75);
+      const sch = S.schritt(s); if (sch) Z.ziel(ctx, scale, sch);
+      if (feier) { const t = (jetztW - feierT0) / 1000; if (t > 1.5) feier = null; else for (const st of feier) { if (t < st.verzug) continue; const u = Math.min(1, (t - st.verzug) / st.fall), e = 1 - (1 - u) * (1 - u); Z.stern(ctx, scale, st.x, st.y0 + (st.y1 - st.y0) * e, st.groesse, st.dreh + u * 3, u < 0.7 ? 1 : (1 - u) / 0.3); } }
+      if (s.letzt) { const [mx, my] = s.richtung, kamm = s.werkzeug === 'kamm'; Z.werkzeug(ctx, scale, s.letzt[0], s.letzt[1], mx, my, kamm ? S.KAMM.zinken : 1, S.KAMM.abstand); }
+    } else {
+      const p = S.abdruckFortschritt(s, jetzt);
+      if (s.phase === 'ergebnis') { if (!angezeigt) { angezeigt = true; leiste(); } if (!ergebnisKarte) { ergebnisKarte = document.createElement('canvas'); ergebnisKarte.width = cv.width; ergebnisKarte.height = cv.height; Z.karte(ergebnisKarte.getContext('2d'), s.becken, cv.width, cv.height, korn); }
+        if (!gespeichert) { gespeichert = true; const a = s.anleitung && s.anleitung.ergebnis ? s.anleitung : null; if (galerie.abdruck(ergebnisKarte, a ? C.MUSTER[a.muster].id : null, a ? a.ergebnis.sterne : null, Date.now())) zeigeHinweis('In Meine Bilder gespeichert', 2500); }
+        ctx.drawImage(ergebnisKarte, 0, 0); return; }
+      if (p < 0.5) { Z.becken(ctx, s.becken, scale, korn, true); Z.blatt(ctx, s.becken, scale, -s.becken.hoehe * (1 - p / 0.5), korn, 0.55); }
+      else { // Abheben: Wasser bleibt klar zurück, der Abdruck hebt sich und geht in die Ergebniskarte über
+        const q = (p - 0.5) / 0.5, leer = E.neuesBecken(s.becken.hoehe); leer.welt = s.becken.welt; Z.becken(ctx, leer, scale, korn, true);
+        ctx.save(); ctx.translate(0, -q * s.becken.hoehe * 0.06 * scale); ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6; Z.becken(ctx, s.becken, scale, korn, false); ctx.restore();
+        if (!ergebnisKarte) { ergebnisKarte = document.createElement('canvas'); ergebnisKarte.width = cv.width; ergebnisKarte.height = cv.height; Z.karte(ergebnisKarte.getContext('2d'), s.becken, cv.width, cv.height, korn); }
+        ctx.globalAlpha = q * q; ctx.drawImage(ergebnisKarte, 0, 0); ctx.globalAlpha = 1;
+      }
+    }
+  }
+  function bild(jetzt) {
+    requestAnimationFrame(bild); const dt = jetzt - letzte; letzte = jetzt; if (!s) return;
+    zugRechnen(); S.bildZeit(s, dt); if (s.plan || s.phase === 'abdruck') dirty = true;
+    if (s.plan) { while (planTon < s.plan.length && s.jetzt / 1000 >= s.plan[planTon].t) { const e = s.plan[planTon]; spiele('tropfen'); welle(e.x, e.y); planTon++; } }
+    if (s.vorfuehrung || vorfZuletzt || wellen.length || feier) dirty = true; vorfZuletzt = !!s.vorfuehrung; /* ein Bild nach dem Ende der Vorführung, damit das Geisterstäbchen verschwindet */
+    if (hinweisAus && jetzt > hinweisAus) { hinweis.style.opacity = 0; hinweisAus = 0; }
+    if (dirty) { dirty = false; malen(jetzt); summe += dt; anzahl++; if (s.phase !== 'ergebnis') veraendert = true; }
+    if (veraendert && jetzt - letzteSammlung >= 250) sammeln(jetzt);
+    if (anzahl >= 30) { const mittel = summe / anzahl; fpsWert = 1000 / mittel; const neuStufe = C.qualitaetNach(stufe, mittel); summe = 0; anzahl = 0; if (neuStufe !== stufe) { stufe = neuStufe; groesse(); } }
+  }
+  window.addEventListener('resize', () => { groesse(); });
+  window.addEventListener('orientationchange', () => setTimeout(groesse, 200));
+  korn = Z.kachel(rnd); neu(); requestAnimationFrame(bild);
+  window.__ebru = { geist: () => geistGemalt, toene: () => ton.gespielt(), klaenge: () => ton.klaenge(), wellen: () => wellen.length, spur: () => spurGesamt, feiern: () => feiern, sterne: () => (feier ? feier.length : 0), bilder: () => bilder.length, video: () => (video ? { groesse: video.blob.size, endung: video.endung } : null), videoBlob: () => (video ? video.blob : null), sitzung: () => s, stufe: () => stufe, fps: () => fpsWert, kanvas: cv };
+})(globalThis);
+
+})();
+
+</script>
+</body>
+</html>
