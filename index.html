@@ -12,7 +12,7 @@
 <style>
   :root {
     --bg: #0f1420; --karte: #1a2233; --rand: #2a3550; --text: #eef2f8; --leise: #9aa7bd;
-    --renn: #ffb020; --brett: #4fc3a1;
+    --renn: #ffb020; --brett: #4fc3a1; --malen: #e8869f;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
@@ -23,10 +23,10 @@
   nav { display: flex; gap: 8px; margin: 22px 0 8px; flex-wrap: wrap; }
   nav a { text-decoration: none; color: var(--text); border: 1px solid var(--rand);
     padding: 7px 14px; border-radius: 999px; font-size: 14px; }
-  nav a.renn { border-color: var(--renn); } nav a.brett { border-color: var(--brett); }
+  nav a.renn { border-color: var(--renn); } nav a.brett { border-color: var(--brett); } nav a.malen { border-color: var(--malen); }
   h2 { margin: 30px 0 12px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
   h2::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--farbe); }
-  section { --farbe: var(--renn); } section.brett { --farbe: var(--brett); }
+  section { --farbe: var(--renn); } section.brett { --farbe: var(--brett); } section.malen { --farbe: var(--malen); }
   .raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
   a.karte { display: block; text-decoration: none; color: inherit; background: var(--karte);
     border: 1px solid var(--rand); border-radius: 14px; overflow: hidden; transition: transform .15s, border-color .15s; }
@@ -49,6 +49,7 @@
   <nav>
     <a class="renn" href="#rennspiele">Rennspiele</a>
     <a class="brett" href="#brettspiele">Brettspiele</a>
+    <a class="malen" href="#malen">Malen</a>
   </nav>
 
   <section id="rennspiele">
@@ -90,6 +91,20 @@
           <h3>Brettspiele</h3>
           <p>Tic Tac Toe, Vier gewinnt, Reversi, Mühle, Schach und Mangala. Zu zweit oder gegen den Computer.</p>
           <span class="knopf">Spielen</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section id="malen" class="malen">
+    <h2>Malen</h2>
+    <div class="raster">
+      <a class="karte" href="ebru/">
+        <img src="bilder/ebru.jpg" alt="Ebru-Muster in Pastellfarben auf Wasser" loading="lazy">
+        <div class="inhalt">
+          <h3>Ebru</h3>
+          <p>Türkische Marmorkunst: Farbe auf Wasser tropfen, mit Stäbchen und Kamm Muster ziehen, auf Papier abdrucken. Mit Tagesmuster, Musik und Zeitraffer-Video.</p>
+          <span class="knopf">Malen</span>
         </div>
       </a>
     </div>
