@@ -5,7 +5,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/etappenrennen-192.png">
 <link rel="apple-touch-icon" href="../bilder/symbole/etappenrennen-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Alpenetappe</title>
+<title>Kleine Rundfahrt</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout: eine Bildschirmhöhe, Spielfeld oben, Bedienleiste unten; Töne wie Asphalt, Trikot und Höhenprofil-Papier */
@@ -75,33 +75,64 @@ button{min-height:44px}#einst button{min-height:48px}#menue{min-width:64px}
 @media (prefers-reduced-motion:reduce){#blitz.an{animation:none}#schleuder.bereit{animation:none}}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* Fassung 9: Ziel, Verständnis, Vergnügen */
+#profil{top:92px}
+#platz{position:absolute;top:10px;left:50%;transform:translateX(-50%);min-width:104px;text-align:center;background:color-mix(in srgb,var(--panel) 82%,transparent);border-radius:8px;padding:4px 10px;line-height:1.1}
+#platz small{display:block;font-size:11px;letter-spacing:.1em;color:var(--mut)}#platzZahl{font-size:30px;font-weight:800;font-family:var(--mono)}#platzVon{font-size:12px;color:var(--mut)}
+#kurs{position:absolute;top:144px;left:50%;transform:translateX(-50%);font-size:16px;font-weight:700;color:#fff;padding:3px 12px;border-radius:12px;background:#1e1d19;white-space:nowrap}
+#kurs.vor{background:#3d8b4a}#kurs.hinter{background:#b4381f}
+#zielband{position:absolute;left:0;right:0;top:150px;text-align:center;font-size:20px;font-weight:800;letter-spacing:0;white-space:nowrap;color:#ffd23f;background:rgba(30,29,25,.85);padding:10px 4px}
+#platzMeld{position:absolute;left:50%;top:30%;transform:translateX(-50%);font-size:26px;font-weight:800;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.45),0 0 18px rgba(255,210,63,.8);white-space:nowrap;animation:pop .25s ease-out;background:rgba(30,29,25,.72);padding:4px 16px;border-radius:18px}
+@keyframes pop{from{transform:translateX(-50%) scale(.6);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+#hinweis{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);width:min(92%,360px);box-sizing:border-box;background:rgba(30,29,25,.88);color:#fff;font-size:14px;line-height:1.35;font-weight:600;padding:8px 12px;border-radius:10px;text-align:center}
+#reserve{display:flex;gap:8px;align-items:center;height:auto;background:none;border-radius:0;overflow:visible;font-size:11px;letter-spacing:.08em;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+#reserve span{flex:1;height:12px;border-radius:6px;background:rgba(0,0,0,.35);overflow:hidden}#reserve i{border-radius:6px}
+#kraftLabel{min-width:36px}#sog b{min-width:36px}
+#einst #nochmal{min-height:56px;font-size:18px;flex:1 1 100%}
+#ergebnis summary::before{content:'▸ ';margin-right:6px}#ergebnis details[open] summary::before{content:'▾ '}
+#ergebnis summary{min-height:44px;display:flex;align-items:center;font-weight:600;cursor:pointer}
+#ergebnis .tipp{background:#1e1d19;color:#fff;padding:8px 12px;border-radius:10px;font-weight:600;line-height:1.4}
+#ergebnis .abstandzeile{font-weight:700}
+@media (prefers-reduced-motion:reduce){#platzMeld{animation:none}}
+/* Fassung 10: kleine Rundfahrt */
+#einst #weiter{min-height:56px;font-size:18px;flex:1 1 100%;order:-2;background:#f4d03f;color:#1b1b1f}
+#einst:has(#ergebnis[hidden]) #weiter{display:none}
+#etappen{display:grid;gap:8px;max-width:520px}
+#einst .etappe{min-height:60px;display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;background:var(--panel);color:var(--fg);border:1px solid color-mix(in srgb,var(--mut) 50%,transparent);padding:8px 12px}
+#einst .etappe b{display:block;font-size:15px}#einst .etappe small{display:block;color:var(--mut);font-size:12px;font-weight:500;opacity:1}
+#einst .etappe .sterne{display:flex;flex-direction:column;align-items:flex-end;color:#d8b11a;font-size:18px;letter-spacing:.05em}
+#einst .etappe.gesperrt{opacity:.6}
+#ergebnis .feier{font-size:24px;font-weight:800;margin:4px 0;color:#d9321e}#ergebnis .feier.gelb{color:#1b1b1f;background:#f4d03f;display:inline-block;padding:2px 12px;border-radius:8px}
+#ergebnis .gesamtzeile{font-weight:700;border-left:6px solid #f4d03f;padding-left:8px}
 </style>
 <div id="spiel">
   <canvas id="c"></canvas>
   <canvas id="profil"></canvas><canvas id="linien"></canvas><canvas id="konf"></canvas><div id="blitz"></div>
   <div id="hud">
     <div class="ecke" id="links"><div class="klein">Tempo</div><div class="gross" id="hTempo">0</div><div class="klein">km/h · <span id="hSteig">0 %</span></div></div>
-    <div class="ecke" id="rechts"><div class="klein">Leistung</div><div class="gross" id="hWatt">250</div><div class="klein">Watt · <span id="hPos">1./20</span> · <span id="hZeit">0:00</span></div></div>
-    <div id="reserve"><i id="hRes"></i></div>
+    <div class="ecke" id="rechts"><div class="klein">Leistung</div><div class="gross" id="hWatt">250</div><div class="klein">Watt · <span id="hZeit">0:00</span><span id="hPos" hidden>1./20</span></div></div>
+    <div id="platz"><small>PLATZ</small><span id="platzZahl">20</span><span id="platzVon">/20</span></div><div id="kurs" hidden></div><div id="zielband" hidden></div><div id="platzMeld" hidden></div><div id="hinweis" hidden></div>
+    <div id="reserve"><b id="kraftLabel">KRAFT</b><span><i id="hRes"></i></span></div>
     <div id="meldung" hidden></div><div id="zaehler" hidden></div><div id="sog"><b>SOG</b><span><i id="sogfuell"></i></span></div>
   </div>
   <div id="einst" hidden>
-    <div id="ergebnis" hidden></div><a class="ng-zurueck" href="../" style="display:inline-flex;align-items:center;min-height:44px;color:inherit;font:600 14px system-ui,sans-serif;text-decoration:none">← Alle Spiele</a><h1>Alpenetappe</h1>
-    <p>Lenken: ◀ ▶ oder Daumen ziehen. Das Tempo regelt sich selbst und hält das Hinterrad. Im Windschatten lädt der SOG-Balken; ist er voll, zündest du die SCHLEUDER. ANTRITT gedrückt halten kostet Reserve, loslassen füllt sie wieder. 2 km Alpenetappe mit Gipfelsprint.</p>
-    <div class="zeile"><label for="eModus">Modus</label><select id="eModus"><option value="einzel">Einzelne Etappe</option><option value="tour">Rundfahrt, 3 Etappen</option></select></div>
-    <div class="zeile"><label for="eStrecke">Strecke</label><select id="eStrecke"><option value="alpen" selected>Alpenetappe, 2 km</option><option value="flach">Flach, 3 km</option><option value="huegel">Hügel, 4 km</option><option value="berg">Berg, 5 km</option><option value="mess">Messstrecke S-001, 5 km</option></select></div>
+    <div id="ergebnis" hidden></div><a class="ng-menue-zurueck" href="../" style="display:inline-flex;align-items:center;min-height:44px;color:inherit;font:600 14px system-ui,sans-serif;text-decoration:none">← Alle Spiele</a><h1>Kleine Rundfahrt</h1>
+    <p>Lenken: ◀ ▶ oder Daumen ziehen. Das Tempo regelt sich selbst und hält das Hinterrad. Im Windschatten lädt der SOG-Balken; ist er voll, zündest du die SCHLEUDER. ANTRITT gedrückt halten kostet Reserve, loslassen füllt sie wieder. Drei Etappen: Flach, Hügel und Alpen. Wer nach allen drei die wenigste Zeit hat, trägt das Gelbe Trikot.</p>
+    <div class="zeile"><label for="eModus">Modus</label><select id="eModus"><option value="tour" selected>Kleine Rundfahrt, 3 Etappen</option><option value="einzel">Einzelne Etappe</option></select></div>
+    <div class="zeile"><label for="eStrecke">Strecke</label><select id="eStrecke"><option value="sprint">Flachetappe, 2,3 km</option><option value="wellen">Hügeletappe, 1,9 km</option><option value="alpen" selected>Alpenetappe, 1,5 km</option><option value="flach">Flach, 3 km</option><option value="huegel">Hügel, 4 km</option><option value="berg">Berg, 5 km</option><option value="mess">Messstrecke S-001, 5 km</option></select></div>
     
     <div class="zeile"><label for="eGegner">Gegner <output id="oGegner">19</output></label><input type="range" id="eGegner" min="0" max="29" step="1" value="19"></div>
     <div class="zeile"><label for="eStaerke">Gegnerstärke <output id="oStaerke">235</output> W</label><input type="range" id="eStaerke" min="200" max="300" step="5" value="235"></div>
     <div class="zeile"><label for="eTon">Ton</label><input type="checkbox" id="eTon" checked></div>
     <div class="zeile" hidden><label for="eAuto">Autopilot</label><input type="checkbox" id="eAuto"></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="start">Spielen</button><button id="teilen" hidden>Teilen</button><button id="tag" style="background:var(--acc);color:#1b1b1f">Tagesrennen</button><button id="einstBtn" style="background:transparent;color:var(--fg);border:1px solid var(--mut)">Einstellungen</button><button id="nochmal" style="background:var(--you);color:#fff">Nochmal</button><button id="tourReset" hidden style="background:transparent;color:var(--fg);border:1px solid var(--mut)">Rundfahrt zurücksetzen</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="weiter" hidden>Weiter</button><button id="start">Spielen</button><button id="teilen" hidden>Teilen</button><button id="tag" style="background:var(--acc);color:#1b1b1f">Tagesrennen</button><button id="einstBtn" style="background:transparent;color:var(--fg);border:1px solid var(--mut)">Einstellungen</button><button id="nochmal" style="background:var(--you);color:#fff">Nochmal</button><button id="tourReset" hidden style="background:transparent;color:var(--fg);border:1px solid var(--mut)">Rundfahrt zurücksetzen</button></div>
     <div id="tourStand" class="klein" hidden></div>
+    <div id="etappen"></div>
     
   </div>
 </div>
 <div id="leiste">
-  <div id="info"><span id="hInfo">Windschatten <b id="hWind">0 %</b> · Rückstand <b id="hGap">0 m</b><b id="hAus"></b></span><button id="menue">Menü</button></div>
+  <div id="info"><a class="ng-zurueck" href="../" style="display:inline-flex;align-items:center;min-height:44px;color:inherit;font:600 14px system-ui,sans-serif;text-decoration:none;flex:none">← Spiele</a><span id="hInfo">Windschatten <b id="hWind">0 %</b> · Rückstand <b id="hGap">0 m</b><b id="hAus"></b></span><button id="menue">Menü</button></div>
   <div id="tasten"><button id="lenkL" class="lenk" aria-label="Nach links">◀</button><button id="antritt">ANTRITT<small>halten</small></button><button id="schleuder" disabled>SCHLEUDER<small>Sog voll</small></button><button id="lenkR" class="lenk" aria-label="Nach rechts">▶</button></div>
 </div>
 <script src="three.min.js"></script>
@@ -129,6 +160,8 @@ const STRECKEN={
  huegel:{name:'Hügel',pts:[[0,0],[800,0],[1400,30],[2000,10],[2600,60],[3200,0],[4000,0]],kurven:[[300,600,-1/90],[1500,1900,1/70],[2100,2300,-1/60],[2900,3300,1/110]],sprint:[1000,3600],berg:[1400,2600]},
  berg:{name:'Berg',pts:[[0,0],[1000,0],[3000,180],[4000,80],[5000,0]],kurven:[[1200,1500,1/60],[1700,1900,-1/40],[2100,2400,1/50],[2600,2800,-1/45],[3300,3600,-1/70],[4200,4500,1/90]],sprint:[800],berg:[3000]},
  alpen:{name:'Alpenetappe',pts:[[0,0],[300,0],[1100,56],[1500,56]],kurven:[[340,497,1/50],[620,777,-1/50],[860,1017,1/50]],sprint:[250],berg:[1100]},
+ sprint:{name:'Flachetappe',pts:[[0,0],[2300,0]],kurven:[[450,610,1/60],[1100,1260,-1/60],[1700,1830,1/70]],sprint:[1150],berg:[]},
+ wellen:{name:'Hügeletappe',pts:[[0,0],[250,0],[600,14],[850,5],[1200,19],[1450,8],[1900,7]],kurven:[[270,400,1/55],[870,1000,-1/55],[1480,1600,1/65]],sprint:[180],berg:[600,1200]},
  mess:{name:'Messstrecke S-001',pts:[[0,0],[1500,0],[2500,80],[3500,0],[5000,0]],kurven:[],sprint:[],berg:[]}};
 for(const k in STRECKEN)STRECKEN[k].id=k;
 function kruemmung(st,x){for(const [a,b,k] of st.kurven)if(x>=a&&x<=b)return k;return 0}
@@ -140,42 +173,90 @@ function hoehe(pts,x){for(let i=1;i<pts.length;i++){if(x<=pts[i][0]){const [x0,h
 // ---------- Zufall hineingereicht ----------
 function rng(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
 // ---------- Rundfahrt (3 Etappen, Speicherstand im Browser mit Formatversion) ----------
-const TOUR_ETAPPEN=['flach','huegel','berg'],TOUR_KEY='etappenrennen.tour',TOUR_FV=1;
+const ETAPPEN_IDS=['sprint','wellen','alpen'],TOUR_ETAPPEN=ETAPPEN_IDS,TOUR_KEY='etappenrennen.tour',TOUR_FV=2;
 let TOUR=null;
-function tourLaden(){try{const t=JSON.parse(localStorage.getItem(TOUR_KEY)||'null');if(t&&t.formatversion===TOUR_FV&&Array.isArray(t.fahrer)&&Number.isInteger(t.etappe)&&t.etappe>=0&&t.etappe<=3&&t.fahrer.length===t.n+1)TOUR=t;else TOUR=null}catch(e){TOUR=null}}
+function tourGueltig(t){if(!t||t.formatversion!==TOUR_FV||!Number.isInteger(t.aktuell)||t.aktuell<0||t.aktuell>3||!Number.isInteger(t.n)||!Number.isFinite(t.ps)||!Array.isArray(t.fahrer)||t.fahrer.length!==t.n+1)return false;
+  return t.fahrer.every((f,i)=>f&&f.id===i&&Number.isFinite(f.staerke)&&Number.isFinite(f.mut)&&['etappen','sprintE','bergE'].every(k=>Array.isArray(f[k])&&f[k].length===3&&f[k].every(v=>v===null||Number.isFinite(v))))}
+function tourLaden(){try{const t=JSON.parse(localStorage.getItem(TOUR_KEY)||'null');TOUR=tourGueltig(t)?t:null}catch(e){TOUR=null}}
 function tourSpeichern(){try{if(TOUR)localStorage.setItem(TOUR_KEY,JSON.stringify(TOUR));else localStorage.removeItem(TOUR_KEY)}catch(e){}}
-function tourNeu(n,ps){const rand=rng(777);TOUR={formatversion:TOUR_FV,etappe:0,n,ps,fahrer:[]};
-  for(let i=0;i<=n;i++){const spieler=i===0;TOUR.fahrer.push({id:i,name:teamName(i),farbe:TEAMS[teamVon(i)].farbe,staerke:spieler?K.pDauer:ps+Math.round((rand()-0.5)*40),mut:rand(),zeit:0,sprintP:0,bergP:0,etappen:[]})}
+function tourNeu(n,ps){const rand=rng(777);TOUR={formatversion:TOUR_FV,aktuell:0,n,ps,fahrer:[]};
+  for(let i=0;i<=n;i++){const spieler=i===0;TOUR.fahrer.push({id:i,staerke:spieler?K.pDauer:ps+Math.round((rand()-0.5)*40),mut:rand(),etappen:[null,null,null],sprintE:[0,0,0],bergE:[0,0,0]})}
   tourSpeichern()}
-function trikots(){ // Rangfolge: Gelb (Zeit), Grün (Sprintpunkte), Gepunktet (Bergpunkte); Trikots nach Etappe 1 und 2 sichtbar
-  if(!TOUR||TOUR.etappe===0)return {};
-  const F=TOUR.fahrer,gelb=[...F].sort((a,b)=>a.zeit-b.zeit)[0];
-  const gruen=[...F].filter(f=>f!==gelb).sort((a,b)=>b.sprintP-a.sprintP||a.zeit-b.zeit)[0];
-  const berg=[...F].filter(f=>f!==gelb&&f!==gruen).sort((a,b)=>b.bergP-a.bergP||a.zeit-b.zeit)[0];
-  const t={};if(gelb)t[gelb.id]='gelb';if(gruen&&gruen.sprintP>0)t[gruen.id]='gruen';if(berg&&berg.bergP>0)t[berg.id]='berg';return t}
-function tourAnzeige(){const tour=$('eModus').value==='tour';$('tourReset').hidden=!(tour&&TOUR);$('tourStand').hidden=!tour;$('eStrecke').disabled=tour;$('eGegner').disabled=tour&&!!TOUR;$('eStaerke').disabled=tour&&!!TOUR;
-  if(tour){if(TOUR&&TOUR.etappe>=3){$('start').textContent='Neue Rundfahrt';$('tourStand').textContent='Rundfahrt beendet.'}
-    else{const e=(TOUR?TOUR.etappe:0)+1;$('start').textContent='Etappe '+e+' von 3 starten';$('eStrecke').value=TOUR_ETAPPEN[e-1];$('tourStand').textContent=TOUR?'Gespeicherter Stand: '+TOUR.etappe+' von 3 Etappen gefahren.':'Etappen: Flach 3 km, Hügel 4 km, Berg 5 km. Der Stand wird im Browser gespeichert.'}}
+const summe=a=>a.reduce((s,v)=>s+(v||0),0);
+function gesamt(){if(!TOUR)return [];return TOUR.fahrer.map(f=>({id:f.id,zeit:summe(f.etappen),sprint:summe(f.sprintE),berg:summe(f.bergE)})).sort((a,b)=>a.zeit-b.zeit||(a.id===0?-1:b.id===0?1:0))}
+function trikots(){ // Gelb (kleinste Gesamtzeit, Gleichstand: Spieler), Grün (Sprintpunkte), Gepunktet (Bergpunkte); erst nach der ersten gefahrenen Etappe
+  if(!TOUR||!TOUR.fahrer[0].etappen.some(v=>v!==null))return {};
+  const G=gesamt(),gelb=G[0],gruen=G.filter(f=>f!==gelb).sort((a,b)=>b.sprint-a.sprint||a.zeit-b.zeit)[0],berg=G.filter(f=>f!==gelb&&f!==gruen).sort((a,b)=>b.berg-a.berg||a.zeit-b.zeit)[0];
+  const t={};t[gelb.id]='gelb';if(gruen&&gruen.sprint>0)t[gruen.id]='gruen';if(berg&&berg.berg>0)t[berg.id]='berg';return t}
+function etappeFrei(k){return k===0||fortLaden(ETAPPEN_IDS[k-1]).sterne>=1}
+function rundfahrtZeilen(m){const r=Math.abs(m.rueck).toFixed(1).replace('.',',');
+  return `${m.etappenPlatz===1?'<p class="feier">Etappensieg!</p>':''}${m.gelbNeu?'<p class="feier gelb">Gelbes Trikot!</p>':''}<p class="gesamtzeile">Gesamt: Platz ${m.gesamtPlatz} von ${m.n}${m.gesamtPlatz===1?', Gelbes Trikot':', +'+r+' s'}</p>${m.fertig?'<h1 class="rundfahrtende">Rundfahrt beendet: Gesamtplatz '+m.gesamtPlatz+'</h1>':''}`}
+function tourFertig(){return !!TOUR&&TOUR.fahrer[0].etappen.every(v=>v!==null)}
+function naechsteEtappe(){const i=TOUR?TOUR.fahrer[0].etappen.findIndex(v=>v===null):0;return i<0?3:i} // erste noch nicht gefahrene Etappe, 3 = Rundfahrt komplett
+function tourAnzeige(){const tour=$('eModus').value==='tour';$('tourReset').hidden=!(tour&&TOUR);$('tourStand').hidden=!tour;$('eStrecke').disabled=tour;
+  if(tour){const k=TOUR&&TOUR.aktuell<3?TOUR.aktuell:0;$('start').textContent=tourFertig()?'Neue Rundfahrt starten':'Etappe '+(k+1)+' von 3 starten';$('tourStand').textContent=TOUR?'Rundfahrt: '+TOUR.fahrer[0].etappen.filter(v=>v!==null).length+' von 3 Etappen gefahren.':'Kleine Rundfahrt: Flach, Hügel, Alpen.'}
   else $('start').textContent='Spielen'}
+function mmss(s){return Math.floor(s/60)+':'+String(Math.round(s%60)).padStart(2,'0')}
+function etappenKarten(){const box=$('etappen');if(!box)return;box.innerHTML='';
+  ETAPPEN_IDS.forEach((id,k)=>{const st=STRECKEN[id],frei=etappeFrei(k),s=fortLaden(id).sterne,best=bestLaden(id),pts=st.pts,L=pts[pts.length-1][0],H=Math.max(1,...pts.map(q=>q[1]));
+    const linie=pts.map(q=>(q[0]/L*72).toFixed(1)+','+(18-q[1]/H*14).toFixed(1)).join(' ');
+    const b=document.createElement('button');b.className='etappe'+(frei?'':' gesperrt');b.dataset.k=k;
+    b.innerHTML=`<span><b>Etappe ${k+1} · ${st.name}</b><small>${frei?(best?'Bestzeit '+fmt(best.zeit)+' s':'noch nicht gefahren'):'🔒 Erst Etappe '+k+' fahren'}</small></span><span class="sterne">${'★'.repeat(s)}${'☆'.repeat(3-s)}<svg width="72" height="20" viewBox="0 0 72 20" aria-hidden="true"><polyline points="${linie}" fill="none" stroke="#d9321e" stroke-width="1.5"/></svg></span>`;
+    b.addEventListener('click',()=>{if(!etappeFrei(k))return;$('eModus').value='tour';if(!TOUR)tourNeu(+$('eGegner').value,+$('eStaerke').value);TOUR.aktuell=k;tourSpeichern();starten(false,false)});box.appendChild(b)})}
+function weiter(schnell){if(!R||!R.tour)return;if(!TOUR)tourNeu(+$('eGegner').value,+$('eStaerke').value);TOUR.aktuell=naechsteEtappe();tourSpeichern();$('eModus').value='tour';starten(schnell===true,false)}
 // ---------- Bestzeit und Geist (Speicher mit Formatversion, R-07); Zeiten in Rechensekunden ----------
-function bestLaden(){try{const e=JSON.parse(localStorage.getItem(BEST_KEY)||'null');
-  if(e&&e.formatversion===BEST_FV&&e.strecke==='alpen'&&Number.isFinite(e.zeit)&&e.zeit>0&&Array.isArray(e.geist)&&e.geist.every(Number.isFinite))return e}catch(x){}return null}
-function bestSpeichern(strecke,zeit,geist){try{const alt=bestLaden();if(alt&&alt.strecke===strecke&&alt.zeit<=zeit)return false;
-  localStorage.setItem(BEST_KEY,JSON.stringify({formatversion:BEST_FV,strecke,zeit,geist}));return true}catch(x){return false}}
+const bestKey=id=>id==='alpen'?BEST_KEY:BEST_KEY+'.'+id;
+function bestLaden(id='alpen'){try{const e=JSON.parse(localStorage.getItem(bestKey(id))||'null');
+  if(e&&e.formatversion===BEST_FV&&e.strecke===id&&Number.isFinite(e.zeit)&&e.zeit>0&&Array.isArray(e.geist)&&e.geist.every(Number.isFinite))return e}catch(x){}return null}
+function bestSpeichern(strecke,zeit,geist){try{const alt=bestLaden(strecke);if(alt&&alt.zeit<=zeit)return false;
+  localStorage.setItem(bestKey(strecke),JSON.stringify({formatversion:BEST_FV,strecke,zeit,geist}));return true}catch(x){return false}}
 // ---------- Schleuder und Antritt ----------
 function schleuder(){if(!R||R.intro||R.auto)return false;const sp=R.fahrer[0];if(sp.ziel!=null||sp.sog<1||R.t<sp.schleuderBis)return false;
-  sp.sog=0;sp.v+=SCHL_KICK;sp.schleuderBis=R.t+SCHL_DAUER;R.ton.push('schleuder');R.hinweis={text:'SCHLEUDER!',bis:R.t+6};try{navigator.vibrate&&navigator.vibrate(40)}catch(x){}return true}
+  sp.sog=0;sp.mess.schleudern++;sp.v+=SCHL_KICK;sp.schleuderBis=R.t+SCHL_DAUER;R.ton.push('schleuder');R.hinweis={text:'SCHLEUDER!',bis:R.t+6};try{navigator.vibrate&&navigator.vibrate(40)}catch(x){}return true}
 function antritt(an){if(R&&!R.auto&&!R.intro)R.fahrer[0].halte=!!an}
 // ---------- Tagesrennen und Teilen ----------
 function tagSeed(d){return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate()}
 function tagSpeichern(zeit){try{const k='etappenrennen.tag';let e=null;try{e=JSON.parse(localStorage.getItem(k)||'null')}catch(x){}if(e&&e.formatversion===1&&e.seed===SEED&&Number.isFinite(e.zeit)&&e.zeit<=zeit)return;localStorage.setItem(k,JSON.stringify({formatversion:1,seed:SEED,zeit}))}catch(x){}}
-function teilText(sp){if(sp.ziel==null)return '';const d=String(SEED);return `Alpenetappe${TAG?' · Tagesrennen '+d.slice(6)+'.'+d.slice(4,6)+'.':''}: ${fmt(sp.ziel)} s, Platz ${platz(sp)} von ${R.fahrer.length}. Schaffst du es besser? ${location.href.split('#')[0]}`}
+function teilText(sp){if(sp.ziel==null)return '';const d=String(SEED);return `${R.st.name}${TAG?' · Tagesrennen '+d.slice(6)+'.'+d.slice(4,6)+'.':''}: ${fmt(sp.ziel)} s, Platz ${platz(sp)} von ${R.fahrer.length}. Schaffst du es besser? ${location.href.split('#')[0]}`}
 function teilen(){const t=window.__teiltext||'';if(!t)return;try{if(navigator.share){navigator.share({text:t}).catch(()=>{});return}}catch(x){}try{navigator.clipboard.writeText(t);const b=$('teilen');b.textContent='Kopiert';setTimeout(()=>b.textContent='Teilen',1500)}catch(x){}}
 // ---------- Fortschritt zum Behalten: Sterne (Zeit in Rechensekunden) und Goldtrikot bei 3 Sternen ----------
 const FORT_KEY='etappenrennen.fortschritt',STERN2=82,STERN3=80;
-function sterneFuer(zeitRechen){const z=zeitRechen/Z;return z<=STERN3?3:z<=STERN2?2:1}
-function fortLaden(){try{const e=JSON.parse(localStorage.getItem(FORT_KEY)||'null');if(e&&e.formatversion===1&&Number.isInteger(e.sterne)&&e.sterne>=0&&e.sterne<=3)return e}catch(x){}return {formatversion:1,sterne:0}}
-function fortSpeichern(st){try{if(st>fortLaden().sterne)localStorage.setItem(FORT_KEY,JSON.stringify({formatversion:1,sterne:st}))}catch(x){}}
+const STERNE={sprint:[76,78],wellen:[68,70],alpen:[STERN3,STERN2]};
+function sterneFuer(zeitRechen,id='alpen'){const z=zeitRechen/Z,s=STERNE[id]||STERNE.alpen;return z<=s[0]?3:z<=s[1]?2:1}
+// ---------- Fassung 9: Ziel, Hinweise, Platzfeier (reine Funktionen, S-007) ----------
+const REF_ROH=[0,5.85,9.40,12.80,16.94,24.21,31.45,38.79,46.16,53.53,61.22,68.60,73.17,76.56,79.46,82.18],HILFE_KEY='etappenrennen.hilfe';
+const REF_TAB={sprint:[0,5.97,9.67,13.12,16.47,19.78,23.07,26.35,29.63,32.9,36.22,39.54,42.58,45.53,48.51,53.07,58.26,62.38,65.99,69.36,72.68,75.74,78.67,81.51],
+  wellen:[0,5.96,9.53,13.13,17.6,22.52,27.62,31.12,33.69,36.07,38.93,42.4,50.02,54.63,57.57,60.07,62.81,65.62,68.32,70.96],alpen:REF_ROH};
+function refZeit(x,id='alpen'){const tab=REF_TAB[id];if(!tab)return null;const k=tab.length-1;x=Math.max(0,Math.min(k*100,Number(x)));const u=x/100,i=Math.min(k-1,Math.floor(u)),f=tab[i]+(tab[i+1]-tab[i])*(u-i);return f*STERNE[id][0]/tab[k]}
+function abstandZiel(x,tReal,id='alpen'){if(!Number.isFinite(x)||!Number.isFinite(tReal))return null;const r=refZeit(x,id);return r===null?null:r-tReal}
+function kursText(a){if(!Number.isFinite(a))return null;return Math.abs(a).toFixed(1).replace('.',',')+' s '+(a>=0?'vor':'hinter')+' ★★★'}
+function platzMeldung(alt,neu,serieAlt,sek){if(neu<alt){const s=sek<=6?serieAlt+1:1;return {text:'▲ Platz '+neu+(s>=2?' · Serie ×'+s:''),serie:s}}if(neu>alt)return {text:'▼ Platz '+neu,serie:0};return {text:null,serie:serieAlt}}
+const HINWEIS_TEXT={schleuder:'SOG VOLL: tippe SCHLEUDER!',kraft:'KRAFT fast leer: ANTRITT loslassen, sie lädt wieder',wind:'Fahr dicht hinter einem Fahrer: Windschatten spart Kraft und lädt den SOG'};
+function coachTipp(z,g){if(!z||!g)return null;
+  if(z.bereit&&g.schleuder<2)return 'schleuder';
+  if(z.res<=0.25&&g.kraft<2)return 'kraft';
+  if(z.t>=3&&z.w<0.10&&z.vorn!=null&&z.vorn<=15&&g.wind<2)return 'wind';
+  return null}
+function hilfeLaden(){const n={wind:0,schleuder:0,kraft:0};try{const d=JSON.parse(localStorage.getItem(HILFE_KEY)||'null');
+  if(d&&d.formatversion===1)for(const k of Object.keys(n))if(Number.isInteger(d[k])&&d[k]>=0&&d[k]<=2)n[k]=d[k]}catch(x){}return n}
+function hilfeSpeichern(g){try{localStorage.setItem(HILFE_KEY,JSON.stringify(Object.assign({formatversion:1},g)))}catch(x){}}
+function ergebnisTipp(m){m=m||{};const n=v=>Number.isFinite(v)?v:null,sch=n(m.schleudern),w=n(m.imWindPct),r=n(m.resRestPct),s=n(m.sterne),sek=n(m.sek);
+  if(sch===0)return 'Tipp: Zünde die Schleuder, sobald der SOG-Balken voll ist.';
+  if(w!==null&&w<40)return 'Tipp: Du warst nur '+Math.round(w)+' % im Windschatten. Fahr dichter hinter anderen, das lädt den SOG.';
+  if(r!==null&&r>30)return 'Tipp: Du hattest am Ziel noch '+Math.round(r)+' % Kraft. Halte ANTRITT früher.';
+  if(s!==null&&s<3&&sek!==null){const q=sek.toFixed(1).replace('.',',');return sek<=3?'Tipp: Fast geschafft, nur noch '+q+' s bis ★★★.':'Tipp: Dir fehlen '+q+' s bis ★★★. Schleuder am Anstieg, ANTRITT im Finale.'}
+  return 'Stark! Schlage jetzt deine Bestzeit oder fahr das Tagesrennen.'}
+function ergebnisKarte(m){const s3=m.stern3||STERN3,q=Number.isFinite(m.zeit)?Math.max(0,m.zeit-s3):null;
+  const abst=m.sterne>=3?'★★★ erreicht':'Noch '+(q===null?'?':q.toFixed(1).replace('.',','))+' s bis ★★★ ('+mmss(s3)+')';
+  return `<h1 class="platzzeile">Platz ${m.platz} von ${m.n}</h1><p class="abstandzeile">${abst}</p><p class="tipp">${ergebnisTipp(Object.assign({},m,{sek:q}))}</p>`}
+function coachZeigen(id){if(!R||!HINWEIS_TEXT[id])return;const g=R.gesehen||hilfeLaden();g[id]=Math.min(2,g[id]+1);R.gesehen=g;hilfeSpeichern(g);R.hint={text:HINWEIS_TEXT[id],bis:R.t+4*Z};const hb=$('hinweis');hb.textContent=R.hint.text;hb.hidden=false}
+function platzEreignis(alt,neu){if(!R)return;const sek=(R.t-R.lastGewinnT)/Z,e=platzMeldung(alt,neu,R.serie||0,sek);R.serie=e.serie;if(!e.text)return;R.meld={text:e.text,bis:R.t+1.5*Z};
+  if(neu<alt){R.lastGewinnT=R.t;R.ton.push('platz');try{navigator.vibrate&&navigator.vibrate(30)}catch(x){}}}
+
+const fortKey=id=>id==='alpen'?FORT_KEY:FORT_KEY+'.'+id;
+function goldtrikot(){return ETAPPEN_IDS.some(id=>fortLaden(id).sterne>=3)}
+function fortLaden(id='alpen'){try{const e=JSON.parse(localStorage.getItem(fortKey(id))||'null');if(e&&e.formatversion===1&&Number.isInteger(e.sterne)&&e.sterne>=0&&e.sterne<=3)return e}catch(x){}return {formatversion:1,sterne:0}}
+function fortSpeichern(st,id='alpen'){try{if(st>fortLaden(id).sterne)localStorage.setItem(fortKey(id),JSON.stringify({formatversion:1,sterne:st}))}catch(x){}}
 
 // ---------- Rennen ----------
 let R=null,anim=0,letzt=0;
@@ -186,17 +267,17 @@ function teamVon(i){return i%TEAMS.length}
 function teamName(i){if(i===0)return 'Du';const t=teamVon(i);return TEAMS[t].name+' '+(Math.floor(i/TEAMS.length)+(t===0?0:1))}
 const FARBEN=['#1f6fb2','#2a9d8f','#e76f51','#8a5cf6','#f4a261','#264653','#9b2226','#606c38','#bc6c25','#4361ee','#e9c46a','#7b2cbf','#0096c7','#6a994e','#b5838d','#3a5a40','#ff7f51','#5f0f40','#118ab2','#ef476f'];
 function neuesRennen(){
-  const tour=$('eModus').value==='tour';
-  if(tour&&(!TOUR||TOUR.etappe>=3))tourNeu(+$('eGegner').value,+$('eStaerke').value);
-  const st=STRECKEN[tour?TOUR_ETAPPEN[TOUR.etappe]:$('eStrecke').value],n=tour?TOUR.n:+$('eGegner').value,ps=tour?TOUR.ps:(TAG?235:+$('eStaerke').value)+(TAG?(SEED%7)*5-5:0),rand=rng(SEED+(tour?TOUR.etappe:0));
+  const tour=$('eModus').value==='tour'&&!TAG;
+  if(tour&&(!TOUR||TOUR.aktuell>=3))tourNeu(+$('eGegner').value,+$('eStaerke').value);
+  const st=STRECKEN[tour?TOUR_ETAPPEN[TOUR.aktuell]:$('eStrecke').value],n=tour?TOUR.n:+$('eGegner').value,ps=tour?TOUR.ps:(TAG?235:+$('eStaerke').value)+(TAG?(SEED%7)*5-5:0),rand=rng(SEED+(tour?TOUR.aktuell:0));
   const fahrer=[],trik=tour?trikots():{};
   for(let i=0;i<=n;i++){
     const spieler=i===0,reihe=spieler?Math.floor(n/3):Math.floor((i-1)/3),sp=spieler?1:(i-1)%3; // Spieler startet hinten in der Mitte
     const z0=(sp-1)*1.0;
     fahrer.push({id:i,spieler,team:teamVon(i),name:teamName(i),farbe:TEAMS[teamVon(i)].farbe,
       x:-reihe*1.2-(spieler?1.2:0),z:z0,zZiel:z0,vz:0,lehn:0,rempler:0,v:0,res:K.rMax,pIn:spieler?K.pDauer:ps,p:0,w:0,
-      staerke:tour?TOUR.fahrer[i].staerke:spieler?K.pDauer:ps+Math.round((rand()-0.5)*40),mut:tour?TOUR.fahrer[i].mut:rand(),trikot:trik[i]||(spieler&&fortLaden().sterne>=3?'gelb':null),sog:0,schleuderBis:-1,halte:false,ziel:null,angriffBis:-1,
-      mess:{imWind:0,schritte:0,pSum:0,wechsel:0,rempler:0},sprintP:0,bergP:0});
+      staerke:tour?TOUR.fahrer[i].staerke:spieler?K.pDauer:ps+Math.round((rand()-0.5)*40),mut:tour?TOUR.fahrer[i].mut:rand(),trikot:trik[i]||(spieler&&goldtrikot()?'gelb':null),sog:0,schleuderBis:-1,halte:false,ziel:null,angriffBis:-1,
+      mess:{imWind:0,schritte:0,pSum:0,wechsel:0,rempler:0,schleudern:0},sprintP:0,bergP:0});
   }
   // Kapitän je KI-Team = stärkster Fahrer; Ausreißer: 2 bis 3 mutige Helfer fremder Teams, Start zwischen 300 und 800 m
   for(let t=1;t<TEAMS.length;t++){const tf=fahrer.filter(f=>f.team===t);if(tf.length){const k=tf.reduce((a,b)=>b.staerke>a.staerke?b:a);k.kapitaen=true}}
@@ -204,7 +285,7 @@ function neuesRennen(){
   const anz=Math.min(kand.length,2+Math.floor(rand()*2)),ausStart=300+rand()*500;
   kand.slice(0,anz).forEach(f=>{f.ausreisser=true;f.ausStart=ausStart+rand()*40});
   const laenge=st.pts[st.pts.length-1][0];
-  R={st,pts:st.pts,laenge,M:mittellinie(st,laenge+220),tore:[...st.sprint.map(x=>({art:'Sprint',x,punkte:[6,4,2],wer:[]})),...st.berg.map(x=>({art:'Berg',x,punkte:[5,3,1],wer:[]}))].sort((a,b)=>a.x-b.x),fahrer,t:0,rand,fertig:false,tempo:Z,intro:true,rt:0,zielRt:null,geistAuf:[],geistBest:TAG?null:bestLaden(),tag:TAG,auto:$('eAuto').checked,tour,ton:[],jagd:false,
+  R={gesehen:hilfeLaden(),serie:0,lastGewinnT:-1e9,platzGem:null,platzNext:0,meld:null,hint:null,st,pts:st.pts,laenge,M:mittellinie(st,laenge+220),tore:[...st.sprint.map(x=>({art:'Sprint',x,punkte:[6,4,2],wer:[]})),...st.berg.map(x=>({art:'Berg',x,punkte:[5,3,1],wer:[]}))].sort((a,b)=>a.x-b.x),fahrer,t:0,rand,fertig:false,tempo:Z,intro:true,rt:0,zielRt:null,geistAuf:[],geistBest:TAG||!STERNE[st.id]?null:bestLaden(st.id),tourEtappe:tour?TOUR.aktuell:null,tag:TAG,auto:$('eAuto').checked,tour,ton:[],jagd:false,
      touch:null,ereignis:[]};
 }
 function frei(f,alle,z,dxMax){return !alle.some(o=>o!==f&&o.ziel==null&&Math.abs(o.x-f.x)<dxMax&&Math.abs(o.z-z)<K.sitz*1.1)}
@@ -339,6 +420,7 @@ function simSchritt(dt){
 }
 function platz(f){return R.fahrer.filter(o=>o.ziel!=null?(f.ziel==null||o.ziel<f.ziel):(f.ziel==null&&o.x>f.x)).length+1}
 function fmt(s){s/=Z;const m=Math.floor(s/60),r=s-m*60;return m+':'+(r<10?'0':'')+r.toFixed(r>=60?0:1)}
+function karteM(sp,F,w,stn){const zr=sp.ziel/Z;return {stern3:(STERNE[R.st.id]||STERNE.alpen)[0],sterne:stn,platz:platz(sp),n:F.length,zeit:zr,schleudern:sp.mess.schleudern||0,imWindPct:w,resRestPct:Math.round(100*sp.res/K.rMax)}}
 function ende(){
   tonEreignisse();
   const F=R.fahrer,sp=F[0];
@@ -348,23 +430,31 @@ function ende(){
   const z=rang.slice(0,6).map((f,i)=>`<tr><td>${i+1}.</td><td style="color:${f.farbe}">■ ${f.name}</td><td>${f.ziel!=null?fmt(f.ziel):'('+Math.round(R.laenge-f.x)+' m zurück)'}</td></tr>`).join('');
   const w=Math.round(100*sp.mess.imWind/Math.max(1,sp.mess.schritte)),pm=Math.round(sp.mess.pSum/Math.max(1,sp.mess.schritte));
   const sieger=rang[0];
-  $('ergebnis').innerHTML=`<h1>Platz ${platz(sp)} von ${F.length}</h1><table><tr><th>Platz</th><th>Fahrer</th><th>Zeit</th></tr>${z}</table>
+  const alpenK=sp.ziel!=null&&!R.auto&&!!STERNE[R.st.id];
+  $('ergebnis').innerHTML=`${alpenK?'<details><summary>Einzelheiten</summary>':''}<h1>Platz ${platz(sp)} von ${F.length}</h1><table><tr><th>Platz</th><th>Fahrer</th><th>Zeit</th></tr>${z}</table>
    <p style="margin:8px 0 0">Grünes Trikot: <b style="color:${gruen.farbe}">${gruen.name}</b> (${gruen.sprintP} P.) · Bergtrikot: <b style="color:${punkt.farbe}">${punkt.name}</b> (${punkt.bergP} P.) · du: ${sp.sprintP} Sprint-, ${sp.bergP} Bergpunkte</p>
-   <p class="klein" style="margin-top:8px">Messwerte: Strecke ${R.st.name}, ${R.laenge} m · deine Zeit ${sp.ziel!=null?fmt(sp.ziel):'nicht im Ziel'} · Sieger ${fmt(sieger.ziel)} · Spieltempo ×${R.tempo} · Mittel ${pm} W · ${w} % im Windschatten · ${sp.mess.wechsel} Seitenwechsel · ${sp.mess.rempler} Rempler · Reserve ${Math.round(sp.res/1000)} kJ</p>`;
-  if(R.tour&&TOUR){ // Zeiten und Punkte in die Rundfahrt übernehmen; wer nicht im Ziel ist, bekommt Restweg mit 8 m/s
-    const letzte=Math.max(...F.filter(f=>f.ziel!=null).map(f=>f.ziel));
-    F.forEach(f=>{const tf=TOUR.fahrer[f.id];const z=f.ziel!=null?f.ziel:letzte+(R.laenge-f.x)/8;tf.zeit+=z;tf.sprintP+=f.sprintP;tf.bergP+=f.bergP;tf.etappen.push(Math.round(z*100)/100)});
-    TOUR.etappe++;tourSpeichern();
-    const G=[...TOUR.fahrer].sort((a,b)=>a.zeit-b.zeit),ich=G.findIndex(f=>f.id===0)+1,tk=trikots(),tn={gelb:'Gelb',gruen:'Grün',berg:'Berg'};
-    const zeilen=G.slice(0,6).map((f,i)=>`<tr><td>${i+1}.</td><td style="color:${f.farbe}">■ ${f.name}${tk[f.id]?' ('+tn[tk[f.id]]+')':''}</td><td>${i===0?fmt(f.zeit):'+'+(f.zeit-G[0].zeit).toFixed(1)+' s'}</td><td>${f.sprintP}</td><td>${f.bergP}</td></tr>`).join('');
-    $('ergebnis').innerHTML+=`<h1 style="margin-top:12px">${TOUR.etappe>=3?'Rundfahrt beendet: Gesamtplatz '+ich:'Gesamtwertung nach Etappe '+TOUR.etappe+': Platz '+ich}</h1><table><tr><th>Platz</th><th>Fahrer</th><th>Gesamt</th><th>Sprint</th><th>Berg</th></tr>${zeilen}</table>`;
+   <p class="klein" style="margin-top:8px">Messwerte: Strecke ${R.st.name}, ${R.laenge} m · deine Zeit ${sp.ziel!=null?fmt(sp.ziel):'nicht im Ziel'} · Sieger ${fmt(sieger.ziel)} · Spieltempo ×${R.tempo} · Mittel ${pm} W · ${w} % im Windschatten · ${sp.mess.wechsel} Seitenwechsel · ${sp.mess.rempler} Rempler · Reserve ${Math.round(sp.res/1000)} kJ</p>${alpenK?'</details>':''}`;
+  let rzeilen='';
+  if(R.tour&&TOUR){ // Zeiten und Punkte dieser Etappe in die Rundfahrt (ersetzt eine frühere Fahrt derselben Etappe); wer nicht im Ziel ist, bekommt Restweg mit 8 m/s
+    const i=R.tourEtappe,gelbVorher=trikots()[0]==='gelb',fertigeZ=F.filter(f=>f.ziel!=null).map(f=>f.ziel),letzte=fertigeZ.length?Math.max(...fertigeZ):R.t;
+    F.forEach(f=>{const tf=TOUR.fahrer[f.id];if(!tf)return;const z=f.ziel!=null?f.ziel:letzte+(R.laenge-f.x)/8;tf.etappen[i]=Math.round(z*100)/100;tf.sprintE[i]=f.sprintP;tf.bergE[i]=f.bergP});
+    tourSpeichern();
+    const G=gesamt(),ich=G.findIndex(f=>f.id===0)+1,tk=trikots(),tn={gelb:'Gelb',gruen:'Grün',berg:'Berg'},gelbNeu=!gelbVorher&&tk[0]==='gelb';
+    if(gelbNeu||platz(sp)===1)R.ton.push('gelb');
+    rzeilen=rundfahrtZeilen({etappenPlatz:platz(sp),gelbNeu,gesamtPlatz:ich,n:F.length,rueck:(G[ich-1].zeit-G[0].zeit)/Z,etappe:i,fertig:tourFertig()});
+    const zeilen=G.slice(0,6).map((f,k)=>`<tr><td>${k+1}.</td><td style="color:${F[f.id].farbe}">■ ${F[f.id].name}${tk[f.id]?' ('+tn[tk[f.id]]+')':''}</td><td>${k===0?fmt(f.zeit):'+'+((f.zeit-G[0].zeit)/Z).toFixed(1)+' s'}</td><td>${f.sprint}</td><td>${f.berg}</td></tr>`).join('');
+    const gc=`<h2 style="margin:12px 0 4px;font-size:16px">Gesamtwertung nach Etappe ${i+1}</h2><table><tr><th>Platz</th><th>Fahrer</th><th>Gesamt</th><th>Sprint</th><th>Berg</th></tr>${zeilen}</table>`;
+    const det=$('ergebnis').querySelector('details');if(det)det.insertAdjacentHTML('beforeend',gc);else $('ergebnis').insertAdjacentHTML('beforeend',gc);
     window.__tour=JSON.parse(JSON.stringify(TOUR));
   }
   if(sp.ziel!=null&&!R.auto&&R.st.id==='alpen'&&R.tag)tagSpeichern(sp.ziel);
-  if(sp.ziel!=null&&!R.auto&&R.st.id==='alpen'&&!R.tag){const alt=R.geistBest,neu=bestSpeichern('alpen',sp.ziel,R.geistAuf),stn=sterneFuer(sp.ziel),vorher=fortLaden().sterne;fortSpeichern(stn);
-    $('ergebnis').insertAdjacentHTML('afterbegin',`<p class="gross" style="color:#d8b11a;font-size:34px">${'★'.repeat(stn)}${'☆'.repeat(3-stn)}</p>${stn===3&&vorher<3?'<p><b>Goldtrikot freigeschaltet!</b> Ab jetzt fährst du in Gold.</p>':''}<h1>${neu?'Neue Bestzeit! '+fmt(sp.ziel)+' s':fmt(sp.ziel)+' s'}</h1><p class="klein">${alt?'Bestzeit bisher '+fmt(alt.zeit)+' s'+(neu?' · '+((alt.zeit-sp.ziel)/Z).toFixed(1)+' s schneller':' · '+((sp.ziel-alt.zeit)/Z).toFixed(1)+' s langsamer'):'Erste Fahrt gespeichert, nächstes Mal fährt dein Geist mit'}</p>`)}
-  $('ergebnis').hidden=false;$('einst').hidden=false;$('einst').classList.remove('zeig');$('teilen').hidden=sp.ziel==null;window.__teiltext=teilText(sp);$('start').textContent='Spielen';tourAnzeige();tonStop();
-  window.__ergebnis={tag:R.tag,seed:SEED,zeitRechen:sp.ziel,platz:platz(sp),zeit:sp.ziel,sieger:sieger.ziel,laenge:R.laenge,strecke:R.st.name,tempo:R.tempo,imWind:w,pMittel:pm,wechsel:sp.mess.wechsel,rempler:sp.mess.rempler,sprintP:sp.sprintP,bergP:sp.bergP,n:F.length,ziel:F.filter(f=>f.ziel!=null).length};
+  if(alpenK&&!R.tag){const sid=R.st.id,alt=R.geistBest,neu=bestSpeichern(sid,sp.ziel,R.geistAuf),stn=sterneFuer(sp.ziel,sid),goldVorher=goldtrikot();fortSpeichern(stn,sid);const vorher=goldVorher?3:0;
+    $('ergebnis').insertAdjacentHTML('afterbegin',`<p class="gross sterne" style="color:#d8b11a;font-size:34px">${'★'.repeat(stn)}${'☆'.repeat(3-stn)}</p>${stn===3&&vorher<3?'<p><b>Goldtrikot freigeschaltet!</b> Ab jetzt fährst du in Gold.</p>':''}<h1 class="zeitzeile">${neu?'Neue Bestzeit! '+fmt(sp.ziel)+' s':fmt(sp.ziel)+' s'}</h1><p class="klein">${alt?'Bestzeit bisher '+fmt(alt.zeit)+' s'+(neu?' · '+((alt.zeit-sp.ziel)/Z).toFixed(1)+' s schneller':' · '+((sp.ziel-alt.zeit)/Z).toFixed(1)+' s langsamer'):'Erste Fahrt gespeichert, nächstes Mal fährt dein Geist mit'}</p>${ergebnisKarte(karteM(sp,F,w,stn))}${rzeilen}`)}
+  if(alpenK&&R.tag)$('ergebnis').insertAdjacentHTML('afterbegin',ergebnisKarte(karteM(sp,F,w,sterneFuer(sp.ziel))));
+  if(!(alpenK&&!R.tag)&&rzeilen)$('ergebnis').insertAdjacentHTML('afterbegin',rzeilen);
+  const wb=$('weiter');wb.hidden=!R.tour;if(R.tour){const nx=naechsteEtappe();wb.textContent=nx<3?'Weiter: Etappe '+(nx+1)+' · '+STRECKEN[TOUR_ETAPPEN[nx]].name:'Neue Rundfahrt'}etappenKarten();tonEreignisse();
+  $('ergebnis').hidden=false;$('einst').hidden=false;$('einst').classList.remove('zeig');$('teilen').hidden=sp.ziel==null;window.__teiltext=teilText(sp);tourAnzeige();tonStop();
+  window.__ergebnis={schleudern:sp.mess.schleudern,resRestPct:Math.round(100*sp.res/K.rMax),tag:R.tag,seed:SEED,zeitRechen:sp.ziel,platz:platz(sp),zeit:sp.ziel,sieger:sieger.ziel,laenge:R.laenge,strecke:R.st.name,tempo:R.tempo,imWind:w,pMittel:pm,wechsel:sp.mess.wechsel,rempler:sp.mess.rempler,sprintP:sp.sprintP,bergP:sp.bergP,n:F.length,ziel:F.filter(f=>f.ziel!=null).length};
 }
 // ---------- 3D-Welt (Three.js): x = Strecke, y = Höhe, z = seitlich ----------
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -608,7 +698,7 @@ function tonStart(){if(!$('eTon').checked){if(AC)AC.suspend();return}
     AC.resume()}catch(e){AC=null;TON=null}}
 function piep(freq,dauer,start=0,typ='triangle',laut=0.25){if(!TON)return;const o=AC.createOscillator(),g=AC.createGain(),t0=AC.currentTime+start;o.type=typ;o.frequency.value=freq;g.gain.setValueAtTime(laut,t0);g.gain.exponentialRampToValueAtTime(0.001,t0+dauer);o.connect(g);g.connect(TON.haupt);o.start(t0);o.stop(t0+dauer+0.05)}
 function tonEreignisse(){if(!R)return;const ev=R.ton.splice(0);if(!TON||!$('eTon').checked)return;
-  for(const e of ev){if(e==='tor'){piep(880,0.15);piep(1320,0.25,0.12)}else if(e==='rempler'){piep(90,0.18,0,'sine',0.5)}else if(e==='angriff'){piep(660,0.12);piep(660,0.12,0.18)}else if(e==='ziel'){piep(523,0.2);piep(659,0.2,0.18);piep(784,0.45,0.36)}}}
+  for(const e of ev){if(e==='tor'){piep(880,0.15);piep(1320,0.25,0.12)}else if(e==='rempler'){piep(90,0.18,0,'sine',0.5)}else if(e==='angriff'){piep(660,0.12);piep(660,0.12,0.18)}else if(e==='gelb'){piep(659,0.15);piep(784,0.15,0.13);piep(1047,0.4,0.26)}else if(e==='platz'){piep(740,0.08);piep(988,0.12,0.07)}else if(e==='ziel'){piep(523,0.2);piep(659,0.2,0.18);piep(784,0.45,0.36)}}}
 function tonBild(){ // je Bild: Fahrtwind nach Tempo (im Windschatten leiser), Zuschauer am Anstieg, Freilauf-Klicken ohne Treten
   tonEreignisse();if(!TON||!$('eTon').checked||!R||R.fertig)return;const sp=R.fahrer[0],t=AC.currentTime;
   TON.wF.frequency.setTargetAtTime(300+sp.v*45,t,0.1);TON.wG.gain.setTargetAtTime(Math.min(0.35,0.0018*sp.v*sp.v)*(1-sp.w*1.5),t,0.15);
@@ -619,6 +709,14 @@ function hud(){
   const sp=R.fahrer[0];$('hTempo').textContent=(sp.v*3.6).toFixed(0);$('hWatt').textContent=Math.round(sp.p);
   const st=steigung(R.pts,sp.x);$('hSteig').textContent=(st*100).toFixed(0)+' %';
   $('hPos').textContent=platz(sp)+'./'+R.fahrer.length;$('hZeit').textContent=fmt(R.t);
+  const zk=ETAPPEN_IDS.indexOf(R.st.id),alpen=zk>=0,tr=R.t/Z,pl=platz(sp);
+  $('platzZahl').textContent=pl;$('platzVon').textContent='/'+R.fahrer.length;
+  $('zielband').hidden=!(R.intro&&alpen);if(alpen)$('zielband').textContent='ETAPPE '+(zk+1)+'/3 · ZIEL ★★★ unter '+mmss(STERNE[R.st.id][0]);
+  const kt=alpen&&tr>=3&&sp.ziel==null?kursText(abstandZiel(sp.x,tr,R.st.id)):null,ku=$('kurs');ku.hidden=kt===null;if(kt!==null){ku.textContent=kt;ku.className=/ vor /.test(kt)?'vor':'hinter'}
+  if(!R.intro&&sp.ziel==null){if(R.platzGem===null)R.platzGem=pl;else if(pl!==R.platzGem&&R.t>=R.platzNext){platzEreignis(R.platzGem,pl);R.platzGem=pl;R.platzNext=R.t+1.5*Z}
+    if(!R.auto&&!(R.hint&&R.t<R.hint.bis)){const vs=R.fahrer.filter(f=>f!==sp&&f.x>sp.x&&Math.abs(f.z-sp.z)<3).map(f=>f.x-sp.x),id=coachTipp({t:tr,w:sp.w,vorn:vs.length?Math.min(...vs):null,res:sp.res/K.rMax,bereit:sp.sog>=1&&R.t>=sp.schleuderBis},R.gesehen);if(id)coachZeigen(id)}}
+  const pm=$('platzMeld');if(R.meld&&R.t<R.meld.bis){if(pm.textContent!==R.meld.text){pm.textContent=R.meld.text;pm.style.animation='none';void pm.offsetWidth;pm.style.animation=''}pm.hidden=false}else pm.hidden=true;
+  const hb=$('hinweis');if(R.hint&&R.t<R.hint.bis){hb.textContent=R.hint.text;hb.hidden=false}else hb.hidden=true;
   $('hRes').style.width=(100*sp.res/K.rMax).toFixed(1)+'%';$('hRes').style.background=sp.res<K.rMax*0.2?css('--bad'):css('--good');
   $('hWind').textContent=Math.round(sp.w*100)+' %';
   $('hAus').textContent=R.ausAnz>0?` · Ausreißer: ${R.ausAnz}, ${Math.round(R.ausVorsprung)} s vorn`:'';
@@ -658,11 +756,12 @@ addEventListener('keyup',e=>{if(e.key===' ')antritt(false);if(R&&(e.key==='Arrow
   b.addEventListener('pointerdown',an);b.addEventListener('pointerup',aus);b.addEventListener('pointerleave',aus);b.addEventListener('pointercancel',aus);
   $('schleuder').addEventListener('pointerdown',e=>{e.preventDefault();schleuder()})}
 $('eModus').addEventListener('change',tourAnzeige);$('tourReset').addEventListener('click',()=>{TOUR=null;tourSpeichern();tourAnzeige()});tourLaden();tourAnzeige();
-$('menue').addEventListener('click',()=>{tonStop();if(R){R.fertig=true;cancelAnimationFrame(anim);anim=0}$('einst').hidden=false;$('start').textContent='Spielen'});
+$('menue').addEventListener('click',()=>{tonStop();if(R){R.fertig=true;cancelAnimationFrame(anim);anim=0}$('einst').hidden=false;tourAnzeige();etappenKarten()});
+$('weiter').addEventListener('click',()=>weiter(false));
 function starten(schnell,tag){tonStart();cancelAnimationFrame(anim);TAG=!!tag;SEED=TAG?tagSeed(new Date()):12345;neuesRennen();if(schnell===true){R.intro=false;R.rt=INTRO}welt&&szene.remove(welt);welt=null;konfettiStop();document.body.classList.remove('boost');$('einst').hidden=true;$('ergebnis').hidden=true;$('meldung').hidden=true;letzt=performance.now();anim=requestAnimationFrame(schleife)}
-$('start').addEventListener('click',starten);$('nochmal').addEventListener('click',()=>starten(true,TAG));$('tag').addEventListener('click',()=>starten(false,true));$('einstBtn').addEventListener('click',()=>$('einst').classList.toggle('zeig'));$('teilen').addEventListener('click',teilen);
+$('start').addEventListener('click',e=>{if($('eModus').value==='tour'&&tourFertig())TOUR.aktuell=3;starten(e)});$('nochmal').addEventListener('click',()=>starten(true,TAG));$('tag').addEventListener('click',()=>starten(false,true));$('einstBtn').addEventListener('click',()=>$('einst').classList.toggle('zeig'));$('teilen').addEventListener('click',teilen);
 for(const [id,out,f] of [['eGegner','oGegner',v=>v],['eStaerke','oStaerke',v=>v]])$(id).addEventListener('input',e=>$(out).textContent=f(e.target.value));
 
-tourLaden();tourAnzeige();starten();requestAnimationFrame(()=>requestAnimationFrame(()=>$('menue').click()));
+tourLaden();tourAnzeige();starten();
 
 </script>
