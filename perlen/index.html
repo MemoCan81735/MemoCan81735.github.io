@@ -84,6 +84,9 @@ section[hidden] { display: none; }
 .hinweis { font-size: 0.88rem; color: var(--gedaempft); margin: 0; }
 ol.schritte { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 10px; }
 ol.schritte li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 10px; }
+ol.schritte li > span { min-width: 0; }
+.schrittbild { grid-column: 1 / -1; display: block; width: 100%; max-width: 440px; aspect-ratio: 16 / 9; border-radius: 12px; background: var(--matte); cursor: pointer; }
+.schrittbild:focus-visible { outline: 3px solid var(--akzent); outline-offset: 2px; }
 ol.schritte li::before { content: counter(s); width: 30px; height: 30px; border-radius: 50%; background: var(--akzent-zart); color: var(--tinte); display: grid; place-items: center; font-weight: 800; }
 ul.tipps { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 .entwuerfe { display: grid; gap: 8px; }
@@ -519,7 +522,7 @@ Perlen.control.ideen = (function () {
 })();
 
 (function(){
-// Control: Inhalte der Anleitung je Technik (S-001, A-2). Reine Daten.
+// Control: Inhalte der Anleitung je Technik (S-001, A-2) mit einem bewegten Bild je Schritt (S-002, A-11). Reine Daten.
 var Perlen = globalThis.Perlen = globalThis.Perlen || {};
 Perlen.control = Perlen.control || {};
 Perlen.control.anleitung = (function () {
@@ -595,6 +598,14 @@ Perlen.control.anleitung = (function () {
       ]
     }
   };
+  // Ein Bild je Schritt (Szenen aus Perlen.control.szenen); spiegel: Ende des Armbands statt Anfang
+  const BILDER = {
+    gummi: ['messen', 'dehnen', 'stopper', 'auffaedeln', 'anprobe', 'knoten', 'einziehen'],
+    faden: ['messen', 'abschneiden', 'verschluss', 'quetschen', { szene: 'auffaedeln', verschluss: true }, { szene: 'verschluss', spiegel: true, ende: true }, { szene: 'quetschen', spiegel: true, ende: true }],
+    peyote: ['nadel', 'peyote_start', 'peyote_auslassen', 'peyote', { szene: 'vergleichen', versatz: true }, 'faden_neu', { szene: 'klemmen', versatz: true }],
+    loom: ['kettfaeden', 'schuss', 'loom_unter', 'loom_druecken', 'loom_zurueck', 'loom', 'klemmen']
+  };
+  const alsBild = b => (typeof b === 'string' ? { szene: b } : Object.assign({}, b));
   const MESSEN = [
     'Ein Maßband oder einen Papierstreifen locker um das Handgelenk legen, direkt über dem Handknochen.',
     'Die Stelle markieren, an der sich das Band trifft, und die Länge in Zentimetern ablesen.',
@@ -602,8 +613,9 @@ Perlen.control.anleitung = (function () {
     'Typische Werte: Kinder 13 bis 15 cm, Frauen 15 bis 17 cm, Männer 17 bis 20 cm.'
   ];
   return {
-    fuer: t => JSON.parse(JSON.stringify(INHALT[t] || INHALT.gummi)),
-    messen: () => MESSEN.slice()
+    fuer: t => { const id = INHALT[t] ? t : 'gummi'; return Object.assign(JSON.parse(JSON.stringify(INHALT[id])), { bilder: BILDER[id].map(alsBild) }); },
+    messen: () => MESSEN.slice(),
+    messbild: () => ({ szene: 'messen' })
   };
 })();
 
@@ -779,6 +791,373 @@ Perlen.control.katalog = (function () {
     perlenLaenge: E.perlenLaenge,
     grenzen: () => ({ umfangMin: E.UMFANG_MIN, umfangMax: E.UMFANG_MAX, musterMax: E.MUSTER_MAX, nameMax: E.NAME_MAX,
       spaltenMin: E.SPALTEN_MIN, spaltenMax: E.SPALTEN_MAX, reihenMin: E.REIHEN_MIN, reihenMax: E.REIHEN_MAX, entwuerfeMax: E.ENTWUERFE_MAX })
+  };
+})();
+
+})();
+
+(function(){
+// Control: bewegte Bilder der Anleitung (S-002). Reine Funktionen: Szene + Zeit + Entwurf -> Liste von Zeichenteilen.
+// Die Zeit t (Sekunden) reicht die UI hinein (R-02). Bildfläche 320 x 180, Farben als Katalognummer oder Name.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.szenen = (function () {
+  const E = Perlen.entity, W = Perlen.control.entwurf, R = Perlen.control.rechner;
+  const B = 320, H = 180, DAUER = 4, HALT = 0.8, PERLEN_MAX = 12, RASTER_MAX = 12;
+  const DX = 16, DY = 13;   // Delica im Bild: 1,6 mm entlang des Bandes, 1,3 mm quer (10 Einheiten je mm), vergrößert bis 1,5-fach
+  // Farben über ihren Namen im Katalog (nicht über feste Nummern)
+  const farbe = name => Math.max(0, E.FARBEN.findIndex(f => f.name === name));
+  const GOLD = farbe('Gold'), SILBER = farbe('Silber');
+  const STANDARD = ['Nazarblau', 'Gold', 'Weiß', 'Himmelblau', 'Weiß', 'Gold'].map((name, i) => ({ farbe: farbe(name), groesse: i % 3 === 1 ? 6 : 8, form: i % 3 === 1 ? 'rondelle' : 'rund' }));
+
+  const klemme01 = x => Math.max(0, Math.min(1, x));
+  const weich = x => { x = klemme01(x); return x * x * (3 - 2 * x); };
+  function fortschritt(t) {
+    let n = typeof t === 'number' && isFinite(t) ? t : DAUER - HALT / 2;
+    n = Math.round((((n % DAUER) + DAUER) % DAUER) * 1e6) / 1e6;
+    return Math.min(1, n / (DAUER - HALT));
+  }
+
+  // ---- Zeichenteile ----
+  const linie = (punkte, farbe, dicke) => ({ art: 'linie', punkte, farbe, dicke: dicke || 2 });
+  const bogen = (x, y, rx, ry, farbe, o) => Object.assign({ art: 'bogen', x, y, rx, ry, farbe, von: 0, bis: Math.PI * 2, dicke: 0 }, o || {});
+  const rechteck = (x, y, b, h, farbe, o) => Object.assign({ art: 'rechteck', x, y, b, h, farbe, rund: 0, dicke: 0 }, o || {});
+  const text = (x, y, inhalt, groesse) => ({ art: 'text', x, y, text: inhalt, groesse: groesse || 16, farbe: 'text' });
+  function perle(p, x, y, s) {
+    const l = E.perlenLaenge(p) * s, hoch = (p.buchstabe ? E.WUERFEL_MM : p.groesse) * s;
+    const t = { art: 'perle', x, y, r: hoch / 2, laenge: l, farbe: p.farbe, form: p.buchstabe ? 'wuerfel' : p.form };
+    if (p.buchstabe) t.buchstabe = p.buchstabe;
+    return t;
+  }
+  // Rasterperle; z und s nennen die Zelle des Rasters (für die Prüfung "zellgenau")
+  function delica(k, z, s, x, y, f) {
+    f = f === undefined ? 1 : f;
+    return { art: 'perle', x, y, r: k.dy / 2 * f, laenge: k.dx * f, farbe: zelle(k, z, s), form: 'delica', z, s };
+  }
+
+  // Polylinie bis zum Anteil q ihrer Länge
+  function teilweg(punkte, q) {
+    const seg = []; let summe = 0;
+    for (let i = 2; i < punkte.length; i += 2) { const l = Math.hypot(punkte[i] - punkte[i - 2], punkte[i + 1] - punkte[i - 1]); seg.push(l); summe += l; }
+    let rest = summe * klemme01(q); const aus = [punkte[0], punkte[1]];
+    for (let k = 0; k < seg.length && rest > 0; k++) {
+      const a = Math.min(1, rest / seg[k]), i = 2 * k;
+      aus.push(punkte[i] + (punkte[i + 2] - punkte[i]) * a, punkte[i + 1] + (punkte[i + 3] - punkte[i + 1]) * a); rest -= seg[k];
+    }
+    return aus;
+  }
+
+  // ---- Kontext aus dem Entwurf ----
+  function kontext(e) {
+    let w;
+    try { w = W.bereinige(e && typeof e === 'object' ? e : {}); } catch (x) { w = W.bereinige({}); }
+    let folge = R.folge(Object.assign({}, w, { technik: 'gummi' }));
+    // zu wenig Perlen (leeres Muster): Standardperlen, der Name bleibt in der Mitte
+    if (folge.filter(p => !p.buchstabe).length < 6) folge = R.folge(W.bereinige({ technik: 'gummi', muster: STANDARD, name: w.name }));
+    const mitte = Math.floor(folge.length / 2), start = Math.max(0, Math.min(folge.length - PERLEN_MAX, mitte - PERLEN_MAX / 2));
+    const perlen = folge.slice(start, start + PERLEN_MAX).map(p => {
+      const q = { farbe: p.farbe, groesse: p.groesse, form: p.form };
+      if (p.buchstabe) q.buchstabe = p.buchstabe;
+      return q;
+    });
+    // Ausschnitt bis 12 x 12: alle Reihen ab der ersten, bei breiten Bändern die mittleren Spalten
+    const r = w.raster, sp = Math.min(RASTER_MAX, r.spalten), re = Math.min(RASTER_MAX, r.reihen), s0 = Math.floor((r.spalten - sp) / 2), zellen = [];
+    for (let z = 0; z < re; z++) for (let s = 0; s < sp; s++) zellen.push(r.zellen[z * r.spalten + s0 + s]);
+    const f = Math.min(1.5, 200 / (re * DX + DX / 2), 128 / (sp * DY));
+    return { perlen, raster: { spalten: sp, reihen: re, zellen, s0, spaltenGesamt: r.spalten }, umfang: w.umfang, dx: DX * f, dy: DY * f };
+  }
+
+  // Perlen an einer Schnur, linksbündig ab x0, Maßstab so, dass sie in die Breite b passen
+  function reihe(perlen, x0, y, b) {
+    const summe = perlen.reduce((s, p) => s + E.perlenLaenge(p), 0) + perlen.length * 0.3;
+    const s = Math.min(2.6, b / summe); let x = x0;
+    return perlen.map(p => { const l = E.perlenLaenge(p) * s; const t = perle(p, x + l / 2, y, s); x += l + 0.3 * s; return t; });
+  }
+
+  // Rasterlage: Reihe z entlang x, Spalte s quer (y); bei Peyote ist jede zweite Spalte um eine halbe Perle versetzt
+  function lage(k, z, s, peyote, xm) {
+    const sp = k.raster.spalten, re = k.raster.reihen;
+    const x0 = (xm === undefined ? B / 2 : xm) - (re * k.dx + (peyote ? k.dx / 2 : 0)) / 2, y0 = H / 2 - sp * k.dy / 2;
+    return [x0 + z * k.dx + k.dx / 2 + (peyote && s % 2 ? k.dx / 2 : 0), y0 + s * k.dy + k.dy / 2];
+  }
+  // Reihenfolge bei Peyote: Reihe 1 und 2 aufgefädelt (alle Spalten), dann je Reihe zwei Durchgänge in jede zweite Spalte,
+  // der erste Durchgang beginnt am Fadenende (letzte Spalte) und läuft zurück
+  function peyoteFolge(k) {
+    const sp = k.raster.spalten, re = k.raster.reihen, aus = [];
+    for (let s = 0; s < sp; s++) aus.push([0, s]);
+    let runter = true;
+    for (let z = 1; z < re; z++) for (const par of [(sp - 1) % 2, sp % 2]) {
+      const sp2 = []; for (let s = par; s < sp; s += 2) sp2.push(s);
+      if (runter) sp2.reverse(); runter = !runter;
+      for (const s of sp2) aus.push([z, s]);
+    }
+    return aus;
+  }
+  function zelle(k, z, s) { return k.raster.zellen[z * k.raster.spalten + s]; }
+  const hand = (x, y, r) => bogen(x, y, r, r * 0.85, 'haut', { fuellen: true });
+  const klammer = (x, y) => [rechteck(x - 6, y - 14, 12, 28, 'metall', { rund: 4 }), rechteck(x - 2, y - 14, 4, 6, 'werkzeug')];
+  const biegering = (x, y) => [bogen(x + 4, y, 11, 11, 'metall', { dicke: 3 }), linie([x - 7, y - 3, x - 7, y + 3], 'schale', 3)];
+  const karabiner = (x, y) => [bogen(x, y, 15, 19, 'metall', { dicke: 4 }), linie([x + 13, y - 8, x + 9, y + 6], 'metall', 3)];
+  // Kaschierperle: offen eine Schale (Bogen), geschlossen eine Kugel
+  const kaschier = (x, y, zu) => (zu >= 1 ? bogen(x, y, 7, 8, GOLD, { fuellen: true }) : bogen(x, y, 7, 8, GOLD, { dicke: 3, von: 0.4 + 0.6 * zu, bis: Math.PI * 2 - 0.4 - 0.6 * zu }));
+  // geknotetes Gummiband mit Perlen links und rechts
+  function geknotet(k, aus) {
+    aus.push(linie([20, 100, 300, 100], 'faden', 2), ...reihe(k.perlen.slice(0, 4), 24, 100, 90), ...reihe(k.perlen.slice(4, 8), 206, 100, 90));
+    return aus;
+  }
+
+  // Webrahmen: Rahmen, Kettfäden und fertige Reihen bis z (ausschließlich)
+  function webrahmen(k, fertig) {
+    const sp = k.raster.spalten, oben = H / 2 - sp * k.dy / 2, aus = [rechteck(8, 28, 10, 124, 'werkzeug', { rund: 4 }), rechteck(302, 28, 10, 124, 'werkzeug', { rund: 4 })];
+    for (let i = 0; i <= sp; i++) aus.push(linie([18, oben + i * k.dy, 302, oben + i * k.dy], 'faden', 1));
+    for (let z = 0; z < fertig; z++) {
+      for (let s = 0; s < sp; s++) { const [x, y] = lage(k, z, s, false); aus.push(delica(k, z, s, x, y)); }
+      const [x] = lage(k, z, 0, false); aus.push(linie([x, oben - 2, x, oben + sp * k.dy + 2], 'faden', 1.5));
+    }
+    return aus;
+  }
+  // Eine Reihe am Webrahmen in drei Teilen: unter die Kettfäden schieben, hochdrücken, Nadel oben zurück
+  function loomReihe(k, z, teil, f) {
+    const sp = k.raster.spalten, oben = H / 2 - sp * k.dy / 2, aus = webrahmen(k, z), [x] = lage(k, z, 0, false);
+    const unten = teil === 'unter' ? 1 : teil === 'druecken' ? 1 - weich(f) : 0;
+    const quer = teil === 'unter' ? (1 - weich(f)) * 60 : 0;
+    for (let s = 0; s < sp; s++) { const [, y] = lage(k, z, s, false); aus.push(delica(k, z, s, x + quer, y + k.dy * unten)); }
+    if (teil === 'unter') aus.push(linie([x + quer, oben + sp * k.dy + 22, Math.min(304, x + quer + 80), oben + sp * k.dy + 10], 'metall', 2));
+    if (teil === 'druecken') aus.push(hand(x, Math.min(H - 10, oben + sp * k.dy + k.dy * unten + 14), 9));
+    if (teil === 'zurueck') {
+      aus.push(linie([x, oben + sp * k.dy + 6, x, oben - 4, x + 14, oben - 8], 'faden', 1.5));
+      const yN = oben + sp * k.dy + 4 - (sp * k.dy + 10) * weich(f);
+      aus.push(linie([x, yN, x, oben + sp * k.dy + 6], 'hinweis', 2), linie([x, yN, x + 3, Math.max(4, yN - 40)], 'metall', 2.5));
+    }
+    return aus;
+  }
+
+  const SZENEN = {
+    messen(q, k) {
+      const umfang = k.umfang * q / 10;
+      return [rechteck(0, 64, 236, 52, 'haut', { rund: 22 }), hand(262, 90, 44),
+        bogen(190, 90, 10, 31, 'band', { von: -Math.PI / 2, bis: -Math.PI / 2 + Math.PI * 2 * q, dicke: 6 }),
+        linie([190, 121, 190 - 60 * (1 - q), 121 + 40 * (1 - q)], 'band', 6),
+        text(110, 34, umfang.toFixed(1).replace('.', ',') + ' cm', 20)];
+    },
+    dehnen(q) {
+      // erst abschneiden (Schere schließt), dann zweimal dehnen
+      const schnitt = weich(q / 0.25), d = q < 0.3 ? 0 : 0.5 - 0.5 * Math.cos((q - 0.3) / 0.7 * Math.PI * 4), l = 100 - 50 * d, r = 220 + 50 * d, a = 0.45 * (1 - schnitt);
+      const aus = [linie([l, 90, r, 90], 'gummi', 5 - 2 * d), hand(l - 14, 90, 18), hand(r + 14, 90, 18)];
+      if (q < 0.3) aus.push(linie([r + 30, 90, r + 30 + 40 * Math.cos(a), 90 - 40 * Math.sin(a) - 8], 'werkzeug', 4), linie([r + 30, 90, r + 30 + 40 * Math.cos(a), 90 + 40 * Math.sin(a) + 8], 'werkzeug', 4));
+      return aus;
+    },
+    stopper(q, k) {
+      const y = 22 + 68 * weich(q);
+      const schale = [bogen(230, 146, 70, 22, 'schale', { fuellen: true })].concat(reihe(k.perlen.slice(0, 8), 176, 144, 108));
+      return [linie([42, 90, 300, 90], 'faden', 2)].concat(schale, klammer(46, y));
+    },
+    auffaedeln(q, k, b) {
+      const ziel = reihe(k.perlen, 48, 92, 238), n = ziel.length, wert = q * n;
+      const aus = [linie([20, 92, 300, 92], 'faden', 2)].concat(b && b.verschluss ? karabiner(26, 92) : klammer(26, 92));
+      ziel.forEach((p, i) => {
+        const rand = 312 - Math.max(p.r, p.laenge / 2);
+        if (wert >= i + 1) aus.push(p);
+        else if (wert > i) aus.push(Object.assign({}, p, { x: rand - (rand - p.x) * weich(wert - i) }));
+      });
+      return aus;
+    },
+    anprobe(q, k) {
+      // geschlossener Ring um das Handgelenk; der Name erscheint nur einmal, danach nur Musterperlen
+      const atem = 1 + 0.07 * Math.sin(q * Math.PI * 4) * (1 - q), ohne = k.perlen.filter(p => !p.buchstabe), rx = 70 * atem, ry = 54 * atem;
+      const folge = k.perlen.slice(); let i = 0; while (folge.length < 26 && ohne.length) folge.push(ohne[i++ % ohne.length]);
+      const aus = [bogen(160, 92, 50, 38, 'haut', { fuellen: true }), bogen(160, 92, rx, ry, 'faden', { dicke: 1.5 })];
+      folge.forEach((p, j) => {
+        const a = -Math.PI / 2 - 0.5 + Math.PI * 2 * j / folge.length;
+        aus.push(perle(p, 160 + rx * Math.cos(a), 92 + ry * Math.sin(a), Math.min(1.5, 12 / (p.buchstabe ? E.WUERFEL_MM : p.groesse))));
+      });
+      aus.push(bogen(160 + 40 * Math.cos(-Math.PI / 2 - 0.9), 24 + 26 * weich(q), 7, 9, 'haut', { fuellen: true }));
+      return aus;
+    },
+    knoten(q, k) {
+      // zweimal umschlingen, festziehen, noch einmal; am Ende ein Tropfen Kleber
+      // zwei Enden kommen von links und rechts, kreuzen sich und schlingen sich umeinander
+      const aus = [linie([20, 100, 146, 100], 'faden', 2), linie([174, 100, 300, 100], 'faden', 2), ...reihe(k.perlen.slice(0, 4), 24, 100, 90), ...reihe(k.perlen.slice(4, 8), 206, 100, 90)];
+      const w1 = weich(q / 0.5), w2 = weich((q - 0.5) / 0.35), rho1 = 4 + 18 * (1 - w1), rho2 = 3 + 14 * (1 - w2);
+      aus.push(linie([146, 100, 174, 100 - 2 * rho1], 'faden', 2), linie([174, 100, 146, 100 - 2 * rho1], 'faden', 2));
+      aus.push(bogen(160, 100 - rho1, rho1, rho1, 'faden', { dicke: 2 }), bogen(160, 100 - rho1, rho1 * 0.7, rho1 * 0.7, 'faden', { dicke: 2 }));
+      if (q > 0.5) aus.push(bogen(160, 100 - rho2 - 3, rho2, rho2, 'faden', { dicke: 2 }));
+      if (q > 0.85) aus.push(bogen(160, 98, 4 + 6 * weich((q - 0.85) / 0.15), 3, 'kleber', { fuellen: true }));
+      return aus;
+    },
+    einziehen(q, k) {
+      // Enden knapp abschneiden, dann den Knoten in die nächste größere Perle ziehen
+      const aus = geknotet(k, []), lang = 18 * (1 - weich(q / 0.4)), zug = weich((q - 0.45) / 0.55);
+      const ziel = aus.filter(t => t.art === 'perle' && t.x > 160).sort((a, b) => b.r - a.r || a.x - b.x)[0];
+      const x = 160 + ((ziel ? ziel.x : 220) - 160) * zug;
+      aus.push(bogen(x, 100, 4 * (1 - 0.6 * zug), 4 * (1 - 0.6 * zug), 'faden', { fuellen: true }));
+      if (lang > 0.5) aus.push(linie([x, 96, x - 6, 96 - lang], 'faden', 2), linie([x, 96, x + 6, 96 - lang], 'faden', 2));
+      if (q > 0.45) aus.push(linie([160, 100, x, 100], 'hinweis', 2));
+      return aus;
+    },
+    abschneiden(q) {
+      const a = 0.5 * (1 - weich(q / 0.7)), fall = 40 * weich((q - 0.7) / 0.3);
+      return [linie([30, 90, 240, 90], 'faden', 2), linie([240, 90 + fall, 300, 90 + fall], 'faden', 2),
+        linie([240, 90, 240 + 50 * Math.cos(a), 90 - 50 * Math.sin(a) - 10], 'werkzeug', 4), linie([240, 90, 240 + 50 * Math.cos(-a), 90 - 50 * Math.sin(-a) + 10], 'werkzeug', 4),
+        bogen(296, 70, 9, 9, 'werkzeug', { dicke: 3 }), bogen(296, 110, 9, 9, 'werkzeug', { dicke: 3 }), text(110, 40, '+ 20 cm', 18)];
+    },
+    verschluss(q, k, b) {
+      // Kaschierperle (offen), Quetschperle, Karabiner (am Ende ein Biegering) auffädeln, Ende zurück durch Quetsch- und Kaschierperle
+      const weg = [300, 96, 112, 96, 84, 96, 52, 98, 40, 108, 26, 92, 40, 76, 52, 84, 84, 84, 112, 84, 170, 84];
+      return (b && b.ende ? biegering(36, 92) : karabiner(36, 92)).concat([linie(teilweg(weg, q), 'faden', 2), bogen(84, 90, 5, 8, SILBER, { fuellen: true }), kaschier(112, 90, 0)]);
+    },
+    quetschen(q, k, b) {
+      // Quetschperle flach drücken, dann die Kaschierperle darüberschieben und schließen
+      const z = weich(q / 0.5), ry = 8 * (1 - 0.55 * z), spalt = ry + 0.5, auf = 1 - z, schieb = weich((q - 0.55) / 0.3), zu = weich((q - 0.85) / 0.15);
+      const aus = (b && b.ende ? biegering(36, 92) : karabiner(36, 92)).concat([linie([300, 93, 52, 93, 52, 87, 300, 87], 'faden', 2), bogen(84, 90, 5, ry, SILBER, { fuellen: true }),
+        kaschier(112 - 28 * schieb, 90, zu)]);
+      if (q < 0.55) aus.push(rechteck(70, 90 - spalt - 10 - 24 * auf, 28, 10, 'werkzeug', { rund: 3 }), rechteck(70, 90 + spalt + 24 * auf, 28, 10, 'werkzeug', { rund: 3 }),
+        linie([98, 90 - spalt - 5 - 24 * auf, 300, 30 - 20 * auf], 'werkzeug', 5), linie([98, 90 + spalt + 5 + 24 * auf, 300, 150 + 20 * auf], 'werkzeug', 5));
+      else aus.push(linie([112 - 28 * schieb + 9, 90, 140, 90], 'hinweis', 2));
+      return aus;
+    },
+    nadel(q, k) {
+      const aus = [linie([150, 90, 290, 90], 'metall', 3), bogen(282, 90, 6, 2.5, 'faden', { dicke: 1 }),
+        linie(teilweg([20, 128, 120, 120, 230, 100, 282, 90, 300, 94], q), 'faden', 2)];
+      if (q > 0.85) aus.push(perle(k.perlen[0], 40, 126.4, 1.2));
+      return aus;
+    },
+    peyote_start(q, k) {
+      // Reihe 1 und 2: alle Spalten auffädeln (Farben der ersten Reihe), dann rutschen sie abwechselnd in zwei Reihen
+      const sp = k.raster.spalten, x0 = B / 2 - sp * k.dx / 2, n = q / 0.7 * sp, schub = k.dy * 0.4 * weich((q - 0.7) / 0.3), aus = [linie([20, 90, 300, 90], 'faden', 2)];
+      for (let j = 0; j < sp; j++) {
+        const x = x0 + j * k.dx + k.dx / 2, y = 90 + (j % 2 ? -schub : schub);
+        if (n >= j + 1) aus.push(delica(k, 0, j, x, y));
+        else if (n > j) aus.push(delica(k, 0, j, 300 - k.dx / 2 - (300 - k.dx / 2 - x) * weich(n - j), 90));
+      }
+      return aus;
+    },
+    peyote_auslassen(q, k) {
+      // Reihe 1 und 2 liegen; die neue Perle kommt an das Fadenende, die letzte Perle wird ausgelassen (Ring), die Nadel sticht in die davor
+      const ord = peyoteFolge(k), sp = k.raster.spalten, aus = [];
+      for (const [z, s] of ord.slice(0, sp)) { const [x, y] = lage(k, z, s, true); aus.push(delica(k, z, s, x, y)); }
+      const [z1, s1] = ord[sp] || ord[0], [xn, yn] = lage(k, z1, s1, true), [xa, ya] = lage(k, 0, sp - 1, true), [xd, yd] = lage(k, 0, Math.max(0, sp - 2), true);
+      aus.push(rechteck(xa - k.dx / 2 - 2, ya - k.dy / 2 - 2, k.dx + 4, k.dy + 4, 'hinweis', { dicke: 2, rund: 3 }));
+      const f = weich(q / 0.5);
+      aus.push(delica(k, z1, s1, xn + (1 - f) * 60, yn, 0.4 + 0.6 * f));
+      const weg = teilweg([Math.min(304, xn + 70), yn - 30, xn, yn, xd, yd], weich((q - 0.5) / 0.5));
+      aus.push(linie(weg, 'hinweis', 1.5), linie([weg[weg.length - 2], weg[weg.length - 1], Math.min(304, weg[weg.length - 2] + 40), weg[weg.length - 1] - 20], 'metall', 2));
+      return aus;
+    },
+    peyote(q, k) {
+      const ord = peyoteFolge(k), n = q * ord.length, aus = [], weg = [];
+      ord.forEach(([z, s], i) => {
+        const [x, y] = lage(k, z, s, true);
+        if (n >= i + 1) { aus.push(delica(k, z, s, x, y)); if (i >= Math.floor(n) - 4) weg.push(x, y); }
+        else if (n >= i) { aus.push(delica(k, z, s, x, y, 0.3 + 0.7 * weich(n - i))); weg.push(x, y); aus.push(linie([x, y, Math.min(304, x + 70), y - 30], 'metall', 2)); }
+      });
+      if (weg.length >= 4) aus.push(linie(weg, 'hinweis', 1.5));
+      return aus;
+    },
+    vergleichen(q, k, b) {
+      // links das Band (bei Peyote versetzt), rechts der Designer; die Markierung wandert Reihe für Reihe
+      const sp = k.raster.spalten, re = k.raster.reihen, v = !!(b && b.versatz), wert = q * (re - 1), aus = [];
+      const bx = Math.min(14, 164 / (re + 0.5)), by = Math.min(12, 140 / sp), px = Math.min(9, 80 / (re + 0.5)), py = Math.min(9, 116 / sp);
+      for (let z = 0; z < re; z++) for (let s = 0; s < sp; s++) {
+        const x = 20 + z * bx + bx / 2 + (v && s % 2 ? bx / 2 : 0), y = 90 - sp * by / 2 + s * by + by / 2;
+        aus.push(Object.assign(delica(k, z, s, x, y), { laenge: bx - 1, r: (by - 1) / 2 }));
+        aus.push(Object.assign(rechteck(214 + z * px + (v && s % 2 ? px / 2 : 0), 90 - sp * py / 2 + s * py, px - 1, py - 1, zelle(k, z, s), { rund: 1 }), { z, s }));
+      }
+      aus.push(rechteck(200, 22, 104, 136, 'metall', { rund: 12, dicke: 3 }));
+      aus.push(rechteck(20 + wert * bx - 1, 90 - sp * by / 2 - 3, bx + 2 + (v ? bx / 2 : 0), sp * by + 6, 'hinweis', { dicke: 2.5, rund: 3 }));
+      aus.push(rechteck(214 + wert * px - 1.5, 90 - sp * py / 2 - 2, px + 2 + (v ? px / 2 : 0), sp * py + 3, 'hinweis', { dicke: 2.5, rund: 2 }));
+      return aus;
+    },
+    faden_neu(q, k) {
+      const ord = peyoteFolge(k), aus = ord.map(([z, s]) => { const [x, y] = lage(k, z, s, true, 140); return delica(k, z, s, x, y); });
+      const weg = [304, 24];
+      for (const [z, s] of ord.slice(-8).reverse()) weg.push(...lage(k, z, s, true, 140));
+      aus.push(linie(teilweg(weg, q), 'hinweis', 2));
+      return aus;
+    },
+    klemmen(q, k, b) {
+      // Klemmende aufschieben, mit der Flachzange schließen, Ringe anbringen (bei Peyote versetztes Band)
+      const sp = k.raster.spalten, re = Math.min(6, k.raster.reihen), v = !!(b && b.versatz), aus = [], hoch = sp * k.dy + 8, x0 = 130;
+      for (let z = 0; z < re; z++) for (let s = 0; s < sp; s++) aus.push(delica(k, z, s, x0 + z * k.dx + k.dx / 2 + (v && s % 2 ? k.dx / 2 : 0), 90 - sp * k.dy / 2 + s * k.dy + k.dy / 2));
+      const x = 40 + (x0 - 14 - 40) * weich(q / 0.45);
+      aus.push(rechteck(x, 90 - hoch / 2, 14, hoch, 'metall', { rund: 3 }));
+      if (q > 0.4 && q < 0.65) { const z = weich((q - 0.4) / 0.2); aus.push(rechteck(x - 18 + 14 * z, 70, 8, 40, 'werkzeug', { rund: 3 }), rechteck(x + 24 - 14 * z, 70, 8, 40, 'werkzeug', { rund: 3 })); }
+      if (q > 0.65) { const g = weich((q - 0.65) / 0.35); aus.push(bogen(x - 8, 90, 7 * g, 7 * g, 'metall', { dicke: 2.5 }), bogen(x - 28, 90, 13 * g, 10 * g, 'metall', { dicke: 3.5 })); }
+      return aus;
+    },
+    kettfaeden(q, k) {
+      const n = k.raster.spalten + 1, wert = q * n, oben = H / 2 - k.raster.spalten * k.dy / 2, aus = [rechteck(8, 28, 10, 124, 'werkzeug', { rund: 4 }), rechteck(302, 28, 10, 124, 'werkzeug', { rund: 4 })];
+      for (let i = 0; i < n; i++) {
+        const y = oben + i * k.dy;
+        if (wert >= i + 1) aus.push(linie([18, y, 302, y], 'faden', 1.5));
+        else if (wert > i) aus.push(linie([18, y, 18 + 284 * weich(wert - i), y], 'faden', 1.5));
+      }
+      aus.push(text(160, 14, ((k.raster.spaltenGesamt || k.raster.spalten) + 1) + ' Kettfäden', 16));
+      return aus;
+    },
+    schuss(q, k) {
+      const aus = SZENEN.kettfaeden(1, k).slice(0, -1), unten = H / 2 + k.raster.spalten * k.dy / 2;
+      aus.push(bogen(60, unten, 4, 4, 'hinweis', { fuellen: true }));
+      const weg = teilweg([60, unten, 60, unten + 10, 140, unten + 12, 240, unten + 8], q);
+      aus.push(linie(weg, 'hinweis', 2));
+      if (q > 0.5) aus.push(linie([weg[weg.length - 2], weg[weg.length - 1], Math.min(304, weg[weg.length - 2] + 50), weg[weg.length - 1] - 6], 'metall', 3));
+      return aus;
+    },
+    loom_unter: (q, k) => loomReihe(k, 0, 'unter', q),
+    loom_druecken: (q, k) => loomReihe(k, 0, 'druecken', q),
+    loom_zurueck: (q, k) => loomReihe(k, 0, 'zurueck', q),
+    loom(q, k) {
+      // Reihe für Reihe: unter die Kettfäden, hochdrücken, Faden zurück
+      const re = k.raster.reihen, wert = q * re, z = Math.min(re - 1, Math.floor(wert)), f = wert - z;
+      if (q >= 1) return webrahmen(k, re);
+      return loomReihe(k, z, f < 0.35 ? 'unter' : f < 0.65 ? 'druecken' : 'zurueck', f < 0.35 ? f / 0.35 : f < 0.65 ? (f - 0.35) / 0.3 : (f - 0.65) / 0.35);
+    }
+  };
+
+  // Stichwort im Schritttext, an dem man erkennt, dass das Bild zum Schritt passt (Prüfung "Bild passt zum Text")
+  const STICHWORT = {
+    messen: /handgelenk/i, dehnen: /dehn/i, stopper: /stopper|klammer/i, auffaedeln: /auffädeln/i, anprobe: /prüfen/i, knoten: /knoten/i,
+    einziehen: /in die nächste/i, abschneiden: /abschneiden/i, verschluss: /karabiner|biegering/i, quetschen: /quetsch/i, nadel: /nadel/i,
+    peyote_start: /reihe 1 und 2/i, peyote_auslassen: /auslassen/i, peyote: /überspringen/i, vergleichen: /vergleichen/i, faden_neu: /neuen faden/i,
+    klemmen: /klemmenden/i, kettfaeden: /kettfäden spannen/i, schuss: /schussfaden/i, loom_unter: /unter die kettfäden/i, loom_druecken: /drücken/i,
+    loom_zurueck: /zurück/i, loom: /reihe für reihe/i
+  };
+  const BESCHREIBUNG = {
+    messen: 'Maßband wird um das Handgelenk gelegt, die Zentimeter zählen hoch', dehnen: 'Gummiband wird abgeschnitten und zweimal gedehnt',
+    stopper: 'Klammer wird an das Fadenende gesetzt, daneben die Perlen in der Schale', auffaedeln: 'deine Perlen gleiten der Reihe nach auf den Faden',
+    anprobe: 'Armband liegt um das Handgelenk, ein Finger passt darunter', knoten: 'Knoten mit doppelter Schlinge wird festgezogen, dann ein Tropfen Kleber',
+    einziehen: 'Enden werden abgeschnitten und der Knoten in die große Perle gezogen', abschneiden: 'Schere schneidet 20 cm Faden zusätzlich ab',
+    verschluss: 'Faden geht durch Kaschierperle, Quetschperle und Karabiner und zurück', quetschen: 'Zange drückt die Quetschperle flach, die Kaschierperle schließt sich darüber',
+    nadel: 'Faden wird durch das Nadelöhr gefädelt, am Ende die Stopperperle', peyote_start: 'Perlen für Reihe 1 und 2 werden aufgefädelt und rutschen versetzt',
+    peyote_auslassen: 'neue Perle kommt dazu, die markierte Perle wird ausgelassen', peyote: 'das Peyote-Band wächst Perle für Perle versetzt',
+    vergleichen: 'Markierung wandert Reihe für Reihe über Band und Designer', faden_neu: 'neuer Faden läuft im Zickzack durch die Perlen',
+    klemmen: 'Klemmende wird auf das Bandende geschoben, Ringe kommen dazu', kettfaeden: 'Kettfäden werden einer nach dem anderen gespannt',
+    schuss: 'Schussfaden wird am äußersten Kettfaden angeknotet', loom_unter: 'Perlen einer Reihe werden unter die Kettfäden geschoben',
+    loom_druecken: 'Finger drückt die Perlen zwischen die Kettfäden', loom_zurueck: 'Nadel läuft oben über den Kettfäden zurück durch die Reihe',
+    loom: 'Band wächst Reihe für Reihe am Webrahmen'
+  };
+
+  function spiegle(t) {
+    const s = Object.assign({}, t);
+    if (t.art === 'linie') s.punkte = t.punkte.map((v, i) => (i % 2 ? v : B - v));
+    else if (t.art === 'rechteck') s.x = B - t.x - t.b;
+    else { s.x = B - t.x; if (t.art === 'bogen') { s.von = Math.PI - t.bis; s.bis = Math.PI - t.von; } }
+    return s;
+  }
+  const rund = v => (typeof v === 'number' ? Math.round(v * 100) / 100 : Array.isArray(v) ? v.map(rund) : v);
+  const bekannt = name => typeof name === 'string' && Object.prototype.hasOwnProperty.call(SZENEN, name);
+  function bild(b, t, k) {
+    const name = b && bekannt(b.szene) ? b.szene : 'messen';
+    k = k && k.perlen && k.perlen.length && k.raster && k.dx ? k : kontext(null);
+    let teile = SZENEN[name](fortschritt(t), k, b);
+    if (b && b.spiegel) teile = teile.map(spiegle);
+    teile = teile.map(x => { const o = {}; for (const key of Object.keys(x)) o[key] = rund(x[key]); return o; });
+    return { breite: B, hoehe: H, teile };
+  }
+  return {
+    DAUER, HALT, kontext, bild, namen: () => Object.keys(SZENEN),
+    stichwort: name => (bekannt(name) ? STICHWORT[name] : null),
+    beschreibung: name => (bekannt(name) ? BESCHREIBUNG[name] : BESCHREIBUNG.messen)
   };
 })();
 
@@ -962,7 +1341,124 @@ Perlen.ui.zeichnen = (function () {
     }
   }
 
-  return { vorschau, farben: FARBEN };
+  return { vorschau, perle, hintergrund, farben: FARBEN };
+})();
+
+})();
+
+(function(){
+// UI: bewegte Bilder der Anleitung (S-002). Zeichnet die Szenen aus Perlen.control.szenen auf Canvas.
+// Eine gemeinsame Zeichenschleife nur für sichtbare, laufende Bilder; sie endet von selbst. Tippen hält an, "weniger Bewegung" zeigt das Endbild.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.ui = Perlen.ui || {};
+Perlen.ui.anleitungsbild = (function () {
+  const S = Perlen.control.szenen, Z = Perlen.ui.zeichnen;
+  const FARBE = { haut: '#d9a47f', faden: 'rgba(236,236,242,0.85)', gummi: '#efe7d6', metall: '#c8ced8', werkzeug: '#e2566b',
+    band: '#f2c94c', schale: '#4a5878', kleber: 'rgba(205,232,255,0.85)', hinweis: '#f58db0', text: '#ffffff' };
+  const GEO = { ring: { cx: 0, cy: 0, rx: 1, ry: 1 } };
+  const ENDE = S.DAUER - 0.01;
+  const messung = { frames: 0, zeichnungen: 0, ms: 0, msMax: 0, fehler: 0, ersteZeit: [] };
+  let fenster = null, bilder = [], laeuft = false, letzte = -1e9, beobachter = null;
+
+  const farbe = f => (typeof f === 'number' ? (Z.farben[f] || Z.farben[0]).hex : FARBE[f] || '#ffffff');
+
+  function male(ctx, bild) {
+    Z.hintergrund(ctx, bild.breite, bild.hoehe);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const t of bild.teile) {
+      if (t.art === 'perle') { Z.perle(ctx, GEO, Object.assign({}, t, { winkel: -Math.PI / 2, tiefe: 1 })); continue; }
+      ctx.fillStyle = ctx.strokeStyle = farbe(t.farbe); ctx.lineWidth = t.dicke || 1;
+      ctx.beginPath();
+      if (t.art === 'linie') {
+        ctx.moveTo(t.punkte[0], t.punkte[1]); for (let i = 2; i < t.punkte.length; i += 2) ctx.lineTo(t.punkte[i], t.punkte[i + 1]); ctx.stroke();
+      } else if (t.art === 'bogen') {
+        if (t.rx <= 0 || t.ry <= 0) continue;
+        ctx.ellipse(t.x, t.y, t.rx, t.ry, 0, t.von, t.bis); if (t.fuellen) ctx.fill(); else ctx.stroke();
+      } else if (t.art === 'rechteck') {
+        ctx.roundRect(t.x, t.y, t.b, t.h, t.rund || 0); if (t.dicke) ctx.stroke(); else ctx.fill();
+      } else if (t.art === 'text') {
+        ctx.font = '800 ' + t.groesse + 'px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 4; ctx.fillText(t.text, t.x, t.y); ctx.shadowBlur = 0;
+      }
+    }
+  }
+
+  // Pausenzeichen unten rechts, damit man sieht, dass das Bild steht
+  function pausenzeichen(ctx) {
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.arc(304, 164, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(300.5, 158); ctx.lineTo(310, 164); ctx.lineTo(300.5, 170); ctx.closePath(); ctx.fill();
+  }
+
+  // Ein Fehler beim Zeichnen eines Bildes darf weder die Schleife noch die Anleitung anhalten
+  function zeichne(b, t) {
+    const t0 = fenster.performance.now();
+    const ctx = b.c.getContext('2d');
+    if (!ctx) return;
+    try {
+      const k = b.c.width / 320;
+      ctx.setTransform(k, 0, 0, k, 0, 0);
+      male(ctx, S.bild(b.bild, t, b.kontext));
+      if (b.pause) pausenzeichen(ctx);
+    } catch (x) { messung.fehler++; }
+    const ms = fenster.performance.now() - t0;
+    messung.zeichnungen++; messung.ms += ms; if (ms > messung.msMax) messung.msMax = ms;
+  }
+
+  // sichtbar: nach dem IntersectionObserver, ohne ihn nach dem Dokument (verborgener Reiter zählt nicht)
+  const sichtbar = b => (beobachter ? b.sichtbar : b.c.isConnected && !b.c.closest('[hidden]'));
+  const aktiv = () => bilder.filter(b => sichtbar(b) && !b.pause);
+  function aufraeumen() {
+    bilder = bilder.filter(b => { if (!b.c.isConnected && beobachter) beobachter.unobserve(b.c); return b.c.isConnected; });
+  }
+  // nach dem Einhängen der neuen Bilder: aufräumen und (ohne Observer) die Schleife anstoßen
+  function eingehaengt() { aufraeumen(); wecke(); }
+  // höchstens etwa 30 Bilder je Sekunde: die Bewegung ist langsam, das spart Akku
+  function schleife(jetzt) {
+    aufraeumen();
+    const l = aktiv();
+    if (!l.length) { laeuft = false; return; }
+    fenster.requestAnimationFrame(schleife);
+    if (jetzt - letzte >= 30) {
+      letzte = jetzt; messung.frames++;
+      // rAF-Zeit kann knapp vor dem Start liegen: nie unter 0, sonst blitzt das Endbild auf
+      for (const b of l) { const t = Math.max(0, (jetzt - b.start) / 1000); if (b.neu) { messung.ersteZeit.push(t); b.neu = false; } zeichne(b, t); }
+    }
+  }
+  function wecke() { if (!laeuft && aktiv().length) { laeuft = true; fenster.requestAnimationFrame(schleife); } }
+
+  function setze(f) {
+    fenster = f;
+    // ein Bild beginnt von vorn, wenn es sichtbar wird
+    if (f.IntersectionObserver) beobachter = new f.IntersectionObserver(eintraege => {
+      for (const e of eintraege) { const b = bilder.find(x => x.c === e.target); if (b) { if (e.isIntersecting && !b.sichtbar) { b.start = f.performance.now(); b.neu = true; } b.sichtbar = e.isIntersecting; } }
+      wecke();
+    });
+  }
+
+  // Neues Bild: zeigt sofort das Endbild, läuft, sobald es sichtbar ist (außer bei "weniger Bewegung")
+  function erzeuge(bild, kontext) {
+    const doc = fenster.document, c = doc.createElement('canvas');
+    const k = Math.min(2.5, (fenster.devicePixelRatio || 1) * 1.1);
+    c.width = Math.round(320 * k); c.height = Math.round(180 * k);
+    c.className = 'schrittbild'; c.setAttribute('role', 'button'); c.setAttribute('tabindex', '0');
+    c.setAttribute('aria-label', 'Bild: ' + S.beschreibung(bild && bild.szene) + '. Antippen hält an oder spielt ab.');
+    const still = !!(fenster.matchMedia && fenster.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const b = { c, bild, kontext, pause: still, sichtbar: false, start: fenster.performance.now() };
+    const umschalten = () => {
+      b.pause = !b.pause; c.setAttribute('aria-pressed', String(b.pause));
+      if (b.pause) zeichne(b, (fenster.performance.now() - b.start) / 1000); else { b.start = fenster.performance.now(); b.neu = true; }
+      wecke();
+    };
+    c.setAttribute('aria-pressed', String(still));
+    c.addEventListener('click', umschalten);
+    c.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); umschalten(); } else if (e.key === 'Enter' || e.key === ' ') e.preventDefault(); });
+    bilder.push(b);
+    zeichne(b, ENDE);
+    if (beobachter) beobachter.observe(c); else wecke();
+    return c;
+  }
+
+  return { setze, erzeuge, aufraeumen: eingehaengt, messung, laeuft: () => laeuft, anzahl: () => bilder.length };
 })();
 
 })();
@@ -1257,14 +1753,19 @@ Perlen.ui.app = (function () {
       B.melde({ geteilt: 'Geteilt', kopiert: 'Liste kopiert', abgebrochen: 'Teilen abgebrochen' }[r] || 'Kopieren nicht möglich: bitte die Liste abschreiben'));
   }
 
+  // Anleitung mit einem bewegten Bild je Schritt (S-002), gezeichnet mit den Perlen des aktuellen Entwurfs
   function anleitung() {
-    const z = app.zustand, a = Perlen.control.anleitung.fuer(z.anleitung);
+    const z = app.zustand, AL = Perlen.control.anleitung, a = AL.fuer(z.anleitung), BILD = Perlen.ui.anleitungsbild;
+    const kontext = Perlen.control.szenen.kontext(z.verlauf.zustand());
     bereiche.anleitung.replaceChildren(
       el('h2', {}, 'Anleitung'),
       B.wahl(K.techniken().map(t => ({ id: t.id, name: TECHNIK_KURZ[t.id] })), z.anleitung, t => { z.anleitung = t; zeichne('anleitung'); }, 'Technik der Anleitung', true),
-      el('div', { class: 'block' }, el('h3', {}, 'Handgelenk messen'), el('ol', { class: 'schritte', id: 'messen' }, Perlen.control.anleitung.messen().map(s => el('li', {}, s)))),
-      el('div', { class: 'block' }, el('h2', {}, a.titel), el('ol', { class: 'schritte', id: 'schritte' }, a.schritte.map(s => el('li', {}, s)))),
+      el('div', { class: 'block' }, el('h3', {}, 'Handgelenk messen'), BILD.erzeuge(AL.messbild(), kontext),
+        el('ol', { class: 'schritte', id: 'messen' }, AL.messen().map(s => el('li', {}, s)))),
+      el('div', { class: 'block' }, el('h2', {}, a.titel), el('p', { class: 'hinweis' }, 'Die Bilder zeigen dein Armband aus dem Designer. Tippe auf ein Bild, um es anzuhalten oder abzuspielen.'),
+        el('ol', { class: 'schritte', id: 'schritte' }, a.schritte.map((s, i) => el('li', {}, el('span', {}, s), BILD.erzeuge(a.bilder[i], kontext))))),
       el('div', { class: 'block' }, el('h3', {}, 'Tipps gegen typische Fehler'), el('ul', { class: 'tipps', id: 'tipps' }, a.tipps.map(s => el('li', {}, s)))));
+    BILD.aufraeumen();   // alte Bilder der vorigen Technik loslassen
   }
 
   function zeichne(r) {
@@ -1308,7 +1809,7 @@ Perlen.ui.app = (function () {
   app.jetzt = () => fenster.performance.now();
 
   app.starte = function (f) {
-    fenster = f; app.dokument = f.document; B.setzeDokument(f.document);
+    fenster = f; app.dokument = f.document; B.setzeDokument(f.document); Perlen.ui.anleitungsbild.setze(f);
     sitzung = Perlen.control.sitzung.starte(f);
     const z = app.zustand;
     lade();

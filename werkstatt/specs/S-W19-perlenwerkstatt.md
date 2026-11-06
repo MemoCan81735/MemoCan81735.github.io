@@ -5,6 +5,7 @@
 
 ## Anlass
 Der Betreiber will die Perlenwerkstatt (Perlenarmbänder planen, S-001 der App) öffentlich nutzen können, bevor die Anleitung bewegte Bilder bekommt.
+Nachtrag 06.11.2026: Stand mit S-002 der App (Anleitung mit bewegten Bildern je Schritt) neu gebaut, gleiche Prüfungen grün.
 
 ## Anwendungsfall
 - U-1: Der Besucher öffnet die Startseite, sieht die neue Rubrik "Basteln" mit der Karte Perlenwerkstatt, tippt "Planen" und sieht in unter 3 s zwölf Ideen.
