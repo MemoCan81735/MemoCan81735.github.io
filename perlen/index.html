@@ -1,0 +1,1336 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2b3446">
+<meta name="description" content="Perlenarmbänder planen: Ideen, Vorschau, Einkaufsliste und Anleitung, direkt im Browser.">
+<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/perlen-192.png">
+<link rel="apple-touch-icon" href="../bilder/symbole/perlen-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Perlenwerkstatt</title>
+<style>
+/* Layout: eine Spalte wie ein Werktisch; oben die Perlenmatte mit dem Armband, darunter die Werkzeuge; Reiter unten am Daumen. */
+:root {
+  --papier: #f5f3f7; --flaeche: #ffffff; --tinte: #1e2130; --gedaempft: #62667a; --linie: #e3e0ea;
+  --akzent: #b02e64; --akzent-text: #ffffff; --akzent-zart: #f8e3ec; --matte: #2b3446; --gut: #2f7d4f;
+  --schrift-titel: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --schrift: "Nunito Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --reiter-hoehe: 64px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --papier: #14161d; --flaeche: #1d2029; --tinte: #ebe9f1; --gedaempft: #a2a5b6; --linie: #2d3140;
+  --akzent: #f0779f; --akzent-text: #22121a; --akzent-zart: #3a2030; --gut: #6fcf97; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --papier: #14161d; --flaeche: #1d2029; --tinte: #ebe9f1; --gedaempft: #a2a5b6; --linie: #2d3140;
+  --akzent: #f0779f; --akzent-text: #22121a; --akzent-zart: #3a2030; --gut: #6fcf97; color-scheme: dark }
+html, body { height: 100%; }
+body { background: var(--papier); color: var(--tinte); font: 400 16px/1.5 var(--schrift); -webkit-tap-highlight-color: transparent; }
+* { box-sizing: border-box; }
+button, input { font: inherit; color: inherit; }
+.seite { max-width: 560px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px calc(var(--reiter-hoehe) + 28px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 18px; }
+header.kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+h1 { font: 800 1.6rem/1.1 var(--schrift-titel); letter-spacing: -0.01em; margin: 0; }
+h1 span { color: var(--akzent); }
+h2 { font: 700 1.2rem/1.2 var(--schrift-titel); margin: 0; text-wrap: balance; }
+h3 { font: 700 0.78rem/1.2 var(--schrift); text-transform: uppercase; letter-spacing: 0.08em; color: var(--gedaempft); margin: 0; }
+.unter { color: var(--gedaempft); font-size: 0.9rem; }
+section[hidden] { display: none; }
+.stapel { display: grid; gap: 12px; }
+.zeile { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.knopf { min-height: 44px; min-width: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--linie); background: var(--flaeche); font-weight: 700; cursor: pointer; }
+.knopf:disabled { opacity: 0.45; cursor: default; }
+.knopf.haupt { background: var(--akzent); color: var(--akzent-text); border-color: transparent; }
+.knopf:focus-visible, .wahl button:focus-visible, .feld:focus-visible, .karte:focus-visible { outline: 3px solid var(--akzent); outline-offset: 2px; }
+.wahl { display: flex; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 12px; padding: 3px; gap: 3px; overflow-x: auto; }
+.wahl button { flex: 1 0 auto; min-height: 44px; border: 0; border-radius: 9px; background: transparent; padding: 0 12px; font-weight: 700; color: var(--gedaempft); cursor: pointer; }
+.wahl.gitter { display: grid; grid-template-columns: 1fr 1fr; }
+.wahl button[aria-pressed="true"] { background: var(--akzent-zart); color: var(--tinte); }
+.buehne { position: relative; border-radius: 18px; overflow: hidden; background: var(--matte); box-shadow: 0 10px 30px rgba(20, 24, 40, 0.18); }
+.buehne canvas { display: block; width: 100%; aspect-ratio: 5 / 4; max-width: min(100%, calc((100vh - 150px) * 1.25)); margin: 0 auto; }
+.zahlen { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: none; }
+.chip { background: rgba(14, 17, 26, 0.62); color: #f3f1f7; border-radius: 999px; padding: 3px 10px; font-size: 0.82rem; font-weight: 700; font-variant-numeric: tabular-nums; backdrop-filter: blur(4px); }
+.werkzeuge { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.block { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 16px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.regler { display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; align-items: center; }
+.regler input[type=range] { width: 100%; accent-color: var(--akzent); height: 44px; }
+.wert { font: 800 1.5rem/1 var(--schrift-titel); font-variant-numeric: tabular-nums; }
+.palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
+.farbe { aspect-ratio: 1; min-height: 44px; border-radius: 50%; border: 2px solid var(--linie); cursor: pointer; position: relative; }
+.farbe[aria-pressed="true"] { border-color: var(--tinte); box-shadow: 0 0 0 3px var(--akzent); }
+.muster { display: flex; gap: 0; flex-wrap: wrap; min-height: 44px; align-items: center; }
+.muster button { border: 0; padding: 0; cursor: pointer; background: transparent; min-width: 44px; min-height: 44px; display: grid; place-items: center; border-radius: 10px; }
+.muster button:hover { background: var(--akzent-zart); }
+.muster span { display: block; box-shadow: inset -2px -3px 4px rgba(0, 0, 0, 0.25), inset 2px 2px 3px rgba(255, 255, 255, 0.45); }
+.feld { width: 100%; min-height: 44px; border-radius: 12px; border: 1px solid var(--linie); background: var(--papier); padding: 0 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+.raster-huelle { overflow-x: auto; }
+.raster-huelle canvas { display: block; touch-action: none; margin: 0 auto; border-radius: 8px; }
+.ideen { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.karte { display: grid; gap: 6px; text-align: left; padding: 0 0 12px; border-radius: 16px; border: 1px solid var(--linie); background: var(--flaeche); cursor: pointer; overflow: hidden; min-height: 44px; }
+.karte canvas { width: 100%; aspect-ratio: 5 / 4; display: block; background: var(--matte); }
+.karte b { padding: 0 12px; font: 700 1rem/1.2 var(--schrift-titel); }
+.karte small { padding: 0 12px; color: var(--gedaempft); font-size: 0.82rem; line-height: 1.35; }
+.marke { margin: 0 12px; justify-self: start; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--akzent); }
+.liste { list-style: none; margin: 0; padding: 0; display: grid; }
+.liste li { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; align-items: center; min-height: 52px; border-bottom: 1px solid var(--linie); }
+.liste li:last-child { border-bottom: 0; }
+.liste input { width: 24px; height: 24px; accent-color: var(--akzent); justify-self: center; }
+.liste label { cursor: pointer; min-width: 0; }
+.liste .zahl { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.liste .klein { display: block; color: var(--gedaempft); font-size: 0.8rem; }
+.liste li.erledigt label { text-decoration: line-through; color: var(--gedaempft); }
+.punkt { width: 18px; height: 18px; border-radius: 50%; display: inline-block; vertical-align: -3px; margin-right: 6px; box-shadow: inset -2px -2px 3px rgba(0, 0, 0, 0.3); }
+.hinweis { font-size: 0.88rem; color: var(--gedaempft); margin: 0; }
+ol.schritte { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 10px; }
+ol.schritte li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 10px; }
+ol.schritte li::before { content: counter(s); width: 30px; height: 30px; border-radius: 50%; background: var(--akzent-zart); color: var(--tinte); display: grid; place-items: center; font-weight: 800; }
+ul.tipps { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.entwuerfe { display: grid; gap: 8px; }
+.entwurf { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+nav.reiter { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--flaeche); border-top: 1px solid var(--linie);
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+nav.reiter div { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+nav.reiter button { min-height: 52px; border: 0; background: transparent; border-radius: 12px; font-weight: 800; font-size: 0.82rem; color: var(--gedaempft); cursor: pointer; display: grid; place-items: center; gap: 2px; }
+nav.reiter button svg { width: 22px; height: 22px; }
+nav.reiter button[aria-current="page"] { color: var(--akzent); background: var(--akzent-zart); }
+.meldung { position: fixed; left: 50%; bottom: calc(var(--reiter-hoehe) + 24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 6;
+  background: var(--tinte); color: var(--papier); padding: 10px 16px; border-radius: 12px; font-weight: 700; max-width: calc(100% - 32px); }
+@media (prefers-reduced-motion: no-preference) { .meldung { transition: opacity 0.2s; } }
+a.ng-zurueck{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border-radius:12px;background:var(--flaeche);border:1px solid var(--linie);color:var(--tinte);font-weight:700;text-decoration:none}
+:root{padding-top:env(safe-area-inset-top,0px)}
+body{margin:0}
+</style>
+</head>
+<body>
+<a class="ng-zurueck" href="../">← Spiele</a>
+<div id="app"></div>
+<div class="meldung" id="meldung" role="status" aria-live="polite" hidden></div>
+<script>
+(function(){
+// Entity: Perlen, Farben, Techniken und Maße (S-001, Rechenmodell). Keine Abhängigkeiten, kein Plattformzugriff.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.entity = (function () {
+  const FARBEN = [
+    { name: 'Rot', hex: '#d62839' }, { name: 'Koralle', hex: '#f26b5b' }, { name: 'Orange', hex: '#f39237' },
+    { name: 'Gelb', hex: '#f6c945' }, { name: 'Grün', hex: '#3fa34d' }, { name: 'Mint', hex: '#8fd9b6' },
+    { name: 'Türkis', hex: '#1fb5b0' }, { name: 'Himmelblau', hex: '#5aa9e6' }, { name: 'Nazarblau', hex: '#1d4fa8' },
+    { name: 'Nachtblau', hex: '#1b2a4a' }, { name: 'Lila', hex: '#8a4fbf' }, { name: 'Rosa', hex: '#f4a6c1' },
+    { name: 'Weiß', hex: '#f7f5ef' }, { name: 'Perlmutt', hex: '#e9dccb' }, { name: 'Gold', hex: '#d4a72c', metall: true },
+    { name: 'Silber', hex: '#b9c0c8', metall: true }, { name: 'Schwarz', hex: '#1c1c1f' }, { name: 'Braun', hex: '#8b5a3c' }
+  ];
+  const FORMEN = { rund: 'Rund', rondelle: 'Rondelle', wuerfel: 'Buchstabe' };
+  const GROESSEN = [4, 6, 8, 10];
+  const TECHNIKEN = {
+    gummi: { name: 'Gummiband', zugabe: 10, verschluss: 0, raster: false },
+    faden: { name: 'Schmuckfaden mit Verschluss', zugabe: 15, verschluss: 15, raster: false },
+    peyote: { name: 'Peyote mit Nadel', zugabe: 15, verschluss: 20, raster: true },
+    loom: { name: 'Webrahmen', zugabe: 15, verschluss: 20, raster: true }
+  };
+  const DELICA = { breite: 1.3, laenge: 1.6, proGramm: 190 };
+  const STRANG = { 4: 100, 6: 66, 8: 50, 10: 40 };
+  const KLEMMEN = [10, 13, 16, 20, 25, 30];
+  const WUERFEL_MM = 6;
+  const BUCHSTABEN = /[A-ZÄÖÜ]/;
+
+  function zahl(v) {
+    if (v === null || v === undefined || v === '' || typeof v === 'boolean') return NaN;
+    return Number(v);
+  }
+  // Klemmt auf [min, max]; Unsinn (Text, NaN, unendlich) wird zum Standardwert.
+  function klemme(v, min, max, standard) {
+    const n = zahl(v);
+    if (!isFinite(n)) return standard;
+    return Math.min(max, Math.max(min, Math.round(n)));
+  }
+  function perlenLaenge(p) {
+    if (p.buchstabe || p.form === 'wuerfel') return WUERFEL_MM;
+    return p.form === 'rondelle' ? Math.round(p.groesse * 0.6 * 10) / 10 : p.groesse;
+  }
+  function istRaster(technik) { return !!(TECHNIKEN[technik] && TECHNIKEN[technik].raster); }
+  // FNV-1a über einen Text; für Prüfsummen der Geometrie (Wiederholbarkeit, PS-16).
+  function pruefsumme(text) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h.toString(16);
+  }
+  // FNV-1a-Art über ganze Zahlen (je Zahl ein Schritt).
+  function pruefsummeZahlen(zahlen) {
+    let h = 0x811c9dc5;
+    for (const z of zahlen) { h ^= z | 0; h = Math.imul(h, 0x01000193) >>> 0; }
+    return h.toString(16);
+  }
+
+  return {
+    FARBEN, FORMEN, GROESSEN, TECHNIKEN, DELICA, STRANG, KLEMMEN, WUERFEL_MM, BUCHSTABEN,
+    FORMAT: 1, UMFANG_MIN: 120, UMFANG_MAX: 240, UMFANG_STANDARD: 165,
+    MUSTER_MAX: 40, NAME_MAX: 12, PERLEN_MAX: 400, SPALTEN_MIN: 4, SPALTEN_MAX: 16,
+    REIHEN_MIN: 1, REIHEN_MAX: 60, ENTWUERFE_MAX: 20, UNDO_TIEFE: 50,
+    klemme, perlenLaenge, istRaster, pruefsumme, pruefsummeZahlen
+  };
+})();
+
+})();
+
+(function(){
+// Control: Rechenkern (S-001, Rechenmodell). Reine Funktionen: Perlenfolge, Raster, Einkaufsliste, Listentext.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.rechner = (function () {
+  const E = Perlen.entity;
+  const WEISS = 12;
+
+  // Perlenstrecke P in mm: Umfang + Zugabe - Verschluss.
+  function strecke(e) {
+    const t = E.TECHNIKEN[e.technik] || E.TECHNIKEN.gummi;
+    return e.umfang + t.zugabe - t.verschluss;
+  }
+
+  function mitte(e) {
+    return Array.from(e.name || '').map(b => ({ farbe: WEISS, groesse: E.WUERFEL_MM, form: 'wuerfel', buchstabe: b }));
+  }
+
+  // Aufgefädelt: Muster wiederholen; eine Perle kommt dazu, solange die Summe höchstens P + ihre halbe Länge ist.
+  function folge(e) {
+    if (E.istRaster(e.technik) || !e.muster.length) return [];
+    const m = mitte(e);
+    const rest = strecke(e) - m.reduce((s, p) => s + E.perlenLaenge(p), 0);
+    const seq = [];
+    let summe = 0;
+    for (let k = 0; seq.length < E.PERLEN_MAX - m.length; k++) {
+      const p = e.muster[k % e.muster.length], l = E.perlenLaenge(p);
+      if (summe + l > rest + l / 2) break;
+      seq.push({ farbe: p.farbe, groesse: p.groesse, form: p.form });
+      summe += l;
+    }
+    const i = Math.floor(seq.length / 2);
+    return seq.slice(0, i).concat(m, seq.slice(i));
+  }
+
+  // Raster (Peyote, Webrahmen): Reihen R = aufrunden(P / 1,6), Muster wiederholt sich über die Reihen.
+  function raster(e) {
+    const r = e.raster, reihen = Math.ceil(strecke(e) / E.DELICA.laenge - 1e-9);
+    const zelle = (z, s) => r.zellen[(z % r.reihen) * r.spalten + s];
+    const zaehlung = {};
+    for (let z = 0; z < reihen; z++) for (let s = 0; s < r.spalten; s++) { const c = zelle(z, s); zaehlung[c] = (zaehlung[c] || 0) + 1; }
+    return { reihen, spalten: r.spalten, breite: r.spalten * E.DELICA.breite, zaehlung, zelle };
+  }
+
+  function bestellmenge(n) { return n > 0 ? Math.max(Math.ceil(n * 1.1 - 1e-9), n + 2) : 0; }
+  const auf10cm = mm => Math.ceil(mm / 100 - 1e-9) * 10;
+  const farbname = i => E.FARBEN[i].name;
+
+  function perlenPositionen(e) {
+    if (E.istRaster(e.technik)) {
+      const z = raster(e).zaehlung;
+      return Object.keys(z).map(Number).sort((a, b) => a - b).map(f => {
+        const bestellen = bestellmenge(z[f]);
+        return { id: 'delica-' + f, name: 'Delica 11/0 ' + farbname(f), farbe: f, groesse: 1.6, form: 'delica', anzahl: z[f], bestellen,
+          gramm: Math.max(1, Math.ceil(bestellen / E.DELICA.proGramm)), packung: Math.max(1, Math.ceil(bestellen / E.DELICA.proGramm)) + ' g' };
+      });
+    }
+    const gruppen = new Map();
+    for (const p of folge(e)) {
+      const id = p.buchstabe ? 'buchstabe-' + p.buchstabe : 'perle-' + p.farbe + '-' + p.groesse + '-' + p.form;
+      if (!gruppen.has(id)) gruppen.set(id, { id, farbe: p.farbe, groesse: p.groesse, form: p.form, buchstabe: p.buchstabe, anzahl: 0 });
+      gruppen.get(id).anzahl++;
+    }
+    const alle = Array.from(gruppen.values());
+    const perlen = alle.filter(g => !g.buchstabe).map(g => {
+      g.bestellen = bestellmenge(g.anzahl);
+      g.name = farbname(g.farbe) + ', ' + E.FORMEN[g.form] + ' ' + g.groesse + ' mm';
+      const st = Math.ceil(g.bestellen / E.STRANG[g.groesse]);
+      g.packung = st + (st === 1 ? ' Strang' : ' Stränge') + ' (je etwa ' + E.STRANG[g.groesse] + ' Stück)';
+      return g;
+    });
+    // Buchstaben: eine Zeile mit genauer Zahl je Buchstabe; die Reserve steckt im ABC-Mischbeutel (Hinweis)
+    const b = alle.filter(g => g.buchstabe);
+    if (b.length) {
+      const n = b.reduce((s, g) => s + g.anzahl, 0);
+      perlen.push({ id: 'buchstaben-' + b.map(g => g.buchstabe + g.anzahl).join(''), farbe: WEISS, groesse: E.WUERFEL_MM, form: 'wuerfel', buchstabe: true,
+        je: b.map(g => ({ buchstabe: g.buchstabe, anzahl: g.anzahl })), anzahl: n, bestellen: n,
+        name: 'Buchstabenwürfel 6 mm: ' + b.map(g => g.buchstabe + ' ' + g.anzahl).join(', '), packung: 'ABC-Mischbeutel' });
+    }
+    return perlen;
+  }
+
+  // Passt das Rastermuster glatt in die Reihenzahl? Sonst Vorschlag für den nächsten Umfang mit ganzer Wiederholung.
+  function musterPasst(e) {
+    if (!E.istRaster(e.technik)) return { glatt: true, wiederholungen: 0, vorschlag: null };
+    const mr = e.raster.reihen, R0 = raster(e).reihen;
+    const glatt = R0 % mr === 0;
+    let vorschlag = null;
+    if (!glatt) for (let d = 1; d <= 120 && vorschlag === null; d++) for (const u of [e.umfang + d, e.umfang - d]) {
+      if (vorschlag === null && u >= E.UMFANG_MIN && u <= E.UMFANG_MAX && raster(Object.assign({}, e, { umfang: u })).reihen % mr === 0) vorschlag = u;
+    }
+    return { glatt, wiederholungen: Math.round(R0 / mr * 10) / 10, vorschlag };
+  }
+
+  function klemmbreite(b) {
+    const k = E.KLEMMEN.find(x => x >= b - 1e-9);
+    return k || E.KLEMMEN[E.KLEMMEN.length - 1];
+  }
+
+  const WERKZEUG = {
+    gummi: ['Schere', 'Schmuckkleber oder klarer Nagellack', 'Perlenstopper oder Klammer', 'Perlenmatte oder Schale'],
+    faden: ['Seitenschneider', 'Quetschzange oder Flachzange', 'Perlenstopper oder Klammer', 'Perlenmatte oder Schale'],
+    peyote: ['Perlennadel Größe 10 oder 12', 'Schere', 'Fadenwachs', 'Perlenmatte', 'Flachzange für die Klemmenden'],
+    loom: ['Perlenwebrahmen', 'Perlennadel Größe 10 oder 12 (lang)', 'Schere', 'Perlenmatte', 'Flachzange für die Klemmenden']
+  };
+
+  function einkauf(e) {
+    const P = strecke(e), hinweise = [];
+    const perlen = perlenPositionen(e);
+    const faden = [], verschluss = [];
+    if (E.istRaster(e.technik)) {
+      const r = raster(e);
+      const mp = musterPasst(e);
+      if (!mp.glatt) hinweise.push('Das Muster wiederholt sich ' + mp.wiederholungen.toLocaleString('de-DE') + ' mal und bricht am Verschluss ab' + (mp.vorschlag ? '; glatt wird es bei ' + (mp.vorschlag / 10).toLocaleString('de-DE') + ' cm Handgelenk.' : '.'));
+      if (e.technik === 'peyote') {
+        if (r.spalten % 2) hinweise.push('Peyote mit ungerader Spaltenzahl braucht am Rand eine besondere Wende; für den Anfang ist eine gerade Zahl einfacher.');
+        faden.push({ id: 'faden-peyote', name: 'Perlenfaden (Nymo oder Miyuki), etwa', cm: auf10cm(r.reihen * 2 * (r.breite + 3) + 600) });
+      } else {
+        faden.push({ id: 'faden-kette', name: 'Kettfäden: ' + (r.spalten + 1) + ' Fäden, zusammen etwa', cm: auf10cm((r.spalten + 1) * (P + 600)) });
+        faden.push({ id: 'faden-schuss', name: 'Schussfaden (Perlenfaden), etwa', cm: auf10cm(r.reihen * (2 * r.breite + 10) + 600) });
+      }
+      const k = klemmbreite(r.breite);
+      verschluss.push({ id: 'klemmen', name: 'Klemmenden ' + k + ' mm', anzahl: 2 }, { id: 'karabiner', name: 'Karabiner', anzahl: 1 },
+        { id: 'biegering', name: 'Biegeringe 5 mm', anzahl: 2 });
+    } else {
+      faden.push(e.technik === 'gummi'
+        ? { id: 'faden-gummi', name: 'Gummiband 0,8 mm', cm: auf10cm(P + 200) }
+        : { id: 'faden-schmuck', name: 'Schmuckfaden 0,38 mm (nylonummantelt)', cm: auf10cm(P + 200) });
+      if (e.technik === 'faden') verschluss.push({ id: 'karabiner', name: 'Karabiner', anzahl: 1 }, { id: 'biegering', name: 'Biegering 5 mm', anzahl: 1 },
+        { id: 'quetsch', name: 'Quetschperlen 2 mm', anzahl: 2 }, { id: 'kaschier', name: 'Kaschierperlen', anzahl: 2 });
+      if (!e.muster.length) hinweise.push('Muster leer: füge im Designer Perlen hinzu.');
+    }
+    if (!E.istRaster(e.technik) && e.name) hinweise.push('Buchstabenwürfel gibt es als ABC-Mischbeutel. Achte darauf, dass jeder Buchstabe deines Namens mindestens so oft drin ist wie angegeben, plus einer Reserve.');
+    if (E.istRaster(e.technik)) hinweise.push('Faden in Stücken von höchstens 1,5 m verarbeiten und nachsetzen, wenn er kurz wird; die Länge oben ist die Gesamtmenge.');
+    if (e.technik === 'gummi') hinweise.push('Kein Verschluss nötig: Gummiband mit doppeltem Knoten schließen und mit Kleber sichern.');
+    hinweise.push('Fadenlängen sind großzügige Schätzwerte. Reserve bei Perlen: 10 %, mindestens 2.');
+    const werkzeug = WERKZEUG[e.technik].map((name, i) => ({ id: 'werkzeug-' + e.technik + '-' + i, name }));
+    return { technik: e.technik, strecke: P, perlen, faden, verschluss, werkzeug, hinweise };
+  }
+
+  function listenText(ek, titel) {
+    const z = ['Einkaufsliste: ' + titel, 'Technik: ' + E.TECHNIKEN[ek.technik].name, ''];
+    z.push('Perlen:');
+    if (!ek.perlen.length) z.push('- keine');
+    for (const p of ek.perlen) z.push('- ' + p.bestellen + ' x ' + p.name + ' (gebraucht ' + p.anzahl + ', ' + p.packung + ')');
+    z.push('', 'Faden:');
+    for (const f of ek.faden) z.push('- ' + f.name + ' ' + f.cm + ' cm');
+    z.push('', 'Verschluss:');
+    if (!ek.verschluss.length) z.push('- keiner (Knoten)');
+    for (const v of ek.verschluss) z.push('- ' + v.anzahl + ' x ' + v.name);
+    z.push('', 'Werkzeug:');
+    for (const w of ek.werkzeug) z.push('- ' + w.name);
+    return z.join('\n');
+  }
+
+  return { strecke, folge, raster, bestellmenge, einkauf, listenText, klemmbreite, musterPasst };
+})();
+
+})();
+
+(function(){
+// Control: Entwurf des Designers (S-001). Bereinigen (Klemmen manipulierter Daten), Änderungen, Rückgängig.
+// Jede Funktion gibt einen neuen, bereinigten Entwurf zurück; der alte bleibt unverändert.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.entwurf = (function () {
+  const E = Perlen.entity;
+  const kopie = x => JSON.parse(JSON.stringify(x));
+  const ganz = (v, n, standard) => (Number.isInteger(v) && v >= 0 && v < n ? v : standard);
+
+  function perle(p) {
+    p = p && typeof p === 'object' ? p : {};
+    return {
+      farbe: ganz(p.farbe, E.FARBEN.length, 0),
+      groesse: E.GROESSEN.includes(p.groesse) ? p.groesse : 6,
+      form: p.form === 'rondelle' ? 'rondelle' : 'rund'
+    };
+  }
+
+  function name(v) {
+    if (typeof v !== 'string') return '';
+    // ß wird SS, Akzente fallen weg (É wird E), Ä Ö Ü bleiben; alles andere fällt weg.
+    const ohneAkzent = b => (E.BUCHSTABEN.test(b) ? b : b.normalize('NFD').charAt(0));
+    return Array.from(v.replace(/ß/g, 'SS').toUpperCase()).map(ohneAkzent).filter(b => E.BUCHSTABEN.test(b)).slice(0, E.NAME_MAX).join('');
+  }
+
+  // Fehlt das Raster (zum Beispiel bei einer aufgefädelten Idee), entsteht es aus den Farben des Musters als Schrägstreifen,
+  // damit ein Technikwechsel kein einfarbiges Band liefert (Korrekturrunde 2).
+  function rasterAusFarben(farben, spalten, reihen) {
+    const f = farben.length ? farben : [6, 13];
+    const zellen = [];
+    for (let z = 0; z < reihen; z++) for (let s = 0; s < spalten; s++) zellen.push(f[Math.floor((z + s) / 2) % f.length]);
+    return zellen;
+  }
+  function verschieden(liste) { return liste.filter((x, i) => liste.indexOf(x) === i); }
+
+  function raster(r, musterFarben) {
+    r = r && typeof r === 'object' ? r : {};
+    const leer = !Array.isArray(r.zellen) || !r.zellen.length;
+    const spalten = E.klemme(r.spalten, E.SPALTEN_MIN, E.SPALTEN_MAX, 8);
+    const reihen = E.klemme(r.reihen, E.REIHEN_MIN, E.REIHEN_MAX, 8);
+    const alt = leer ? rasterAusFarben(musterFarben, spalten, reihen) : r.zellen;
+    const zellen = [];
+    for (let k = 0; k < spalten * reihen; k++) zellen.push(ganz(alt[k], E.FARBEN.length, 0));
+    return { spalten, reihen, zellen };
+  }
+
+  function bereinige(roh) {
+    const e = roh && typeof roh === 'object' && !Array.isArray(roh) ? roh : {};
+    const b = {
+      titel: typeof e.titel === 'string' ? e.titel.slice(0, 40) : '',
+      technik: Object.prototype.hasOwnProperty.call(E.TECHNIKEN, e.technik) ? e.technik : 'gummi',
+      umfang: E.klemme(e.umfang, E.UMFANG_MIN, E.UMFANG_MAX, E.UMFANG_STANDARD),
+      name: name(e.name),
+      muster: [],
+      raster: null
+    };
+    // fehlt das Muster ganz (Raster-Idee), entsteht es aus den Rasterfarben; ein leeres Muster [] bleibt leer
+    b.muster = Array.isArray(e.muster) ? e.muster.slice(0, E.MUSTER_MAX).map(perle) : null;
+    b.raster = raster(e.raster, verschieden((b.muster || []).map(p => p.farbe)).slice(0, 4));
+    if (!b.muster) b.muster = verschieden(b.raster.zellen).slice(0, 3).map(f => ({ farbe: f, groesse: 6, form: 'rund' }));
+    return b;
+  }
+
+  function neu(technik) {
+    return bereinige({
+      technik,
+      muster: [{ farbe: 6, groesse: 8 }, { farbe: 13, groesse: 4 }, { farbe: 14, groesse: 6, form: 'rondelle' }, { farbe: 13, groesse: 4 }],
+      raster: { spalten: 8, reihen: 4, zellen: [6, 6, 13, 13, 13, 13, 6, 6, 13, 6, 6, 13, 13, 6, 6, 13, 13, 13, 6, 6, 6, 6, 13, 13, 13, 6, 6, 13, 13, 6, 6, 13] }
+    });
+  }
+
+  const mit = (e, f) => { const k = kopie(e); f(k); return bereinige(k); };
+  const perleAnfuegen = (e, p) => mit(e, k => { if (k.muster.length < E.MUSTER_MAX) k.muster.push(perle(p)); });
+  const letztePerleWeg = e => mit(e, k => { k.muster.pop(); });
+  const perleEntfernen = (e, i) => mit(e, k => { if (i >= 0 && i < k.muster.length) k.muster.splice(i, 1); });
+  const setzeUmfang = (e, mm) => mit(e, k => { k.umfang = E.klemme(mm, E.UMFANG_MIN, E.UMFANG_MAX, E.UMFANG_STANDARD); });
+  const setzeName = (e, n) => mit(e, k => { k.name = name(n); });
+  const setzeTechnik = (e, t) => mit(e, k => { k.technik = t; });
+  const setzeTitel = (e, t) => mit(e, k => { k.titel = t; });
+
+  // Spalten oder Musterreihen ändern: vorhandene Felder bleiben an ihrem Platz (Reihe, Spalte).
+  function groesse(e, spalten, reihen) {
+    return mit(e, k => {
+      const alt = k.raster, s = E.klemme(spalten, E.SPALTEN_MIN, E.SPALTEN_MAX, alt.spalten), r = E.klemme(reihen, E.REIHEN_MIN, E.REIHEN_MAX, alt.reihen);
+      const zellen = [];
+      for (let z = 0; z < r; z++) for (let x = 0; x < s; x++) zellen.push(z < alt.reihen && x < alt.spalten ? alt.zellen[z * alt.spalten + x] : (x < alt.spalten ? alt.zellen[(z % alt.reihen) * alt.spalten + x] : 0));
+      k.raster = { spalten: s, reihen: r, zellen };
+    });
+  }
+  const setzeSpalten = (e, s) => groesse(e, s, e.raster.reihen);
+  const setzeMusterreihen = (e, r) => groesse(e, e.raster.spalten, r);
+  const malFeld = (e, reihe, spalte, farbe) => mit(e, k => {
+    if (reihe >= 0 && reihe < k.raster.reihen && spalte >= 0 && spalte < k.raster.spalten) k.raster.zellen[reihe * k.raster.spalten + spalte] = farbe;
+  });
+  const fuelleRaster = (e, farbe) => mit(e, k => { k.raster.zellen = k.raster.zellen.map(() => farbe); });
+
+  // Verlauf mit Rückgängig (A-8): bis UNDO_TIEFE Schritte; gleiche Zustände zählen nicht als Schritt (PS-5).
+  function verlauf(start) {
+    let jetzt = bereinige(start);
+    const zurueck = [];
+    let offen = null;
+    return {
+      zustand: () => kopie(jetzt),
+      // gruppe: aufeinanderfolgende Änderungen derselben Gruppe (Name tippen, Regler ziehen) sind ein Rückgängig-Schritt,
+      // bis schliesse() die Gruppe beendet (Korrekturrunde 3).
+      aendere(fn, gruppe) {
+        const neuer = bereinige(fn(kopie(jetzt)));
+        if (JSON.stringify(neuer) === JSON.stringify(jetzt)) return false;
+        if (!(gruppe && gruppe === offen && zurueck.length)) { zurueck.push(jetzt); if (zurueck.length > E.UNDO_TIEFE) zurueck.shift(); }
+        offen = gruppe || null;
+        jetzt = neuer;
+        return true;
+      },
+      schliesse() { offen = null; },
+      setze(e) { return this.aendere(() => e); },
+      // ersetzt den Zustand ohne Rückgängig-Schritt (zum Beispiel Titel beim Speichern)
+      ersetze(e) { jetzt = bereinige(e); },
+      rueckgaengig() { offen = null; if (!zurueck.length) return false; jetzt = zurueck.pop(); return true; },
+      kannZurueck: () => zurueck.length > 0
+    };
+  }
+
+  return { bereinige, neu, verlauf, perleAnfuegen, letztePerleWeg, perleEntfernen, setzeUmfang, setzeName, setzeTechnik, setzeTitel,
+    setzeSpalten, setzeMusterreihen, malFeld, fuelleRaster };
+})();
+
+})();
+
+(function(){
+// Control: 12 Ideen in allen drei Techniken (S-001, A-3). Jede Idee ist ein bereinigter Entwurf.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.ideen = (function () {
+  const W = Perlen.control.entwurf;
+  // Farbnummern aus Perlen.entity.FARBEN
+  const ROT = 0, KORALLE = 1, ORANGE = 2, GELB = 3, GRUEN = 4, MINT = 5, TUERKIS = 6, HIMMEL = 7, NAZAR = 8, NACHT = 9,
+    LILA = 10, ROSA = 11, WEISS = 12, PERLMUTT = 13, GOLD = 14, SILBER = 15, SCHWARZ = 16;
+  const p = (farbe, groesse, form) => ({ farbe, groesse, form: form || 'rund' });
+
+  // Raster aus Textbild, so gezeichnet, wie das Band waagerecht am Handgelenk aussieht:
+  // jede Bildzeile ist eine Spalte (quer zum Band), jedes Zeichen eine Reihe entlang des Bandes.
+  function bild(zeilen, farben) {
+    const spalten = zeilen.length, reihen = zeilen[0].length, zellen = [];
+    for (let r = 0; r < reihen; r++) for (let s = 0; s < spalten; s++) zellen.push(farben[zeilen[s][r]]);
+    return { spalten, reihen, zellen };
+  }
+  function gerechnet(spalten, reihen, f) {
+    const zellen = [];
+    for (let z = 0; z < reihen; z++) for (let s = 0; s < spalten; s++) zellen.push(f(z, s));
+    return { spalten, reihen, zellen };
+  }
+
+  const roh = [
+    { titel: 'Nazar (Blaues Auge)', beschreibung: 'Glücksbringer in Nazarblau mit Gold und Weiß.',
+      entwurf: { technik: 'faden', muster: [p(NAZAR, 8), p(GOLD, 6, 'rondelle'), p(WEISS, 4), p(HIMMEL, 6), p(WEISS, 4), p(GOLD, 6, 'rondelle')] } },
+    { titel: 'Regenbogen', beschreibung: 'Alle Farben des Regenbogens, schnell aufgezogen.',
+      entwurf: { technik: 'gummi', muster: [p(ROT, 6), p(ORANGE, 6), p(GELB, 6), p(GRUEN, 6), p(TUERKIS, 6), p(NAZAR, 6), p(LILA, 6)] } },
+    { titel: 'Meeresbrise', beschreibung: 'Türkis, Himmelblau und Silber wie Wellen.',
+      entwurf: { technik: 'gummi', muster: [p(TUERKIS, 8), p(WEISS, 4), p(HIMMEL, 6), p(SILBER, 4, 'rondelle'), p(HIMMEL, 6), p(WEISS, 4)] } },
+    { titel: 'Namensarmband', beschreibung: 'Buchstabenwürfel in der Mitte, Rosa und Weiß drumherum.',
+      entwurf: { technik: 'gummi', name: 'ANNE', muster: [p(ROSA, 6), p(WEISS, 4), p(PERLMUTT, 6), p(WEISS, 4)] } },
+    { titel: 'Perlmutt elegant', beschreibung: 'Schlicht und edel für besondere Tage.',
+      entwurf: { technik: 'faden', muster: [p(PERLMUTT, 8), p(GOLD, 4, 'rondelle')] } },
+    { titel: 'Sonnenuntergang', beschreibung: 'Warme Töne von Koralle bis Gold.',
+      entwurf: { technik: 'gummi', muster: [p(KORALLE, 8), p(ORANGE, 6), p(GELB, 4), p(GOLD, 6, 'rondelle'), p(GELB, 4), p(ORANGE, 6)] } },
+    { titel: 'Schwarz und Gold', beschreibung: 'Kräftiger Kontrast, wirkt auch bei Männern.',
+      entwurf: { technik: 'faden', muster: [p(SCHWARZ, 8), p(SCHWARZ, 8), p(GOLD, 6), p(GOLD, 4, 'rondelle'), p(GOLD, 6)] } },
+    { titel: 'Zickzack', beschreibung: 'Peyote-Klassiker mit zwei Zacken in Blau und Gold.', entwurf: { technik: 'peyote',
+      raster: gerechnet(8, 8, (z, s) => { const t = z % 8 < 4 ? z % 8 : 8 - (z % 8); return s === t ? NAZAR : s === t + 4 ? GOLD : WEISS; }) } },
+    { titel: 'Herzen', beschreibung: 'Rote Herzen auf Rosa, mit Nadel gestickt.', entwurf: { technik: 'peyote',
+      raster: bild(['..........', '..XX.XX...', '.XXXXXXX..', '.XXXXXXX..', '.XXXXXXX..', '..XXXXX...', '...XXX....', '....X.....', '..........', '..........'], { '.': ROSA, X: ROT }) } },
+    { titel: 'Kilim-Rauten', beschreibung: 'Rauten wie auf einem anatolischen Teppich.', entwurf: { technik: 'peyote',
+      raster: gerechnet(12, 12, (z, s) => { const d = Math.abs(s - 5.5) + Math.abs(z - 5.5); return d < 2 ? GOLD : d < 4 ? ROT : d < 5 ? WEISS : d < 7 ? NACHT : ROT; }) } },
+    { titel: 'Tulpe (Lale)', beschreibung: 'Gewebte Tulpen auf Creme, vom Webrahmen.', entwurf: { technik: 'loom',
+      raster: bild(['..........', '..X.X.X...', '..XXXXX...', '..XXXXX...', '...XXX....', '....G.....', '..G.G.G...', '...GGG....', '....G.....', '..........', '..........'], { '.': PERLMUTT, X: ROT, G: GRUEN }) } },
+    { titel: 'Sternenhimmel', beschreibung: 'Goldene Sterne auf Nachtblau.', entwurf: { technik: 'loom',
+      raster: bild(['..........', '.*.....*..', '....+.....', '...+++....', '....+...*.', '..*.......', '.......*..', '.*........', '..........'], { '.': NACHT, '*': GOLD, '+': MINT }) } }
+  ];
+
+  const IDEEN = roh.map(i => ({ titel: i.titel, beschreibung: i.beschreibung, entwurf: W.bereinige(Object.assign({ titel: i.titel }, i.entwurf)) }));
+  return { liste: () => JSON.parse(JSON.stringify(IDEEN)) };
+})();
+
+})();
+
+(function(){
+// Control: Inhalte der Anleitung je Technik (S-001, A-2). Reine Daten.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.anleitung = (function () {
+  const INHALT = {
+    gummi: {
+      titel: 'Aufgefädelt mit Gummiband',
+      schritte: [
+        'Handgelenk messen (siehe unten) und im Designer eintragen. Die App rechnet 1 cm Zugabe dazu.',
+        'Gummiband etwa 20 cm länger abschneiden als das Armband und kräftig vordehnen: zwei- bis dreimal langziehen, so leiert es später nicht aus.',
+        'Ein Ende mit Perlenstopper oder Klammer sichern, damit nichts herunterrutscht.',
+        'Perlen nach der Vorschau auffädeln. Bei Namensarmbändern zuerst die Hälfte des Musters, dann die Buchstaben, dann den Rest.',
+        'Armband um das Handgelenk legen und prüfen: es soll anliegen, aber nicht einschneiden. Bei Bedarf Perlen ergänzen oder wegnehmen.',
+        'Mit einem doppelten Chirurgenknoten schließen (zweimal umschlingen, festziehen, noch einmal). Einen Tropfen Kleber auf den Knoten geben.',
+        'Kleber trocknen lassen, Enden knapp abschneiden und den Knoten in die nächste größere Perle ziehen.'
+      ],
+      tipps: [
+        'Gummiband nie mit der Schere quetschen, sondern sauber schräg abschneiden, dann geht es leichter durch die Perlen.',
+        'Bei Perlen mit scharfen Löchern (Glas, Metall) doppeltes Gummiband nehmen, sonst reißt es.',
+        'Sekundenkleber macht Gummi spröde: besser Schmuckkleber oder klaren Nagellack.',
+        'Beim Knoten nicht am Gummi ziehen, während er noch gedehnt ist, sonst wird das Armband zu eng.'
+      ]
+    },
+    faden: {
+      titel: 'Aufgefädelt mit Schmuckfaden und Verschluss',
+      schritte: [
+        'Handgelenk messen und im Designer eintragen. Die App zieht die Länge des Verschlusses ab.',
+        'Schmuckfaden etwa 20 cm länger als das Armband abschneiden.',
+        'Eine Kaschierperle (offen), eine Quetschperle und den Karabiner auffädeln. Das Fadenende zurück durch Quetschperle und Kaschierperle führen.',
+        'Quetschperle mit der Quetschzange flach drücken, dann die Kaschierperle darüberschieben und vorsichtig zudrücken.',
+        'Perlen nach der Vorschau auffädeln, das kurze Ende durch die ersten Perlen mitnehmen.',
+        'Am Ende Kaschierperle, Quetschperle und Biegering auffädeln, Faden zurück durch beide und einige Perlen führen, so festziehen, dass die Perlen noch beweglich sind.',
+        'Quetschperle zudrücken, Kaschierperle darüber schließen, Fadenreste mit dem Seitenschneider knapp abschneiden.'
+      ],
+      tipps: [
+        'Nicht zu stramm ziehen: ein Armband ohne Spiel liegt steif und bricht leichter.',
+        'Quetschperlen erst probeweise leicht drücken, Sitz prüfen, dann fest zudrücken.',
+        'Den Faden nie knicken: nylonummantelter Draht behält jeden Knick.'
+      ]
+    },
+    peyote: {
+      titel: 'Peyote mit Nadel',
+      schritte: [
+        'Etwa 1,5 m Perlenfaden abschneiden, wachsen und eine Perlennadel einfädeln. Eine Stopperperle 15 cm vor dem Ende festknoten.',
+        'Reihe 1 und 2: so viele Perlen auffädeln, wie das Muster Spalten hat (gerade Zahl). Die Perlen zählen abwechselnd zur ersten und zweiten Reihe.',
+        'Reihe 3: eine neue Perle aufnehmen, die letzte aufgefädelte Perle auslassen und mit der Nadel durch die Perle davor stechen. Dann wieder: Perle aufnehmen, eine Perle aus Reihe 1 und 2 auslassen, durch die nächste stechen. So entsteht der Versatz um eine halbe Perle.',
+        'Weiter so: Perle aufnehmen, eine überspringen, durch die nächste. Am Rand wenden und in Gegenrichtung arbeiten.',
+        'Nach jeder Reihe mit dem Raster im Designer vergleichen. Im Designer liegt das Raster wie das fertige Band, versetzte Spalten sind um eine halbe Perle verschoben.',
+        'Wird der Faden kurz (etwa 15 cm), im Zickzack durch einige Perlen zurücknähen und einen neuen Faden genauso einziehen.',
+        'Ist die Länge erreicht, die Enden in die Klemmenden legen, mit der Flachzange schließen und den Karabiner mit Biegeringen anbringen.'
+      ],
+      tipps: [
+        'Die ersten drei Reihen sind am schwersten: Stopperperle und Daumen halten das Stück, ab Reihe 4 wird es leicht.',
+        'Immer gleichmäßige Fadenspannung, sonst wird das Band krumm.',
+        'Delica-Perlen sind gleichmäßiger als normale Rocailles und ergeben ein glattes Band.',
+        'Fehler sofort auftrennen: mit der Nadel rückwärts durch die Perlen, nie mit Gewalt ziehen.'
+      ]
+    },
+    loom: {
+      titel: 'Webrahmen (Loom)',
+      schritte: [
+        'Kettfäden spannen: eine Spalte mehr als das Muster hat (die App nennt die Zahl). Jeder Faden etwa 60 cm länger als das Armband.',
+        'Schussfaden am äußersten Kettfaden festknoten und eine Nadel einfädeln.',
+        'Für Reihe 1 die Perlen in Farbe und Reihenfolge des Rasters auffädeln und unter die Kettfäden schieben.',
+        'Mit dem Finger jede Perle von unten zwischen zwei Kettfäden drücken.',
+        'Die Nadel oben über den Kettfäden zurück durch alle Perlen der Reihe führen. Die Reihe sitzt jetzt fest.',
+        'Reihe für Reihe wiederholen und mit dem Designer vergleichen. Neuen Schussfaden einziehen, wenn er kurz wird.',
+        'Fertig gewebt: Kettfäden vernähen oder verkleben, Enden in die Klemmenden legen und zudrücken, Karabiner anbringen.'
+      ],
+      tipps: [
+        'Die Kettfäden gleich straff spannen, sonst wölbt sich das Band.',
+        'Der Schussfaden muss beim Rückweg wirklich über den Kettfäden laufen, sonst fallen die Perlen heraus.',
+        'Ein Muster mit hellem Hintergrund verzeiht unregelmäßige Perlen besser als ein dunkler.'
+      ]
+    }
+  };
+  const MESSEN = [
+    'Ein Maßband oder einen Papierstreifen locker um das Handgelenk legen, direkt über dem Handknochen.',
+    'Die Stelle markieren, an der sich das Band trifft, und die Länge in Zentimetern ablesen.',
+    'Diesen Wert im Designer eintragen. Die App rechnet die Bequemlichkeitszugabe selbst dazu.',
+    'Typische Werte: Kinder 13 bis 15 cm, Frauen 15 bis 17 cm, Männer 17 bis 20 cm.'
+  ];
+  return {
+    fuer: t => JSON.parse(JSON.stringify(INHALT[t] || INHALT.gummi)),
+    messen: () => MESSEN.slice()
+  };
+})();
+
+})();
+
+(function(){
+// Control: Ringgeometrie der Vorschau (S-001, A-5). Reine Funktion: Perlen mit Lage, Größe und Tiefe,
+// sortiert von hinten nach vorn, damit die UI nur noch der Reihe nach zeichnet.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.ring = (function () {
+  const E = Perlen.entity, R = Perlen.control.rechner;
+  const NEIGUNG = 0.42;   // Verhältnis der Ellipsenachsen: Ring liegt schräg vor dem Betrachter
+
+  function rahmen(breite, hoehe, bandHoehe) {
+    const rx = Math.min(breite * 0.38, (hoehe - bandHoehe) * 0.9);
+    return { cx: breite / 2, cy: hoehe * 0.43, rx, ry: rx * NEIGUNG };
+  }
+  // Perspektive: hinten etwas kleiner und dunkler (tiefe -1 hinten, +1 vorn)
+  const massstab = tiefe => 0.86 + 0.14 * (tiefe + 1) / 2;
+
+  function aufgefaedelt(e, breite, hoehe) {
+    const f = R.folge(e);
+    const laengen = f.map(E.perlenLaenge), gesamt = laengen.reduce((a, b) => a + b, 0) || 1;
+    const r0 = rahmen(breite, hoehe, 0);
+    const s = (2 * Math.PI * r0.rx) / gesamt;   // Pixel je Millimeter entlang des Rings
+    let lauf = 0;
+    return { ring: r0, mmPx: s, perlen: f.map((p, i) => {
+      // Anfang hinten, Mitte (Name) vorn; vorn läuft die Folge von links nach rechts, damit der Name lesbar ist
+      const w = 1.5 * Math.PI - 2 * Math.PI * (lauf + laengen[i] / 2) / gesamt;
+      lauf += laengen[i];
+      const tiefe = Math.sin(w), k = massstab(tiefe);
+      return { x: r0.cx + r0.rx * Math.cos(w), y: r0.cy + r0.ry * Math.sin(w), r: (p.groesse / 2) * s * k, laenge: laengen[i] * s * k,
+        winkel: w, tiefe, farbe: p.farbe, form: p.form, buchstabe: p.buchstabe || '', reihe: i, spalte: 0, versatz: 0 };
+    }) };
+  }
+
+  function raster(e, breite, hoehe) {
+    const r = R.raster(e), P = R.strecke(e);
+    const r0 = rahmen(breite, hoehe, 0);
+    const s = (2 * Math.PI * r0.rx) / P;
+    const bandHoehe = r.breite * s;
+    const versetzt = e.technik === 'peyote';
+    const perlen = [];
+    for (let z = 0; z < r.reihen; z++) for (let sp = 0; sp < r.spalten; sp++) {
+      const versatz = versetzt && sp % 2 === 1 ? 0.5 : 0;
+      const w = 1.5 * Math.PI - 2 * Math.PI * (z + 0.5 + versatz) / r.reihen;   // vorn wie im Editor: Reihen nach rechts
+      const tiefe = Math.sin(w), k = massstab(tiefe);
+      perlen.push({ x: r0.cx + r0.rx * Math.cos(w), y: r0.cy + r0.ry * Math.sin(w) + (sp - (r.spalten - 1) / 2) * E.DELICA.breite * s * 0.92,
+        r: (E.DELICA.breite / 2) * s * k, laenge: E.DELICA.laenge * s * k, winkel: w, tiefe, farbe: r.zelle(z, sp), form: 'delica', buchstabe: '',
+        reihe: z, spalte: sp, versatz });
+    }
+    return { ring: r0, mmPx: s, bandHoehe, perlen };
+  }
+
+  function geometrie(entwurf, breite, hoehe) {
+    const g = E.istRaster(entwurf.technik) ? raster(entwurf, breite, hoehe) : aufgefaedelt(entwurf, breite, hoehe);
+    // stabile Sortierung von hinten nach vorn (Index als zweiter Schlüssel)
+    const n = g.perlen.length, idx = new Array(n);
+    for (let i = 0; i < n; i++) idx[i] = i;
+    const alt = g.perlen;
+    idx.sort((a, b) => (alt[a].tiefe - alt[b].tiefe) || (a - b));
+    g.perlen = idx.map(i => alt[i]);
+    return g;
+  }
+
+  // Prüfsumme der Geometrie (Wiederholbarkeit, PS-16); getrennt, damit das Zeichnen sie nicht bezahlt.
+  function pruefsumme(g) {
+    const zahlen = [];
+    for (const p of g.perlen) zahlen.push(Math.round(p.x * 1000), Math.round(p.y * 1000), Math.round(p.r * 1000), p.farbe, p.buchstabe ? p.buchstabe.charCodeAt(0) : 0);
+    return E.pruefsummeZahlen(zahlen);
+  }
+
+  return { geometrie, pruefsumme };
+})();
+
+})();
+
+(function(){
+// Control: Entwürfe und Haken im Gerät (S-001, A-9, R-07 Formatversion). Speicher und Teilen kommen als Boundary-Objekte herein.
+// Kaputte oder fremde Daten: leer anfangen, den alten Text nicht anfassen, bis der Nutzer speichert; dann wird er gesichert.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.sitzung = (function () {
+  const E = Perlen.entity, W = Perlen.control.entwurf;
+  const SCHLUESSEL = 'perlenwerkstatt';
+
+  function erzeuge(speicher, teilen) {
+    let daten = { format: E.FORMAT, entwuerfe: [], haken: {} };
+    let fremd = null, geladen = false, ok = true;
+
+    function lies() {
+      try { return speicher.lies(SCHLUESSEL); } catch (x) { ok = false; return null; }
+    }
+    function laden() {
+      geladen = true; ok = true; fremd = null;
+      daten = { format: E.FORMAT, entwuerfe: [], haken: {} };
+      const roh = lies();
+      if (roh === null || roh === undefined) return ergebnis();
+      let d = null;
+      try { d = JSON.parse(roh); } catch (x) { d = null; }
+      if (!d || typeof d !== 'object' || Array.isArray(d) || d.format !== E.FORMAT || !Array.isArray(d.entwuerfe)) { fremd = roh; return ergebnis(); }
+      daten.entwuerfe = d.entwuerfe.slice(-E.ENTWUERFE_MAX).map(W.bereinige);
+      if (d.haken && typeof d.haken === 'object' && !Array.isArray(d.haken))
+        for (const k of Object.keys(d.haken)) if (d.haken[k] === true && k.length < 80) daten.haken[k] = true;
+      return ergebnis();
+    }
+    function ergebnis() { return { ok, fremd: fremd !== null, entwuerfe: JSON.parse(JSON.stringify(daten.entwuerfe)), haken: Object.assign({}, daten.haken) }; }
+    function schreibe() {
+      try {
+        if (fremd !== null) { if (speicher.schreibe(SCHLUESSEL + '.alt', fremd) === false) return false; fremd = null; }
+        return speicher.schreibe(SCHLUESSEL, JSON.stringify(daten)) !== false;
+      } catch (x) { return false; }
+    }
+    const vorher = () => { if (!geladen) laden(); };
+
+    function speichere(entwurf) {
+      vorher();
+      const e = W.bereinige(entwurf), text = JSON.stringify(e);
+      daten.entwuerfe = daten.entwuerfe.filter(x => JSON.stringify(x) !== text);
+      daten.entwuerfe.push(e);
+      if (daten.entwuerfe.length > E.ENTWUERFE_MAX) daten.entwuerfe.shift();
+      return schreibe();
+    }
+    function loesche(index) {
+      vorher();
+      if (!(index >= 0 && index < daten.entwuerfe.length)) return false;
+      daten.entwuerfe.splice(index, 1);
+      return schreibe();
+    }
+    function hakeAb(id, wert) {
+      vorher();
+      if (wert) daten.haken[id] = true; else delete daten.haken[id];
+      if (fremd !== null) return false;   // fremde Daten nicht überschreiben, nur weil ein Haken gesetzt wurde
+      return schreibe();
+    }
+    function teile(titel, text) {
+      if (!teilen) return Promise.resolve('fehler');
+      return teilen.teile(titel, text);
+    }
+    function kopiere(text) {
+      if (!teilen) return Promise.resolve('fehler');
+      return teilen.kopiere(text);
+    }
+    // aktueller Stand im Speicher der Seite, ohne neu zu lesen (Haken bleiben auch ohne Gerätespeicher erhalten)
+    function stand() { vorher(); return ergebnis(); }
+    return { laden, stand, speichere, loesche, hakeAb, teile, kopiere };
+  }
+
+  // Start aus der UI: Boundary-Objekte für das Fenster bauen.
+  function starte(fenster) {
+    return erzeuge(Perlen.boundary.speicher.erzeuge(fenster), Perlen.boundary.teilen.erzeuge(fenster));
+  }
+
+  return { SCHLUESSEL, erzeuge, starte };
+})();
+
+})();
+
+(function(){
+// Control: Auswahl für die Oberfläche (Farben, Formen, Größen, Techniken, Grenzen). Die UI kennt die Entity nur über diese Liste.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.katalog = (function () {
+  const E = Perlen.entity;
+  const kopie = x => JSON.parse(JSON.stringify(x));
+  return {
+    farben: () => kopie(E.FARBEN),
+    formen: () => [{ id: 'rund', name: 'Rund' }, { id: 'rondelle', name: 'Rondelle' }],
+    groessen: () => E.GROESSEN.slice(),
+    techniken: () => Object.keys(E.TECHNIKEN).map(id => ({ id, name: E.TECHNIKEN[id].name, raster: E.TECHNIKEN[id].raster })),
+    istRaster: E.istRaster,
+    perlenLaenge: E.perlenLaenge,
+    grenzen: () => ({ umfangMin: E.UMFANG_MIN, umfangMax: E.UMFANG_MAX, musterMax: E.MUSTER_MAX, nameMax: E.NAME_MAX,
+      spaltenMin: E.SPALTEN_MIN, spaltenMax: E.SPALTEN_MAX, reihenMin: E.REIHEN_MIN, reihenMax: E.REIHEN_MAX, entwuerfeMax: E.ENTWUERFE_MAX })
+  };
+})();
+
+})();
+
+(function(){
+// Boundary: localStorage (S-001, A-9). Jeder Zugriff in try/catch: privater Modus oder voller Speicher brechen nichts.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.boundary = Perlen.boundary || {};
+Perlen.boundary.speicher = {
+  erzeuge(fenster) {
+    const ls = () => { try { return fenster.localStorage || null; } catch (x) { return null; } };
+    return {
+      lies(k) { const s = ls(); if (!s) throw new Error('kein Speicher'); return s.getItem(k); },
+      schreibe(k, v) { const s = ls(); if (!s) return false; try { s.setItem(k, v); return true; } catch (x) { return false; } }
+    };
+  }
+};
+
+})();
+
+(function(){
+// Boundary: Teilen (Web Share) mit Rückfall auf die Zwischenablage (S-001, U-8). Nur auf Tippen des Nutzers.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.boundary = Perlen.boundary || {};
+Perlen.boundary.teilen = {
+  erzeuge(fenster) {
+    const nav = fenster.navigator || {};
+    async function kopiere(text) {
+      try { if (nav.clipboard && nav.clipboard.writeText) { await nav.clipboard.writeText(text); return 'kopiert'; } } catch (x) { /* weiter mit Rückfall */ }
+      try {
+        const d = fenster.document, t = d.createElement('textarea');
+        t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+        d.body.appendChild(t); t.select(); const ok = d.execCommand('copy'); t.remove();
+        return ok ? 'kopiert' : 'fehler';
+      } catch (x) { return 'fehler'; }
+    }
+    return {
+      async teile(titel, text) {
+        if (nav.share) {
+          try { await nav.share({ title: titel, text }); return 'geteilt'; } catch (x) { if (x && x.name === 'AbortError') return 'abgebrochen'; }
+        }
+        return kopiere(text);
+      },
+      kopiere
+    };
+  }
+};
+
+})();
+
+(function(){
+// UI: zeichnet die Ringgeometrie auf eine Perlenmatte (Canvas 2D): Faden, Schatten, glänzende Perlen (S-001, A-5, AK-10).
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.ui = Perlen.ui || {};
+Perlen.ui.zeichnen = (function () {
+  const K = Perlen.control.katalog;
+  const FARBEN = K.farben();
+  const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const mische = (c, z, a) => c.map((v, i) => Math.round(v + (z[i] - v) * a));
+  const css = (c, a) => 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (a === undefined ? 1 : a) + ')';
+  const WEISS = [255, 255, 255], SCHWARZ = [0, 0, 0];
+  let matte = null;
+
+  // Perlenmatte: dunkler Samt mit feiner Faserstruktur, einmal erzeugt und als Muster wiederverwendet.
+  function mattenMuster(ctx) {
+    if (matte) return ctx.createPattern(matte, 'repeat');
+    const c = ctx.canvas.ownerDocument.createElement('canvas'); c.width = c.height = 96;
+    const m = c.getContext('2d'); m.fillStyle = '#2b3446'; m.fillRect(0, 0, 96, 96);
+    let s = 7;
+    for (let i = 0; i < 1400; i++) {
+      s = (s * 16807) % 2147483647; const x = s % 96; s = (s * 16807) % 2147483647; const y = s % 96;
+      m.fillStyle = i % 2 ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.08)'; m.fillRect(x, y, 1, 2);
+    }
+    matte = c; return ctx.createPattern(c, 'repeat');
+  }
+
+  function hintergrund(ctx, b, h) {
+    ctx.fillStyle = mattenMuster(ctx); ctx.fillRect(0, 0, b, h);
+    const g = ctx.createRadialGradient(b / 2, h * 0.42, 10, b / 2, h / 2, Math.max(b, h) * 0.75);
+    g.addColorStop(0, 'rgba(120,140,190,0.16)'); g.addColorStop(1, 'rgba(0,0,0,0.35)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, b, h);
+  }
+
+  function schatten(ctx, geo) {
+    const r = geo.ring, band = geo.bandHoehe || 0;
+    let maxR = 0; for (const p of geo.perlen) if (p.r > maxR) maxR = p.r;
+    const dick = Math.max(12, maxR * 2.2) + band * 0.5;
+    ctx.save();
+    ctx.translate(r.cx, r.cy + r.ry * 0.22 + maxR * 0.7 + band * 0.5);
+    ctx.scale(1, r.ry / r.rx);
+    ctx.lineWidth = dick * r.rx / r.ry * 0.7;
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.filter = 'blur(5px)';
+    ctx.beginPath(); ctx.arc(0, 0, r.rx, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  function faden(ctx, geo, vorn) {
+    const r = geo.ring; ctx.save();
+    ctx.strokeStyle = vorn ? 'rgba(235,235,240,0.55)' : 'rgba(200,200,210,0.3)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.ellipse(r.cx, r.cy, r.rx, r.ry, 0, vorn ? 0 : Math.PI, vorn ? Math.PI : Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // Tiefe: hinten dunkler (Licht kommt von vorn oben links)
+  const licht = p => 0.72 + 0.28 * (p.tiefe + 1) / 2;
+  const tangente = (geo, p) => Math.atan2(geo.ring.ry * Math.cos(p.winkel), -geo.ring.rx * Math.sin(p.winkel));
+
+  function kugel(ctx, p, f) {
+    const c = rgb(f.hex), l = licht(p), basis = mische(c, SCHWARZ, 1 - l);
+    const g = ctx.createRadialGradient(p.x - p.r * 0.35, p.y - p.r * 0.4, p.r * 0.05, p.x, p.y, p.r);
+    g.addColorStop(0, css(mische(basis, WEISS, f.metall ? 0.75 : 0.45)));
+    g.addColorStop(0.45, css(basis));
+    g.addColorStop(1, css(mische(basis, SCHWARZ, f.metall ? 0.6 : 0.45)));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    glanz(ctx, p.x - p.r * 0.38, p.y - p.r * 0.42, p.r * 0.24, l);
+  }
+
+  function glanz(ctx, x, y, r, l) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, 'rgba(255,255,255,' + Math.min(1, 1.1 * l) + ')'); g.addColorStop(0.6, 'rgba(255,255,255,' + (0.95 * l) + ')'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function rondelle(ctx, geo, p, f) {
+    const c = rgb(f.hex), l = licht(p), basis = mische(c, SCHWARZ, 1 - l), w = tangente(geo, p);
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(w);
+    const g = ctx.createLinearGradient(0, -p.r, 0, p.r);
+    g.addColorStop(0, css(mische(basis, WEISS, f.metall ? 0.7 : 0.4))); g.addColorStop(0.5, css(basis)); g.addColorStop(1, css(mische(basis, SCHWARZ, 0.5)));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, Math.max(1, p.laenge / 2), p.r, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    glanz(ctx, p.x - p.laenge * 0.12, p.y - p.r * 0.5, Math.max(1.2, p.r * 0.16), l);
+  }
+
+  function wuerfel(ctx, geo, p) {
+    const l = licht(p), s = p.laenge, w = tangente(geo, p);
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(w * 0.35);
+    const g = ctx.createLinearGradient(-s / 2, -s / 2, s / 2, s / 2);
+    g.addColorStop(0, css(mische([252, 250, 245], SCHWARZ, 1 - l))); g.addColorStop(1, css(mische([205, 200, 192], SCHWARZ, 1 - l)));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(-s / 2, -s / 2, s, s, s * 0.18); ctx.fill();
+    ctx.fillStyle = css(mische([30, 30, 40], SCHWARZ, 0.2)); ctx.font = '700 ' + Math.round(s * 0.62) + 'px system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.buchstabe, 0, s * 0.04);
+    ctx.restore();
+    glanz(ctx, p.x - s * 0.28, p.y - s * 0.3, Math.max(1.2, s * 0.1), l);
+  }
+
+  // Delica: kleiner Zylinder, quer zum Band. Ohne Verläufe, damit 2000 Perlen schnell bleiben.
+  function delica(ctx, geo, p, f) {
+    const l = licht(p), c = mische(rgb(f.hex), SCHWARZ, 1 - l), w = tangente(geo, p);
+    const lg = p.laenge * 0.94, hg = p.r * 2 * 0.98;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(w);
+    ctx.fillStyle = css(mische(c, SCHWARZ, 0.35)); ctx.fillRect(-lg / 2, -hg / 2, lg, hg);
+    ctx.fillStyle = css(c); ctx.fillRect(-lg / 2 + 0.6, -hg / 2 + 0.6, lg - 1.2, hg - 1.6);
+    ctx.fillStyle = css(mische(c, WEISS, f.metall ? 0.6 : 0.35)); ctx.fillRect(-lg / 2 + 0.8, -hg / 2 + 0.8, lg - 1.6, hg * 0.22);
+    ctx.fillStyle = 'rgba(255,255,255,' + (0.95 * l) + ')'; ctx.fillRect(-lg * 0.25, -hg / 2 + 0.9, lg * 0.32, Math.max(1, hg * 0.12));
+    ctx.restore();
+  }
+
+  function perle(ctx, geo, p) {
+    const f = FARBEN[p.farbe] || FARBEN[0];
+    if (p.form === 'delica') delica(ctx, geo, p, f);
+    else if (p.buchstabe) wuerfel(ctx, geo, p);
+    else if (p.form === 'rondelle') rondelle(ctx, geo, p, f);
+    else kugel(ctx, p, f);
+  }
+
+  // Zeichnet die ganze Vorschau. canvas hat schon seine Pixelgröße; b und h sind CSS-Pixel.
+  function vorschau(canvas, geo, b, h, dpr) {
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    hintergrund(ctx, b, h);
+    if (!geo.perlen.length) return;
+    schatten(ctx, geo);
+    const raster = geo.perlen[0].form === 'delica';
+    if (!raster) faden(ctx, geo, false);
+    let vorn = false;
+    for (const p of geo.perlen) {
+      if (!raster && !vorn && p.tiefe > 0) { faden(ctx, geo, true); vorn = true; }
+      perle(ctx, geo, p);
+    }
+  }
+
+  return { vorschau, farben: FARBEN };
+})();
+
+})();
+
+(function(){
+// UI: kleine Bausteine (Elemente, Auswahlleisten, Meldung, Vorschau in eine Leinwand). Texte nur als Textknoten, nie als HTML.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.ui = Perlen.ui || {};
+Perlen.ui.bauteile = (function () {
+  let doc = null, meldeZeit = 0;
+  const setzeDokument = d => { doc = d; };
+
+  function el(tag, attr, ...kinder) {
+    const n = doc.createElement(tag);
+    for (const [k, v] of Object.entries(attr || {})) {
+      if (v === undefined || v === null || v === false) continue;
+      if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+      else if (k === 'class') n.className = v;
+      else if (k === 'style') n.setAttribute('style', v);
+      else if (k in n && typeof v !== 'string') n[k] = v;
+      else n.setAttribute(k, v === true ? '' : v);
+    }
+    for (const k of kinder.flat()) if (k !== null && k !== undefined && k !== false) n.append(typeof k === 'string' || typeof k === 'number' ? doc.createTextNode(String(k)) : k);
+    return n;
+  }
+  const text = (n, t) => n.replaceChildren(doc.createTextNode(String(t)));
+
+  // Auswahlleiste (eine Wahl aus mehreren), aria-pressed zeigt die Wahl.
+  function wahl(optionen, aktiv, beiWahl, label, gitter) {
+    return el('div', { class: gitter ? 'wahl gitter' : 'wahl', role: 'group', 'aria-label': label },
+      optionen.map(o => el('button', { type: 'button', 'aria-pressed': String(o.id === aktiv), 'data-wert': String(o.id), onclick: () => beiWahl(o.id) }, o.name)));
+  }
+
+  function melde(t) {
+    const m = doc.getElementById('meldung'); if (!m) return;
+    text(m, t); m.hidden = false; const jetzt = ++meldeZeit;
+    doc.defaultView.setTimeout(() => { if (jetzt === meldeZeit) m.hidden = true; }, 2600);
+  }
+
+  // Zeichnet einen Entwurf als Ring in eine Leinwand der Breite b (CSS-Pixel), Seitenverhältnis 5:4.
+  function zeichneRing(canvas, entwurf, b) {
+    const dpr = Math.min(doc.defaultView.devicePixelRatio || 1, 2.5), h = Math.round(b * 0.8);
+    if (canvas.width !== Math.round(b * dpr)) { canvas.width = Math.round(b * dpr); canvas.height = Math.round(h * dpr); }
+    const geo = Perlen.control.ring.geometrie(entwurf, b, h);
+    Perlen.ui.zeichnen.vorschau(canvas, geo, b, h, dpr);
+    return geo;
+  }
+
+  const ICON = {
+    ideen: 'M12 3l2.4 5 5.6.8-4 3.9.9 5.5L12 15.6 7.1 18.2 8 12.7 4 8.8l5.6-.8z',
+    designer: 'M12 4a8 8 0 100 16 8 8 0 000-16zm0 3a1.6 1.6 0 110 3.2A1.6 1.6 0 0112 7zm-4.2 3a1.6 1.6 0 110 3.2 1.6 1.6 0 010-3.2zm8.4 0a1.6 1.6 0 110 3.2 1.6 1.6 0 010-3.2zM12 13.8a1.6 1.6 0 110 3.2 1.6 1.6 0 010-3.2z',
+    einkauf: 'M6 7h12l-1 12H7zM9 7a3 3 0 016 0',
+    anleitung: 'M5 4h9l5 5v11H5zM14 4v5h5M8 13h8M8 16h6'
+  };
+  function icon(name) {
+    const ns = 'http://www.w3.org/2000/svg', s = doc.createElementNS(ns, 'svg'), p = doc.createElementNS(ns, 'path');
+    s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true');
+    p.setAttribute('d', ICON[name]); p.setAttribute('fill', name === 'ideen' || name === 'designer' ? 'currentColor' : 'none');
+    p.setAttribute('stroke', 'currentColor'); p.setAttribute('stroke-width', name === 'ideen' || name === 'designer' ? '0' : '1.8'); p.setAttribute('stroke-linejoin', 'round');
+    s.append(p); return s;
+  }
+
+  return { setzeDokument, el, text, wahl, melde, zeichneRing, icon };
+})();
+
+})();
+
+(function(){
+// UI: Designer (S-001, U-2 bis U-6). Vorschau oben, darunter Technik, Handgelenk, Muster oder Raster.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.ui = Perlen.ui || {};
+Perlen.ui.designer = (function () {
+  const B = Perlen.ui.bauteile, K = Perlen.control.katalog, W = Perlen.control.entwurf, R = Perlen.control.rechner;
+  const el = (...a) => B.el(...a);
+  const FARBEN = K.farben(), G = K.grenzen();
+  const cm = mm => (mm / 10).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' cm';
+
+  function erzeuge(app) {
+    const z = app.zustand;
+    let wurzel = null, teile = {}, entwurf = null, ziehen = null;
+    const aktuell = () => (ziehen ? ziehen.entwurf : z.verlauf.zustand());
+    const aendere = (fn, gruppe) => { if (z.verlauf.aendere(fn, gruppe)) { if (teile.technik !== aktuell().technik) baue(); else aktualisiere(); } };
+
+    function palette() {
+      return el('div', { class: 'palette', role: 'group', 'aria-label': 'Farbe' }, FARBEN.map((f, i) =>
+        el('button', { type: 'button', class: 'farbe', title: f.name, 'aria-label': f.name, 'aria-pressed': String(z.auswahl.farbe === i), 'data-farbe': String(i),
+          style: 'background:radial-gradient(circle at 35% 30%, #fff 0 8%, ' + f.hex + ' 45%, ' + f.hex + ')',
+          onclick: () => { z.auswahl.farbe = i; baue(); } })));
+    }
+
+    function musterBlock() {
+      const a = z.auswahl;
+      teile.muster = el('div', { class: 'muster', 'aria-label': 'Muster, Antippen entfernt eine Perle' });
+      // beim Tippen sofort bereinigen; ein ganzes Wort ist ein Rückgängig-Schritt
+      teile.name = el('input', { class: 'feld', id: 'name', type: 'text', maxLength: G.nameMax, autocomplete: 'off', placeholder: 'z. B. ELIF', value: aktuell().name,
+        oninput: ev => { aendere(e => W.setzeName(e, ev.target.value), 'name'); if (ev.target.value !== aktuell().name) ev.target.value = aktuell().name; },
+        onblur: () => z.verlauf.schliesse() });
+      teile.titel = el('input', { class: 'feld', id: 'titel', type: 'text', maxLength: 40, autocomplete: 'off', placeholder: 'z. B. Für Oma', value: aktuell().titel, style: 'text-transform:none;letter-spacing:0',
+        oninput: ev => aendere(e => W.setzeTitel(e, ev.target.value), 'titel'), onblur: () => z.verlauf.schliesse() });
+      return el('div', { class: 'block' },
+        el('div', { class: 'zeile', style: 'justify-content:space-between' }, el('h3', {}, 'Muster (wiederholt sich)'), el('span', { class: 'unter', id: 'musterzahl' })),
+        teile.muster,
+        el('h3', {}, 'Farbe: ' + FARBEN[a.farbe].name), palette(),
+        B.wahl(K.formen(), a.form, f => { a.form = f; baue(); }, 'Form'),
+        B.wahl(K.groessen().map(g => ({ id: g, name: g + ' mm' })), a.groesse, g => { a.groesse = g; baue(); }, 'Größe'),
+        el('button', { type: 'button', class: 'knopf haupt', id: 'anfuegen', onclick: () => aendere(e => W.perleAnfuegen(e, { farbe: a.farbe, form: a.form, groesse: a.groesse })) }, 'Perle anfügen'),
+        el('label', { for: 'name' }, el('h3', {}, 'Name in Buchstabenwürfeln (bis ' + G.nameMax + ' Buchstaben)')), teile.name,
+        el('label', { for: 'titel' }, el('h3', {}, 'Titel des Entwurfs')), teile.titel);
+    }
+
+    function rasterBlock() {
+      const e = aktuell();
+      teile.raster = el('canvas', { id: 'raster', 'aria-label': 'Raster zum Antippen' });
+      teile.raster.addEventListener('pointerdown', ev => { ev.preventDefault(); teile.raster.setPointerCapture(ev.pointerId); ziehen = { entwurf: z.verlauf.zustand() }; male(ev); });
+      teile.raster.addEventListener('pointermove', ev => { if (ziehen && !teile.zuBreit) male(ev); });
+      const ende = () => { if (!ziehen) return; const fertig = ziehen.entwurf; ziehen = null; z.verlauf.setze(fertig); aktualisiere(); };
+      teile.raster.addEventListener('pointerup', ende); teile.raster.addEventListener('pointercancel', ende);
+      const schritt = (was, d) => el('button', { type: 'button', class: 'knopf', 'aria-label': was + (d > 0 ? ' mehr' : ' weniger'), 'data-schritt': was + d,
+        onclick: () => aendere(x => was === 'Spalten' ? W.setzeSpalten(x, x.raster.spalten + d) : W.setzeMusterreihen(x, x.raster.reihen + d)) }, d > 0 ? '+' : '−');
+      return el('div', { class: 'block' },
+        el('h3', {}, 'Farbe: ' + FARBEN[z.auswahl.farbe].name), palette(),
+        el('div', { class: 'zeile' }, el('span', { class: 'unter', style: 'flex:1' }, 'Feld antippen oder darüber wischen'),
+          el('button', { type: 'button', class: 'knopf', onclick: () => aendere(x => W.fuelleRaster(x, z.auswahl.farbe)) }, 'Alles füllen')),
+        el('div', { class: 'raster-huelle' }, teile.raster),
+        el('div', { class: 'regler' }, schritt('Spalten', -1), el('span', { id: 'spalten', style: 'text-align:center;font-weight:700' }), schritt('Spalten', 1)),
+        el('div', { class: 'regler' }, schritt('Reihen', -1), el('span', { id: 'reihen', style: 'text-align:center;font-weight:700' }), schritt('Reihen', 1)),
+        teile.passt = el('div', { class: 'zeile', id: 'passt' }),
+        el('p', { class: 'hinweis' }, e.technik === 'peyote' ? 'Peyote: jede zweite Spalte sitzt eine halbe Perle versetzt.' : 'Webrahmen: Perlen sitzen in geraden Reihen zwischen den Kettfäden.'));
+    }
+
+    function zelleBei(ev) {
+      const e = aktuell(), r = teile.raster.getBoundingClientRect(), g = teile.rasterGroesse;
+      // Raster liegt wie das Band: Reihen nach rechts, Spalten nach unten; Peyote versetzt jede zweite Spalte um eine halbe Perle nach rechts.
+      const s = Math.floor((ev.clientY - r.top) / g), versatz = e.technik === 'peyote' && s % 2 ? g / 2 : 0;
+      return { s, z: Math.floor((ev.clientX - r.left - versatz) / g) };
+    }
+    function male(ev) {
+      const { s, z: reihe } = zelleBei(ev);
+      ziehen.entwurf = W.malFeld(ziehen.entwurf, reihe, s, z.auswahl.farbe);
+      aktualisiere();
+    }
+
+    function zeichneRaster() {
+      const e = aktuell(), r = e.raster, c = teile.raster, breite = Math.max(200, wurzel.clientWidth - 30);
+      const peyote = e.technik === 'peyote';
+      const g = Math.max(10, Math.min(30, Math.floor(breite / (r.reihen + (peyote ? 0.5 : 0))))); teile.rasterGroesse = g;
+      const b = r.reihen * g + (peyote ? g / 2 : 0), h = r.spalten * g, dpr = 2;
+      c.width = b * dpr; c.height = h * dpr; c.style.width = b + 'px'; c.style.height = h + 'px';
+      // breiter als der Bildschirm: wischen verschiebt, tippen malt (sonst ließe sich der hintere Teil nicht erreichen)
+      teile.zuBreit = b > breite + 30; c.style.touchAction = teile.zuBreit ? 'pan-x' : 'none';
+      const mp = R.musterPasst(e);
+      teile.passt.replaceChildren(...(mp.glatt ? [] : [el('span', { class: 'hinweis', style: 'flex:1 1 100%' }, 'Muster wiederholt sich ' + mp.wiederholungen.toLocaleString('de-DE') + ' mal und bricht am Verschluss ab.'),
+        mp.vorschlag ? el('button', { type: 'button', class: 'knopf', id: 'laenge-anpassen', onclick: () => aendere(x => W.setzeUmfang(x, mp.vorschlag)) }, 'Auf ' + cm(mp.vorschlag) + ' anpassen') : null].filter(Boolean)),
+        ...(teile.zuBreit ? [el('span', { class: 'hinweis' }, 'Breites Raster: wischen verschiebt, tippen malt.')] : []));
+      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, b, h);
+      for (let reihe = 0; reihe < r.reihen; reihe++) for (let spalte = 0; spalte < r.spalten; spalte++) {
+        const v = peyote && spalte % 2 ? g / 2 : 0, px = reihe * g + v, py = spalte * g;
+        ctx.fillStyle = FARBEN[r.zellen[reihe * r.spalten + spalte]].hex; ctx.fillRect(px + 1, py + 1, g - 2, g - 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(px + 2, py + 2, g - 4, 3);
+      }
+    }
+
+    function aktualisiere() {
+      if (!wurzel) return;
+      const e = aktuell(), t0 = app.jetzt();
+      const geo = B.zeichneRing(teile.buehne, e, teile.buehne.clientWidth || 360);
+      app.messung = { ms: app.jetzt() - t0, gezeichnet: geo.perlen.length, ringBreite: geo.ring.rx * 2, geo };
+      const raster = K.istRaster(e.technik), P = R.strecke(e);
+      const zahlen = [raster ? geo.perlen.length + ' Delica-Perlen' : geo.perlen.length + ' Perlen', 'Perlenstrecke ' + cm(P),
+        raster ? R.raster(e).breite.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' mm breit' : 'Handgelenk ' + cm(e.umfang)];
+      teile.zahlen.replaceChildren(...zahlen.map(t => el('span', { class: 'chip' }, t)));
+      if (!raster && !e.muster.length) teile.zahlen.append(el('span', { class: 'chip' }, 'Muster leer'));
+      B.text(teile.wert, cm(e.umfang)); teile.umfang.value = String(e.umfang);
+      teile.zurueck.disabled = !z.verlauf.kannZurueck();
+      if (raster) { zeichneRaster(); B.text(wurzel.querySelector('#spalten'), e.raster.spalten + ' Spalten'); B.text(wurzel.querySelector('#reihen'), e.raster.reihen + ' Musterreihen'); }
+      else {
+        teile.muster.replaceChildren(...e.muster.map((p, i) => {
+          const d = Math.round(12 + p.groesse * 2.4);
+          return el('button', { type: 'button', 'aria-label': FARBEN[p.farbe].name + ' ' + p.groesse + ' mm entfernen', 'data-index': String(i), onclick: () => aendere(x => W.perleEntfernen(x, i)) },
+            el('span', { style: 'background:' + FARBEN[p.farbe].hex + ';width:' + (p.form === 'rondelle' ? Math.round(d * 0.6) : d) + 'px;height:' + d + 'px;border-radius:' + (p.form === 'rondelle' ? '40%' : '50%') }));
+        }));
+        B.text(wurzel.querySelector('#musterzahl'), e.muster.length + ' von ' + G.musterMax);
+        wurzel.querySelector('#anfuegen').disabled = e.muster.length >= G.musterMax;
+        if (teile.name !== app.dokument.activeElement) teile.name.value = e.name;
+      }
+    }
+
+    function baue() {
+      if (!wurzel) return;
+      const e = aktuell(); teile = { technik: e.technik };
+      teile.buehne = el('canvas', { id: 'vorschau', role: 'img', 'aria-label': 'Vorschau des Armbands' });
+      teile.zahlen = el('div', { class: 'zahlen', id: 'zahlen' });
+      teile.wert = el('span', { class: 'wert', id: 'umfangwert' });
+      teile.umfang = el('input', { type: 'range', id: 'umfang', min: String(G.umfangMin), max: String(G.umfangMax), step: '5', 'aria-label': 'Handgelenkumfang in Millimetern',
+        oninput: ev => aendere(x => W.setzeUmfang(x, Number(ev.target.value)), 'umfang'), onchange: () => z.verlauf.schliesse() });
+      teile.zurueck = el('button', { type: 'button', class: 'knopf', id: 'zurueck', onclick: () => { if (z.verlauf.rueckgaengig()) { if (teile.technik !== aktuell().technik) baue(); else aktualisiere(); } } }, 'Rückgängig');
+      const um = d => el('button', { type: 'button', class: 'knopf', 'aria-label': d > 0 ? 'Handgelenk größer' : 'Handgelenk kleiner', onclick: () => aendere(x => W.setzeUmfang(x, x.umfang + d)) }, d > 0 ? '+' : '−');
+      wurzel.replaceChildren(
+        el('div', { class: 'buehne' }, teile.buehne, teile.zahlen),
+        el('div', { class: 'werkzeuge' }, teile.zurueck,
+          el('button', { type: 'button', class: 'knopf', id: 'speichern', onclick: () => app.speichere() }, 'Speichern'),
+          el('button', { type: 'button', class: 'knopf haupt', onclick: () => app.zeige('einkauf') }, 'Einkauf')),
+        el('div', { class: 'block' }, el('h3', {}, 'Technik'),
+          B.wahl(K.techniken().map(t => ({ id: t.id, name: { gummi: 'Gummiband', faden: 'Mit Verschluss', peyote: 'Peyote', loom: 'Webrahmen' }[t.id] })), e.technik, t => aendere(x => W.setzeTechnik(x, t)), 'Technik', true),
+          el('h3', {}, 'Handgelenk'), el('div', { class: 'zeile', style: 'justify-content:space-between' }, teile.wert, el('span', { class: 'unter' }, 'Zugabe rechnet die App dazu')),
+          el('div', { class: 'regler' }, um(-5), teile.umfang, um(5))),
+        K.istRaster(e.technik) ? rasterBlock() : musterBlock());
+      aktualisiere();
+    }
+
+    return {
+      haenge(an) { wurzel = an; baue(); },
+      baue, aktualisiere,
+      oeffne(neu) { ziehen = null; if (z.verlauf.setze(neu) || teile.technik !== neu.technik) baue(); }
+    };
+  }
+  return { erzeuge };
+})();
+
+})();
+
+(function(){
+// UI: Rahmen der App mit vier Reitern: Ideen, Designer, Einkauf, Anleitung (S-001). Ruft nur Control und eigene UI-Bausteine.
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.ui = Perlen.ui || {};
+Perlen.ui.app = (function () {
+  const B = Perlen.ui.bauteile, K = Perlen.control.katalog, W = Perlen.control.entwurf, R = Perlen.control.rechner;
+  const el = (...a) => B.el(...a);
+  const FARBEN = K.farben();
+  const TECHNIK_KURZ = { gummi: 'Gummiband', faden: 'Mit Verschluss', peyote: 'Peyote', loom: 'Webrahmen' };
+  const REITER = [{ id: 'ideen', name: 'Ideen' }, { id: 'designer', name: 'Designer' }, { id: 'einkauf', name: 'Einkauf' }, { id: 'anleitung', name: 'Anleitung' }];
+
+  const app = {
+    zustand: { reiter: 'ideen', auswahl: { farbe: 8, form: 'rund', groesse: 6 }, anleitung: 'gummi', daten: { entwuerfe: [], haken: {} }, speicherOk: true },
+    messung: null
+  };
+  let fenster = null, sitzung = null, designer = null, bereiche = {}, reiterKnoepfe = {};
+
+  const titelVon = e => e.titel || TECHNIK_KURZ[e.technik];
+
+  function ideen() {
+    const z = app.zustand, l = Perlen.control.ideen.liste();
+    const karten = l.map((i, n) => {
+      const c = el('canvas', { 'aria-hidden': 'true' });
+      fenster.requestAnimationFrame(() => B.zeichneRing(c, i.entwurf, 220));
+      return el('button', { type: 'button', class: 'karte', 'data-idee': String(n), onclick: () => oeffne(i.entwurf) },
+        c, el('span', { class: 'marke' }, TECHNIK_KURZ[i.entwurf.technik]), el('b', {}, i.titel), el('small', {}, i.beschreibung));
+    });
+    const eigene = z.daten.entwuerfe.slice().reverse().map((e, k) => {
+      const index = z.daten.entwuerfe.length - 1 - k;
+      return el('div', { class: 'entwurf' }, el('div', {}, el('b', {}, titelVon(e)), el('span', { class: 'unter', style: 'display:block' }, TECHNIK_KURZ[e.technik] + ' · ' + kurzinfo(e))),
+        el('button', { type: 'button', class: 'knopf', onclick: () => oeffne(e) }, 'Öffnen'),
+        el('button', { type: 'button', class: 'knopf', 'aria-label': 'Entwurf ' + titelVon(e) + ' löschen', onclick: () => { sitzung.loesche(index); auffrischen(); zeichne('ideen'); } }, 'Löschen'));
+    });
+    bereiche.ideen.replaceChildren(...[
+      el('div', { class: 'stapel' }, el('h2', {}, 'Ideen zum Nachmachen'), el('p', { class: 'unter', style: 'margin:0' }, 'Antippen, dann im Designer anpassen: Farben, Länge, Name.')),
+      eigene.length ? el('div', { class: 'block', id: 'meine' }, el('h3', {}, 'Meine Entwürfe (' + eigene.length + ')'), el('div', { class: 'entwuerfe' }, eigene)) : null,
+      z.speicherOk ? null : el('p', { class: 'hinweis' }, 'Speichern ist in diesem Browser nicht möglich (privater Modus?). Alles andere funktioniert.'),
+      el('div', { class: 'ideen' }, karten)].filter(Boolean));
+  }
+
+  function einkauf() {
+    const z = app.zustand, e = z.verlauf.zustand(), ek = R.einkauf(e);
+    // Haken gelten je Technik und Menge: ändert sich die Menge, ist die Position wieder offen.
+    const zeile = (pos, name, klein, zahl, punkt) => {
+      const id = e.technik + ':' + pos + ':' + zahl;
+      const an = !!z.daten.haken[id];
+      return el('li', { class: an ? 'erledigt' : '' },
+        el('input', { type: 'checkbox', id: 'h-' + id, checked: an, 'data-haken': id, onchange: ev => {
+          if (!sitzung.hakeAb(id, ev.target.checked) && z.speicherOk) B.melde('Haken nicht gespeichert'); auffrischen(); zeichne('einkauf'); } }),
+        el('label', { for: 'h-' + id }, punkt ? el('span', { class: 'punkt', style: 'background:' + punkt }) : null, name, klein ? el('span', { class: 'klein' }, klein) : null),
+        el('span', { class: 'zahl' }, zahl));
+    };
+    const teil = (titel, zeilen) => el('div', { class: 'block' }, el('h3', {}, titel), zeilen.length ? el('ul', { class: 'liste' }, zeilen) : el('p', { class: 'hinweis' }, 'Nichts nötig.'));
+    const text = () => R.listenText(ek, titelVon(e));
+    bereiche.einkauf.replaceChildren(
+      el('div', { class: 'stapel' }, el('h2', {}, 'Einkaufsliste'), el('p', { class: 'unter', style: 'margin:0' },
+        titelVon(e) + ' · ' + K.techniken().find(t => t.id === e.technik).name + ' · Handgelenk ' + (e.umfang / 10).toLocaleString('de-DE') + ' cm')),
+      el('div', { class: 'werkzeuge', style: 'grid-template-columns:1fr 1fr' },
+        el('button', { type: 'button', class: 'knopf', id: 'kopieren', onclick: () => sitzungTeilen(text(), true) }, 'Kopieren'),
+        el('button', { type: 'button', class: 'knopf haupt', id: 'teilen', onclick: () => sitzungTeilen(text(), false) }, 'Teilen')),
+      teil('Perlen (mit Reserve)', ek.perlen.map(p => zeile(p.id, p.name, 'gebraucht ' + p.anzahl + ' · ' + p.packung, p.bestellen + ' Stk.', p.buchstabe ? null : FARBEN[p.farbe].hex))),
+      teil('Faden', ek.faden.map(f => zeile(f.id, f.name, null, f.cm + ' cm'))),
+      teil('Verschluss', ek.verschluss.map(v => zeile(v.id, v.name, null, v.anzahl + ' x'))),
+      teil('Werkzeug', ek.werkzeug.map(w => zeile(w.id, w.name, null, ''))),
+      el('div', { class: 'stapel' }, ek.hinweise.map(h => el('p', { class: 'hinweis' }, h))));
+  }
+
+  function sitzungTeilen(text, nurKopieren) {
+    app.letzterText = text;
+    (nurKopieren ? sitzung.kopiere(text) : sitzung.teile('Einkaufsliste Perlenarmband', text)).then(r =>
+      B.melde({ geteilt: 'Geteilt', kopiert: 'Liste kopiert', abgebrochen: 'Teilen abgebrochen' }[r] || 'Kopieren nicht möglich: bitte die Liste abschreiben'));
+  }
+
+  function anleitung() {
+    const z = app.zustand, a = Perlen.control.anleitung.fuer(z.anleitung);
+    bereiche.anleitung.replaceChildren(
+      el('h2', {}, 'Anleitung'),
+      B.wahl(K.techniken().map(t => ({ id: t.id, name: TECHNIK_KURZ[t.id] })), z.anleitung, t => { z.anleitung = t; zeichne('anleitung'); }, 'Technik der Anleitung', true),
+      el('div', { class: 'block' }, el('h3', {}, 'Handgelenk messen'), el('ol', { class: 'schritte', id: 'messen' }, Perlen.control.anleitung.messen().map(s => el('li', {}, s)))),
+      el('div', { class: 'block' }, el('h2', {}, a.titel), el('ol', { class: 'schritte', id: 'schritte' }, a.schritte.map(s => el('li', {}, s)))),
+      el('div', { class: 'block' }, el('h3', {}, 'Tipps gegen typische Fehler'), el('ul', { class: 'tipps', id: 'tipps' }, a.tipps.map(s => el('li', {}, s)))));
+  }
+
+  function zeichne(r) {
+    if (r === 'ideen') ideen(); else if (r === 'einkauf') einkauf(); else if (r === 'anleitung') anleitung(); else designer.baue();
+  }
+
+  function zeige(r) {
+    app.zustand.reiter = r;
+    for (const x of REITER) { bereiche[x.id].hidden = x.id !== r; if (x.id === r) reiterKnoepfe[x.id].setAttribute('aria-current', 'page'); else reiterKnoepfe[x.id].removeAttribute('aria-current'); }
+    zeichne(r);
+    fenster.scrollTo(0, 0);
+  }
+
+  function oeffne(e) {
+    if (app.zustand.reiter !== 'designer') zeige('designer');
+    designer.oeffne(e);
+  }
+
+  // Gerätespeicher nur beim Start lesen; danach gilt der Stand der Sitzung (Haken bleiben auch ohne Speicher, Korrekturrunde 3)
+  function lade() {
+    const d = sitzung.laden();
+    app.zustand.daten = d; app.zustand.speicherOk = d.ok;
+    return d;
+  }
+  function auffrischen() { app.zustand.daten = sitzung.stand(); }
+  function kurzinfo(e) {
+    const n = K.istRaster(e.technik) ? R.raster(e).reihen * e.raster.spalten : R.folge(e).length;
+    return n + ' Perlen · Handgelenk ' + (e.umfang / 10).toLocaleString('de-DE') + ' cm';
+  }
+
+  app.speichere = function () {
+    const z = app.zustand; let e = z.verlauf.zustand();
+    if (!e.titel) {
+      let n = z.daten.entwuerfe.length + 1; while (z.daten.entwuerfe.some(x => x.titel === 'Mein Armband ' + n)) n++;
+      e = W.setzeTitel(e, 'Mein Armband ' + n); z.verlauf.ersetze(e);
+    }
+    if (sitzung.speichere(e)) B.melde('Gespeichert als "' + e.titel + '"'); else B.melde('Nicht gespeichert: dieser Browser erlaubt kein Speichern');
+    auffrischen();
+  };
+  app.zeige = zeige;
+  app.jetzt = () => fenster.performance.now();
+
+  app.starte = function (f) {
+    fenster = f; app.dokument = f.document; B.setzeDokument(f.document);
+    sitzung = Perlen.control.sitzung.starte(f);
+    const z = app.zustand;
+    lade();
+    const start = Perlen.control.ideen.liste()[0].entwurf;
+    z.verlauf = W.verlauf(start);
+    for (const r of REITER) bereiche[r.id] = el('section', { id: 'bereich-' + r.id, 'aria-label': r.name, class: 'stapel', hidden: true });
+    const nav = el('nav', { class: 'reiter', 'aria-label': 'Bereiche' }, el('div', {}, REITER.map(r => (reiterKnoepfe[r.id] =
+      el('button', { type: 'button', 'data-reiter': r.id, onclick: () => zeige(r.id) }, B.icon(r.id), r.name)))));
+    f.document.getElementById('app').replaceChildren(
+      el('div', { class: 'seite' }, el('header', { class: 'kopf' }, el('h1', {}, 'Perlen', el('span', {}, 'werkstatt')), document.querySelector('a.ng-zurueck')),
+        REITER.map(r => bereiche[r.id])), nav);
+    designer = Perlen.ui.designer.erzeuge(app);
+    designer.haenge(bereiche.designer);
+    if (!z.speicherOk) B.melde('Speichern ist hier nicht möglich, alles andere geht');
+    zeige('ideen');
+  };
+  return app;
+})();
+
+})();
+
+Perlen.ui.app.starte(window);
+</script>
+</body>
+</html>

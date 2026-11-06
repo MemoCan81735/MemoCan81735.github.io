@@ -9,7 +9,7 @@ const path = require('path');
 const ordner = path.resolve(process.argv[2] || path.join(__dirname, '..'));
 const PORT = 8000 + Math.floor(Math.random() * 900);
 const BASIS = `http://127.0.0.1:${PORT}`;
-const SEITEN = ['/', '/driftpokal/', '/luftdrift/', '/etappenrennen/', '/ebru/', '/brettspiele/'];
+const SEITEN = ['/', '/driftpokal/', '/luftdrift/', '/etappenrennen/', '/ebru/', '/perlen/', '/brettspiele/'];
 const FORMATE = [['hoch', { width: 412, height: 915 }], ['quer', { width: 915, height: 412 }]];
 const FACHSPRACHE = /\b(BCE|Entity|Boundary|Fassung)\b/i;
 
