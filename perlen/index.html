@@ -188,7 +188,8 @@ const FARBEN = [
 { name: 'Weiß', hex: '#f7f5ef' }, { name: 'Perlmutt', hex: '#e9dccb' }, { name: 'Gold', hex: '#d4a72c', metall: true },
 { name: 'Silber', hex: '#b9c0c8', metall: true }, { name: 'Schwarz', hex: '#1c1c1f' }, { name: 'Braun', hex: '#8b5a3c' }
 ];
-const FORMEN = { rund: 'Rund', rondelle: 'Rondelle', wuerfel: 'Buchstabe' };
+const FORMEN = { rund: 'Rund', rondelle: 'Rondelle', herz: 'Herz', tropfen: 'Tropfen', wuerfel: 'Buchstabe' };
+const ANHAENGER = { nazar: 'Nazar', herz: 'Herz', stern: 'Stern', mond: 'Mond', klee: 'Kleeblatt' };
 const GROESSEN = [4, 6, 8, 10];
 const TECHNIKEN = {
 gummi: { name: 'Gummiband', zugabe: 10, verschluss: 0, raster: false },
@@ -198,10 +199,10 @@ loom: { name: 'Webrahmen', zugabe: 15, verschluss: 20, raster: true }
 };
 const DELICA = { breite: 1.3, laenge: 1.6, proGramm: 190, proTuetchen: 950 };
 const PREISE = { strang4: 2.5, strang6: 2.9, strang8: 3.5, strang10: 3.9, delica: 3.9, abc: 3.5, gummi: 2.5, schmuck: 3.0, perlenfaden: 2.5,
-karabiner: 2.0, biegering: 1.5, quetsch: 1.5, kaschier: 1.5, klemmen: 2.5 };
+karabiner: 2.0, biegering: 1.5, anhaenger: 2.0, quetsch: 1.5, kaschier: 1.5, klemmen: 2.5 };
 const PREIS_NAMEN = { strang4: 'Strang 4 mm', strang6: 'Strang 6 mm', strang8: 'Strang 8 mm', strang10: 'Strang 10 mm', delica: 'Delica-Tütchen 5 g',
 abc: 'ABC-Mischbeutel', gummi: 'Rolle Gummiband', schmuck: 'Rolle Schmuckfaden', perlenfaden: 'Spule Perlenfaden', karabiner: 'Beutel Karabiner',
-biegering: 'Beutel Biegeringe', quetsch: 'Beutel Quetschperlen', kaschier: 'Beutel Kaschierperlen', klemmen: 'Beutel Klemmenden' };
+biegering: 'Beutel Biegeringe', quetsch: 'Beutel Quetschperlen', kaschier: 'Beutel Kaschierperlen', klemmen: 'Beutel Klemmenden', anhaenger: 'Anhänger' };
 const LOCH_MM = { 4: 0.8, 6: 1.0, 8: 1.0, 10: 1.2, wuerfel: 3.5, delica: 0.8 };
 const FADEN_MM = { gummi: 0.8, gummiDuenn: 0.5, schmuck: 0.38, perlenfaden: 0.3 };
 const LOCH_SPIEL_MM = 0.2, FADEN_STUECK_CM = 150, ABC_BEUTEL = 100;
@@ -224,6 +225,7 @@ return Math.min(max, Math.max(min, Math.round(n)));
 }
 function perlenLaenge(p) {
 if (p.buchstabe || p.form === 'wuerfel') return WUERFEL_MM;
+if (p.form === 'tropfen') return Math.round(p.groesse * 1.3 * 10) / 10;
 return p.form === 'rondelle' ? Math.round(p.groesse * 0.6 * 10) / 10 : p.groesse;
 }
 function passform(v) { return typeof v === 'string' && Object.prototype.hasOwnProperty.call(PASSFORMEN, v) ? v : 'normal'; }
@@ -240,10 +242,10 @@ return h.toString(16);
 }
 
 return {
-FARBEN, FORMEN, GROESSEN, TECHNIKEN, DELICA, STRANG, PREISE, PREIS_NAMEN, LOCH_MM, FADEN_MM, LOCH_SPIEL_MM, FADEN_STUECK_CM, ABC_BEUTEL, KLEMMEN, WUERFEL_MM, BUCHSTABEN, PASSFORMEN, GROESSENHILFE, DICKE_OHNE_ZUGABE,
+FARBEN, FORMEN, ANHAENGER, GROESSEN, TECHNIKEN, DELICA, STRANG, PREISE, PREIS_NAMEN, LOCH_MM, FADEN_MM, LOCH_SPIEL_MM, FADEN_STUECK_CM, ABC_BEUTEL, KLEMMEN, WUERFEL_MM, BUCHSTABEN, PASSFORMEN, GROESSENHILFE, DICKE_OHNE_ZUGABE,
 FORMAT: 1, UMFANG_MIN: 120, UMFANG_MAX: 240, UMFANG_STANDARD: 165,
 MUSTER_MAX: 40, NAME_MAX: 12, PERLEN_MAX: 400, SPALTEN_MIN: 4, SPALTEN_MAX: 16,
-REIHEN_MIN: 1, REIHEN_MAX: 60, ENTWUERFE_MAX: 20, UNDO_TIEFE: 50,
+REIHEN_MIN: 1, REIHEN_MAX: 60, RUNDEN_MAX: 3, ENTWUERFE_MAX: 20, UNDO_TIEFE: 50,
 klemme, perlenLaenge, istRaster, passform, pruefsumme, pruefsummeZahlen
 };
 })();
@@ -265,7 +267,7 @@ return Math.ceil(Math.PI * Math.max(0, d - E.DICKE_OHNE_ZUGABE) - 1e-9);
 
 function strecke(e) {
 const t = E.TECHNIKEN[e.technik] || E.TECHNIKEN.gummi;
-return e.umfang + t.zugabe + E.PASSFORMEN[E.passform(e.passform)] + dickenZugabe(e) - t.verschluss;
+return (E.istRaster(e.technik) ? 1 : e.runden || 1) * (e.umfang + t.zugabe + E.PASSFORMEN[E.passform(e.passform)] + dickenZugabe(e)) - t.verschluss;
 }
 
 function mitte(e) {
@@ -413,6 +415,12 @@ if (e.technik === 'faden') verschluss.push({ id: 'karabiner', name: 'Karabiner',
 { id: 'quetsch', name: 'Quetschperlen 2 mm', anzahl: 2 }, { id: 'kaschier', name: 'Kaschierperlen', anzahl: 2 });
 if (!e.muster.length) hinweise.push('Muster leer: füge im Designer Perlen hinzu.');
 }
+if (e.anhaenger) {
+verschluss.push({ id: 'anhaenger', name: 'Anhänger ' + E.ANHAENGER[e.anhaenger], anzahl: 1 });
+const b = verschluss.find(v => v.id === 'biegering');
+if (b) { b.anzahl++; b.name = 'Biegeringe 5 mm'; } else verschluss.push({ id: 'biegering', name: 'Biegering 5 mm', anzahl: 1 });
+}
+if (e.runden > 1 && !E.istRaster(e.technik)) hinweise.push('Wickelarmband: ' + e.runden + ' Runden ums Handgelenk, die Strecke ist schon mit allen Runden gerechnet.');
 if (!E.istRaster(e.technik) && e.name) hinweise.push('Buchstabenwürfel gibt es als ABC-Mischbeutel. Achte darauf, dass jeder Buchstabe deines Namens mindestens so oft drin ist wie angegeben, plus einer Reserve.');
 if (E.istRaster(e.technik)) hinweise.push('Faden in Stücken von höchstens 1,5 m verarbeiten und nachsetzen, wenn er kurz wird; die Länge oben ist die Gesamtmenge.');
 if (e.technik === 'gummi') hinweise.push('Kein Verschluss nötig: Gummiband mit doppeltem Knoten schließen und mit Kleber sichern.');
@@ -459,7 +467,7 @@ p = p && typeof p === 'object' ? p : {};
 return {
 farbe: ganz(p.farbe, E.FARBEN.length, 0),
 groesse: E.GROESSEN.includes(p.groesse) ? p.groesse : 6,
-form: p.form === 'rondelle' ? 'rondelle' : 'rund'
+form: ['rondelle', 'herz', 'tropfen'].includes(p.form) ? p.form : 'rund'
 };
 }
 
@@ -496,6 +504,8 @@ technik: Object.prototype.hasOwnProperty.call(E.TECHNIKEN, e.technik) ? e.techni
 umfang: E.klemme(e.umfang, E.UMFANG_MIN, E.UMFANG_MAX, E.UMFANG_STANDARD),
 passform: E.passform(e.passform),
 name: name(e.name),
+anhaenger: typeof e.anhaenger === 'string' && Object.prototype.hasOwnProperty.call(E.ANHAENGER, e.anhaenger) ? e.anhaenger : '',
+runden: E.klemme(e.runden, 1, E.RUNDEN_MAX, 1),
 muster: [],
 raster: null
 };
@@ -522,6 +532,51 @@ const setzeName = (e, n) => mit(e, k => { k.name = name(n); });
 const setzeTechnik = (e, t) => mit(e, k => { k.technik = t; });
 const setzeTitel = (e, t) => mit(e, k => { k.titel = t; });
 const setzePassform = (e, pf) => mit(e, k => { k.passform = pf; });
+const setzeAnhaenger = (e, a) => mit(e, k => { k.anhaenger = a; });
+const setzeRunden = (e, n) => mit(e, k => { k.runden = n; });
+
+function zufall(e, zahlen) {
+let i = 0;
+const naechste = () => { const v = Array.isArray(zahlen) ? Number(zahlen[i++]) : 0; return Number.isFinite(v) && v >= 0 && v < 1 ? v : 0; };
+const farben = liste => {
+const f = verschieden(liste);
+if (f.length < 2) while (f.length < 3) {
+const frei = E.FARBEN.map((_, k) => k).filter(k => !f.includes(k)); f.push(frei[Math.floor(naechste() * frei.length)]);
+}
+return f;
+};
+const verteile = (n, f) => {
+const liste = Array.from({ length: n }, () => f[Math.floor(naechste() * f.length)]), plaetze = liste.map((_, k) => k);
+for (let k = n - 1; k > 0; k--) { const j = Math.floor(naechste() * (k + 1)); [plaetze[k], plaetze[j]] = [plaetze[j], plaetze[k]]; }
+f.slice(0, n).forEach((farbe, k) => { liste[plaetze[k]] = farbe; });
+return liste;
+};
+return mit(e, k => {
+if (E.istRaster(k.technik)) { k.raster.zellen = verteile(k.raster.zellen.length, farben(k.raster.zellen)); return; }
+const vorlage = k.muster.length ? k.muster : Array.from({ length: 8 }, () => ({ groesse: 6, form: 'rund', farbe: 0 }));
+const neu = verteile(vorlage.length, farben(k.muster.map(p => p.farbe)));
+k.muster = vorlage.map((p, i) => ({ farbe: neu[i], groesse: p.groesse, form: p.form }));
+});
+}
+const STUFEN = [0, 0, 1, 0, 1, 1];
+function farbverlauf(e, von, bis) {
+von = ganz(von, E.FARBEN.length, 0); bis = ganz(bis, E.FARBEN.length, 0);
+return mit(e, k => {
+if (!E.istRaster(k.technik)) {
+const p = k.muster[0] || { groesse: 6, form: 'rund' };
+k.muster = Array.from({ length: 12 }, (_, i) => ({ farbe: STUFEN[Math.min(i, 11 - i)] ? bis : von, groesse: p.groesse, form: p.form }));
+return;
+}
+const S = k.raster.spalten, R = Math.min(E.REIHEN_MAX, Math.max(24, k.raster.reihen)), zellen = [];
+const ordnung = Array.from({ length: S }, (_, c) => c).sort((a, b) => (a * 0.618034) % 1 - (b * 0.618034) % 1), rang = [];
+ordnung.forEach((c, i) => { rang[c] = i; });
+for (let z = 0; z < R; z++) {
+const t = 1 - Math.abs(2 * z / (R - 1) - 1), n = Math.min(S, Math.round(t * (S + 1)));
+for (let s = 0; s < S; s++) zellen.push(rang[(s + 3 * z) % S] < n ? bis : von);
+}
+k.raster = { spalten: S, reihen: R, zellen };
+});
+}
 const setzeRaster = (e, r) => mit(e, k => { if (r && typeof r === 'object') k.raster = r; });
 const setzeMuster = (e, m) => mit(e, k => { if (Array.isArray(m)) k.muster = m; });
 
@@ -577,7 +632,7 @@ ablegen: () => kopie({ jetzt, zurueck })
 }
 
 return { bereinige, neu, verlauf, perleAnfuegen, letztePerleWeg, perleEntfernen, setzeUmfang, setzeName, setzeTechnik, setzeTitel, setzePassform, setzeRaster, setzeMuster, spiegeln, spiegelnRaster,
-setzeSpalten, setzeMusterreihen, malFeld, fuelleRaster };
+setzeSpalten, setzeMusterreihen, malFeld, fuelleRaster, setzeAnhaenger, setzeRunden, zufall, farbverlauf };
 })();
 
 })();
@@ -886,13 +941,14 @@ function aufgefaedelt(e, breite, hoehe) {
 const f = R.folge(e);
 const laengen = f.map(E.perlenLaenge), gesamt = laengen.reduce((a, b) => a + b, 0) || 1;
 const r0 = rahmen(breite, hoehe, 0);
-const s = (2 * Math.PI * r0.rx) / gesamt;   // Pixel je Millimeter entlang des Rings
+const n = e.runden || 1, s = (2 * Math.PI * r0.rx * n) / gesamt;   // Pixel je Millimeter entlang des Rings
+const stufe = n > 1 ? f.reduce((m, p) => Math.max(m, p.groesse), 0) * s * 0.95 : 0;   // Abstand der Runden
 let lauf = 0;
 return { ring: r0, mmPx: s, perlen: f.map((p, i) => {
-const w = 1.5 * Math.PI - 2 * Math.PI * (lauf + laengen[i] / 2) / gesamt;
+const anteil = (lauf + laengen[i] / 2) / gesamt, w = 1.5 * Math.PI - 2 * Math.PI * n * (lauf + laengen[i] / 2) / gesamt + Math.PI * (n - 1);
 lauf += laengen[i];
 const tiefe = Math.sin(w), k = massstab(tiefe);
-return { x: r0.cx + r0.rx * Math.cos(w), y: r0.cy + r0.ry * Math.sin(w), r: (p.groesse / 2) * s * k, laenge: laengen[i] * s * k,
+return { x: r0.cx + r0.rx * Math.cos(w), y: r0.cy + r0.ry * Math.sin(w) + (n * anteil - n / 2) * stufe, r: (p.groesse / 2) * s * k, laenge: laengen[i] * s * k,
 winkel: w, tiefe, farbe: p.farbe, form: p.form, buchstabe: p.buchstabe || '', reihe: i, spalte: 0, versatz: 0 };
 }) };
 }
@@ -922,6 +978,11 @@ for (let i = 0; i < n; i++) idx[i] = i;
 const alt = g.perlen;
 idx.sort((a, b) => (alt[a].tiefe - alt[b].tiefe) || (a - b));
 g.perlen = idx.map(i => alt[i]);
+if (entwurf.anhaenger && alt.length) {
+const r = g.ring, maxR = alt.reduce((m, p) => Math.max(m, p.r), 0), d = Math.max(maxR * 2.2, 8 * g.mmPx);
+const vorn = alt.filter(p => p.tiefe > 0.5 && Math.abs(p.x - r.cx) < r.rx * 0.3), unten = vorn.length ? Math.max(...vorn.map(p => p.y + p.r)) : r.cy + r.ry + (g.bandHoehe || 0) / 2;
+g.anhaenger = { art: entwurf.anhaenger, x: r.cx, oben: unten - maxR * 0.4, y: Math.min(hoehe - d * 0.55, unten + d * 0.7), r: d / 2 };
+}
 return g;
 }
 
@@ -1085,7 +1146,9 @@ const E = Perlen.entity;
 const kopie = x => JSON.parse(JSON.stringify(x));
 return {
 farben: () => kopie(E.FARBEN),
-formen: () => [{ id: 'rund', name: 'Rund' }, { id: 'rondelle', name: 'Rondelle' }],
+formen: () => ['rund', 'rondelle', 'herz', 'tropfen'].map(id => ({ id, name: E.FORMEN[id] })),
+anhaenger: () => [{ id: '', name: 'Kein' }].concat(Object.keys(E.ANHAENGER).map(id => ({ id, name: E.ANHAENGER[id] }))),
+rundenMax: () => E.RUNDEN_MAX,
 groessen: () => E.GROESSEN.slice(),
 techniken: () => Object.keys(E.TECHNIKEN).map(id => ({ id, name: E.TECHNIKEN[id].name, raster: E.TECHNIKEN[id].raster })),
 preisArten: () => Object.keys(E.PREISE).map(id => ({ id, name: E.PREIS_NAMEN[id], schaetzung: E.PREISE[id] })),
@@ -2038,9 +2101,57 @@ ctx.fillStyle = 'rgba(255,255,255,' + (0.95 * l) + ')'; ctx.fillRect(-lg * 0.25,
 ctx.restore();
 }
 
+function herzPfad(ctx, x, y, r) {
+ctx.beginPath(); ctx.moveTo(x, y + r * 0.95);
+ctx.bezierCurveTo(x - r * 1.5, y - r * 0.05, x - r * 0.75, y - r * 1.25, x, y - r * 0.45);
+ctx.bezierCurveTo(x + r * 0.75, y - r * 1.25, x + r * 1.5, y - r * 0.05, x, y + r * 0.95); ctx.closePath();
+}
+function verlaufFuell(ctx, p, f, l) {
+const basis = mische(rgb(f.hex), SCHWARZ, 1 - l), g = ctx.createRadialGradient(p.x - p.r * 0.35, p.y - p.r * 0.4, p.r * 0.05, p.x, p.y, p.r * 1.2);
+g.addColorStop(0, css(mische(basis, WEISS, f.metall ? 0.75 : 0.45))); g.addColorStop(0.45, css(basis)); g.addColorStop(1, css(mische(basis, SCHWARZ, 0.45)));
+return g;
+}
+function herz(ctx, p, f) {
+const l = licht(p); ctx.fillStyle = verlaufFuell(ctx, p, f, l); herzPfad(ctx, p.x, p.y, p.r); ctx.fill();
+glanz(ctx, p.x - p.r * 0.45, p.y - p.r * 0.45, p.r * 0.2, l);
+}
+function tropfen(ctx, geo, p, f) {
+const l = licht(p), a = p.laenge / 2, b = p.r * 0.85;
+ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(tangente(geo, p));
+ctx.fillStyle = verlaufFuell(ctx, { x: 0, y: 0, r: Math.max(a, b) }, f, l);
+ctx.beginPath(); ctx.moveTo(a, 0); ctx.bezierCurveTo(a * 0.3, -b * 1.1, -a, -b * 1.1, -a, 0); ctx.bezierCurveTo(-a, b * 1.1, a * 0.3, b * 1.1, a, 0); ctx.fill();
+ctx.restore();
+glanz(ctx, p.x - b * 0.3, p.y - b * 0.45, Math.max(1.2, b * 0.25), l);
+}
+function anhaenger(ctx, a, oben) {
+const x = a.x, y = a.y, r = a.r, gold = { hex: '#d4a531', metall: true };
+ctx.save(); ctx.strokeStyle = '#c9ced6'; ctx.lineWidth = Math.max(1.5, r * 0.12);
+ctx.beginPath(); ctx.ellipse(x, (oben + y - r) / 2, r * 0.22, Math.max(2, (y - r - oben) / 2 + r * 0.1), 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+const p = { x, y, r, tiefe: 1 };
+if (a.art === 'nazar') {
+for (const [k, hex] of [[1, '#1f4fa8'], [0.72, '#f4f6fa'], [0.5, '#6fb5e8'], [0.26, '#15161a']]) { ctx.fillStyle = hex; ctx.beginPath(); ctx.arc(x, y, r * k, 0, Math.PI * 2); ctx.fill(); }
+glanz(ctx, x - r * 0.4, y - r * 0.45, r * 0.22, 1);
+} else if (a.art === 'herz') herz(ctx, p, { hex: '#d63a4a' });
+else if (a.art === 'stern') {
+ctx.fillStyle = verlaufFuell(ctx, p, gold, 1); ctx.beginPath();
+for (let i = 0; i < 10; i++) { const w = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * 0.45 : r * 1.05; ctx.lineTo(x + q * Math.cos(w), y + q * Math.sin(w)); }
+ctx.closePath(); ctx.fill();
+} else if (a.art === 'mond') {
+ctx.fillStyle = verlaufFuell(ctx, p, gold, 1); ctx.beginPath(); ctx.arc(x, y, r, 0.35 * Math.PI, 1.65 * Math.PI, false);
+ctx.arc(x + r * 0.45, y - r * 0.1, r * 0.8, 1.6 * Math.PI, 0.4 * Math.PI, true); ctx.closePath(); ctx.fill();
+} else {
+const gruen = { hex: '#2f9e55' };
+ctx.strokeStyle = '#1f7a3e'; ctx.lineWidth = Math.max(1.5, r * 0.14); ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + r * 0.2, y + r * 0.8, x + r * 0.6, y + r * 1.1); ctx.stroke();
+for (let i = 0; i < 4; i++) { const w = i * Math.PI / 2 + Math.PI / 4, q = { x: x + Math.cos(w) * r * 0.5, y: y + Math.sin(w) * r * 0.5, r: r * 0.48, tiefe: 1 };
+ctx.fillStyle = verlaufFuell(ctx, q, gruen, 1); ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, Math.PI * 2); ctx.fill(); }
+}
+}
+
 function perle(ctx, geo, p) {
 const f = FARBEN[p.farbe] || FARBEN[0];
 if (p.form === 'delica') delica(ctx, geo, p, f);
+else if (p.form === 'herz') herz(ctx, p, f);
+else if (p.form === 'tropfen') tropfen(ctx, geo, p, f);
 else if (p.buchstabe) wuerfel(ctx, geo, p);
 else if (p.form === 'rondelle') rondelle(ctx, geo, p, f);
 else kugel(ctx, p, f);
@@ -2059,6 +2170,7 @@ for (const p of geo.perlen) {
 if (!raster && !vorn && p.tiefe > 0) { faden(ctx, geo, true); vorn = true; }
 perle(ctx, geo, p);
 }
+if (geo.anhaenger) anhaenger(ctx, geo.anhaenger, geo.anhaenger.oben);
 }
 
 return { vorschau, perle, hintergrund, farben: FARBEN };
@@ -2230,7 +2342,14 @@ p.setAttribute('stroke', 'currentColor'); p.setAttribute('stroke-width', name ==
 s.append(p); return s;
 }
 
-return { setzeDokument, el, text, wahl, melde, zeichneRing, icon };
+const HERZ = 'polygon(50% 100%, 9% 58%, 0 32%, 7% 9%, 27% 0, 50% 17%, 73% 0, 93% 9%, 100% 32%, 91% 58%)';
+function perlenUmriss(form, d) {
+if (form === 'rondelle') return 'width:' + Math.round(d * 0.6) + 'px;height:' + d + 'px;border-radius:40%';
+if (form === 'tropfen') return 'width:' + Math.round(d * 1.3) + 'px;height:' + d + 'px;border-radius:50% 12% 12% 50% / 50%';
+if (form === 'herz') return 'width:' + d + 'px;height:' + d + 'px;border-radius:0;clip-path:' + HERZ;
+return 'width:' + d + 'px;height:' + d + 'px;border-radius:50%';
+}
+return { setzeDokument, el, text, wahl, melde, zeichneRing, icon, perlenUmriss };
 })();
 
 })();
@@ -2336,6 +2455,23 @@ el('p', { class: 'hinweis' }, 'Bild lange drücken, dann speichern oder teilen.'
 el('img', { src: url, alt: 'Armband als Bild', id: 'bild-png', style: 'width:100%;border-radius:16px' })));
 d.addEventListener('keydown', taste);
 d.body.appendChild(ansicht); d.getElementById('bild-schliessen').focus();
+}
+
+function schnellBlock(e) {
+const a = z.auswahl; if (a.bis === undefined) a.bis = 12;
+const zahlen = () => Array.from({ length: 1000 }, () => Math.random());
+const ziel = el('select', { class: 'feld', id: 'verlauf-bis', style: 'text-transform:none;letter-spacing:0', 'aria-label': 'Farbverlauf nach Farbe', onchange: ev => { a.bis = Number(ev.target.value); } },
+FARBEN.map((f, i) => el('option', { value: String(i), selected: i === a.bis }, f.name)));
+return el('div', { class: 'block', id: 'schnell' },
+el('h3', {}, 'Schnell gestalten'),
+el('div', { class: 'werkzeuge', style: 'grid-template-columns:1fr 1fr' },
+el('button', { type: 'button', class: 'knopf', id: 'zufall', onclick: () => { aendere(x => W.zufall(x, zahlen())); z.verlauf.schliesse(); } }, 'Zufall'),
+el('button', { type: 'button', class: 'knopf', id: 'verlauf', onclick: () => { aendere(x => W.farbverlauf(x, a.farbe, a.bis)); z.verlauf.schliesse(); } }, 'Farbverlauf')),
+el('label', { for: 'verlauf-bis', class: 'unter' }, 'Verlauf von ' + FARBEN[a.farbe].name + ' nach'), ziel,
+el('h3', {}, 'Anhänger in der Mitte'),
+B.wahl(K.anhaenger(), e.anhaenger, h => { aendere(x => W.setzeAnhaenger(x, h)); baue(); }, 'Anhänger', true),
+...(K.istRaster(e.technik) ? [] : [el('h3', {}, 'Runden ums Handgelenk'),
+B.wahl(Array.from({ length: K.rundenMax() }, (_, i) => ({ id: i + 1, name: i ? (i + 1) + ' Runden' : '1 Runde' })), e.runden, n => { aendere(x => W.setzeRunden(x, n)); baue(); }, 'Runden')]));
 }
 
 function textBlock() {
@@ -2475,7 +2611,7 @@ else {
 teile.muster.replaceChildren(...e.muster.map((p, i) => {
 const d = Math.round(12 + p.groesse * 2.4);
 return el('button', { type: 'button', 'aria-label': FARBEN[p.farbe].name + ' ' + p.groesse + ' mm entfernen', 'data-index': String(i), onclick: () => aendere(x => W.perleEntfernen(x, i)) },
-el('span', { style: 'background:' + FARBEN[p.farbe].hex + ';width:' + (p.form === 'rondelle' ? Math.round(d * 0.6) : d) + 'px;height:' + d + 'px;border-radius:' + (p.form === 'rondelle' ? '40%' : '50%') }));
+el('span', { style: 'background:' + FARBEN[p.farbe].hex + ';' + B.perlenUmriss(p.form, d) }));
 }));
 B.text(wurzel.querySelector('#musterzahl'), e.muster.length + ' von ' + G.musterMax);
 wurzel.querySelector('#anfuegen').disabled = e.muster.length >= G.musterMax;
@@ -2498,7 +2634,7 @@ teile.huelle = el('div', { class: 'buehne' }, teile.buehne, teile.zurueck,
 el('button', { type: 'button', class: 'ecke rechts', id: 'speichern', 'aria-label': 'Speichern', onclick: () => app.speichere() }, B.icon('speichern'), el('span', {}, 'Speichern')), teile.zahlen);
 const raster = K.istRaster(e.technik), gestalten = raster ? rasterBlock() : musterBlock();
 const basteln = el('button', { type: 'button', class: 'knopf haupt gross', id: 'basteln', onclick: () => app.arbeite(aktuell()) }, 'Jetzt basteln');
-wurzel.replaceChildren(teile.huelle, gestalten, ...(raster ? [textBlock()] : []), einstellungen(e), bildBlock(e), ...(raster ? [] : [namensBlock()]), basteln, bildTeilen());
+wurzel.replaceChildren(teile.huelle, gestalten, ...(raster ? [textBlock()] : []), einstellungen(e), schnellBlock(e), bildBlock(e), ...(raster ? [] : [namensBlock()]), basteln, bildTeilen());
 aktualisiere();
 }
 
@@ -2534,8 +2670,7 @@ let entwurf = null, liste = [], schritt = 0, wurzel = null, teile = {}, raster =
 function perleBild(p, gross) {
 const d = gross ? 140 : 40;
 if (p.buchstabe) return el('span', { class: 'arbeit-wuerfel' + (gross ? ' gross' : ''), style: 'width:' + d + 'px;height:' + d + 'px' }, p.buchstabe);
-const b = p.form === 'rondelle' ? Math.round(d * 0.6) : d;
-return el('span', { class: 'arbeit-perle', style: 'width:' + b + 'px;height:' + d + 'px;border-radius:' + (p.form === 'rondelle' ? '40%' : '50%') +
+return el('span', { class: 'arbeit-perle', style: B.perlenUmriss(p.form, d) +
 ';background:radial-gradient(circle at 35% 30%, #fff 0 7%, ' + FARBEN[p.farbe].hex + ' 42%, ' + FARBEN[p.farbe].hex + ')' });
 }
 function felder(s) {
