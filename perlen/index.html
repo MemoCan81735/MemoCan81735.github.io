@@ -25,6 +25,8 @@
   --papier: #14161d; --flaeche: #1d2029; --tinte: #ebe9f1; --gedaempft: #a2a5b6; --linie: #2d3140;
   --akzent: #f0779f; --akzent-text: #22121a; --akzent-zart: #3a2030; --gut: #6fcf97; color-scheme: dark }
 html, body { height: 100%; }
+/* S-003: Tastaturfokus nie unter der haftenden Vorschau oder der Reiterleiste */
+html:has(#bereich-designer:not([hidden])) { scroll-padding-top: 162px; scroll-padding-bottom: calc(var(--reiter-hoehe) + 20px + env(safe-area-inset-bottom, 0px)); }
 body { background: var(--papier); color: var(--tinte); font: 400 16px/1.5 var(--schrift); -webkit-tap-highlight-color: transparent; }
 * { box-sizing: border-box; }
 button, input { font: inherit; color: inherit; }
@@ -47,10 +49,31 @@ section[hidden] { display: none; }
 .wahl button { flex: 1 0 auto; min-height: 44px; border: 0; border-radius: 9px; background: transparent; padding: 0 12px; font-weight: 700; color: var(--gedaempft); cursor: pointer; }
 .wahl.gitter { display: grid; grid-template-columns: 1fr 1fr; }
 .wahl button[aria-pressed="true"] { background: var(--akzent-zart); color: var(--tinte); }
-.buehne { position: relative; border-radius: 18px; overflow: hidden; background: var(--matte); box-shadow: 0 10px 30px rgba(20, 24, 40, 0.18); }
+/* Bühne (S-003): haftet oben; designer.js setzt beim Scrollen Höhe und unteren Rand (Seite bleibt gleich hoch) */
+.buehne { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 4; border-radius: 18px; overflow: hidden; background: #272e3f; box-shadow: 0 10px 30px rgba(20, 24, 40, 0.18); }   /* Farbe des Leinwandrands: keine Naht neben der kleinen Leinwand */
 .buehne canvas { display: block; width: 100%; aspect-ratio: 5 / 4; max-width: min(100%, calc((100vh - 150px) * 1.25)); margin: 0 auto; }
-.zahlen { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: none; }
-.chip { background: rgba(14, 17, 26, 0.62); color: #f3f1f7; border-radius: 999px; padding: 3px 10px; font-size: 0.82rem; font-weight: 700; font-variant-numeric: tabular-nums; backdrop-filter: blur(4px); }
+.buehne.klein canvas { width: auto; height: 100%; max-width: 100%; }
+.ecke { position: absolute; top: 8px; z-index: 1; min-height: 44px; min-width: 44px; padding: 0 14px; border: 0; border-radius: 999px; display: grid; place-items: center;
+  background: rgba(14, 17, 26, 0.62); color: #f3f1f7; font-weight: 800; cursor: pointer; backdrop-filter: blur(4px); }
+.ecke.links { left: 8px; width: 44px; padding: 0; }
+.ecke.rechts { right: 8px; display: flex; gap: 6px; }
+.buehne.eng .ecke.rechts { padding: 0; width: 44px; justify-content: center; }
+.buehne.eng .ecke.rechts span, .buehne.eng .zahlen { display: none; }
+.ecke svg { width: 22px; height: 22px; }
+.ecke:disabled { opacity: 0.6; cursor: default; }
+.ecke:focus-visible { outline: 3px solid var(--akzent); outline-offset: 2px; }
+.zahlen { position: absolute; left: 12px; bottom: 10px; max-width: calc(100% - 24px); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: rgba(14, 17, 26, 0.62); color: #f3f1f7; border-radius: 999px; padding: 3px 12px; font-size: 0.82rem; font-weight: 700; font-variant-numeric: tabular-nums; backdrop-filter: blur(4px); }
+.einstellungen { padding-block: 6px; }
+.einstellungen > summary { min-height: 44px; display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; border-radius: 10px; }
+.einstellungen > summary::-webkit-details-marker { display: none; }
+.einstellungen > summary::after { content: ""; flex: none; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); margin-right: 6px; }
+.einstellungen[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+.einstellungen[open] { padding-bottom: 14px; }
+.einstellungen > summary:focus-visible { outline: 3px solid var(--akzent); outline-offset: 2px; }
+.kurz-titel { font: 700 0.78rem/1.2 var(--schrift); text-transform: uppercase; letter-spacing: 0.08em; color: var(--gedaempft); }
+.kurz-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.kurz-wert { font-weight: 800; font-variant-numeric: tabular-nums; }
 .werkzeuge { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .block { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 16px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
 .regler { display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; align-items: center; }
@@ -1511,7 +1534,9 @@ Perlen.ui.bauteile = (function () {
     ideen: 'M12 3l2.4 5 5.6.8-4 3.9.9 5.5L12 15.6 7.1 18.2 8 12.7 4 8.8l5.6-.8z',
     designer: 'M12 4a8 8 0 100 16 8 8 0 000-16zm0 3a1.6 1.6 0 110 3.2A1.6 1.6 0 0112 7zm-4.2 3a1.6 1.6 0 110 3.2 1.6 1.6 0 010-3.2zm8.4 0a1.6 1.6 0 110 3.2 1.6 1.6 0 010-3.2zM12 13.8a1.6 1.6 0 110 3.2 1.6 1.6 0 010-3.2z',
     einkauf: 'M6 7h12l-1 12H7zM9 7a3 3 0 016 0',
-    anleitung: 'M5 4h9l5 5v11H5zM14 4v5h5M8 13h8M8 16h6'
+    anleitung: 'M5 4h9l5 5v11H5zM14 4v5h5M8 13h8M8 16h6',
+    zurueck: 'M9 5L4 10l5 5M4 10h10a5 5 0 010 10h-3',
+    speichern: 'M7 4h10v16l-5-4-5 4z'
   };
   function icon(name) {
     const ns = 'http://www.w3.org/2000/svg', s = doc.createElementNS(ns, 'svg'), p = doc.createElementNS(ns, 'path');
@@ -1527,18 +1552,20 @@ Perlen.ui.bauteile = (function () {
 })();
 
 (function(){
-// UI: Designer (S-001, U-2 bis U-6). Vorschau oben, darunter Technik, Handgelenk, Muster oder Raster.
+// UI: Designer (S-001, U-2 bis U-6; S-003 Anordnung fürs Handy). Vorschau haftet oben und wird beim Scrollen kleiner,
+// direkt darunter Muster oder Raster, dann die einklappbare Kurzzeile Technik und Handgelenk, zuletzt Name und Titel.
 var Perlen = globalThis.Perlen = globalThis.Perlen || {};
 Perlen.ui = Perlen.ui || {};
 Perlen.ui.designer = (function () {
   const B = Perlen.ui.bauteile, K = Perlen.control.katalog, W = Perlen.control.entwurf, R = Perlen.control.rechner;
   const el = (...a) => B.el(...a);
   const FARBEN = K.farben(), G = K.grenzen();
+  const TECHNIK = { gummi: 'Gummiband', faden: 'Mit Verschluss', peyote: 'Peyote', loom: 'Webrahmen' };
   const cm = mm => (mm / 10).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' cm';
 
   function erzeuge(app) {
     const z = app.zustand;
-    let wurzel = null, teile = {}, entwurf = null, ziehen = null;
+    let wurzel = null, teile = {}, ziehen = null, offen = false, klein = false, breite = 0, fensterBreite = 0;
     const aktuell = () => (ziehen ? ziehen.entwurf : z.verlauf.zustand());
     const aendere = (fn, gruppe) => { if (z.verlauf.aendere(fn, gruppe)) { if (teile.technik !== aktuell().technik) baue(); else aktualisiere(); } };
 
@@ -1564,10 +1591,45 @@ Perlen.ui.designer = (function () {
         el('h3', {}, 'Farbe: ' + FARBEN[a.farbe].name), palette(),
         B.wahl(K.formen(), a.form, f => { a.form = f; baue(); }, 'Form'),
         B.wahl(K.groessen().map(g => ({ id: g, name: g + ' mm' })), a.groesse, g => { a.groesse = g; baue(); }, 'Größe'),
-        el('button', { type: 'button', class: 'knopf haupt', id: 'anfuegen', onclick: () => aendere(e => W.perleAnfuegen(e, { farbe: a.farbe, form: a.form, groesse: a.groesse })) }, 'Perle anfügen'),
+        el('button', { type: 'button', class: 'knopf haupt', id: 'anfuegen', onclick: () => aendere(e => W.perleAnfuegen(e, { farbe: a.farbe, form: a.form, groesse: a.groesse })) }, 'Perle anfügen'));
+    }
+    function namensBlock() {
+      return el('div', { class: 'block' },
         el('label', { for: 'name' }, el('h3', {}, 'Name in Buchstabenwürfeln (bis ' + G.nameMax + ' Buchstaben)')), teile.name,
         el('label', { for: 'titel' }, el('h3', {}, 'Titel des Entwurfs')), teile.titel);
     }
+
+    // Kurzzeile "Technik und Handgelenk": eingeklappt, nennt beides; der Zustand "offen" bleibt beim Neuaufbau erhalten
+    function einstellungen(e) {
+      const um = d => el('button', { type: 'button', class: 'knopf', 'aria-label': d > 0 ? 'Handgelenk größer' : 'Handgelenk kleiner', onclick: () => aendere(x => W.setzeUmfang(x, x.umfang + d)) }, d > 0 ? '+' : '−');
+      teile.kurz = el('span', { class: 'kurz-wert' });
+      const d = el('details', { class: 'block einstellungen', id: 'einstellungen' },
+        el('summary', {}, el('span', { class: 'kurz-text' }, el('span', { class: 'kurz-titel' }, 'Technik und Handgelenk'), teile.kurz)),
+        el('div', { class: 'stapel' },
+          B.wahl(K.techniken().map(t => ({ id: t.id, name: TECHNIK[t.id] })), e.technik, t => aendere(x => W.setzeTechnik(x, t)), 'Technik', true),
+          el('div', { class: 'zeile', style: 'justify-content:space-between' }, teile.wert, el('span', { class: 'unter' }, 'Zugabe rechnet die App dazu')),
+          el('div', { class: 'regler' }, um(-5), teile.umfang, um(5))));
+      d.open = offen;
+      d.addEventListener('toggle', () => { offen = d.open; });
+      return d;
+    }
+
+    // Bühne haftet oben und wird stufenlos kleiner, so weit man über ihren Anfang scrollt (bis 150 px, höchstens 30 % der Höhe).
+    // Der untere Rand gleicht die gesparte Höhe aus: die Seite bleibt gleich hoch, unter der Bühne bleibt kein Streifen, nichts springt.
+    function groesse() {
+      const bu = teile.huelle; if (!bu || !bu.isConnected || !bu.offsetParent) return;
+      const f = app.dokument.defaultView;
+      if (!klein) teile.voll = bu.offsetHeight;
+      // die Bühne ist das erste Kind der Wurzel: deren Oberkante ist der Platz der Bühne im Fluss (die haftende Bühne selbst wandert mit)
+      const weg = -wurzel.getBoundingClientRect().top, unten = Math.min(150, Math.round(f.innerHeight * 0.3));
+      const d = Math.round(Math.max(0, Math.min(teile.voll - unten, weg)));
+      if (d === teile.weg) return;
+      teile.weg = d; klein = d > 0;
+      const h = teile.voll - d;
+      bu.className = !klein ? 'buehne' : h < 200 ? 'buehne klein eng' : 'buehne klein';
+      bu.style.height = klein ? h + 'px' : ''; bu.style.marginBottom = klein ? d + 'px' : '';
+    }
+    function zurueckGross() { klein = false; teile.weg = 0; const bu = teile.huelle; bu.className = 'buehne'; bu.style.height = bu.style.marginBottom = ''; }
 
     function rasterBlock() {
       const e = aktuell();
@@ -1624,14 +1686,18 @@ Perlen.ui.designer = (function () {
     function aktualisiere() {
       if (!wurzel) return;
       const e = aktuell(), t0 = app.jetzt();
-      const geo = B.zeichneRing(teile.buehne, e, teile.buehne.clientWidth || 360);
+      // immer in voller Breite zeichnen; die kleine Bühne zeigt dasselbe Bild verkleinert (bleibt scharf)
+      if (!klein && teile.buehne.clientWidth) breite = teile.buehne.clientWidth;
+      const geo = B.zeichneRing(teile.buehne, e, breite || 360);
       app.messung = { ms: app.jetzt() - t0, gezeichnet: geo.perlen.length, ringBreite: geo.ring.rx * 2, geo };
       const raster = K.istRaster(e.technik), P = R.strecke(e);
-      const zahlen = [raster ? geo.perlen.length + ' Delica-Perlen' : geo.perlen.length + ' Perlen', 'Perlenstrecke ' + cm(P),
-        raster ? R.raster(e).breite.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' mm breit' : 'Handgelenk ' + cm(e.umfang)];
-      teile.zahlen.replaceChildren(...zahlen.map(t => el('span', { class: 'chip' }, t)));
-      if (!raster && !e.muster.length) teile.zahlen.append(el('span', { class: 'chip' }, 'Muster leer'));
+      const zahlen = [geo.perlen.length + ' Perlen', cm(P)];
+      if (raster) zahlen.push(R.raster(e).breite.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' mm breit');
+      if (!raster && !e.muster.length) zahlen.push('Muster leer');
+      B.text(teile.zahlen, zahlen.join(' · '));
       B.text(teile.wert, cm(e.umfang)); teile.umfang.value = String(e.umfang);
+      B.text(teile.kurz, TECHNIK[e.technik] + ' · ' + cm(e.umfang));
+      groesse();
       teile.zurueck.disabled = !z.verlauf.kannZurueck();
       if (raster) { zeichneRaster(); B.text(wurzel.querySelector('#spalten'), e.raster.spalten + ' Spalten'); B.text(wurzel.querySelector('#reihen'), e.raster.reihen + ' Musterreihen'); }
       else {
@@ -1654,23 +1720,25 @@ Perlen.ui.designer = (function () {
       teile.wert = el('span', { class: 'wert', id: 'umfangwert' });
       teile.umfang = el('input', { type: 'range', id: 'umfang', min: String(G.umfangMin), max: String(G.umfangMax), step: '5', 'aria-label': 'Handgelenkumfang in Millimetern',
         oninput: ev => aendere(x => W.setzeUmfang(x, Number(ev.target.value)), 'umfang'), onchange: () => z.verlauf.schliesse() });
-      teile.zurueck = el('button', { type: 'button', class: 'knopf', id: 'zurueck', onclick: () => { if (z.verlauf.rueckgaengig()) { if (teile.technik !== aktuell().technik) baue(); else aktualisiere(); } } }, 'Rückgängig');
-      const um = d => el('button', { type: 'button', class: 'knopf', 'aria-label': d > 0 ? 'Handgelenk größer' : 'Handgelenk kleiner', onclick: () => aendere(x => W.setzeUmfang(x, x.umfang + d)) }, d > 0 ? '+' : '−');
-      wurzel.replaceChildren(
-        el('div', { class: 'buehne' }, teile.buehne, teile.zahlen),
-        el('div', { class: 'werkzeuge' }, teile.zurueck,
-          el('button', { type: 'button', class: 'knopf', id: 'speichern', onclick: () => app.speichere() }, 'Speichern'),
-          el('button', { type: 'button', class: 'knopf haupt', onclick: () => app.zeige('einkauf') }, 'Einkauf')),
-        el('div', { class: 'block' }, el('h3', {}, 'Technik'),
-          B.wahl(K.techniken().map(t => ({ id: t.id, name: { gummi: 'Gummiband', faden: 'Mit Verschluss', peyote: 'Peyote', loom: 'Webrahmen' }[t.id] })), e.technik, t => aendere(x => W.setzeTechnik(x, t)), 'Technik', true),
-          el('h3', {}, 'Handgelenk'), el('div', { class: 'zeile', style: 'justify-content:space-between' }, teile.wert, el('span', { class: 'unter' }, 'Zugabe rechnet die App dazu')),
-          el('div', { class: 'regler' }, um(-5), teile.umfang, um(5))),
-        K.istRaster(e.technik) ? rasterBlock() : musterBlock());
+      teile.zurueck = el('button', { type: 'button', class: 'ecke links', id: 'zurueck', 'aria-label': 'Rückgängig', title: 'Rückgängig',
+        onclick: () => { if (z.verlauf.rueckgaengig()) { if (teile.technik !== aktuell().technik) baue(); else aktualisiere(); } } }, B.icon('zurueck'));
+      klein = false; teile.weg = 0;
+      teile.huelle = el('div', { class: 'buehne' }, teile.buehne, teile.zurueck,
+        el('button', { type: 'button', class: 'ecke rechts', id: 'speichern', 'aria-label': 'Speichern', onclick: () => app.speichere() }, B.icon('speichern'), el('span', {}, 'Speichern')), teile.zahlen);
+      const raster = K.istRaster(e.technik), gestalten = raster ? rasterBlock() : musterBlock();
+      wurzel.replaceChildren(teile.huelle, gestalten, einstellungen(e), ...(raster ? [] : [namensBlock()]));
       aktualisiere();
     }
 
     return {
-      haenge(an) { wurzel = an; baue(); },
+      haenge(an) {
+        wurzel = an; baue();
+        const f = app.dokument.defaultView;
+        f.addEventListener('scroll', groesse, { passive: true });
+        // nur eine neue Breite zeichnet neu; die Browserleiste, die beim Scrollen kommt und geht, ändert nur die Höhe
+        fensterBreite = f.innerWidth;
+        f.addEventListener('resize', () => { if (!teile.huelle || f.innerWidth === fensterBreite) return; fensterBreite = f.innerWidth; zurueckGross(); aktualisiere(); });
+      },
       baue, aktualisiere,
       oeffne(neu) { ziehen = null; if (z.verlauf.setze(neu) || teile.technik !== neu.technik) baue(); }
     };
