@@ -8,6 +8,7 @@ Der Betreiber will die Perlenwerkstatt (Perlenarmbänder planen, S-001 der App) 
 Nachtrag 06.11.2026: Stand mit S-002 der App (Anleitung mit bewegten Bildern je Schritt) neu gebaut, gleiche Prüfungen grün.
 Nachtrag 07.11.2026: Stand mit S-003 der App (Designer fürs Handy: Vorschau haftet oben und wird kleiner, Gestalten direkt darunter) neu gebaut, gleiche Prüfungen grün.
 Nachtrag 07.11.2026: Stand mit S-004 der App (26 Ideen) neu gebaut, gleiche Prüfungen grün.
+Nachtrag 07.11.2026: Stand mit S-005 bis S-010 der App (richtige Größe, Arbeitsmodus, Einkauf mit Preis, Muster aus Bild, Sichern und Laden, Spiegeln, Lupe, Druckansicht) neu gebaut, gleiche Prüfungen grün. Alles bleibt im Gerät, kein fremder Server.
 
 ## Anwendungsfall
 - U-1: Der Besucher öffnet die Startseite, sieht die neue Rubrik "Basteln" mit der Karte Perlenwerkstatt, tippt "Planen" und sieht in unter 3 s zwölf Ideen.
