@@ -22,14 +22,15 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 .zeile{display:flex;gap:6px;align-items:center}
 button{font:inherit;color:var(--text);background:var(--knopf);border:1px solid var(--rand);border-radius:12px;min-height:48px;min-width:48px;padding:0 6px;flex:1}
 button[aria-pressed=true]{background:var(--aktiv);border-color:var(--akzent)}
-button.farbe{flex:0 0 52px;min-width:52px;border-radius:50%;height:48px;border:3px solid transparent;padding:0}
+button.farbe{flex:0 1 52px;min-width:44px;border-radius:50%;height:48px;border:3px solid transparent;padding:0}
 button.farbe[aria-pressed=true]{border-color:#fff}
-button.welt{flex:0 0 48px;padding:0}
+button.welt{flex:0 1 48px;min-width:44px;padding:0}
+#farben{gap:4px}
 .trenner{flex:1}
 body.ergebnis .malen{display:none} body:not(.ergebnis) .fertig{display:none}
 button.gross{background:var(--akzent);color:#2a1a20;min-height:54px}
 button.schild{position:absolute;left:8px;top:8px;flex:none;min-height:44px;background:rgba(29,24,34,.82);font-size:13px;padding:0 12px;z-index:2}
-#musterliste{position:absolute;inset:0;background:rgba(20,16,24,.97);display:flex;flex-direction:column;justify-content:center;gap:8px;padding:24px;z-index:3}
+#musterliste{position:absolute;inset:0;background:rgba(20,16,24,.97);display:flex;flex-direction:column;justify-content:safe center;overflow-y:auto;gap:8px;padding:24px;z-index:3}
 #musterliste[hidden],#galerie[hidden],button[hidden]{display:none}
 #galerie{position:absolute;inset:0;background:#1d1822;display:flex;flex-direction:column;gap:10px;padding:16px;z-index:3;overflow:auto}
 #galerie .raster{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -192,6 +193,14 @@ globalThis.Ebru = {};
 
   function begrenzeRadius(r) { return Number.isFinite(r) ? klemme(r, RADIUS_MIN, RADIUS_MAX) : (RADIUS_MIN + RADIUS_MAX) / 2; }
   function radiusWaehlen(rnd) { return RADIUS_MIN + rnd() * (RADIUS_MAX - RADIUS_MIN); }
+  // Große Tropfen (S-010): ab HALTEN_WARTE Sekunden Haltezeit wächst der Radius gleichmäßig, nach HALTEN_DAUER mehr ist er HALTEN_FAKTOR-mal so groß
+  const HALTEN_WARTE = 0.25, HALTEN_DAUER = 1.5, HALTEN_FAKTOR = 3;
+  function radiusGehalten(r0, sek) { const u = Number.isFinite(sek) ? klemme((sek - HALTEN_WARTE) / HALTEN_DAUER, 0, 1) : 0; return u ? r0 * (1 + (HALTEN_FAKTOR - 1) * u) : r0; }
+  /* Sichtbarer Radius eines gehaltenen Tropfens tRel Sekunden nach dem Tippen: Aufgehen wie jeder Tropfen plus Wachsen bis zum Loslassen (h.bis, null = liegt noch); stetig und nie fallend */
+  function haltenRadius(h, tRel) {
+    const t = Number.isFinite(tRel) ? Math.max(0, tRel) : 0, auf = 1 - Math.pow(1 - klemme(t / h.auf, 0, 1), 3);
+    return h.r0 * auf + radiusGehalten(h.r0, h.bis === null ? t : Math.min(t, h.bis)) - h.r0;
+  }
 
   function verfeinern(p, KANTE_MAX) { // Kanten über KANTE_MAX teilen (Tropfen 6, Strömung 3 Einheiten) (höchstens 4 Durchgänge)
     for (let durchgang = 0; durchgang < 4; durchgang++) {
@@ -292,6 +301,7 @@ globalThis.Ebru = {};
     const b = E.kopie(basis);
     for (const e of plan) {
       if (t < e.t) break;
+      if (e.halten) { const r = haltenRadius(e.halten, t - e.t); if (r > 0.5) tropfen(b, e.x, e.y, r, e.farbe); continue; }
       const p = Math.min(1, (t - e.t) / e.dauer), r = e.rEnde * (1 - Math.pow(1 - p, 3));
       if (r > 0.5) tropfen(b, e.x, e.y, p >= 1 ? e.rEnde : r, e.farbe);
     }
@@ -302,7 +312,7 @@ globalThis.Ebru = {};
   function aufloesung(stufe, dpr) { return [0.5, 0.75, 1][klemme(stufe, 0, 2)] * Math.min(Number.isFinite(dpr) ? dpr : 1, 2); }
   function bildSchritt(ms) { return Number.isFinite(ms) ? klemme(ms, 0, 100) : 0; }
 
-  g.Ebru.control = { KNOTEN_MAX, RADIUS_MIN, RADIUS_MAX, UNDO_TIEFE, neuerZug, begrenzeRadius, radiusWaehlen, tropfen, schiebeWeg, kammWeg, farbeAn, streifen, merke, rueckgaengig, spritzPunkte, vorfuehrungFuer, planAutoTropfen, autoZustand, qualitaetNach, aufloesung, bildSchritt };
+  g.Ebru.control = { KNOTEN_MAX, RADIUS_MIN, RADIUS_MAX, UNDO_TIEFE, HALTEN_WARTE, neuerZug, begrenzeRadius, radiusWaehlen, radiusGehalten, haltenRadius, tropfen, schiebeWeg, kammWeg, farbeAn, streifen, merke, rueckgaengig, spritzPunkte, vorfuehrungFuer, planAutoTropfen, autoZustand, qualitaetNach, aufloesung, bildSchritt };
 })(globalThis);
 
 })();
@@ -466,6 +476,32 @@ globalThis.Ebru = {};
 })();
 
 (function(){
+// Control: Becken im Tab sichern (S-011, A-26). Reine Funktionen; Speicher (sessionStorage) liegt in Boundary.
+// Format (R-07): { version: 1, welt: "A"|"B"|"C", polys: [{ f: 0..3, p: [x, y, ...] }] }, Koordinaten auf 0,01 gerundet.
+(function (g) {
+  const E = g.Ebru.entity, VERSION = 1, MAX_KNOTEN = 150000, RUNDUNG = 100;
+  function schreiben(b) {
+    if (!b || !b.polys.length || E.knoten(b) > MAX_KNOTEN) return null; /* Grenze wie beim Lesen: was geschrieben wird, lässt sich auch lesen */
+    return JSON.stringify({ version: VERSION, welt: b.welt, polys: b.polys.map(q => ({ f: q.farbe, p: Array.from(q.p, v => Math.round(v * RUNDUNG) / RUNDUNG) })) });
+  }
+  function lesen(text) {
+    let roh; try { roh = JSON.parse(text); } catch (e) { return null; }
+    if (!roh || roh.version !== VERSION || !Object.prototype.hasOwnProperty.call(E.PALETTEN, roh.welt) || !Array.isArray(roh.polys) || !roh.polys.length) return null;
+    let knoten = 0; const polys = [];
+    for (const q of roh.polys) {
+      if (!q || !Number.isInteger(q.f) || q.f < 0 || q.f > 3 || !Array.isArray(q.p) || q.p.length < 6 || q.p.length % 2) return null;
+      knoten += q.p.length / 2; if (knoten > MAX_KNOTEN) return null;
+      if (!q.p.every(v => typeof v === 'number' && Number.isFinite(v))) return null;
+      polys.push({ farbe: q.f, p: Float64Array.from(q.p) });
+    }
+    return { welt: roh.welt, polys };
+  }
+  g.Ebru.sicherung = { VERSION, MAX_KNOTEN, schreiben, lesen };
+})(globalThis);
+
+})();
+
+(function(){
 // Control: Sitzung (Phase, Werkzeug, Autotropfen, Abdruck, Farbwelt, Ton-Freigabe). Zeit kommt als Parameter (R-02).
 (function (g) {
   const E = g.Ebru.entity, C = g.Ebru.control, A = g.Ebru.anleitung;
@@ -489,18 +525,25 @@ globalThis.Ebru = {};
     s.becken = C.autoZustand(s.basis, s.plan, sek - s.planStart); s.becken.verlauf = verlauf; s.becken.welt = welt;
     const letzte = s.plan[s.plan.length - 1]; if (sek - s.planStart >= letzte.t + letzte.dauer) s.plan = null;
   }
+  // Große Tropfen (S-010): solange der Finger liegt, wächst der Endradius des getippten Tropfens; der Plan rechnet ihn je Bild neu
+  // Der getippte Tropfen trägt halten = { r0, auf, bis }; solange bis null ist, läuft der Plan weiter (dauer unendlich), Loslassen legt das Ende fest
+  function loslassen(s) {
+    const h = s.halten; s.halten = null; if (!h || h.e.halten.bis !== null) return;
+    const dt = Math.max(0, Number.isFinite(s.jetzt) ? s.jetzt / 1000 - h.t0 : 0); h.e.halten.bis = dt; h.e.dauer = Math.max(AUFGEHEN_S, dt);
+  }
   function bildZeit(s, dtMs) { s.jetzt += C.bildSchritt(dtMs); zeit(s, s.jetzt / 1000); vorfuehrungSchritt(s, s.jetzt / 1000); return s.jetzt; }
   // Laufende Animation sofort zu Ende rechnen (vor jedem neuen Schritt)
   function abschliessen(s) { // Vorführung beenden, begonnene Tropfen fertig setzen, noch nicht begonnene Autotropfen verwerfen
-    s.vorfuehrung = null; if (!s.plan) return; const jetzt = (s.planJetzt || 0) - s.planStart, begonnen = s.plan.filter(e => e.t <= jetzt);
+    s.vorfuehrung = null; loslassen(s); if (!s.plan) return; const jetzt = (s.planJetzt || 0) - s.planStart, begonnen = s.plan.filter(e => e.t <= jetzt);
     if (begonnen.length) { s.plan = begonnen; const l = begonnen[begonnen.length - 1]; zeit(s, s.planStart + l.t + l.dauer); } s.plan = null; }
   // Getippter Tropfen geht in AUFGEHEN_S auf (S-002); im ersten Bild (1/60 s) schon sichtbar.
-  function tippen(s, x, y, farbe, rnd) {
+  function tippen(s, x, y, farbe, rnd, halten) { /* halten: Finger bleibt liegen, Tropfen darf wachsen bis loslassen (S-010) */
     if (s.phase !== 'malen' || !Number.isFinite(x) || !Number.isFinite(y)) return false;
     const sch = schritt(s); if (sch && sch.art !== 'tropfen') return false;
     abschliessen(s); merke(s); if (sch) { farbe = sch.farbe; weiter(s); }
     const t = s.jetzt / 1000, r = sch ? sch.r : C.radiusWaehlen(rnd), cx = Math.min(s.breite, Math.max(0, x)), cy = Math.min(s.hoehe, Math.max(0, y));
-    startePlan(s, [{ t, x: cx, y: cy, rEnde: r, dauer: AUFGEHEN_S, farbe }], 0); zeit(s, t + 1 / 60); return true;
+    const e = { t, x: cx, y: cy, rEnde: r, dauer: AUFGEHEN_S, farbe }, wachsen = halten && !sch; if (wachsen) { e.halten = { r0: r, auf: AUFGEHEN_S, bis: null }; e.dauer = Infinity; }
+    startePlan(s, [e], 0); zeit(s, t + 1 / 60); s.halten = wachsen ? { e, t0: t } : null; return true;
   }
   // Fingerzug mit Stäbchen oder Kamm: Zustand (zurückgelegter Weg) liegt in der Sitzung, nicht in der UI (R-03)
   function zugBeginnen(s) { if (s.phase !== 'malen') return false; abschliessen(s); merke(s); s.zug = C.neuerZug(); return true; }
@@ -549,7 +592,7 @@ globalThis.Ebru = {};
   function musikAn(s) { return s.beruehrt && s.tonStufe === 2; }
   function tonFuer(s, name) { return s.beruehrt && s.tonAn && TOENE.includes(name) ? name : null; }
 
-  g.Ebru.sitzung = { KAMM, planeVorfuehrung, anleitungStarten, anleitungEnde, schritt, musikAn, ABDRUCK_MS, AUFGEHEN_S, abschliessen, zugBeginnen, zugWeiter, zugEnde, neueSitzung, startePlan, zeit, bildZeit, tippen, abdruckStarten, abdruckFortschritt, weltWechseln, neuesBecken, rueckgaengig, beruehrt, tonUmschalten, tonFuer };
+  g.Ebru.sitzung = { KAMM, planeVorfuehrung, anleitungStarten, anleitungEnde, schritt, musikAn, ABDRUCK_MS, AUFGEHEN_S, abschliessen, loslassen, zugBeginnen, zugWeiter, zugEnde, neueSitzung, startePlan, zeit, bildZeit, tippen, abdruckStarten, abdruckFortschritt, weltWechseln, neuesBecken, rueckgaengig, beruehrt, tonUmschalten, tonFuer };
 })(globalThis);
 
 })();
@@ -637,10 +680,10 @@ globalThis.Ebru = {};
 })();
 
 (function(){
-// Boundary: localStorage (S-006). Jeder Zugriff in try/catch: privater Modus, voller oder gesperrter Speicher dürfen nichts brechen.
+// Boundary: localStorage (S-006) oder sessionStorage (art 'session', S-011). Jeder Zugriff in try/catch: privater Modus, voller oder gesperrter Speicher dürfen nichts brechen.
 (function (g) {
-  function erzeuge(fenster) {
-    const ls = () => { try { return fenster.localStorage || null; } catch (e) { return null; } };
+  function erzeuge(fenster, art) {
+    const ls = () => { try { return (art === 'session' ? fenster.sessionStorage : fenster.localStorage) || null; } catch (e) { return null; } };
     return {
       lesen(schluessel) { try { const l = ls(); return l ? l.getItem(schluessel) : null; } catch (e) { return null; } },
       schreiben(schluessel, text) { try { const l = ls(); if (!l) return false; l.setItem(schluessel, text); return true; } catch (e) { return false; } },
@@ -864,7 +907,7 @@ globalThis.Ebru = {};
   const ruhig = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); let wellen = []; // Wasserwellen (nur Anzeige, S-005)
   const flaeche = $('flaeche'); let cssW = 400, cssH = 800, scale = 1, stufe = 2, s = null, korn = null, ergebnisKarte = null;
   // S-008: Spur hinter dem Werkzeug, Sternfeier, Bildsammler für den Zeitraffer (nur im Arbeitsspeicher)
-  let vorfZuletzt = false, geistGemalt = false, spurZug = {}, spurGesamt = 0, feier = null, feierT0 = 0, feiern = 0, bilder = [], bilderRunde = 0, letzteSammlung = 0, veraendert = false, klein = null, video = null, videoLaeuft = false;
+  let tropfenHalten = false, vorfZuletzt = false, geistGemalt = false, spurZug = {}, spurGesamt = 0, feier = null, feierT0 = 0, feiern = 0, bilder = [], bilderRunde = 0, letzteSammlung = 0, veraendert = false, klein = null, video = null, videoLaeuft = false;
   let angezeigt = false, dirty = true, letzte = performance.now(), summe = 0, anzahl = 0, fpsWert = 0, zeiger = null, letzterStab = 0, letzterTon = 0, planTon = 0, hinweisAus = 0;
 
   function hoeheSetzen() { /* sichtbare Höhe statt 100dvh: manche Android-Ansichten zählen die Systemleiste mit (F-10) */
@@ -877,8 +920,15 @@ globalThis.Ebru = {};
   }
   function neu() {
     groesse(); s = S.neueSitzung(E.BREITE, Math.round(E.BREITE * cssH / cssW));
-    const plan = C.planAutoTropfen(rnd, s.breite, s.hoehe); S.startePlan(s, plan, 0); S.planeVorfuehrung(s, C.vorfuehrungFuer(plan)); planTon = 0; wellen = []; ergebnisKarte = null; angezeigt = false; bilderNeu(); zeigeHinweis('Tippe aufs Wasser oder zieh mit dem Finger', 6000); dirty = true; leiste();
+    const alt = g.Ebru.sicherung.lesen(tab.lesen(TAB_SCHLUESSEL)); planTon = 0; wellen = []; ergebnisKarte = null; angezeigt = false; bilderNeu();
+    if (alt) { s.becken.polys = alt.polys; s.becken.welt = alt.welt; zeigeHinweis('Dein Bild ist wieder da', 3000); } /* S-011: Android hatte den Tab geschlossen */
+    else { const plan = C.planAutoTropfen(rnd, s.breite, s.hoehe); S.startePlan(s, plan, 0); S.planeVorfuehrung(s, C.vorfuehrungFuer(plan)); zeigeHinweis('Tippe aufs Wasser oder zieh mit dem Finger', 6000); }
+    dirty = true; leiste();
   }
+  const tab = B.speicher.erzeuge(window, 'session'), TAB_SCHLUESSEL = 'ebru.becken'; // S-011: Becken nur im Tab sichern
+  function sichern() { if (s) tab.schreiben(TAB_SCHLUESSEL, g.Ebru.sicherung.schreiben(s.becken) || ''); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) sichern(); });
+  window.addEventListener('pagehide', sichern);
   function welle(x, y, kl) { if (ruhig) return; wellen.push({ x, y, t0: performance.now(), kl: !!kl }); if (kl) spurGesamt++; }
   function bilderNeu() { bilder = []; bilderRunde++; video = null; letzteSammlung = 0; }
   function sammeln(jetzt) { /* alle 0,25 s ein kleines JPEG des Beckens, höchstens 240 (danach ausgedünnt) */
@@ -944,7 +994,7 @@ globalThis.Ebru = {};
   cv.addEventListener('pointerdown', e => {
     if (zeiger !== null || s.phase !== 'malen') return; zeiger = e.pointerId; try { cv.setPointerCapture(e.pointerId); } catch (fehler) { /* Zeiger schon weg: weiter ohne Fang */ }
     S.beruehrt(s); ton.freischalten(); if (!s.anleitung) hinweis.style.opacity = 0; const [x, y] = pos(e);
-    if (s.werkzeug === 'tropfen') { if (S.tippen(s, x, y, s.farbe, rnd)) { spiele('tropfen'); planTon = 1; welle(x, y); haptik.kurz(); } zeiger = null; leiste(); return; }
+    if (s.werkzeug === 'tropfen') { if (S.tippen(s, x, y, s.farbe, rnd, true)) { spiele('tropfen'); planTon = 1; welle(x, y); haptik.kurz(); tropfenHalten = true; } else zeiger = null; leiste(); return; }
     S.zugBeginnen(s); spurZug = {}; s.letzt = [x, y]; s.ziel = null; s.richtung = [0, 1]; leiste();
   });
   cv.addEventListener('pointermove', e => {
@@ -955,8 +1005,8 @@ globalThis.Ebru = {};
     S.zugWeiter(s, x0, y0, x, y, rnd); if (s.phase === 'malen') for (const [px, py] of W.spurPunkte(x0, y0, x, y, spurZug)) welle(px, py, true); s.letzt = [x, y]; s.richtung = [(x - x0) / d, (y - y0) / d]; dirty = true;
     const jetzt = performance.now(); if (jetzt - letzterStab > 140) { letzterStab = jetzt; spiele('stab', d / 20); }
   }
-  const ende = e => { if (e.pointerId === zeiger) { zugRechnen(); zeiger = null; s.letzt = null; s.ziel = null; S.zugEnde(s); leiste(); } };
-  cv.addEventListener('pointerup', ende); cv.addEventListener('pointercancel', ende);
+  const ende = e => { if (e.pointerId === zeiger && tropfenHalten) { tropfenHalten = false; zeiger = null; S.loslassen(s); leiste(); return; } if (e.pointerId === zeiger) { zugRechnen(); zeiger = null; s.letzt = null; s.ziel = null; S.zugEnde(s); leiste(); } };
+  cv.addEventListener('pointerup', ende); cv.addEventListener('pointercancel', ende); cv.addEventListener('lostpointercapture', ende); /* Finger verloren: Halten sicher beenden */
 
   document.addEventListener('click', async e => {
     if (e.target.id === 'musterliste') { musterListe(false); return; }
@@ -1009,7 +1059,7 @@ globalThis.Ebru = {};
     requestAnimationFrame(bild); const dt = jetzt - letzte; letzte = jetzt; if (!s) return;
     zugRechnen(); S.bildZeit(s, dt); if (s.plan || s.phase === 'abdruck') dirty = true;
     if (s.plan) { while (planTon < s.plan.length && s.jetzt / 1000 >= s.plan[planTon].t) { const e = s.plan[planTon]; spiele('tropfen'); welle(e.x, e.y); planTon++; } }
-    if (s.vorfuehrung || vorfZuletzt || wellen.length || feier) dirty = true; vorfZuletzt = !!s.vorfuehrung; /* ein Bild nach dem Ende der Vorführung, damit das Geisterstäbchen verschwindet */
+    if (s.vorfuehrung || s.halten || vorfZuletzt || wellen.length || feier) dirty = true; vorfZuletzt = !!s.vorfuehrung; /* ein Bild nach dem Ende der Vorführung, damit das Geisterstäbchen verschwindet */
     if (hinweisAus && jetzt > hinweisAus) { hinweis.style.opacity = 0; hinweisAus = 0; }
     if (dirty) { dirty = false; malen(jetzt); summe += dt; anzahl++; if (s.phase !== 'ergebnis') veraendert = true; }
     if (veraendert && jetzt - letzteSammlung >= 250) sammeln(jetzt);
@@ -1019,7 +1069,7 @@ globalThis.Ebru = {};
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => groesse());
   window.addEventListener('orientationchange', () => setTimeout(groesse, 200));
   korn = Z.kachel(rnd); neu(); requestAnimationFrame(bild);
-  window.__ebru = { geist: () => geistGemalt, toene: () => ton.gespielt(), klaenge: () => ton.klaenge(), wellen: () => wellen.length, spur: () => spurGesamt, feiern: () => feiern, sterne: () => (feier ? feier.length : 0), bilder: () => bilder.length, video: () => (video ? { groesse: video.blob.size, endung: video.endung } : null), videoBlob: () => (video ? video.blob : null), sitzung: () => s, stufe: () => stufe, fps: () => fpsWert, kanvas: cv };
+  window.__ebru = { sichern, geist: () => geistGemalt, toene: () => ton.gespielt(), klaenge: () => ton.klaenge(), wellen: () => wellen.length, spur: () => spurGesamt, feiern: () => feiern, sterne: () => (feier ? feier.length : 0), bilder: () => bilder.length, video: () => (video ? { groesse: video.blob.size, endung: video.endung } : null), videoBlob: () => (video ? video.blob : null), sitzung: () => s, stufe: () => stufe, fps: () => fpsWert, kanvas: cv };
 })(globalThis);
 
 })();
