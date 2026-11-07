@@ -2,7 +2,7 @@
 """Baut ebru/index.html aus dem Bau der Ebru-App (S-W18): Symbol, Manifest, Zurück-Link. Aufruf: python3 werkstatt/bau_ebru.py <build/ebru.html>"""
 import sys
 t = open(sys.argv[1], encoding="utf-8").read()
-alt = '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">'
+alt = '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">'
 assert t.count(alt) == 1 and t.startswith('<!doctype html>')
 t = t.replace(alt, alt + '\n<meta name="theme-color" content="#2a2430">\n<meta name="description" content="Ebru: türkische Marmorierkunst auf Wasser malen, direkt im Browser.">'
               '\n<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/ebru-192.png">\n<link rel="apple-touch-icon" href="../bilder/symbole/ebru-192.png">'
