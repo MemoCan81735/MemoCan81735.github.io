@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#2a2430">
 <meta name="description" content="Ebru: türkische Marmorierkunst auf Wasser malen, direkt im Browser.">
 <link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/ebru-192.png">
@@ -14,11 +14,11 @@
 @media (prefers-color-scheme: light){:root{--grund:#e9e1d4}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--grund);color:var(--text);font:600 14px system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-#app{display:flex;flex-direction:column;height:100dvh;max-width:560px;margin:0 auto}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;height:var(--hoehe,100dvh);max-width:560px;margin:0 auto}
 #flaeche{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 #hinweis{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:13px;color:#fff;text-shadow:0 1px 3px #000;pointer-events:none;transition:opacity .6s;z-index:4}
-#leiste{background:var(--leiste);padding:6px 8px calc(6px + env(safe-area-inset-bottom));display:grid;gap:6px}
+#leiste{background:var(--leiste);padding:6px 8px max(6px,env(safe-area-inset-bottom));display:grid;gap:6px}
 .zeile{display:flex;gap:6px;align-items:center}
 button{font:inherit;color:var(--text);background:var(--knopf);border:1px solid var(--rand);border-radius:12px;min-height:48px;min-width:48px;padding:0 6px;flex:1}
 button[aria-pressed=true]{background:var(--aktiv);border-color:var(--akzent)}
@@ -867,7 +867,11 @@ globalThis.Ebru = {};
   let vorfZuletzt = false, geistGemalt = false, spurZug = {}, spurGesamt = 0, feier = null, feierT0 = 0, feiern = 0, bilder = [], bilderRunde = 0, letzteSammlung = 0, veraendert = false, klein = null, video = null, videoLaeuft = false;
   let angezeigt = false, dirty = true, letzte = performance.now(), summe = 0, anzahl = 0, fpsWert = 0, zeiger = null, letzterStab = 0, letzterTon = 0, planTon = 0, hinweisAus = 0;
 
+  function hoeheSetzen() { /* sichtbare Höhe statt 100dvh: manche Android-Ansichten zählen die Systemleiste mit (F-10) */
+    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight; if (h > 200) document.documentElement.style.setProperty('--hoehe', Math.round(h) + 'px');
+  }
   function groesse() {
+    hoeheSetzen();
     const r = flaeche.getBoundingClientRect(); cssW = Math.max(200, Math.round(r.width)); cssH = Math.max(300, Math.round(r.height));
     const dpr = C.aufloesung(stufe, window.devicePixelRatio || 1); cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr); scale = cv.width / E.BREITE; dirty = true;
   }
@@ -1012,6 +1016,7 @@ globalThis.Ebru = {};
     if (anzahl >= 30) { const mittel = summe / anzahl; fpsWert = 1000 / mittel; const neuStufe = C.qualitaetNach(stufe, mittel); summe = 0; anzahl = 0; if (neuStufe !== stufe) { stufe = neuStufe; groesse(); } }
   }
   window.addEventListener('resize', () => { groesse(); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => groesse());
   window.addEventListener('orientationchange', () => setTimeout(groesse, 200));
   korn = Z.kachel(rnd); neu(); requestAnimationFrame(bild);
   window.__ebru = { geist: () => geistGemalt, toene: () => ton.gespielt(), klaenge: () => ton.klaenge(), wellen: () => wellen.length, spur: () => spurGesamt, feiern: () => feiern, sterne: () => (feier ? feier.length : 0), bilder: () => bilder.length, video: () => (video ? { groesse: video.blob.size, endung: video.endung } : null), videoBlob: () => (video ? video.blob : null), sitzung: () => s, stufe: () => stufe, fps: () => fpsWert, kanvas: cv };
