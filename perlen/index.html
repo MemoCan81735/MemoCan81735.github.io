@@ -488,7 +488,7 @@ Perlen.control.entwurf = (function () {
 })();
 
 (function(){
-// Control: 12 Ideen in allen drei Techniken (S-001, A-3). Jede Idee ist ein bereinigter Entwurf.
+// Control: 26 Ideen in allen drei Techniken (S-001, A-3; S-004, A-13: zwölf weitere, Paare als zwei Ideen). Jede Idee ist ein bereinigter Entwurf.
 var Perlen = globalThis.Perlen = globalThis.Perlen || {};
 Perlen.control = Perlen.control || {};
 Perlen.control.ideen = (function () {
@@ -526,16 +526,51 @@ Perlen.control.ideen = (function () {
       entwurf: { technik: 'gummi', muster: [p(KORALLE, 8), p(ORANGE, 6), p(GELB, 4), p(GOLD, 6, 'rondelle'), p(GELB, 4), p(ORANGE, 6)] } },
     { titel: 'Schwarz und Gold', beschreibung: 'Kräftiger Kontrast, wirkt auch bei Männern.',
       entwurf: { technik: 'faden', muster: [p(SCHWARZ, 8), p(SCHWARZ, 8), p(GOLD, 6), p(GOLD, 4, 'rondelle'), p(GOLD, 6)] } },
-    { titel: 'Zickzack', beschreibung: 'Peyote-Klassiker mit zwei Zacken in Blau und Gold.', entwurf: { technik: 'peyote',
+    { titel: 'Zickzack', beschreibung: 'Peyote-Klassiker mit zwei Zacken in Blau und Gold.', entwurf: { technik: 'peyote', umfang: 170,
       raster: gerechnet(8, 8, (z, s) => { const t = z % 8 < 4 ? z % 8 : 8 - (z % 8); return s === t ? NAZAR : s === t + 4 ? GOLD : WEISS; }) } },
-    { titel: 'Herzen', beschreibung: 'Rote Herzen auf Rosa, mit Nadel gestickt.', entwurf: { technik: 'peyote',
+    { titel: 'Herzen', beschreibung: 'Rote Herzen auf Rosa, mit Nadel gestickt.', entwurf: { technik: 'peyote', umfang: 165,
       raster: bild(['..........', '..XX.XX...', '.XXXXXXX..', '.XXXXXXX..', '.XXXXXXX..', '..XXXXX...', '...XXX....', '....X.....', '..........', '..........'], { '.': ROSA, X: ROT }) } },
-    { titel: 'Kilim-Rauten', beschreibung: 'Rauten wie auf einem anatolischen Teppich.', entwurf: { technik: 'peyote',
+    { titel: 'Kilim-Rauten', beschreibung: 'Rauten wie auf einem anatolischen Teppich.', entwurf: { technik: 'peyote', umfang: 158,
       raster: gerechnet(12, 12, (z, s) => { const d = Math.abs(s - 5.5) + Math.abs(z - 5.5); return d < 2 ? GOLD : d < 4 ? ROT : d < 5 ? WEISS : d < 7 ? NACHT : ROT; }) } },
-    { titel: 'Tulpe (Lale)', beschreibung: 'Gewebte Tulpen auf Creme, vom Webrahmen.', entwurf: { technik: 'loom',
+    { titel: 'Tulpe (Lale)', beschreibung: 'Gewebte Tulpen auf Creme, vom Webrahmen.', entwurf: { technik: 'loom', umfang: 165,
       raster: bild(['..........', '..X.X.X...', '..XXXXX...', '..XXXXX...', '...XXX....', '....G.....', '..G.G.G...', '...GGG....', '....G.....', '..........', '..........'], { '.': PERLMUTT, X: ROT, G: GRUEN }) } },
-    { titel: 'Sternenhimmel', beschreibung: 'Goldene Sterne auf Nachtblau.', entwurf: { technik: 'loom',
-      raster: bild(['..........', '.*.....*..', '....+.....', '...+++....', '....+...*.', '..*.......', '.......*..', '.*........', '..........'], { '.': NACHT, '*': GOLD, '+': MINT }) } }
+    { titel: 'Sternenhimmel', beschreibung: 'Goldene Sterne auf Nachtblau.', entwurf: { technik: 'loom', umfang: 165,
+      raster: bild(['..........', '.*.....*..', '....+.....', '...+++....', '....+...*.', '..*.......', '.......*..', '.*........', '..........'], { '.': NACHT, '*': GOLD, '+': MINT }) } },
+
+    // S-004: zwölf weitere Ideen (A-13)
+    { titel: 'Freundschaft (Teil 1)', beschreibung: 'Für dich: Rosa vorn. Teil 2 hat die Farben vertauscht.',
+      entwurf: { technik: 'gummi', muster: [p(ROSA, 6), p(WEISS, 4), p(LILA, 6), p(SILBER, 4, 'rondelle')] } },
+    { titel: 'Freundschaft (Teil 2)', beschreibung: 'Für die beste Freundin: dasselbe Armband in Lila.',
+      entwurf: { technik: 'gummi', muster: [p(LILA, 6), p(WEISS, 4), p(ROSA, 6), p(SILBER, 4, 'rondelle')] } },
+    { titel: 'Kleeblatt', beschreibung: 'Glücksbringer in Grün und Mint mit goldenem Akzent.',
+      entwurf: { technik: 'gummi', muster: [p(GRUEN, 8), p(MINT, 6), p(GRUEN, 8), p(GOLD, 6, 'rondelle')] } },
+    { titel: 'Türkische Fahne', beschreibung: 'Rot und Weiß im Wechsel, große weiße Perlen als Monde.',
+      entwurf: { technik: 'faden', muster: [p(ROT, 8), p(WEISS, 4), p(ROT, 8), p(WEISS, 4), p(ROT, 8), p(WEISS, 10)] } },
+    { titel: 'Vereinsfarben', beschreibung: 'Zwei Vereinsfarben im Wechsel, Farben und Name frei wählbar.',
+      entwurf: { technik: 'gummi', name: 'TOR', muster: [p(GELB, 8), p(ROT, 8)] } },
+    { titel: 'Morse ANNE', beschreibung: 'Geheimschrift: Scheibe kurz, Kugel lang, Weiß trennt. 17,5 cm.',
+      entwurf: { technik: 'faden', umfang: 175, muster: [p(GOLD, 6, 'rondelle'), p(NAZAR, 8), p(WEISS, 4), p(NAZAR, 8), p(GOLD, 6, 'rondelle'), p(WEISS, 4),
+        p(NAZAR, 8), p(GOLD, 6, 'rondelle'), p(WEISS, 4), p(GOLD, 6, 'rondelle'), p(WEISS, 4), p(WEISS, 4)] } },
+    { titel: 'Mama und Kind (Mama)', beschreibung: 'Dasselbe Muster wie beim Kind, nur in großen runden Perlen.',
+      entwurf: { technik: 'gummi', umfang: 165, muster: [p(TUERKIS, 8), p(PERLMUTT, 8), p(GOLD, 4, 'rondelle')] } },
+    { titel: 'Mama und Kind (Kind)', beschreibung: 'Das Kinderarmband zur Mama, kleine Perlen, 14 cm.',
+      entwurf: { technik: 'gummi', umfang: 140, muster: [p(TUERKIS, 4), p(PERLMUTT, 4), p(GOLD, 4, 'rondelle')] } },
+    { titel: 'İznik-Fliesen', beschreibung: 'Blau, Türkis und Weiß wie die Kacheln der Moscheen.', entwurf: { technik: 'peyote', umfang: 158,
+      raster: gerechnet(12, 12, (z, s) => { const dz = Math.abs(z - 5.5), ds = Math.abs(s - 5.5), d = Math.hypot(dz, ds);
+        return d < 1.6 ? TUERKIS : dz + ds > 8.5 ? NAZAR : d > 3.2 && d < 4.4 ? NAZAR : (dz < 1 || ds < 1) && d < 3.2 ? TUERKIS : WEISS; }) } },
+    { titel: 'Schachbrett', beschreibung: 'Schwarz und Weiß in Blöcken, gut für den Anfang.', entwurf: { technik: 'peyote', umfang: 158,
+      raster: gerechnet(8, 12, (z, s) => ((Math.floor(z / 3) + Math.floor(s / 2)) % 2 ? SCHWARZ : WEISS)) } },
+    { titel: 'Wellen', beschreibung: 'Blaue Wellen mit weißer Gischt über das ganze Band.', entwurf: { technik: 'peyote', umfang: 158,
+      raster: gerechnet(8, 16, (z, s) => { const w = 3.5 + 2.5 * Math.sin(2 * Math.PI * z / 16); return Math.abs(s - w) < 0.8 ? WEISS : s > w ? NAZAR : HIMMEL; }) } },
+    { titel: 'Halbmond und Stern', beschreibung: 'Weißer Halbmond und Stern auf Rot, gewebt.', entwurf: { technik: 'loom', umfang: 158,
+      raster: gerechnet(11, 16, (z, s) => { const mond = Math.hypot(z - 5, s - 5) < 4.2 && Math.hypot(z - 6.3, s - 5) >= 3.4;
+        const stern = Math.abs(z - 11) + Math.abs(s - 5) <= 2.1; return mond || stern ? WEISS : ROT; }) } },
+    { titel: 'Pixelherz mit Buchstabe', beschreibung: 'Rotes Herz und ein großes A, im Raster umzeichenbar.', entwurf: { technik: 'loom', umfang: 158,
+      raster: bild(['................', '.XX.XX....AAA...', 'XXXXXXX..A...A..', 'XXXXXXX..A...A..', '.XXXXX...AAAAA..', '..XXX....A...A..', '...X.....A...A..', '................'],
+        { '.': WEISS, X: ROT, A: NACHT }) } },
+    { titel: 'Ebru-Marmor', beschreibung: 'Weiche Farbschlieren wie bei der Ebru-Malerei.', entwurf: { technik: 'loom', umfang: 165,
+      raster: gerechnet(10, 20, (z, s) => { const v = Math.sin(z * 0.32 + 1.4 * Math.sin(s * 0.38));
+        return [NACHT, NAZAR, HIMMEL, WEISS, ROSA][Math.max(0, Math.min(4, Math.floor((v + 1) * 2.5)))]; }) } }
   ];
 
   const IDEEN = roh.map(i => ({ titel: i.titel, beschreibung: i.beschreibung, entwurf: W.bereinige(Object.assign({ titel: i.titel }, i.entwurf)) }));
