@@ -1,6 +1,6 @@
 # S-W15: Mühle verstehen und gut spielen (Stufe 1)
 
-**Status:** gebaut, freigegeben am 04.11.2026, 21:34
+**Status:** abgenommen, freigegeben am 04.11.2026, 21:34; abgenommen am Handy am 07.11.2026, 09:24
 <!-- Freigabe durch den Betreiber im Projekt-Thread: "Das mühle Spiel bitte stark verbessern. Die Regeln die angewendet dort kenne ich nicht"
      und Wahl "Beide Stufen, erst Stufe 1" (Stufe 1: Einführung beim ersten Start, ?-Knopf, erlaubte Punkte leuchten, geschützte Steine markiert,
      Statuszeile in Klartext, Weiß beginnt, "Springen", Unentschieden bei dreifacher Wiederholung, Computer in drei Stärken mit Tipp und Warnung).
@@ -164,4 +164,18 @@ Suche Tiefe 4 in der Springphase hat viele Züge (bis 3 × 21 × Wegnahmen): Zei
 - Review-Befunde und Umsetzung: (1) Suche ohne Wiederholung: Zähler in der Suche, Test; (2, 3) Zug landete trotz offener Karten, Test zu früh: Pause in der Control, Test mit verzögerter Rechnung; (4) Neustart während der Rechnung ließ die Partie hängen: "erneut" anstoßen, Test; (5) alter Computer-Stand: alte Seite bis zum Neustart, Test; (6) AK-9-Wortlaut angeglichen; (7) Tests ergänzt: Tiefe wird von der Steuerung weitergegeben, Knotengrenze wiederholbar, Abschluss der Übung über echtes Tippen (Fehlerquoten prüft schon `stufen_tabelle` in `brett_test.js`); (8) UI liest die Topologie über `MuehleControl.NACHBARN`/`LAGE`; (9) Tippen bei "Geschafft" startet die Partie; (10) bleibt (allgemeines Muster aller Spiele, nicht Teil dieser Änderung); (11) Statuszeile mit Warnsatz höchstens zwei Zeilen, gemessen; (12) Ergebnis, Fehlerliste, Status.
 - Gegenproben: 19 absichtliche Fehler, alle von ihrem Test erkannt.
 - Neue Fehler: 6 Einträge in `werkstatt/fehlerliste.md` (früheste Stufe jeweils Spec).
-- Offen: Abnahme am Handy (`werkstatt/abnahme/S-W15-muehle.md`).
+- Abnahme am Handy: erteilt vom Betreiber am 07.11.2026, 09:24 ("Abnahme erteilt"), Liste `werkstatt/abnahme/S-W15-muehle.md`, ohne Befund.
+
+## Veröffentlichung (Phase 11)
+- Version: Brettspiele mit Mühle S-W15 (Commits fc0a8e4 und 13f50b6 auf main, 04.11.2026)
+- Änderungen: Mühle erklärt sich selbst (Übung und Regelkarten), Weiß beginnt, Unentschieden bei Wiederholung, große Punkte mit Markierungen, Computer in drei echten Stärken
+- Rückweg: Stand vor fc0a8e4 per `git revert fc0a8e4 13f50b6` auf main; GitHub Pages veröffentlicht den Rückweg in etwa einer Minute
+- Linkprüfung: 04.11.2026, https://memocan81735.github.io/brettspiele/ geöffnet, Übung "1 von 5" sichtbar, Suche geladen, keine Skriptfehler; Abnahme am Handy am 07.11.2026
+- Lizenzen: keine neuen (eigener Code, keine neuen Bibliotheken)
+
+## Rückblick (Phase 14)
+Anforderungen aus dem Anlass (Betreiber, 04.11.2026: "Das Mühle-Spiel bitte stark verbessern. Die Regeln die angewendet dort kenne ich nicht"):
+- A-1: erfüllt (Regeln im Spiel erklärt: Übung in 5 Schritten und drei Regelkarten, AK-1 bis AK-3, AK-10)
+- A-2: erfüllt (stark verbessert: Klartext, Markierungen, Drohungen, Unentschieden, Computer stark 20 von 20 gegen den alten, AK-4 bis AK-9)
+- A-3: erfüllt (Stufe 1 zuerst, Stufe 2 mit 3D-Brett, Ton und Mühleschule folgt als eigene Spec)
+- Messwerte: siehe Ergebnis; 6 Fehler mit frühester Stufe in `werkstatt/fehlerliste.md`, die Lehre "nach Korrekturen alle Testdateien des Spiels laufen lassen" steht dort.
