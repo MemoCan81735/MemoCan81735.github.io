@@ -157,6 +157,10 @@ html.arbeitet, html.arbeitet body { overflow: hidden; }
 .arbeit-richtung { margin: 0; font-weight: 800; font-size: 1.1rem; letter-spacing: 0.04em; }
 .arbeit-felder { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; max-width: 100%; }
 .arbeit-feld { width: 34px; height: 40px; border-radius: 6px; display: grid; place-items: end center; font-size: 0.7rem; font-weight: 800; color: rgba(0,0,0,0.55); padding-bottom: 2px; box-shadow: inset 0 3px 0 rgba(255,255,255,0.35); }
+.arbeit-band { display: block; max-width: 100%; height: auto; border-radius: 4px; }
+.arbeit-hilfe { justify-self: stretch; text-align: left; border-top: 1px solid rgba(255,255,255,0.18); padding-top: 12px; }
+.arbeit-hilfe h3 { margin: 0 0 6px; color: #f1eef6; font-size: 0.95rem; letter-spacing: 0.04em; }
+.arbeit-hilfe ol { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; color: #e3e1ea; line-height: 1.4; }
 .arbeit-fertig { font: 800 2rem/1.2 var(--schrift-titel); }
 .arbeit-tasten { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
 @media (prefers-reduced-motion: no-preference) { .arbeit-fortschritt span { transition: width 0.2s; } }
@@ -1321,25 +1325,40 @@ const SCHLUESSEL = 'perlenwerkstatt.arbeit', STAENDE_MAX = 20;
 const farbname = f => E.FARBEN[f].name;
 const perlenText = p => (p.buchstabe ? 'Buchstabe ' + p.buchstabe : farbname(p.farbe) + ', ' + E.FORMEN[p.form] + ' ' + p.groesse + ' mm');
 
+const HANDGRIFFE = {
+perle: ['Diese Perle auf den Faden schieben, dann Erledigt tippen.'],
+reihe: ['Die Perlen in der gezeigten Reihenfolge auf die Nadel fädeln.',
+'Unter die gespannten Kettfäden legen: je eine Perle zwischen zwei Fäden, Perle 1 links.',
+'Die Perlen mit dem Finger nach oben zwischen die Kettfäden drücken.',
+'Die Nadel oben über den Kettfäden zurück durch alle Perlen führen.'],
+anfang: ['Alle Perlen der Reihe auf den Faden fädeln, Perle 1 zuerst.',
+'Diese Perlen bilden Durchgang 1 und 2: im nächsten Schritt schiebt sich jede zweite nach oben.'],
+durchgang: ['Eine Perle in der gezeigten Farbe aufnehmen.',
+'Eine Perle der Reihe darunter überspringen.',
+'Durch die nächste hochstehende Perle stechen und festziehen.',
+'So in Pfeilrichtung weiter, bis alle Perlen des Durchgangs sitzen.']
+};
+const mitHilfe = s => Object.assign(s, { handgriffe: HANDGRIFFE[s.art].slice() });
+
 function schritte(roh) {
 const e = W.bereinige(roh);
 if (!E.istRaster(e.technik)) {
 const f = R.folge(e);
-return f.map((p, i) => ({ art: 'perle', titel: 'Perle ' + (i + 1) + ' von ' + f.length, text: perlenText(p), richtung: null,
+return f.map((p, i) => mitHilfe({ art: 'perle', titel: 'Perle ' + (i + 1) + ' von ' + f.length, text: perlenText(p), richtung: null, reihe: null,
 perlen: [{ farbe: p.farbe, groesse: p.groesse, form: p.form, buchstabe: p.buchstabe || '' }] }));
 }
 const r = R.raster(e), feld = (z, s) => ({ farbe: r.zelle(z, s), groesse: E.DELICA.laenge, form: 'delica', buchstabe: '', reihe: z, spalte: s });
 const alle = z => Array.from({ length: r.spalten }, (_, s) => feld(z, s));
-if (e.technik === 'loom') return Array.from({ length: r.reihen }, (_, z) => ({ art: 'reihe', titel: 'Reihe ' + (z + 1) + ' von ' + r.reihen,
-text: r.spalten + ' Perlen auffädeln, von links nach rechts', richtung: 'rechts', perlen: alle(z) }));
-const n = 2 * r.reihen - 1, liste = [{ art: 'anfang', titel: 'Durchgang 1 und 2', text: 'Anfang: alle ' + r.spalten + ' Perlen der ersten Reihe auffädeln',
-richtung: 'rechts', perlen: alle(0) }];
+if (e.technik === 'loom') return Array.from({ length: r.reihen }, (_, z) => mitHilfe({ art: 'reihe', titel: 'Reihe ' + (z + 1) + ' von ' + r.reihen,
+text: r.spalten + ' Perlen auffädeln, Perle 1 kommt nach links', richtung: null, reihe: z, perlen: alle(z) }));
+const n = 2 * r.reihen - 1, liste = [mitHilfe({ art: 'anfang', titel: 'Durchgang 1 und 2', text: 'Anfang: alle ' + r.spalten + ' Perlen der ersten Reihe auffädeln',
+richtung: 'rechts', reihe: 0, perlen: alle(0) })];
 for (let j = 1; j < n; j++) {
 const z = 1 + Math.floor((j - 1) / 2), gerade = (j - 1) % 2 === 0, richtung = j % 2 ? 'links' : 'rechts';
 const perlen = alle(z).filter(q => q.spalte % 2 === (gerade ? 0 : 1));
 if (richtung === 'links') perlen.reverse();
-liste.push({ art: 'durchgang', titel: 'Durchgang ' + (j + 2), text: perlen.length + ' Perlen in Reihe ' + (z + 1) + ', ' + (richtung === 'links' ? 'nach links' : 'nach rechts'),
-richtung, perlen });
+liste.push(mitHilfe({ art: 'durchgang', titel: 'Durchgang ' + (j + 2), text: perlen.length + ' Perlen in Reihe ' + (z + 1) + ', ' + (richtung === 'links' ? 'nach links' : 'nach rechts'),
+richtung, reihe: z, perlen }));
 }
 return liste;
 }
@@ -1385,7 +1404,7 @@ return { stand, setze, speicherOk: () => { vorher(); return ok; } };
 
 function starte(fenster) { return Object.assign(erzeuge(Perlen.boundary.speicher.erzeuge(fenster)), { wach: Perlen.boundary.wach.erzeuge(fenster) }); }
 
-return { SCHLUESSEL, schritte, kennung, erzeuge, starte };
+return { SCHLUESSEL, HANDGRIFFE, schritte, kennung, erzeuge, starte };
 })();
 
 })();
@@ -2214,13 +2233,13 @@ return { erzeuge };
 var Perlen = globalThis.Perlen = globalThis.Perlen || {};
 Perlen.ui = Perlen.ui || {};
 Perlen.ui.arbeit = (function () {
-const B = Perlen.ui.bauteile, K = Perlen.control.katalog, A = Perlen.control.arbeit;
+const B = Perlen.ui.bauteile, K = Perlen.control.katalog, A = Perlen.control.arbeit, R = Perlen.control.rechner;
 const el = (...a) => B.el(...a);
 const FARBEN = K.farben();
 
 function erzeuge(app, fenster) {
 const dienst = A.starte(fenster);
-let entwurf = null, liste = [], schritt = 0, wurzel = null, teile = {};
+let entwurf = null, liste = [], schritt = 0, wurzel = null, teile = {}, raster = null;
 
 function perleBild(p, gross) {
 const d = gross ? 140 : 40;
@@ -2238,6 +2257,27 @@ const t = []; for (const p of s.perlen) { const n = FARBEN[p.farbe].name; if (t.
 return t.map(x => x.k + ' x ' + x.n).join(', ');
 }
 
+function bandBild(aktuell) {
+const N = raster.reihen, S = raster.spalten, platz = Math.max(N, teile.buehne.clientWidth - 32);
+const bw = Math.max(1, Math.min(6, Math.floor(platz / N))), bh = Math.max(3, Math.min(6, bw + 1));
+const c = el('canvas', { id: 'arbeit-band', class: 'arbeit-band', width: String(bw * N), height: String(bh * S + 6),
+'data-reihe': String(aktuell + 1), 'data-reihen': String(N), role: 'img', 'aria-label': 'Reihe ' + (aktuell + 1) + ' von ' + N + ' im Band' });
+const g = c.getContext('2d');
+if (!g) return c;
+g.fillStyle = '#2b3446'; g.fillRect(0, 0, c.width, c.height);
+for (let z = 0; z < N; z++) {
+g.globalAlpha = z > aktuell ? 0.3 : 1;
+for (let sp = 0; sp < S; sp++) { g.fillStyle = FARBEN[raster.zelle(z, sp)].hex; g.fillRect(z * bw, 3 + sp * bh, bw, bh); }
+}
+g.globalAlpha = 1; g.strokeStyle = '#ffffff'; g.lineWidth = 2;
+const x = aktuell * bw, rand = Math.max(bw, 4);
+g.strokeRect(Math.max(1, x + bw / 2 - rand / 2), 1, rand, bh * S + 4);
+return c;
+}
+function hilfe(s) {
+return el('div', { class: 'arbeit-hilfe' }, el('h3', {}, 'So geht\u2019s'), el('ol', { id: 'arbeit-hilfe' }, s.handgriffe.map(t => el('li', {}, t))));
+}
+
 function zeichne() {
 const n = liste.length, fertig = schritt >= n, s = liste[schritt];
 B.text(teile.stand, n ? (fertig ? 'Fertig: alle ' + n + ' Schritte erledigt' : 'Schritt ' + (schritt + 1) + ' von ' + n) : 'Muster leer: im Designer Perlen hinzufügen');
@@ -2252,9 +2292,11 @@ inhalt.push(perleBild(s.perlen[0], true), el('p', { class: 'arbeit-text', id: 'a
 const danach = liste.slice(schritt + 1, schritt + 5);
 if (danach.length) inhalt.push(el('div', { class: 'arbeit-danach' }, el('span', { class: 'unter' }, 'Danach'), danach.map(x => perleBild(x.perlen[0], false))));
 } else {
-inhalt.push(el('p', { class: 'arbeit-richtung', id: 'arbeit-richtung' }, s.richtung === 'links' ? '← nach links' : 'nach rechts →'), felder(s),
-el('p', { class: 'arbeit-text', id: 'arbeit-text' }, s.text), el('p', { class: 'hinweis' }, namenListe(s)));
+if (raster && s.reihe !== null) inhalt.unshift(bandBild(s.reihe));
+if (s.richtung) inhalt.push(el('p', { class: 'arbeit-richtung', id: 'arbeit-richtung' }, s.richtung === 'links' ? '← nach links' : 'nach rechts →'));
+inhalt.push(felder(s), el('p', { class: 'arbeit-text', id: 'arbeit-text' }, s.text), el('p', { class: 'hinweis' }, namenListe(s)));
 }
+inhalt.push(hilfe(s));
 teile.buehne.replaceChildren(...inhalt);
 }
 function gehe(n) {
@@ -2266,6 +2308,7 @@ zeichne();
 function oeffne(e) {
 if (wurzel) schliesse();
 entwurf = e; liste = A.schritte(e); schritt = dienst.stand(e);
+raster = K.istRaster(e.technik) && liste.length ? R.raster(e) : null;
 teile = {};
 teile.stand = el('p', { class: 'arbeit-stand', id: 'arbeit-stand', role: 'status', 'aria-live': 'polite' });
 teile.balken = el('span', {});
