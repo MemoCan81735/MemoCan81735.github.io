@@ -13,6 +13,7 @@ Nachtrag 07.11.2026: Stand mit S-011 der App (Arbeitsmodus erklärt die Handgrif
 Nachtrag 07.11.2026: Stand mit S-012 der App (Startmuster Flaggen, Vereinsfarben ohne Logos, Zeichen; Filtertasten in den Ideen) neu gebaut, gleiche Prüfungen grün.
 Nachtrag 07.11.2026: Stand mit S-013 der App (doppelt so viele Startmuster, vor allem Zeichen) neu gebaut, gleiche Prüfungen grün.
 Nachtrag 07.11.2026: Stand mit S-014 der App (Armband als Bild teilen, Text weben, eigener Vorrat und eigene Preise im Gerät) neu gebaut, gleiche Prüfungen grün.
+Nachtrag 07.11.2026: Stand mit S-015 der App (Zufall, Farbverlauf, Herz- und Tropfenperlen, Anhänger, Wickelarmband) neu gebaut, gleiche Prüfungen grün.
 
 ## Anwendungsfall
 - U-1: Der Besucher öffnet die Startseite, sieht die neue Rubrik "Basteln" mit der Karte Perlenwerkstatt, tippt "Planen" und sieht in unter 3 s zwölf Ideen.
