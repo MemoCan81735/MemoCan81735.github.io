@@ -202,6 +202,12 @@ globalThis.Ebru = {};
     return h.r0 * auf + radiusGehalten(h.r0, h.bis === null ? t : Math.min(t, h.bis)) - h.r0;
   }
 
+  // Stift (S-012): Druck in (0, 1] bestimmt Tropfenradius und Breite der Ahle; ohne gültigen Druck bleibt alles wie beim Finger
+  const gueltig = d => typeof d === 'number' && d > 0 && d <= 1;
+  function radiusAusDruck(d) { return gueltig(d) ? RADIUS_MIN + (RADIUS_MAX - RADIUS_MIN) * d : null; }
+  const AHLE_FEIN = 5, AHLE_FEST = 14, AHLE_FINGER = 12;
+  function ahleBreite(d) { return gueltig(d) ? Math.round(AHLE_FEIN + 9 * d) : AHLE_FINGER; }
+
   function verfeinern(p, KANTE_MAX) { // Kanten über KANTE_MAX teilen (Tropfen 6, Strömung 3 Einheiten) (höchstens 4 Durchgänge)
     for (let durchgang = 0; durchgang < 4; durchgang++) {
       const n = p.length / 2; let neu = 0;
@@ -216,19 +222,30 @@ globalThis.Ebru = {};
     }
     return p;
   }
-  function vereinfachen(b) { // Knotenlimit: kleinste Dreiecksflächen zuerst entfernen, nie zwei benachbarte
-    for (let runde = 0; runde < 6 && E.knoten(b) > KNOTEN_MAX; runde++) {
-      const flaechen = [];
-      for (const q of b.polys) { const p = q.p, n = p.length / 2; q.a = new Float64Array(n); for (let i = 0; i < n; i++) { const a = (i + n - 1) % n, c = (i + 1) % n; q.a[i] = Math.abs((p[2 * i] - p[2 * a]) * (p[2 * c + 1] - p[2 * a + 1]) - (p[2 * c] - p[2 * a]) * (p[2 * i + 1] - p[2 * a + 1])) / 2; flaechen.push(q.a[i]); } }
-      flaechen.sort((x, y) => x - y);
-      const ziel = Math.floor(KNOTEN_MAX * 0.85), weg = flaechen.length - ziel, schwelle = flaechen[Math.min(flaechen.length - 1, Math.max(0, weg * 2))];
-      for (const q of b.polys) {
-        const n = q.p.length / 2; if (n <= 8) { delete q.a; continue; }
-        const aus = []; let letzteWeg = false;
-        for (let i = 0; i < n; i++) { const entf = q.a[i] <= schwelle && !letzteWeg && aus.length > 0 && (n - (i - aus.length)) > 8; if (!entf) { aus.push(2 * i); } letzteWeg = entf; }
-        const r = new Float64Array(aus.length * 2); aus.forEach((o, k) => { r[2 * k] = q.p[o]; r[2 * k + 1] = q.p[o + 1]; }); q.p = r; delete q.a;
-      }
+  // Knotenlimit (F-13): Knoten weglassen, die kaum von der Sehne zu den Nachbarn abweichen, mit Höchstlänge der neuen Kante.
+  // Stufen [Toleranz, längste neue Kante]: zuerst unsichtbar (0,1 Einheiten, Kanten bis 1,5-mal KANTE_STROM), gröber nur so weit wie nötig.
+  // Früher zählte die kleinste Dreiecksfläche ohne Längengrenze: Spitzen dünner Farbfäden verschwanden, lange gerade Kanten wurden beim nächsten Zug zu Zacken.
+  const STUFEN = [[0.1, 4.5], [0.1, 6], [0.2, 9], [0.4, 12], [0.8, 24], [1.6, 48], [3.2, 96], [6.4, 400]];
+  function abstandStrecke(x, y, ax, ay, cx, cy, L) { // Abstand zur Strecke (nicht zur Geraden), damit Spitzen auf der eigenen Linie bleiben; L = 0: Abstand zum Punkt
+    const u = L > 1e-9 ? ((x - ax) * (cx - ax) + (y - ay) * (cy - ay)) / (L * L) : 0;
+    if (u <= 0) return Math.hypot(x - ax, y - ay); if (u >= 1) return Math.hypot(x - cx, y - cy);
+    return Math.abs((cx - ax) * (y - ay) - (cy - ay) * (x - ax)) / L;
+  }
+  function ausduennen(p, tol, sehneMax) {
+    const n = p.length / 2; if (n <= 8) return p;
+    const aus = [0]; let a = 0;
+    for (let i = 1; i < n; i++) {
+      const c = (i + 1) % n, ax = p[2 * a], ay = p[2 * a + 1], cx = p[2 * c], cy = p[2 * c + 1], L = Math.hypot(cx - ax, cy - ay);
+      let weg = L <= sehneMax && n - (i - aus.length) > 8;
+      for (let k = a + 1; weg && k <= i; k++) if (abstandStrecke(p[2 * k], p[2 * k + 1], ax, ay, cx, cy, L) >= tol) weg = false; // alle übersprungenen Knoten nah an der Strecke a-c
+      if (!weg) { aus.push(i); a = i; }
     }
+    if (aus.length === n) return p;
+    const r = new Float64Array(aus.length * 2); aus.forEach((o, k) => { r[2 * k] = p[2 * o]; r[2 * k + 1] = p[2 * o + 1]; }); return r;
+  }
+  function vereinfachen(b, grenze) { // grenze: höchste Knotenzahl, ohne Angabe KNOTEN_MAX; Ziel 85 % davon
+    const max = Number.isFinite(grenze) ? Math.max(0, grenze) : KNOTEN_MAX, ziel = Math.floor(max * 0.85); if (E.knoten(b) <= max) return;
+    for (const [tol, sehne] of STUFEN) { if (E.knoten(b) <= ziel) return; for (const q of b.polys) q.p = ausduennen(q.p, tol, sehne); }
   }
   function abschluss(b) { for (const q of b.polys) q.p = verfeinern(q.p, KANTE_TROPFEN); if (E.knoten(b) > KNOTEN_MAX) vereinfachen(b); }
 
@@ -248,7 +265,8 @@ globalThis.Ebru = {};
   }
 
   // Stäbchen und Kamm: flächentreue Strömung (S-002, stroemung.js). zug = Zustand je Fingerzug (neuerZug), sonst ein eigener Zug.
-  const STAB = St.art(12, 2.5, 40, 4), KAMM = St.art(6, 1.5, 24, 4);
+  const STAB = St.art(AHLE_FINGER, 2.5, 40, 4), KAMM = St.art(6, 1.5, 24, 4), AHLEN = {}; // Ahlen 5 bis 14 einmal vorberechnet (S-012)
+  for (let a = AHLE_FEIN; a <= AHLE_FEST; a++) AHLEN[a] = a === AHLE_FINGER ? STAB : St.art(a, 2.5, 40, 4);
   function neuerZug() { return { weg: 0 }; }
   function nachTeilschritt(b) { for (const q of b.polys) if (q.bewegt) { q.p = verfeinern(q.p, KANTE_STROM); delete q.bewegt; } }
   function weg(b, x0, y0, x1, y1, versatze, p, zug) {
@@ -258,7 +276,7 @@ globalThis.Ebru = {};
     St.zugSchritt(b, x0, y0, x1, y1, versatze, p, zug || neuerZug(), nachTeilschritt);
     if (E.knoten(b) > KNOTEN_MAX) vereinfachen(b); return true;
   }
-  function schiebeWeg(b, x0, y0, x1, y1, zug) { return weg(b, x0, y0, x1, y1, [0], STAB, zug); }
+  function schiebeWeg(b, x0, y0, x1, y1, zug, breite) { return weg(b, x0, y0, x1, y1, [0], AHLEN[breite] || STAB, zug); }
   function kammWeg(b, x0, y0, x1, y1, zinken, abstand, zug) {
     if (!fin(zinken, abstand)) return false; const z = klemme(Math.round(zinken), 1, 12);
     return weg(b, x0, y0, x1, y1, Array.from({ length: z }, (_, k) => (k - (z - 1) / 2) * abstand), KAMM, zug);
@@ -312,7 +330,7 @@ globalThis.Ebru = {};
   function aufloesung(stufe, dpr) { return [0.5, 0.75, 1][klemme(stufe, 0, 2)] * Math.min(Number.isFinite(dpr) ? dpr : 1, 2); }
   function bildSchritt(ms) { return Number.isFinite(ms) ? klemme(ms, 0, 100) : 0; }
 
-  g.Ebru.control = { KNOTEN_MAX, RADIUS_MIN, RADIUS_MAX, UNDO_TIEFE, HALTEN_WARTE, neuerZug, begrenzeRadius, radiusWaehlen, radiusGehalten, haltenRadius, tropfen, schiebeWeg, kammWeg, farbeAn, streifen, merke, rueckgaengig, spritzPunkte, vorfuehrungFuer, planAutoTropfen, autoZustand, qualitaetNach, aufloesung, bildSchritt };
+  g.Ebru.control = { KNOTEN_MAX, RADIUS_MIN, RADIUS_MAX, UNDO_TIEFE, HALTEN_WARTE, AHLE_FEIN, radiusAusDruck, ahleBreite, neuerZug, vereinfachen, begrenzeRadius, radiusWaehlen, radiusGehalten, haltenRadius, tropfen, schiebeWeg, kammWeg, farbeAn, streifen, merke, rueckgaengig, spritzPunkte, vorfuehrungFuer, planAutoTropfen, autoZustand, qualitaetNach, aufloesung, bildSchritt };
 })(globalThis);
 
 })();
@@ -323,7 +341,7 @@ globalThis.Ebru = {};
 (function (g) {
   const C = g.Ebru.control, E = g.Ebru.entity;
   const T = (x, y, r, farbe, text) => ({ art: 'tropfen', x, y, r, farbe, text });
-  const Z = (werkzeug, punkte, text) => ({ art: 'zug', werkzeug, punkte, text });
+  const Z = (werkzeug, punkte, text, fein) => (fein ? { art: 'zug', werkzeug, punkte, text, fein } : { art: 'zug', werkzeug, punkte, text }); // fein: Ahle Breite 5 (S-012)
   const spirale = () => Array.from({ length: 61 }, (_, i) => { const a = i * Math.PI / 12, r = 92 - 88 * i / 60; return [r * Math.cos(a), r * Math.sin(a)]; }); // 2,5 Windungen von außen nach innen
   const nelke = () => Array.from({ length: 8 }, (_, k) => { const a = k * Math.PI / 4; return Z('stab', [[78 * Math.cos(a), 78 * Math.sin(a)], [22 * Math.cos(a), 22 * Math.sin(a)]], 'Stäbchen von außen zur Mitte ziehen'); });
   const zickzack = () => { const p = []; for (let i = 0; i < 9; i++) p.push([i % 2 ? 120 : -120, -150 + i * 37.5]); return p; };
@@ -333,6 +351,10 @@ globalThis.Ebru = {};
     { id: 'nelke', name: 'Nelke (Karanfil)', schritte: [T(0, 0, 50, 0, 'Großer Tropfen'), T(0, 0, 34, 2, 'Tropfen hinein'), T(0, 0, 18, 1, 'Kleiner Tropfen hinein'), ...nelke()] },
     { id: 'nest', name: 'Nachtigallennest (Bülbül yuvası)', schritte: [T(-64, 0, 34, 0, 'Tropfen links'), T(0, 0, 34, 1, 'Tropfen in die Mitte'), T(64, 0, 34, 2, 'Tropfen rechts'), T(0, -62, 30, 3, 'Tropfen oben'), T(0, 62, 30, 3, 'Tropfen unten'), Z('stab', spirale(), 'Stäbchen in einer Spirale von außen nach innen')] },
     { id: 'gelgit', name: 'Gelgit (Wellen)', schritte: [T(-60, -80, 46, 0, 'Tropfen oben links'), T(60, -80, 46, 1, 'Tropfen oben rechts'), T(-60, 20, 46, 2, 'Tropfen links'), T(60, 20, 46, 3, 'Tropfen rechts'), T(0, -30, 40, 1, 'Tropfen in die Mitte'), Z('stab', zickzack(), 'Stäbchen im Zickzack nach unten')] },
+    // Çiçek-Ebru (S-012): Blüte aus drei Tropfen, mit feiner Ahle von unten zur Spitze geformt, Stiel aus kleinem Tropfen gezogen
+    { id: 'tulpe-fein', name: 'Feine Tulpe (Çiçek)', schritte: [T(0, 0, 42, 0, 'Großer Tropfen'), T(0, 4, 28, 2, 'Tropfen hinein'), T(0, 8, 15, 3, 'Kleiner Tropfen hinein'),
+      Z('stab', [[0, 46], [0, -62]], 'Feine Ahle von unten bis über die Spitze', true), Z('stab', [[-30, -48], [-14, -6]], 'Linkes Blütenblatt von oben einziehen', true), Z('stab', [[30, -48], [14, -6]], 'Rechtes Blütenblatt von oben einziehen', true),
+      T(0, 72, 12, 1, 'Kleiner Tropfen unter die Blüte'), Z('stab', [[0, 66], [0, 160]], 'Stiel nach unten ziehen', true)] },
   ];
   const MINDESTANTEIL = 0.5;
   function tagesMuster(tag) { return Number.isFinite(tag) ? ((Math.floor(tag) % MUSTER.length) + MUSTER.length) % MUSTER.length : 0; }
@@ -352,7 +374,7 @@ globalThis.Ebru = {};
       const [ax, ay] = p[i - 1], [bx, by] = p[i], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 10));
       for (let k = 0; k < n; k++) {
         const x0 = ax + (bx - ax) * k / n, y0 = ay + (by - ay) * k / n, x1 = ax + (bx - ax) * (k + 1) / n, y1 = ay + (by - ay) * (k + 1) / n;
-        sch.werkzeug === 'kamm' ? C.kammWeg(b, x0, y0, x1, y1, 9, 14, zug) : C.schiebeWeg(b, x0, y0, x1, y1, zug);
+        sch.werkzeug === 'kamm' ? C.kammWeg(b, x0, y0, x1, y1, 9, 14, zug) : C.schiebeWeg(b, x0, y0, x1, y1, zug, sch.fein ? C.AHLE_FEIN : undefined);
       }
     }
   }
@@ -537,21 +559,27 @@ globalThis.Ebru = {};
     s.vorfuehrung = null; loslassen(s); if (!s.plan) return; const jetzt = (s.planJetzt || 0) - s.planStart, begonnen = s.plan.filter(e => e.t <= jetzt);
     if (begonnen.length) { s.plan = begonnen; const l = begonnen[begonnen.length - 1]; zeit(s, s.planStart + l.t + l.dauer); } s.plan = null; }
   // Getippter Tropfen geht in AUFGEHEN_S auf (S-002); im ersten Bild (1/60 s) schon sichtbar.
-  function tippen(s, x, y, farbe, rnd, halten) { /* halten: Finger bleibt liegen, Tropfen darf wachsen bis loslassen (S-010) */
+  function tippen(s, x, y, farbe, rnd, halten, druck) { /* halten: Finger bleibt liegen, Tropfen darf wachsen bis loslassen (S-010); druck: Stift (S-012) */
     if (s.phase !== 'malen' || !Number.isFinite(x) || !Number.isFinite(y)) return false;
     const sch = schritt(s); if (sch && sch.art !== 'tropfen') return false;
     abschliessen(s); merke(s); if (sch) { farbe = sch.farbe; weiter(s); }
-    const t = s.jetzt / 1000, r = sch ? sch.r : C.radiusWaehlen(rnd), cx = Math.min(s.breite, Math.max(0, x)), cy = Math.min(s.hoehe, Math.max(0, y));
+    const t = s.jetzt / 1000, r = sch ? sch.r : C.radiusAusDruck(druck) || C.radiusWaehlen(rnd), cx = Math.min(s.breite, Math.max(0, x)), cy = Math.min(s.hoehe, Math.max(0, y));
     const e = { t, x: cx, y: cy, rEnde: r, dauer: AUFGEHEN_S, farbe }, wachsen = halten && !sch; if (wachsen) { e.halten = { r0: r, auf: AUFGEHEN_S, bis: null }; e.dauer = Infinity; }
     startePlan(s, [e], 0); zeit(s, t + 1 / 60); s.halten = wachsen ? { e, t0: t } : null; return true;
   }
+  // Stift (S-012): fester drücken hebt den Grundradius des gehaltenen Tropfens, nie senkt es ihn
+  function druecken(s, druck) {
+    const h = s.halten, r = C.radiusAusDruck(druck); if (!h || h.e.halten.bis !== null || r === null) return false;
+    if (r > h.e.halten.r0) { h.e.halten.r0 = r; h.e.rEnde = r; } return true;
+  }
   // Fingerzug mit Stäbchen oder Kamm: Zustand (zurückgelegter Weg) liegt in der Sitzung, nicht in der UI (R-03)
   function zugBeginnen(s) { if (s.phase !== 'malen') return false; abschliessen(s); merke(s); s.zug = C.neuerZug(); return true; }
-  function zugWeiter(s, x0, y0, x1, y1, rnd) {
+  function zugWeiter(s, x0, y0, x1, y1, rnd, druck) { /* druck: Stift; ein feiner Anleitungsschritt gibt die Breite vor (S-012) */
     if (s.phase !== 'malen' || !s.zug) return false;
     if (s.werkzeug === 'spritzen') { const p = C.spritzPunkte(rnd, x0, y0, x1, y1, s.zug, s.breite, s.hoehe); if (!p) return false; for (const [x, y, r] of p) C.tropfen(s.becken, x, y, r, s.farbe); return true; }
-    return s.werkzeug === 'kamm' ? C.kammWeg(s.becken, x0, y0, x1, y1, KAMM.zinken, KAMM.abstand, s.zug) : C.schiebeWeg(s.becken, x0, y0, x1, y1, s.zug);
+    return s.werkzeug === 'kamm' ? C.kammWeg(s.becken, x0, y0, x1, y1, KAMM.zinken, KAMM.abstand, s.zug) : C.schiebeWeg(s.becken, x0, y0, x1, y1, s.zug, ahle(s, druck));
   }
+  function ahle(s, druck) { const sch = schritt(s); return sch && sch.fein ? C.AHLE_FEIN : C.ahleBreite(druck); }
   function zugEnde(s) {
     const sch = schritt(s); if (sch && sch.art === 'zug' && s.zug && s.werkzeug === sch.werkzeug && s.zug.weg >= A.MINDESTANTEIL * sch.laenge) weiter(s);
     s.zug = null;
@@ -592,7 +620,7 @@ globalThis.Ebru = {};
   function musikAn(s) { return s.beruehrt && s.tonStufe === 2; }
   function tonFuer(s, name) { return s.beruehrt && s.tonAn && TOENE.includes(name) ? name : null; }
 
-  g.Ebru.sitzung = { KAMM, planeVorfuehrung, anleitungStarten, anleitungEnde, schritt, musikAn, ABDRUCK_MS, AUFGEHEN_S, abschliessen, loslassen, zugBeginnen, zugWeiter, zugEnde, neueSitzung, startePlan, zeit, bildZeit, tippen, abdruckStarten, abdruckFortschritt, weltWechseln, neuesBecken, rueckgaengig, beruehrt, tonUmschalten, tonFuer };
+  g.Ebru.sitzung = { KAMM, planeVorfuehrung, anleitungStarten, anleitungEnde, schritt, musikAn, ABDRUCK_MS, AUFGEHEN_S, abschliessen, loslassen, druecken, zugBeginnen, zugWeiter, zugEnde, neueSitzung, startePlan, zeit, bildZeit, tippen, abdruckStarten, abdruckFortschritt, weltWechseln, neuesBecken, rueckgaengig, beruehrt, tonUmschalten, tonFuer };
 })(globalThis);
 
 })();
@@ -773,7 +801,9 @@ globalThis.Ebru = {};
     const pal = E.PALETTEN[b.welt];
     for (const q of b.polys) {
       const p = q.p, n = p.length / 2; if (n < 3) continue;
-      ctx.beginPath(); ctx.moveTo(p[0], p[1]); for (let i = 1; i < n; i++) ctx.lineTo(p[2 * i], p[2 * i + 1]); ctx.closePath();
+      // Rand als weiche Kurve durch die Kantenmitten (F-13): grobe Stellen nach dem Knotenlimit wirken nicht eckig
+      ctx.beginPath(); ctx.moveTo((p[2 * n - 2] + p[0]) / 2, (p[2 * n - 1] + p[1]) / 2);
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n; ctx.quadraticCurveTo(p[2 * i], p[2 * i + 1], (p[2 * i] + p[2 * j]) / 2, (p[2 * i + 1] + p[2 * j + 1]) / 2); } ctx.closePath();
       ctx.fillStyle = pal.farben[q.farbe]; ctx.fill();
       if (kante) { ctx.strokeStyle = 'rgba(40,25,30,0.22)'; ctx.lineWidth = 0.7; ctx.stroke(); }
     }
@@ -800,6 +830,11 @@ globalThis.Ebru = {};
       ctx.beginPath(); ctx.arc(zx, zy, zinken > 1 ? 2.2 : 3.2, 0, 7); ctx.fillStyle = '#3a2a22'; ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 0.8; ctx.stroke();
     }
     ctx.restore();
+  }
+  // Vorschau des Stifts (S-012): gestrichelter Ring in der Farbe des nächsten Tropfens, dunkler Rand für hellen Grund
+  function ring(ctx, scale, x, y, r, farbe) {
+    ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.arc(x, y, r, 0, 7);
+    ctx.strokeStyle = 'rgba(40,25,30,0.45)'; ctx.lineWidth = 3.5; ctx.stroke(); ctx.strokeStyle = farbe; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
   }
   // Wasserwelle um einen Tropfen (S-005): heller Ring, Radius 14 bis 28, blendet in 0,5 s aus; u = 0 bis 1
   function welle(ctx, scale, x, y, u, klein) { /* klein: Spurwelle hinter dem Werkzeug (S-008), Radius 4 bis 14, schwächer */
@@ -836,7 +871,7 @@ globalThis.Ebru = {};
     ctx.save(); ctx.translate(x0, y0); becken(ctx, b, s, k, false); ctx.restore();
     koerner(ctx, w, h, k, 0.5);
   }
-  g.Ebru.ui = g.Ebru.ui || {}; g.Ebru.ui.zeichnen = { kachel, koerner, becken, fallender, werkzeug, welle, stern, ziel, blatt, karte };
+  g.Ebru.ui = g.Ebru.ui || {}; g.Ebru.ui.zeichnen = { kachel, koerner, becken, fallender, werkzeug, welle, stern, ziel, blatt, karte, ring };
 })(globalThis);
 
 })();
@@ -907,7 +942,7 @@ globalThis.Ebru = {};
   const ruhig = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); let wellen = []; // Wasserwellen (nur Anzeige, S-005)
   const flaeche = $('flaeche'); let cssW = 400, cssH = 800, scale = 1, stufe = 2, s = null, korn = null, ergebnisKarte = null;
   // S-008: Spur hinter dem Werkzeug, Sternfeier, Bildsammler für den Zeitraffer (nur im Arbeitsspeicher)
-  let tropfenHalten = false, vorfZuletzt = false, geistGemalt = false, spurZug = {}, spurGesamt = 0, feier = null, feierT0 = 0, feiern = 0, bilder = [], bilderRunde = 0, letzteSammlung = 0, veraendert = false, klein = null, video = null, videoLaeuft = false;
+  let vorschau = null, zugDruck, tropfenHalten = false, vorfZuletzt = false, geistGemalt = false, spurZug = {}, spurGesamt = 0, feier = null, feierT0 = 0, feiern = 0, bilder = [], bilderRunde = 0, letzteSammlung = 0, veraendert = false, klein = null, video = null, videoLaeuft = false;
   let angezeigt = false, dirty = true, letzte = performance.now(), summe = 0, anzahl = 0, fpsWert = 0, zeiger = null, letzterStab = 0, letzterTon = 0, planTon = 0, hinweisAus = 0;
 
   function hoeheSetzen() { /* sichtbare Höhe statt 100dvh: manche Android-Ansichten zählen die Systemleiste mit (F-10) */
@@ -993,19 +1028,23 @@ globalThis.Ebru = {};
   cv.addEventListener('contextmenu', e => e.preventDefault());
   cv.addEventListener('pointerdown', e => {
     if (zeiger !== null || s.phase !== 'malen') return; zeiger = e.pointerId; try { cv.setPointerCapture(e.pointerId); } catch (fehler) { /* Zeiger schon weg: weiter ohne Fang */ }
-    S.beruehrt(s); ton.freischalten(); if (!s.anleitung) hinweis.style.opacity = 0; const [x, y] = pos(e);
-    if (s.werkzeug === 'tropfen') { if (S.tippen(s, x, y, s.farbe, rnd, true)) { spiele('tropfen'); planTon = 1; welle(x, y); haptik.kurz(); tropfenHalten = true; } else zeiger = null; leiste(); return; }
+    S.beruehrt(s); ton.freischalten(); if (!s.anleitung) hinweis.style.opacity = 0; const [x, y] = pos(e), druck = stiftDruck(e); vorschau = null; zugDruck = druck;
+    if (s.werkzeug === 'tropfen') { if (S.tippen(s, x, y, s.farbe, rnd, true, druck)) { spiele('tropfen'); planTon = 1; welle(x, y); haptik.kurz(); tropfenHalten = true; } else zeiger = null; leiste(); return; }
     S.zugBeginnen(s); spurZug = {}; s.letzt = [x, y]; s.ziel = null; s.richtung = [0, 1]; leiste();
   });
+  const stiftDruck = e => (e.pointerType === 'pen' ? e.pressure : undefined); // nur der Stift meldet verlässlichen Druck (S-012)
   cv.addEventListener('pointermove', e => {
-    if (e.pointerId !== zeiger || !s.letzt) return; s.ziel = pos(e); // gerechnet wird einmal je Bild in zugRechnen (Ereignisse zusammengefasst)
+    if (e.pointerType === 'pen' && zeiger === null && !e.buttons) { vorschau = s.phase === 'malen' ? pos(e) : null; dirty = true; return; } /* Stift schwebt: Vorschau */
+    if (e.pointerId === zeiger && tropfenHalten) { S.druecken(s, stiftDruck(e)); return; }
+    if (e.pointerId !== zeiger || !s.letzt) return; zugDruck = stiftDruck(e); s.ziel = pos(e); // gerechnet wird einmal je Bild in zugRechnen (Ereignisse zusammengefasst)
   });
   function zugRechnen() {
     if (!s.letzt || !s.ziel) return; const [x0, y0] = s.letzt, [x, y] = s.ziel, d = Math.hypot(x - x0, y - y0); if (d < 2) return;
-    S.zugWeiter(s, x0, y0, x, y, rnd); if (s.phase === 'malen') for (const [px, py] of W.spurPunkte(x0, y0, x, y, spurZug)) welle(px, py, true); s.letzt = [x, y]; s.richtung = [(x - x0) / d, (y - y0) / d]; dirty = true;
+    S.zugWeiter(s, x0, y0, x, y, rnd, zugDruck); if (s.phase === 'malen') for (const [px, py] of W.spurPunkte(x0, y0, x, y, spurZug)) welle(px, py, true); s.letzt = [x, y]; s.richtung = [(x - x0) / d, (y - y0) / d]; dirty = true;
     const jetzt = performance.now(); if (jetzt - letzterStab > 140) { letzterStab = jetzt; spiele('stab', d / 20); }
   }
   const ende = e => { if (e.pointerId === zeiger && tropfenHalten) { tropfenHalten = false; zeiger = null; S.loslassen(s); leiste(); return; } if (e.pointerId === zeiger) { zugRechnen(); zeiger = null; s.letzt = null; s.ziel = null; S.zugEnde(s); leiste(); } };
+  cv.addEventListener('pointerleave', () => { if (vorschau) { vorschau = null; dirty = true; } });
   cv.addEventListener('pointerup', ende); cv.addEventListener('pointercancel', ende); cv.addEventListener('lostpointercapture', ende); /* Finger verloren: Halten sicher beenden */
 
   document.addEventListener('click', async e => {
@@ -1039,6 +1078,7 @@ globalThis.Ebru = {};
       const jetztW = performance.now(); const dauer = w => (w.kl ? 400 : 500); wellen = wellen.filter(w => jetztW - w.t0 < dauer(w)); for (const w of wellen) Z.welle(ctx, scale, w.x, w.y, (jetztW - w.t0) / dauer(w), w.kl);
       geistGemalt = !!(s.vorfuehrung && s.jetzt / 1000 >= s.vorfuehrung.t); if (geistGemalt) Z.werkzeug(ctx, scale, s.vorfuehrung.x, s.vorfuehrung.y, 0, 1, 1, 0, 0.75);
       const sch = S.schritt(s); if (sch) Z.ziel(ctx, scale, sch);
+      if (vorschau && zeiger === null) { const [vx, vy] = vorschau; if (s.werkzeug === 'tropfen') Z.ring(ctx, scale, vx, vy, sch && sch.art === 'tropfen' ? sch.r : C.RADIUS_MIN, E.PALETTEN[s.becken.welt].farben[s.farbe]); else if (s.werkzeug !== 'spritzen') Z.werkzeug(ctx, scale, vx, vy, 0, 1, s.werkzeug === 'kamm' ? S.KAMM.zinken : 1, S.KAMM.abstand, 0.45); }
       if (feier) { const t = (jetztW - feierT0) / 1000; if (t > 1.5) feier = null; else for (const st of feier) { if (t < st.verzug) continue; const u = Math.min(1, (t - st.verzug) / st.fall), e = 1 - (1 - u) * (1 - u); Z.stern(ctx, scale, st.x, st.y0 + (st.y1 - st.y0) * e, st.groesse, st.dreh + u * 3, u < 0.7 ? 1 : (1 - u) / 0.3); } }
       if (s.letzt) { const [mx, my] = s.richtung, kamm = s.werkzeug === 'kamm'; Z.werkzeug(ctx, scale, s.letzt[0], s.letzt[1], mx, my, kamm ? S.KAMM.zinken : 1, S.KAMM.abstand); }
     } else {
@@ -1069,7 +1109,7 @@ globalThis.Ebru = {};
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => groesse());
   window.addEventListener('orientationchange', () => setTimeout(groesse, 200));
   korn = Z.kachel(rnd); neu(); requestAnimationFrame(bild);
-  window.__ebru = { sichern, geist: () => geistGemalt, toene: () => ton.gespielt(), klaenge: () => ton.klaenge(), wellen: () => wellen.length, spur: () => spurGesamt, feiern: () => feiern, sterne: () => (feier ? feier.length : 0), bilder: () => bilder.length, video: () => (video ? { groesse: video.blob.size, endung: video.endung } : null), videoBlob: () => (video ? video.blob : null), sitzung: () => s, stufe: () => stufe, fps: () => fpsWert, kanvas: cv };
+  window.__ebru = { sichern, vorschau: () => vorschau, geist: () => geistGemalt, toene: () => ton.gespielt(), klaenge: () => ton.klaenge(), wellen: () => wellen.length, spur: () => spurGesamt, feiern: () => feiern, sterne: () => (feier ? feier.length : 0), bilder: () => bilder.length, video: () => (video ? { groesse: video.blob.size, endung: video.endung } : null), videoBlob: () => (video ? video.blob : null), sitzung: () => s, stufe: () => stufe, fps: () => fpsWert, kanvas: cv };
 })(globalThis);
 
 })();
