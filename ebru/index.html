@@ -122,7 +122,8 @@ globalThis.Ebru = {};
   function tafel(T, ax) { if (ax >= 6) return T[6 * TS]; const u = ax * TS, i = u | 0; return T[i] + (T[i + 1] - T[i]) * (u - i); }
   function erf(x) { return x >= 0 ? tafel(ERF, x) : -tafel(ERF, -x); }
   function gau(x) { return tafel(GAU, Math.abs(x)); }
-  function rampe(t) { if (t <= 0) return [0, 0]; if (t >= RANDZONE) return [1, 0]; const q = t / RANDZONE; return [3 * q * q - 2 * q * q * q, (6 * q - 6 * q * q) / RANDZONE]; }
+  function rampeW(t) { if (t <= 0) return 0; if (t >= RANDZONE) return 1; const q = t / RANDZONE; return 3 * q * q - 2 * q * q * q; } // Randrampe: 0 am Rand, 1 ab RANDZONE (glatt)
+  function rampeD(t) { if (t <= 0 || t >= RANDZONE) return 0; const q = t / RANDZONE; return (6 * q - 6 * q * q) / RANDZONE; } // Ableitung von rampeW
   // Zinkenart: a = Breite der Mitnahme, rueck = Rückstrombreite in a, nachlauf = D, schritt = Teilschrittlänge. f und Phi als Tafel über n (Schritt 1/50).
   function art(a, rueck, nachlauf, schritt) {
     const b = rueck * a, k = a / b, c = 1 / (1 - k), grenze = 3 * b, m = Math.ceil(grenze * 50) + 2, F = new Float64Array(m), P = new Float64Array(m);
@@ -133,13 +134,9 @@ globalThis.Ebru = {};
   // Geschwindigkeit am Punkt (px, py) für alle Zinken eines Teilschritts. Alle Zinken eines Schritts haben dieselbe Richtung (m) und dasselbe L, D;
   // z = { mx, my, L, D, cx0, cy0 (Zugmitte), versatz: [..], cx/cy: Zinkenorte }. Längsanteil G(s) wird je Punkt einmal gerechnet.
   function geschwindigkeit(px, py, z, p, breite, hoehe) {
-    const [x1, dx1] = rampe(px), [x2, dx2] = rampe(breite - px), [y1, dy1] = rampe(py), [y2, dy2] = rampe(hoehe - py);
-    const W = x1 * x2 * y1 * y2; if (W === 0) return null;
-    const Wx = (dx1 * x2 - x1 * dx2) * y1 * y2, Wy = (dy1 * y2 - y1 * dy2) * x1 * x2, Wn = -Wx * z.my + Wy * z.mx, Ws = Wx * z.mx + Wy * z.my;
+    // Reihenfolge (F-14): erst die billigen Abfragen (längs, quer), dann Rand und Fehlerfunktionen; gleiche Formeln wie zuvor, ohne Hilfsfelder je Punkt
     const s = (px - z.cx0) * z.mx + (py - z.cy0) * z.my; // gleich für alle Zinken
     if (s > 3 * p.sig || s < -z.D - 3 * p.sig) return null;
-    const g1 = 0.5 * (1 + erf(-s / p.sig)), g2 = 0.5 * (1 + erf((s + z.D) / p.sig)), G = g1 * g2;
-    const Gs = (-gau(s / p.sig) * g2 + g1 * gau((s + z.D) / p.sig)) / (p.sig * SQP);
     let sf = 0, sPhi = 0, getroffen = false;
     const n0 = -(px - z.cx0) * z.my + (py - z.cy0) * z.mx, grenze = p.grenze; // n je Zinke = n0 - Versatz (parallele Zinken)
     for (const o of z.versatz) {
@@ -148,6 +145,12 @@ globalThis.Ebru = {};
       sf += p.F[i] + (p.F[i + 1] - p.F[i]) * w; const ph = p.P[i] + (p.P[i + 1] - p.P[i]) * w; sPhi += n < 0 ? -ph : ph;
     }
     if (!getroffen) return null;
+    const x1 = rampeW(px), x2 = rampeW(breite - px), y1 = rampeW(py), y2 = rampeW(hoehe - py);
+    const W = x1 * x2 * y1 * y2; if (W === 0) return null;
+    const dx1 = rampeD(px), dx2 = rampeD(breite - px), dy1 = rampeD(py), dy2 = rampeD(hoehe - py);
+    const Wx = (dx1 * x2 - x1 * dx2) * y1 * y2, Wy = (dy1 * y2 - y1 * dy2) * x1 * x2, Wn = -Wx * z.my + Wy * z.mx, Ws = Wx * z.mx + Wy * z.my;
+    const g1 = 0.5 * (1 + erf(-s / p.sig)), g2 = 0.5 * (1 + erf((s + z.D) / p.sig)), G = g1 * g2;
+    const Gs = (-gau(s / p.sig) * g2 + g1 * gau((s + z.D) / p.sig)) / (p.sig * SQP);
     const dn = z.L * (sf * G * W + sPhi * G * Wn), ds = z.L * (sPhi * Gs * W + sPhi * G * Ws);
     return [dn * z.mx + ds * z.my, dn * z.my - ds * z.mx];
   }
@@ -159,11 +162,12 @@ globalThis.Ebru = {};
     minx -= rr; maxx += rr; miny -= rr; maxy += rr;
     for (const q of b.polys) {
       const pp = q.p;
-      for (let i = 0; i < pp.length; i += 2) { // q.bewegt merkt bewegte Linienzüge, nur diese werden danach verfeinert
+      for (let i = 0; i < pp.length; i += 2) { // q.bewegt merkt die bewegten Knoten (Nummern), nur deren Kanten werden danach verfeinert (F-14)
         const x = pp[i], y = pp[i + 1]; if (x < minx || x > maxx || y < miny || y > maxy) continue;
         const v1 = geschwindigkeit(x, y, z, p, b.breite, b.hoehe); if (!v1 || Math.abs(v1[0]) + Math.abs(v1[1]) < 1e-6) continue;
         const v2 = geschwindigkeit(x + v1[0] / 2, y + v1[1] / 2, z, p, b.breite, b.hoehe) || [0, 0];
-        q.bewegt = true; pp[i] = Math.min(b.breite, Math.max(0, x + v2[0])); pp[i + 1] = Math.min(b.hoehe, Math.max(0, y + v2[1]));
+        (q.bewegt || (q.bewegt = [])).push(i >> 1); pp[i] = Math.min(b.breite, Math.max(0, x + v2[0])); pp[i + 1] = Math.min(b.hoehe, Math.max(0, y + v2[1]));
+        const bx = b.box; if (bx) { bx[0] = Math.min(bx[0], x, pp[i]); bx[1] = Math.min(bx[1], y, pp[i + 1]); bx[2] = Math.max(bx[2], x, pp[i]); bx[3] = Math.max(bx[3], y, pp[i + 1]); } // alte und neue Lage (S-013)
       }
     }
   }
@@ -209,14 +213,15 @@ globalThis.Ebru = {};
   function ahleBreite(d) { return gueltig(d) ? Math.round(AHLE_FEIN + 9 * d) : AHLE_FINGER; }
 
   function verfeinern(p, KANTE_MAX) { // Kanten über KANTE_MAX teilen (Tropfen 6, Strömung 3 Einheiten) (höchstens 4 Durchgänge)
+    const K2 = KANTE_MAX * KANTE_MAX; // Quadrate statt Math.hypot (S-013: hypot ist mehrfach langsamer)
     for (let durchgang = 0; durchgang < 4; durchgang++) {
       const n = p.length / 2; let neu = 0;
-      for (let i = 0; i < n; i++) { const j = (i + 1) % n; if (Math.hypot(p[2 * j] - p[2 * i], p[2 * j + 1] - p[2 * i + 1]) > KANTE_MAX) neu++; }
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n; const dx = p[2 * j] - p[2 * i], dy = p[2 * j + 1] - p[2 * i + 1]; if (dx * dx + dy * dy > K2) neu++; }
       if (!neu) return p;
       const q = new Float64Array((n + neu) * 2); let k = 0;
       for (let i = 0; i < n; i++) {
         const j = (i + 1) % n; q[k++] = p[2 * i]; q[k++] = p[2 * i + 1];
-        if (Math.hypot(p[2 * j] - p[2 * i], p[2 * j + 1] - p[2 * i + 1]) > KANTE_MAX) { q[k++] = (p[2 * i] + p[2 * j]) / 2; q[k++] = (p[2 * i + 1] + p[2 * j + 1]) / 2; }
+        const dx = p[2 * j] - p[2 * i], dy = p[2 * j + 1] - p[2 * i + 1]; if (dx * dx + dy * dy > K2) { q[k++] = (p[2 * i] + p[2 * j]) / 2; q[k++] = (p[2 * i + 1] + p[2 * j + 1]) / 2; }
       }
       p = q;
     }
@@ -228,53 +233,113 @@ globalThis.Ebru = {};
   const STUFEN = [[0.1, 4.5], [0.1, 6], [0.2, 9], [0.4, 12], [0.8, 24], [1.6, 48], [3.2, 96], [6.4, 400]];
   function abstandStrecke(x, y, ax, ay, cx, cy, L) { // Abstand zur Strecke (nicht zur Geraden), damit Spitzen auf der eigenen Linie bleiben; L = 0: Abstand zum Punkt
     const u = L > 1e-9 ? ((x - ax) * (cx - ax) + (y - ay) * (cy - ay)) / (L * L) : 0;
-    if (u <= 0) return Math.hypot(x - ax, y - ay); if (u >= 1) return Math.hypot(x - cx, y - cy);
+    if (u <= 0) return Math.sqrt((x - ax) * (x - ax) + (y - ay) * (y - ay)); if (u >= 1) return Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
     return Math.abs((cx - ax) * (y - ay) - (cy - ay) * (x - ax)) / L;
   }
-  function ausduennen(p, tol, sehneMax) {
+  // f (optional): nur Knoten in diesem Rechteck weglassen; box sammelt das Rechteck aller Knoten, deren Kurvenstück sich ändert (S-013, Ausschnitt neu zeichnen)
+  function ausduennen(p, tol, sehneMax, f, box, aussen) { // aussen: nur Knoten außerhalb von f weglassen
     const n = p.length / 2; if (n <= 8) return p;
     const aus = [0]; let a = 0;
     for (let i = 1; i < n; i++) {
-      const c = (i + 1) % n, ax = p[2 * a], ay = p[2 * a + 1], cx = p[2 * c], cy = p[2 * c + 1], L = Math.hypot(cx - ax, cy - ay);
-      let weg = L <= sehneMax && n - (i - aus.length) > 8;
+      const c = (i + 1) % n, ax = p[2 * a], ay = p[2 * a + 1], cx = p[2 * c], cy = p[2 * c + 1], L = Math.sqrt((cx - ax) * (cx - ax) + (cy - ay) * (cy - ay));
+      let weg = L <= sehneMax && n - (i - aus.length) > 8 && (!f || (p[2 * i] >= f[0] && p[2 * i] <= f[2] && p[2 * i + 1] >= f[1] && p[2 * i + 1] <= f[3]) !== !!aussen);
       for (let k = a + 1; weg && k <= i; k++) if (abstandStrecke(p[2 * k], p[2 * k + 1], ax, ay, cx, cy, L) >= tol) weg = false; // alle übersprungenen Knoten nah an der Strecke a-c
-      if (!weg) { aus.push(i); a = i; }
+      if (!weg) { aus.push(i); a = i; } else if (box) for (let t = -1, m = (c - a + n) % n; t <= m + 1; t++) { const j = (a + t + n) % n; umfasse(box, p[2 * j], p[2 * j + 1]); } // a-1 bis c+1, auch über den Ringschluss (c = 0)
     }
     if (aus.length === n) return p;
     const r = new Float64Array(aus.length * 2); aus.forEach((o, k) => { r[2 * k] = p[2 * o]; r[2 * k + 1] = p[2 * o + 1]; }); return r;
   }
-  function vereinfachen(b, grenze) { // grenze: höchste Knotenzahl, ohne Angabe KNOTEN_MAX; Ziel 85 % davon
-    const max = Number.isFinite(grenze) ? Math.max(0, grenze) : KNOTEN_MAX, ziel = Math.floor(max * 0.85); if (E.knoten(b) <= max) return;
-    for (const [tol, sehne] of STUFEN) { if (E.knoten(b) <= ziel) return; for (const q of b.polys) q.p = ausduennen(q.p, tol, sehne); }
+  const SICHTBAR = 0.1; // größte Toleranz, die ohne Neuzeichnen bleibt: unter einem Fünftel Gerätepixel (0,4 gab im Lasttest sichtbare Kantensprünge bis 97 von 255 beim nächsten ganzen Bild)
+  function vereinfachen(b, grenze) { // grenze: höchste Knotenzahl, ohne Angabe KNOTEN_MAX; Ziel 70 % davon (Abstand, damit die Vereinfachung selten läuft, S-013)
+    const max = Number.isFinite(grenze) ? Math.max(0, grenze) : KNOTEN_MAX, ziel = Math.floor(max * 0.7); if (E.knoten(b) <= max) return 0;
+    let groesste = 0; // größte genutzte Toleranz: bis 0,1 Einheiten ist die Änderung unsichtbar (unter einem Gerätepixel)
+    let k = E.knoten(b); // je Linienzug weiter zählen und mitten in der Stufe aufhören, sobald das Ziel erreicht ist (S-013: früher fiel eine grobe Stufe auf alle, bis 17000 statt 28000 Knoten)
+    for (const [tol, sehne] of STUFEN) { if (k <= ziel) break; groesste = tol; for (const q of b.polys) { if (k <= ziel) break; const vor = q.p.length; q.p = ausduennen(q.p, tol, sehne); k -= (vor - q.p.length) / 2; } }
+    // Notstufen (S-013, harte Laststufe): nach vielen Kammzügen sind alle Kanten schon lang (Mitte 58 Einheiten), keine Stufe entfernt mehr etwas und das Becken wuchs auf 166000 Knoten.
+    // Dann Toleranz verdoppeln ohne Längengrenze, ab 200 Einheiten jeden zweiten Knoten weglassen: grob, aber das Limit hält immer.
+    for (let tol = 12.8; k > max; tol *= 2) {
+      const vorher = k; groesste = tol;
+      for (const q of b.polys) { if (k <= ziel) break; const vor = q.p.length; q.p = tol > 200 ? jederZweite(q.p) : ausduennen(q.p, tol, Infinity); k -= (vor - q.p.length) / 2; }
+      if (k === vorher && tol > 200) break; // nichts mehr zu entfernen (lauter Linienzüge mit 8 Knoten)
+    }
+    return groesste;
   }
-  function abschluss(b) { for (const q of b.polys) q.p = verfeinern(q.p, KANTE_TROPFEN); if (E.knoten(b) > KNOTEN_MAX) vereinfachen(b); }
+  function jederZweite(p) { const n = p.length / 2; if (n <= 8) return p; const m = Math.max(8, Math.ceil(n / 2)), r = new Float64Array(2 * m); for (let k = 0; k < m; k++) { const i = Math.floor(k * n / m); r[2 * k] = p[2 * i]; r[2 * k + 1] = p[2 * i + 1]; } return r; }
+  function umfasse(box, x, y) { if (x < box[0]) box[0] = x; if (y < box[1]) box[1] = y; if (x > box[2]) box[2] = x; if (y > box[3]) box[3] = y; }
+  // Nur im geänderten Rechteck vereinfachen, unsichtbare Stufen (Kanten bis 12): das Bild ändert sich nur dort, die Anzeige zeichnet nur den Ausschnitt neu (S-013).
+  // Rückgabe: Rechteck der geänderten Kurvenstücke oder null (nichts entfernt); reicht es nicht unter die Grenze, folgt danach vereinfachen über alles.
+  // Zuerst außerhalb des Rechtecks (dort ruht die Farbe, die Knoten bleiben weg; nur Stufen bis SICHTBAR, kein Neuzeichnen), erst dann im Rechteck,
+  // wo die Strömung die Kanten gleich wieder teilt. Im Rechteck bis Kantenlänge 12 (nur bis KANTE_STROM gemessen: dann musste je Zug die ganze Fläche vereinfacht werden).
+  function vereinfachenIn(b, f) {
+    const box = [Infinity, Infinity, -Infinity, -Infinity]; if (E.knoten(b) <= KNOTEN_MAX) return null;
+    for (const [tol, sehne] of STUFEN) { if (tol > SICHTBAR || E.knoten(b) <= KNOTEN_MAX * 0.85) break; for (const q of b.polys) q.p = ausduennen(q.p, tol, sehne, f, null, true); }
+    for (const [tol, sehne] of STUFEN) { if (sehne > 12 || E.knoten(b) <= KNOTEN_MAX * 0.95) break; for (const q of b.polys) q.p = ausduennen(q.p, tol, sehne, f, box); }
+    return box[0] <= box[2] ? [box[0] - 1, box[1] - 1, box[2] + 1, box[3] + 1] : null;
+  }
+  // Nach einem Tropfen nur Kanten an Knoten nahe dem Tropfen teilen (bis 3 Radien, dort dehnt der Tropfen die Kanten um mehr als 5 %), mit Budget wie bei der Strömung.
+  // S-013, harte Stufe: früher wurde jede Kante im Becken geteilt; nach einer Vereinfachung kamen so je Tropfen über 6000 Knoten zurück, das Limit griff in jedem Bild (170 ms).
+  function abschluss(b, nah) {
+    let k = E.knoten(b);
+    for (const [q, bei] of nah) { if (k >= TEILEN_BIS) break; const n = q.p.length / 2; q.p = verfeinernBei(q.p, bei, KANTE_TROPFEN, TEILEN_BIS - k); k += q.p.length / 2 - n; }
+    if (E.knoten(b) > KNOTEN_MAX) vereinfachen(b);
+  }
 
   // Tropfen nach Lu u. a.: Punkt P wird zu C + (P-C)·sqrt(1 + r²/|P-C|²); der neue Tropfen ist ein Kreis mit Radius r.
+  // Änderungsmeldung für die Anzeige (S-013): stand zählt jede Änderung, feld ist das geänderte Rechteck [x0, y0, x1, y1] in Einheiten oder 'alles'
+  function geaendert(b, feld) { b.stand = (b.stand || 0) + 1; if (b.feld === 'alles' || feld === 'alles' || !b.feld) { b.feld = b.feld === 'alles' ? 'alles' : feld; return; } b.feld = [Math.min(b.feld[0], feld[0]), Math.min(b.feld[1], feld[1]), Math.max(b.feld[2], feld[2]), Math.max(b.feld[3], feld[3])]; }
   function tropfen(b, x, y, r, farbe) {
-    if (!fin(x, y, r) || r <= 0 || r > 200) return false;
-    const cx = klemme(x, 0, b.breite), cy = klemme(y, 0, b.hoehe), r2 = r * r;
+    if (!fin(x, y, r) || r <= 0 || r > 200) return false; geaendert(b, 'alles');
+    const cx = klemme(x, 0, b.breite), cy = klemme(y, 0, b.hoehe), r2 = r * r, nah = new Map(), weit2 = 9 * r2;
     for (const q of b.polys) {
-      const p = q.p;
+      const p = q.p; let bei = null;
       for (let i = 0; i < p.length; i += 2) {
         const dx = p[i] - cx, dy = p[i + 1] - cy, d2 = dx * dx + dy * dy;
+        if (d2 < weit2) (bei || (bei = [])).push(i / 2);
         if (d2 < 1e-9) { p[i] = cx + r; p[i + 1] = cy; continue; }
         const f = Math.sqrt(1 + r2 / d2); p[i] = cx + dx * f; p[i + 1] = cy + dy * f;
       }
+      if (bei) nah.set(q, bei);
     }
-    b.polys.push(E.kreis(cx, cy, r, farbIdx(farbe))); abschluss(b); return true;
+    const kreis = E.kreis(cx, cy, r, farbIdx(farbe)); b.polys.push(kreis); kreis.p = verfeinern(kreis.p, KANTE_TROPFEN); abschluss(b, nah); return true;
   }
 
   // Stäbchen und Kamm: flächentreue Strömung (S-002, stroemung.js). zug = Zustand je Fingerzug (neuerZug), sonst ein eigener Zug.
   const STAB = St.art(AHLE_FINGER, 2.5, 40, 4), KAMM = St.art(6, 1.5, 24, 4), AHLEN = {}; // Ahlen 5 bis 14 einmal vorberechnet (S-012)
   for (let a = AHLE_FEIN; a <= AHLE_FEST; a++) AHLEN[a] = a === AHLE_FINGER ? STAB : St.art(a, 2.5, 40, 4);
   function neuerZug() { return { weg: 0 }; }
-  function nachTeilschritt(b) { for (const q of b.polys) if (q.bewegt) { q.p = verfeinern(q.p, KANTE_STROM); delete q.bewegt; } }
+  // Nach einem Teilschritt nur die Kanten an bewegten Knoten teilen (F-14: früher jede Kante jedes bewegten Linienzugs, bei vollem Becken über 100 ms je Bild).
+  // Gleiche Regel wie verfeinern: eine Kante wird so oft halbiert, bis sie höchstens KANTE_MAX lang ist, höchstens 4-mal (16 Stücke).
+  // budget (S-013): höchstens so viele neue Knoten; sonst wird die Teilungstiefe gesenkt (4, 3, 2, 1), mindestens einmal halbiert
+  function verfeinernBei(p, knoten, KANTE_MAX, budget) {
+    const n = p.length / 2; let tiefe, neu;
+    for (let tiefeMax = 4; tiefeMax >= 1; tiefeMax--) {
+      tiefe = new Int8Array(n); neu = 0;
+      for (const i of knoten) for (const e of [(i + n - 1) % n, i]) {
+        if (tiefe[e]) continue; const f = (e + 1) % n; const ex = p[2 * f] - p[2 * e], ey = p[2 * f + 1] - p[2 * e + 1]; let L = Math.sqrt(ex * ex + ey * ey), j = 0;
+        while (L > KANTE_MAX && j < tiefeMax) { L /= 2; j++; } if (j) { tiefe[e] = j; neu += (1 << j) - 1; }
+      }
+      if (!(neu > budget)) break;
+    }
+    if (!neu) return p;
+    const q = new Float64Array((n + neu) * 2); let k = 0;
+    const teile = (ax, ay, bx, by, j) => { if (!j) return; const mx = (ax + bx) / 2, my = (ay + by) / 2; teile(ax, ay, mx, my, j - 1); q[k++] = mx; q[k++] = my; teile(mx, my, bx, by, j - 1); };
+    for (let i = 0; i < n; i++) { q[k++] = p[2 * i]; q[k++] = p[2 * i + 1]; if (tiefe[i]) { const f = (i + 1) % n; teile(p[2 * i], p[2 * i + 1], p[2 * f], p[2 * f + 1], tiefe[i]); } }
+    return q;
+  }
+  // S-013: die Kurve eines Knotens läuft durch die Kantenmitten zu den Nachbarn; ein bewegter Knoten ändert das Bild bis zum zweiten Nachbarn (b.box sammelt das Rechteck)
+  // Obergrenze beim Teilen (S-013, harte Laststufe): nach Notstufen mit sehr langen Kanten legte ein Zugstück bis 770000 Knoten an (über 2 s je Stück); bis 1,25-mal dem Limit wird geteilt, mit sinkender Tiefe, sobald das Budget nicht reicht
+  const TEILEN_BIS = KNOTEN_MAX * 1.25;
+  function nachTeilschritt(b) { let k = E.knoten(b); for (const q of b.polys) if (q.bewegt) { const p = q.p, n = p.length / 2; if (b.box) for (const i of q.bewegt) for (let d = -2; d <= 2; d++) { const j = (i + d + n) % n; umfasse(b.box, p[2 * j], p[2 * j + 1]); } if (k < TEILEN_BIS) { q.p = verfeinernBei(p, q.bewegt, KANTE_STROM, TEILEN_BIS - k); k += q.p.length / 2 - n; } delete q.bewegt; } }
   function weg(b, x0, y0, x1, y1, versatze, p, zug) {
     if (!fin(x0, y0, x1, y1)) return false;
     let len = Math.hypot(x1 - x0, y1 - y0); if (len < 1e-9) return true;
     if (len > 1200) { x1 = x0 + (x1 - x0) * 1200 / len; y1 = y0 + (y1 - y0) * 1200 / len; }
-    St.zugSchritt(b, x0, y0, x1, y1, versatze, p, zug || neuerZug(), nachTeilschritt);
-    if (E.knoten(b) > KNOTEN_MAX) vereinfachen(b); return true;
+    b.box = [Infinity, Infinity, -Infinity, -Infinity]; St.zugSchritt(b, x0, y0, x1, y1, versatze, p, zug || neuerZug(), nachTeilschritt); const bx = b.box; delete b.box;
+    const rand = Math.max(p.grenze, p.D + 3 * p.sig) + Math.max(...versatze.map(Math.abs)) + 12; // Wirkbereich wie in teilschritt plus Kantenlänge: Rechteck für die Vereinfachung
+    const feld = [Math.min(x0, x1) - rand, Math.min(y0, y1) - rand, Math.max(x0, x1) + rand, Math.max(y0, y1) + rand];
+    if (bx[0] <= bx[2]) geaendert(b, [bx[0] - 1, bx[1] - 1, bx[2] + 1, bx[3] + 1]); // genau die geänderten Kurven (bewegte Knoten, alte und neue Lage, bis zum zweiten Nachbarn)
+    const box = vereinfachenIn(b, feld); if (box) geaendert(b, box);
+    if (E.knoten(b) > KNOTEN_MAX && vereinfachen(b) > SICHTBAR) geaendert(b, 'alles'); return true; // bis SICHTBAR bleibt das Bild stehen (S-013)
   }
   function schiebeWeg(b, x0, y0, x1, y1, zug, breite) { return weg(b, x0, y0, x1, y1, [0], AHLEN[breite] || STAB, zug); }
   function kammWeg(b, x0, y0, x1, y1, zinken, abstand, zug) {
@@ -330,7 +395,7 @@ globalThis.Ebru = {};
   function aufloesung(stufe, dpr) { return [0.5, 0.75, 1][klemme(stufe, 0, 2)] * Math.min(Number.isFinite(dpr) ? dpr : 1, 2); }
   function bildSchritt(ms) { return Number.isFinite(ms) ? klemme(ms, 0, 100) : 0; }
 
-  g.Ebru.control = { KNOTEN_MAX, RADIUS_MIN, RADIUS_MAX, UNDO_TIEFE, HALTEN_WARTE, AHLE_FEIN, radiusAusDruck, ahleBreite, neuerZug, vereinfachen, begrenzeRadius, radiusWaehlen, radiusGehalten, haltenRadius, tropfen, schiebeWeg, kammWeg, farbeAn, streifen, merke, rueckgaengig, spritzPunkte, vorfuehrungFuer, planAutoTropfen, autoZustand, qualitaetNach, aufloesung, bildSchritt };
+  g.Ebru.control = { KNOTEN_MAX, RADIUS_MIN, RADIUS_MAX, UNDO_TIEFE, HALTEN_WARTE, AHLE_FEIN, radiusAusDruck, ahleBreite, neuerZug, vereinfachen, vereinfachenIn, begrenzeRadius, radiusWaehlen, radiusGehalten, haltenRadius, tropfen, schiebeWeg, kammWeg, farbeAn, streifen, merke, rueckgaengig, spritzPunkte, vorfuehrungFuer, planAutoTropfen, autoZustand, qualitaetNach, aufloesung, bildSchritt };
 })(globalThis);
 
 })();
@@ -540,7 +605,8 @@ globalThis.Ebru = {};
     if (ziel > v.y) { C.schiebeWeg(s.becken, v.x, v.y, v.x, ziel, v.zug); v.y = ziel; }
     if (ziel >= v.y1) s.vorfuehrung = null;
   }
-  function startePlan(s, plan, t0) { s.plan = plan; s.planStart = t0; s.basis = E.kopie(s.becken); }
+  // S-013: nahe am Knotenlimit vorher einmal vereinfachen, sonst vereinfacht jedes Bild des Aufgehens das ganze Becken neu (bei vollem Becken 20 ms je Bild)
+  function startePlan(s, plan, t0) { s.plan = plan; s.planStart = t0; if (E.knoten(s.becken) > C.KNOTEN_MAX * 0.9) C.vereinfachen(s.becken, C.KNOTEN_MAX * 0.9); s.basis = E.kopie(s.becken); }
   function zeit(s, sek) {
     s.planJetzt = sek; if (!s.plan) return;
     const verlauf = s.becken.verlauf, welt = s.becken.welt;
@@ -797,23 +863,47 @@ globalThis.Ebru = {};
   function koerner(ctx, w, h, k, alpha) { // Papierkörnung über alles legen
     ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = alpha; ctx.fillStyle = ctx.createPattern(k, 'repeat'); ctx.fillRect(0, 0, w, h); ctx.restore();
   }
-  function farben(ctx, b, kante) {
+  function aussen(p, f) { // true, wenn der Linienzug ganz außerhalb des Rechtecks f liegt
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (let i = 0; i < p.length; i += 2) { const x = p[i], y = p[i + 1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    return x1 < f[0] || x0 > f[2] || y1 < f[1] || y0 > f[3];
+  }
+  function pfad(ctx, p, n) {
+    ctx.moveTo((p[2 * n - 2] + p[0]) / 2, (p[2 * n - 1] + p[1]) / 2);
+    for (let i = 0; i < n; i++) { const j = (i + 1) % n; ctx.quadraticCurveTo(p[2 * i], p[2 * i + 1], (p[2 * i] + p[2 * j]) / 2, (p[2 * i + 1] + p[2 * j + 1]) / 2); } ctx.closePath();
+  }
+  // Gleicher Rand, aber nur im Rechteck r genau (S-013, Ausschnitt): ein Kurvenstück, das samt Kontrollpunkt ganz auf einer Außenseite von r liegt, wird zur Sehne,
+  // und Sehnen, die gemeinsam auf einer Außenseite (Halbebene) liegen, werden zu einer Linie. Was dabei wegfällt, liegt ganz außerhalb von r: das Bild in r bleibt gleich.
+  function pfadIn(ctx, p, n, r) {
+    const oc = (x, y) => (x < r[0] ? 1 : 0) | (x > r[2] ? 2 : 0) | (y < r[1] ? 4 : 0) | (y > r[3] ? 8 : 0);
+    let ax = (p[2 * n - 2] + p[0]) / 2, ay = (p[2 * n - 1] + p[1]) / 2, oa = oc(ax, ay), lauf = 0, ox = 0, oy = 0; // lauf: gemeinsame Außenseiten der offenen Linie, ox/oy ihr Ende
+    ctx.moveTo(ax, ay);
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n, px = p[2 * i], py = p[2 * i + 1], bx = (px + p[2 * j]) / 2, by = (py + p[2 * j + 1]) / 2, ob = oc(bx, by);
+      if (oa & oc(px, py) & ob) {
+        if (lauf && (lauf & ob)) lauf &= ob; else { if (lauf) ctx.lineTo(ox, oy); lauf = oa & ob; }
+        ox = bx; oy = by;
+      } else { if (lauf) { ctx.lineTo(ox, oy); lauf = 0; } ctx.quadraticCurveTo(px, py, bx, by); }
+      ax = bx; ay = by; oa = ob;
+    }
+    if (lauf) ctx.lineTo(ox, oy); ctx.closePath();
+  }
+  // Ohne dunkle Randlinie (S-013, Wahl vom 07.11.2026, 17:36): Farben stoßen direkt aneinander wie beim echten Ebru, das Zeichnen braucht etwa ein Drittel weniger Zeit
+  function farben(ctx, b, feld) {
     const pal = E.PALETTEN[b.welt];
     for (const q of b.polys) {
-      const p = q.p, n = p.length / 2; if (n < 3) continue;
+      const p = q.p, n = p.length / 2; if (n < 3 || (feld && aussen(p, feld))) continue;
       // Rand als weiche Kurve durch die Kantenmitten (F-13): grobe Stellen nach dem Knotenlimit wirken nicht eckig
-      ctx.beginPath(); ctx.moveTo((p[2 * n - 2] + p[0]) / 2, (p[2 * n - 1] + p[1]) / 2);
-      for (let i = 0; i < n; i++) { const j = (i + 1) % n; ctx.quadraticCurveTo(p[2 * i], p[2 * i + 1], (p[2 * i] + p[2 * j]) / 2, (p[2 * i + 1] + p[2 * j + 1]) / 2); } ctx.closePath();
+      ctx.beginPath(); if (feld) pfadIn(ctx, p, n, [feld[0] - 1, feld[1] - 1, feld[2] + 1, feld[3] + 1]); else pfad(ctx, p, n);
       ctx.fillStyle = pal.farben[q.farbe]; ctx.fill();
-      if (kante) { ctx.strokeStyle = 'rgba(40,25,30,0.22)'; ctx.lineWidth = 0.7; ctx.stroke(); }
     }
   }
   // Becken in Einheiten zeichnen; scale = Gerätepixel je Einheit. wasser=false lässt den Grund durchsichtig (für den Abdruck).
-  function becken(ctx, b, scale, k, wasser) {
+  // feld (S-013): nur dieses Rechteck [x0, y0, x1, y1] in Einheiten neu zeichnen (Ausschnitt), sonst alles
+  function becken(ctx, b, scale, k, wasser, feld) {
     const pal = E.PALETTEN[b.welt], W = b.breite, H = b.hoehe;
-    ctx.save(); ctx.scale(scale, scale);
+    ctx.save(); ctx.scale(scale, scale); if (feld) { ctx.beginPath(); ctx.rect(feld[0], feld[1], feld[2] - feld[0], feld[3] - feld[1]); ctx.clip(); }
     ctx.fillStyle = wasser ? pal.wasser : pal.papier; ctx.fillRect(0, 0, W, H);
-    farben(ctx, b, true);
+    farben(ctx, b, feld);
     if (wasser) { const gr = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, H * 0.75); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(60,70,90,0.18)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); }
     ctx.restore();
   }
@@ -871,7 +961,7 @@ globalThis.Ebru = {};
     ctx.save(); ctx.translate(x0, y0); becken(ctx, b, s, k, false); ctx.restore();
     koerner(ctx, w, h, k, 0.5);
   }
-  g.Ebru.ui = g.Ebru.ui || {}; g.Ebru.ui.zeichnen = { kachel, koerner, becken, fallender, werkzeug, welle, stern, ziel, blatt, karte, ring };
+  g.Ebru.ui = g.Ebru.ui || {}; g.Ebru.ui.zeichnen = { kachel, koerner, becken, pfad, pfadIn, fallender, werkzeug, welle, stern, ziel, blatt, karte, ring };
 })(globalThis);
 
 })();
@@ -1069,12 +1159,27 @@ globalThis.Ebru = {};
     const w = 800, h = Math.max(1400, Math.round(w * s.hoehe / s.breite + w * 0.12)), c = document.createElement('canvas'); c.width = w; c.height = h;
     Z.karte(c.getContext('2d'), s.becken, w, h, korn); return c;
   }
+  // S-013: Becken mit Körnung liegt in einem Puffer und wird nur neu gezeichnet, wenn es sich geändert hat; beim Ziehen nur der geänderte Ausschnitt
+  const bildPuffer = document.createElement('canvas'), puffer = bildPuffer.getContext('2d'); let gemalt = { b: null, polys: null, stand: -1, welt: '', w: 0, h: 0 }, ausschnitte = 0, ganze = 0, ausgelassen = 0, ganzZuletzt = -1e9, ganzKosten = 0, ganzMessen = false, nachholen = false;
+  // Langsames Gerät (S-013): das ganze Bild wird höchstens so oft neu gezeichnet, dass das Zeichnen die Hälfte der Zeit belegt (Tropfen, Spritzen, Zurück);
+  // die Rechnung läuft weiter, ein Tropfen ist nach AUFGEHEN_S fertig statt in Zeitlupe (vorher bis 4,6 s je Tropfen). Ausgelassenes wird im nächsten Bild nachgeholt (nachholen).
+  function beckenBild(jetzt) {
+    const b = s.becken, g = gemalt, neueGroesse = bildPuffer.width !== cv.width || bildPuffer.height !== cv.height; if (neueGroesse) { bildPuffer.width = cv.width; bildPuffer.height = cv.height; }
+    const ganz = g.b !== b || g.polys !== b.polys || g.welt !== b.welt || g.w !== cv.width || g.h !== cv.height || b.feld === 'alles' || (b.stand !== g.stand && !b.feld);
+    if (ganz && !neueGroesse && g.b && g.welt === b.welt && jetzt - ganzZuletzt < (s.plan && g.plan !== s.plan ? 1 : 2) * ganzKosten) { ausgelassen++; nachholen = true; return; } /* neuer Tropfen: schon nach einmal der Kosten */
+    if (ganz) { ganzZuletzt = jetzt; ganzMessen = true; }
+    if (ganz) { Z.becken(puffer, b, scale, korn, true); Z.koerner(puffer, cv.width, cv.height, korn, 0.1); ganze++; }
+    else if (b.stand !== g.stand) { /* Ausschnitt auf ganze Gerätepixel runden, damit keine Nähte entstehen */
+      const f = b.feld, x0 = Math.max(0, Math.floor(f[0] * scale)), y0 = Math.max(0, Math.floor(f[1] * scale)), x1 = Math.min(cv.width, Math.ceil(f[2] * scale)), y1 = Math.min(cv.height, Math.ceil(f[3] * scale));
+      if (x1 > x0 && y1 > y0) { Z.becken(puffer, b, scale, korn, true, [x0 / scale, y0 / scale, x1 / scale, y1 / scale]); puffer.save(); puffer.beginPath(); puffer.rect(x0, y0, x1 - x0, y1 - y0); puffer.clip(); Z.koerner(puffer, cv.width, cv.height, korn, 0.1); puffer.restore(); ausschnitte++; }
+    }
+    b.feld = null; gemalt = { b, polys: b.polys, stand: b.stand, welt: b.welt, w: cv.width, h: cv.height, plan: s.plan };
+  }
   function malen(jetzt) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (s.phase === 'malen') {
-      Z.becken(ctx, s.becken, scale, korn, true);
+      beckenBild(jetzt); ctx.drawImage(bildPuffer, 0, 0);
       if (s.plan) { const t = s.jetzt / 1000, p0 = s.plan[0]; if (t > p0.t - 0.55 && t < p0.t) { const u = (t - (p0.t - 0.55)) / 0.55; Z.fallender(ctx, scale, p0.x, -10 + (p0.y + 10) * u * u, 7, E.PALETTEN[s.becken.welt].farben[0]); } }
-      Z.koerner(ctx, cv.width, cv.height, korn, 0.1);
       const jetztW = performance.now(); const dauer = w => (w.kl ? 400 : 500); wellen = wellen.filter(w => jetztW - w.t0 < dauer(w)); for (const w of wellen) Z.welle(ctx, scale, w.x, w.y, (jetztW - w.t0) / dauer(w), w.kl);
       geistGemalt = !!(s.vorfuehrung && s.jetzt / 1000 >= s.vorfuehrung.t); if (geistGemalt) Z.werkzeug(ctx, scale, s.vorfuehrung.x, s.vorfuehrung.y, 0, 1, 1, 0, 0.75);
       const sch = S.schritt(s); if (sch) Z.ziel(ctx, scale, sch);
@@ -1096,10 +1201,10 @@ globalThis.Ebru = {};
     }
   }
   function bild(jetzt) {
-    requestAnimationFrame(bild); const dt = jetzt - letzte; letzte = jetzt; if (!s) return;
-    zugRechnen(); S.bildZeit(s, dt); if (s.plan || s.phase === 'abdruck') dirty = true;
+    requestAnimationFrame(bild); const dt = jetzt - letzte; letzte = jetzt; if (ganzMessen) { ganzKosten = dt; ganzMessen = false; } if (!s) return;
+    zugRechnen(); const hatPlan = !!s.plan; S.bildZeit(s, dt); if (hatPlan || s.plan || s.phase === 'abdruck') dirty = true; /* hatPlan: auch das Bild, in dem der Plan endet (S-013) */
     if (s.plan) { while (planTon < s.plan.length && s.jetzt / 1000 >= s.plan[planTon].t) { const e = s.plan[planTon]; spiele('tropfen'); welle(e.x, e.y); planTon++; } }
-    if (s.vorfuehrung || s.halten || vorfZuletzt || wellen.length || feier) dirty = true; vorfZuletzt = !!s.vorfuehrung; /* ein Bild nach dem Ende der Vorführung, damit das Geisterstäbchen verschwindet */
+    if (s.vorfuehrung || s.halten || vorfZuletzt || wellen.length || feier || nachholen) dirty = true; nachholen = false; vorfZuletzt = !!s.vorfuehrung; /* ein Bild nach dem Ende der Vorführung, damit das Geisterstäbchen verschwindet */
     if (hinweisAus && jetzt > hinweisAus) { hinweis.style.opacity = 0; hinweisAus = 0; }
     if (dirty) { dirty = false; malen(jetzt); summe += dt; anzahl++; if (s.phase !== 'ergebnis') veraendert = true; }
     if (veraendert && jetzt - letzteSammlung >= 250) sammeln(jetzt);
@@ -1109,7 +1214,7 @@ globalThis.Ebru = {};
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => groesse());
   window.addEventListener('orientationchange', () => setTimeout(groesse, 200));
   korn = Z.kachel(rnd); neu(); requestAnimationFrame(bild);
-  window.__ebru = { sichern, vorschau: () => vorschau, geist: () => geistGemalt, toene: () => ton.gespielt(), klaenge: () => ton.klaenge(), wellen: () => wellen.length, spur: () => spurGesamt, feiern: () => feiern, sterne: () => (feier ? feier.length : 0), bilder: () => bilder.length, video: () => (video ? { groesse: video.blob.size, endung: video.endung } : null), videoBlob: () => (video ? video.blob : null), sitzung: () => s, stufe: () => stufe, fps: () => fpsWert, kanvas: cv };
+  window.__ebru = { puffer: () => ({ ganze, ausschnitte, ausgelassen, aktuell: !!s && gemalt.b === s.becken && gemalt.stand === s.becken.stand && !nachholen }), sichern, vorschau: () => vorschau, geist: () => geistGemalt, toene: () => ton.gespielt(), klaenge: () => ton.klaenge(), wellen: () => wellen.length, spur: () => spurGesamt, feiern: () => feiern, sterne: () => (feier ? feier.length : 0), bilder: () => bilder.length, video: () => (video ? { groesse: video.blob.size, endung: video.endung } : null), videoBlob: () => (video ? video.blob : null), sitzung: () => s, stufe: () => stufe, fps: () => fpsWert, kanvas: cv };
 })(globalThis);
 
 })();
