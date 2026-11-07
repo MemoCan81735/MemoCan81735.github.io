@@ -590,7 +590,7 @@ return { spalten, reihen, zellen };
 }
 
 const roh = [
-{ titel: 'Nazar (Blaues Auge)', beschreibung: 'Glücksbringer in Nazarblau mit Gold und Weiß.',
+{ titel: 'Nazar (Blaues Auge)', gruppe: 'zeichen', beschreibung: 'Glücksbringer in Nazarblau mit Gold und Weiß.',
 entwurf: { technik: 'faden', muster: [p(NAZAR, 8), p(GOLD, 6, 'rondelle'), p(WEISS, 4), p(HIMMEL, 6), p(WEISS, 4), p(GOLD, 6, 'rondelle')] } },
 { titel: 'Regenbogen', beschreibung: 'Alle Farben des Regenbogens, schnell aufgezogen.',
 entwurf: { technik: 'gummi', muster: [p(ROT, 6), p(ORANGE, 6), p(GELB, 6), p(GRUEN, 6), p(TUERKIS, 6), p(NAZAR, 6), p(LILA, 6)] } },
@@ -606,24 +606,24 @@ entwurf: { technik: 'gummi', muster: [p(KORALLE, 8), p(ORANGE, 6), p(GELB, 4), p
 entwurf: { technik: 'faden', muster: [p(SCHWARZ, 8), p(SCHWARZ, 8), p(GOLD, 6), p(GOLD, 4, 'rondelle'), p(GOLD, 6)] } },
 { titel: 'Zickzack', beschreibung: 'Peyote-Klassiker mit zwei Zacken in Blau und Gold.', entwurf: { technik: 'peyote', umfang: 170,
 raster: gerechnet(8, 8, (z, s) => { const t = z % 8 < 4 ? z % 8 : 8 - (z % 8); return s === t ? NAZAR : s === t + 4 ? GOLD : WEISS; }) } },
-{ titel: 'Herzen', beschreibung: 'Rote Herzen auf Rosa, mit Nadel gestickt.', entwurf: { technik: 'peyote', umfang: 165,
+{ titel: 'Herzen', gruppe: 'zeichen', beschreibung: 'Rote Herzen auf Rosa, mit Nadel gestickt.', entwurf: { technik: 'peyote', umfang: 165,
 raster: bild(['..........', '..XX.XX...', '.XXXXXXX..', '.XXXXXXX..', '.XXXXXXX..', '..XXXXX...', '...XXX....', '....X.....', '..........', '..........'], { '.': ROSA, X: ROT }) } },
 { titel: 'Kilim-Rauten', beschreibung: 'Rauten wie auf einem anatolischen Teppich.', entwurf: { technik: 'peyote', umfang: 158,
 raster: gerechnet(12, 12, (z, s) => { const d = Math.abs(s - 5.5) + Math.abs(z - 5.5); return d < 2 ? GOLD : d < 4 ? ROT : d < 5 ? WEISS : d < 7 ? NACHT : ROT; }) } },
 { titel: 'Tulpe (Lale)', beschreibung: 'Gewebte Tulpen auf Creme, vom Webrahmen.', entwurf: { technik: 'loom', umfang: 165,
 raster: bild(['..........', '..X.X.X...', '..XXXXX...', '..XXXXX...', '...XXX....', '....G.....', '..G.G.G...', '...GGG....', '....G.....', '..........', '..........'], { '.': PERLMUTT, X: ROT, G: GRUEN }) } },
-{ titel: 'Sternenhimmel', beschreibung: 'Goldene Sterne auf Nachtblau.', entwurf: { technik: 'loom', umfang: 165,
+{ titel: 'Sternenhimmel', gruppe: 'zeichen', beschreibung: 'Goldene Sterne auf Nachtblau.', entwurf: { technik: 'loom', umfang: 165,
 raster: bild(['..........', '.*.....*..', '....+.....', '...+++....', '....+...*.', '..*.......', '.......*..', '.*........', '..........'], { '.': NACHT, '*': GOLD, '+': MINT }) } },
 
 { titel: 'Freundschaft (Teil 1)', beschreibung: 'Für dich: Rosa vorn. Teil 2 hat die Farben vertauscht.',
 entwurf: { technik: 'gummi', muster: [p(ROSA, 6), p(WEISS, 4), p(LILA, 6), p(SILBER, 4, 'rondelle')] } },
 { titel: 'Freundschaft (Teil 2)', beschreibung: 'Für die beste Freundin: dasselbe Armband in Lila.',
 entwurf: { technik: 'gummi', muster: [p(LILA, 6), p(WEISS, 4), p(ROSA, 6), p(SILBER, 4, 'rondelle')] } },
-{ titel: 'Kleeblatt', beschreibung: 'Glücksbringer in Grün und Mint mit goldenem Akzent.',
+{ titel: 'Kleeblatt', gruppe: 'zeichen', beschreibung: 'Glücksbringer in Grün und Mint mit goldenem Akzent.',
 entwurf: { technik: 'gummi', muster: [p(GRUEN, 8), p(MINT, 6), p(GRUEN, 8), p(GOLD, 6, 'rondelle')] } },
-{ titel: 'Türkische Fahne', beschreibung: 'Rot und Weiß im Wechsel, große weiße Perlen als Monde.',
+{ titel: 'Türkische Fahne', gruppe: 'flagge', beschreibung: 'Rot und Weiß im Wechsel, große weiße Perlen als Monde.',
 entwurf: { technik: 'faden', muster: [p(ROT, 8), p(WEISS, 4), p(ROT, 8), p(WEISS, 4), p(ROT, 8), p(WEISS, 10)] } },
-{ titel: 'Vereinsfarben', beschreibung: 'Zwei Vereinsfarben im Wechsel, Farben und Name frei wählbar.',
+{ titel: 'Vereinsfarben', gruppe: 'verein', beschreibung: 'Zwei Vereinsfarben im Wechsel, Farben und Name frei wählbar.',
 entwurf: { technik: 'gummi', name: 'TOR', muster: [p(GELB, 8), p(ROT, 8)] } },
 { titel: 'Morse ANNE', beschreibung: 'Geheimschrift: Scheibe kurz, Kugel lang, Weiß trennt. 17 cm.',
 entwurf: { technik: 'faden', umfang: 170, muster: [p(GOLD, 6, 'rondelle'), p(NAZAR, 8), p(WEISS, 4), p(NAZAR, 8), p(GOLD, 6, 'rondelle'), p(WEISS, 4),
@@ -639,19 +639,63 @@ return d < 1.6 ? TUERKIS : dz + ds > 8.5 ? NAZAR : d > 3.2 && d < 4.4 ? NAZAR : 
 raster: gerechnet(8, 12, (z, s) => ((Math.floor(z / 3) + Math.floor(s / 2)) % 2 ? SCHWARZ : WEISS)) } },
 { titel: 'Wellen', beschreibung: 'Blaue Wellen mit weißer Gischt über das ganze Band.', entwurf: { technik: 'peyote', umfang: 158,
 raster: gerechnet(8, 16, (z, s) => { const w = 3.5 + 2.5 * Math.sin(2 * Math.PI * z / 16); return Math.abs(s - w) < 0.8 ? WEISS : s > w ? NAZAR : HIMMEL; }) } },
-{ titel: 'Halbmond und Stern', beschreibung: 'Weißer Halbmond und Stern auf Rot, gewebt.', entwurf: { technik: 'loom', umfang: 158,
+{ titel: 'Halbmond und Stern', gruppe: 'flagge', beschreibung: 'Weißer Halbmond und Stern auf Rot, gewebt.', entwurf: { technik: 'loom', umfang: 158,
 raster: gerechnet(11, 16, (z, s) => { const mond = Math.hypot(z - 5, s - 5) < 4.2 && Math.hypot(z - 6.3, s - 5) >= 3.4;
 const stern = Math.abs(z - 11) + Math.abs(s - 5) <= 2.1; return mond || stern ? WEISS : ROT; }) } },
-{ titel: 'Pixelherz mit Buchstabe', beschreibung: 'Rotes Herz und ein großes A, im Raster umzeichenbar.', entwurf: { technik: 'loom', umfang: 158,
+{ titel: 'Pixelherz mit Buchstabe', gruppe: 'zeichen', beschreibung: 'Rotes Herz und ein großes A, im Raster umzeichenbar.', entwurf: { technik: 'loom', umfang: 158,
 raster: bild(['................', '.XX.XX....AAA...', 'XXXXXXX..A...A..', 'XXXXXXX..A...A..', '.XXXXX...AAAAA..', '..XXX....A...A..', '...X.....A...A..', '................'],
 { '.': WEISS, X: ROT, A: NACHT }) } },
 { titel: 'Ebru-Marmor', beschreibung: 'Weiche Farbschlieren wie bei der Ebru-Malerei.', entwurf: { technik: 'loom', umfang: 165,
 raster: gerechnet(10, 20, (z, s) => { const v = Math.sin(z * 0.32 + 1.4 * Math.sin(s * 0.38));
-return [NACHT, NAZAR, HIMMEL, WEISS, ROSA][Math.max(0, Math.min(4, Math.floor((v + 1) * 2.5)))]; }) } }
+return [NACHT, NAZAR, HIMMEL, WEISS, ROSA][Math.max(0, Math.min(4, Math.floor((v + 1) * 2.5)))]; }) } },
+{ titel: 'Deutschland', gruppe: 'flagge', beschreibung: 'Schwarz, Rot, Gold quer über das Band, gewebt.', entwurf: { technik: 'loom', umfang: 167,
+raster: gerechnet(9, 6, (z, s) => [SCHWARZ, ROT, GOLD][Math.floor(s / 3)]) } },
+{ titel: 'Deutschland (Gummiband)', gruppe: 'flagge', beschreibung: 'Schwarz, Rot, Gold als Perlenfolge, schnell aufgezogen.',
+entwurf: { technik: 'gummi', muster: [p(SCHWARZ, 6), p(ROT, 6), p(GOLD, 6)] } },
+{ titel: 'Aserbaidschan', gruppe: 'flagge', beschreibung: 'Blau, Rot, Grün mit weißem Halbmond und Stern.', entwurf: { technik: 'loom', umfang: 158,
+raster: gerechnet(15, 16, (z, s) => { if (s < 5) return HIMMEL; if (s > 9) return GRUEN;
+const mond = Math.hypot(z - 6, s - 7) < 2.6 && Math.hypot(z - 6.9, s - 7) >= 2; return mond || Math.abs(z - 9.6) + Math.abs(s - 7) <= 1.5 ? WEISS : ROT; }) } },
+{ titel: 'Italien', gruppe: 'flagge', beschreibung: 'Grün, Weiß, Rot im Wechsel entlang des Bandes.', entwurf: { technik: 'loom', umfang: 172,
+raster: gerechnet(8, 15, z => [GRUEN, WEISS, ROT][Math.floor(z / 5)]) } },
+{ titel: 'Italien (Gummiband)', gruppe: 'flagge', beschreibung: 'Grün, Weiß, Rot als Perlenfolge.',
+entwurf: { technik: 'gummi', muster: [p(GRUEN, 6), p(WEISS, 6), p(ROT, 6)] } },
+{ titel: 'Frankreich', gruppe: 'flagge', beschreibung: 'Blau, Weiß, Rot im Wechsel entlang des Bandes.', entwurf: { technik: 'loom', umfang: 172,
+raster: gerechnet(8, 15, z => [NAZAR, WEISS, ROT][Math.floor(z / 5)]) } },
+{ titel: 'Frankreich (Gummiband)', gruppe: 'flagge', beschreibung: 'Blau, Weiß, Rot als Perlenfolge.',
+entwurf: { technik: 'gummi', muster: [p(NAZAR, 6), p(WEISS, 6), p(ROT, 6)] } },
+{ titel: 'Spanien', gruppe: 'flagge', beschreibung: 'Rot, breites Gelb, Rot quer über das Band.', entwurf: { technik: 'loom', umfang: 167,
+raster: gerechnet(8, 6, (z, s) => (s < 2 || s > 5 ? ROT : GELB)) } },
+{ titel: 'Spanien (Gummiband)', gruppe: 'flagge', beschreibung: 'Rot und Gelb als Perlenfolge.',
+entwurf: { technik: 'gummi', muster: [p(ROT, 6), p(GELB, 8), p(ROT, 6)] } },
+{ titel: 'Niederlande', gruppe: 'flagge', beschreibung: 'Rot, Weiß, Blau quer über das Band.', entwurf: { technik: 'loom', umfang: 167,
+raster: gerechnet(9, 6, (z, s) => [ROT, WEISS, NAZAR][Math.floor(s / 3)]) } },
+{ titel: 'Niederlande (Gummiband)', gruppe: 'flagge', beschreibung: 'Rot, Weiß, Blau als Perlenfolge.',
+entwurf: { technik: 'gummi', muster: [p(ROT, 6), p(WEISS, 6), p(NAZAR, 6)] } },
+{ titel: 'Griechenland', gruppe: 'flagge', beschreibung: 'Blaue und weiße Streifen mit weißem Kreuz.', entwurf: { technik: 'loom', umfang: 165,
+raster: gerechnet(9, 20, (z, s) => (s < 5 && z < 5 ? (s === 2 || z === 2 ? WEISS : NAZAR) : s % 2 ? WEISS : NAZAR)) } },
+{ titel: 'Gelb und Blau', gruppe: 'verein', beschreibung: 'Vereinsfarben im Wechsel, Name frei wählbar.',
+entwurf: { technik: 'gummi', muster: [p(GELB, 8), p(NACHT, 8)] } },
+{ titel: 'Schwarz und Weiß', gruppe: 'verein', beschreibung: 'Vereinsfarben im Wechsel, Name frei wählbar.',
+entwurf: { technik: 'gummi', muster: [p(SCHWARZ, 8), p(WEISS, 8)] } },
+{ titel: 'Rot und Weiß', gruppe: 'verein', beschreibung: 'Vereinsfarben im Wechsel, Name frei wählbar.',
+entwurf: { technik: 'gummi', muster: [p(ROT, 8), p(WEISS, 8)] } },
+{ titel: 'Grün und Weiß', gruppe: 'verein', beschreibung: 'Vereinsfarben im Wechsel, Name frei wählbar.',
+entwurf: { technik: 'gummi', muster: [p(GRUEN, 8), p(WEISS, 8)] } },
+{ titel: 'Himmelblau und Weiß', gruppe: 'verein', beschreibung: 'Vereinsfarben im Wechsel, Name frei wählbar.',
+entwurf: { technik: 'gummi', muster: [p(HIMMEL, 8), p(WEISS, 8)] } },
+{ titel: 'Vereinsschal', gruppe: 'verein', beschreibung: 'Breite Streifen wie ein Fanschal, Farben im Designer tauschen.', entwurf: { technik: 'loom', umfang: 170,
+raster: gerechnet(10, 8, (z, s) => (s === 0 || s === 9 ? ROT : z < 4 ? GELB : ROT)) } },
+{ titel: 'Fußball', gruppe: 'zeichen', beschreibung: 'Weiße Bälle mit schwarzem Fünfeck auf Rasengrün.', entwurf: { technik: 'loom', umfang: 158,
+raster: bild(['............', '...WWWW.....', '..WWSSWW....', '..WSSSSW....', '..WWSSWW....', '...WWWW.....', '............'], { '.': GRUEN, W: WEISS, S: SCHWARZ }) } },
+{ titel: 'Anker', gruppe: 'zeichen', beschreibung: 'Nachtblauer Anker auf Weiß, maritim.', entwurf: { technik: 'loom', umfang: 158,
+raster: bild(['............', '.....X......', '....X.X.....', '.....X......', '..XXXXXXX...', '.....X......', '.....X......', '..X..X..X...', '...X.X.X....', '....XXX.....', '............'], { '.': WEISS, X: NACHT }) } },
+{ titel: 'Krone', gruppe: 'zeichen', beschreibung: 'Goldene Krone auf Nachtblau.', entwurf: { technik: 'loom', umfang: 158,
+raster: bild(['............', '.X..X..X....', '.XX.XX.XX...', '.XXXXXXXX...', '.XXXXXXXX...', '.SSSSSSSS...', '............'], { '.': NACHT, X: GOLD, S: ROT }) } }
 ];
 
-const IDEEN = roh.map(i => ({ titel: i.titel, beschreibung: i.beschreibung, entwurf: W.bereinige(Object.assign({ titel: i.titel }, i.entwurf)) }));
-return { liste: () => JSON.parse(JSON.stringify(IDEEN)) };
+const IDEEN = roh.map(i => ({ titel: i.titel, gruppe: i.gruppe || '', beschreibung: i.beschreibung, entwurf: W.bereinige(Object.assign({ titel: i.titel }, i.entwurf)) }));
+const GRUPPEN = [{ id: '', name: 'Alle' }, { id: 'flagge', name: 'Flaggen' }, { id: 'verein', name: 'Vereinsfarben' }, { id: 'zeichen', name: 'Zeichen' }];
+return { liste: () => JSON.parse(JSON.stringify(IDEEN)), gruppen: () => GRUPPEN.map(g => Object.assign({}, g)) };
 })();
 
 })();
@@ -2368,8 +2412,9 @@ const titelVon = e => e.titel || TECHNIK_KURZ[e.technik];
 const NEUER = 'Deine Entwürfe stammen aus einer neueren Version der App: bitte die Seite neu laden. Bis dahin wird nichts gespeichert.';
 
 function ideen() {
-const z = app.zustand, l = Perlen.control.ideen.liste();
-const karten = l.map((i, n) => {
+const z = app.zustand, l = Perlen.control.ideen.liste(), gruppe = z.ideenGruppe || '';
+const filter = B.wahl(Perlen.control.ideen.gruppen(), gruppe, g => { z.ideenGruppe = g; zeichne('ideen'); }, 'Ideen filtern', true);
+const karten = l.map((i, n) => [i, n]).filter(x => !gruppe || x[0].gruppe === gruppe).map(([i, n]) => {
 const c = el('canvas', { 'aria-hidden': 'true' });
 fenster.requestAnimationFrame(() => B.zeichneRing(c, i.entwurf, 220));
 return el('button', { type: 'button', class: 'karte', 'data-idee': String(n), onclick: () => oeffne(i.entwurf) },
@@ -2383,6 +2428,7 @@ el('button', { type: 'button', class: 'knopf', 'aria-label': 'Entwurf ' + titelV
 });
 bereiche.ideen.replaceChildren(...[
 el('div', { class: 'stapel' }, el('h2', {}, 'Ideen zum Nachmachen'), el('p', { class: 'unter', style: 'margin:0' }, 'Antippen, dann im Designer anpassen: Farben, Länge, Name.')),
+filter,
 eigene.length ? el('div', { class: 'block', id: 'meine' }, el('h3', {}, 'Meine Entwürfe (' + eigene.length + ')'), el('div', { class: 'entwuerfe' }, eigene)) : null,
 sicherungBlock(),
 z.speicherOk ? null : el('p', { class: 'hinweis' }, 'Speichern ist in diesem Browser nicht möglich (privater Modus?). Alles andere funktioniert.'),
