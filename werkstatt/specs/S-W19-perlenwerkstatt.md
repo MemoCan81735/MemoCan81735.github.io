@@ -17,6 +17,7 @@ Nachtrag 07.11.2026: Stand mit S-015 der App (Zufall, Farbverlauf, Herz- und Tro
 Nachtrag 08.11.2026: Stand mit S-016 der App (Einsteigerpfad, Fehlerhilfe, Hinweise zum Entwurf) neu gebaut, gleiche Prüfungen grün.
 Nachtrag 08.11.2026: Stand mit S-017 der App (Entwurf als Link, Tagesmuster mit Aufgabe, Galerie mit Foto nur im Gerät) neu gebaut, gleiche Prüfungen grün. Links zeigen auf memocan81735.github.io/perlen/ und tragen nur den Entwurf.
 Nachtrag 08.11.2026: Stand mit S-018 der App (Kette, Fußkettchen und Ohrringe, Brick Stitch, Makramee mit Schiebeknoten; Untertitel "Schmuck planen", bau_perlen.py ersetzt ihn) neu gebaut, gleiche Prüfungen grün.
+Nachtrag 08.11.2026: Stand mit S-019 der App (Zufall mit Farbfamilien und Spiegelmustern, Farbverlauf mit Zwischenfarben und wählbarer Startfarbe) neu gebaut, gleiche Prüfungen grün.
 
 ## Anwendungsfall
 - U-1: Der Besucher öffnet die Startseite, sieht die neue Rubrik "Basteln" mit der Karte Perlenwerkstatt, tippt "Planen" und sieht in unter 3 s zwölf Ideen.

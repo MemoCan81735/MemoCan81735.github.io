@@ -190,6 +190,13 @@ const FARBEN = [
 { name: 'Weiß', hex: '#f7f5ef' }, { name: 'Perlmutt', hex: '#e9dccb' }, { name: 'Gold', hex: '#d4a72c', metall: true },
 { name: 'Silber', hex: '#b9c0c8', metall: true }, { name: 'Schwarz', hex: '#1c1c1f' }, { name: 'Braun', hex: '#8b5a3c' }
 ];
+const FAMILIEN = [
+{ name: 'Nazar', farben: ['Nazarblau', 'Weiß', 'Himmelblau', 'Gold'] }, { name: 'Meer', farben: ['Türkis', 'Weiß', 'Nazarblau', 'Mint'] },
+{ name: 'Sonne', farben: ['Orange', 'Gelb', 'Weiß', 'Rot'] }, { name: 'Wald', farben: ['Grün', 'Mint', 'Braun', 'Gold'] },
+{ name: 'Beere', farben: ['Lila', 'Rosa', 'Weiß', 'Silber'] }, { name: 'Nacht', farben: ['Nachtblau', 'Silber', 'Himmelblau', 'Weiß'] },
+{ name: 'Klassik', farben: ['Schwarz', 'Gold', 'Weiß'] }, { name: 'Rose', farben: ['Rot', 'Rosa', 'Weiß', 'Gold'] },
+{ name: 'Erde', farben: ['Braun', 'Orange', 'Perlmutt', 'Gold'] }, { name: 'Lagune', farben: ['Türkis', 'Koralle', 'Weiß', 'Gold'] }
+];
 const FORMEN = { rund: 'Rund', rondelle: 'Rondelle', herz: 'Herz', tropfen: 'Tropfen', wuerfel: 'Buchstabe' };
 const ANHAENGER = { nazar: 'Nazar', herz: 'Herz', stern: 'Stern', mond: 'Mond', klee: 'Kleeblatt' };
 const GROESSEN = [4, 6, 8, 10];
@@ -261,7 +268,7 @@ return h.toString(16);
 }
 
 return {
-STUECKE, OESE_MM, MAKRAMEE_ANTEIL, KNOTEN_MM, GARNE, stueck,
+FAMILIEN, STUECKE, OESE_MM, MAKRAMEE_ANTEIL, KNOTEN_MM, GARNE, stueck,
 FARBEN, FORMEN, ANHAENGER, GROESSEN, TECHNIKEN, DELICA, STRANG, PREISE, PREIS_NAMEN, LOCH_MM, FADEN_MM, LOCH_SPIEL_MM, FADEN_STUECK_CM, ABC_BEUTEL, KLEMMEN, WUERFEL_MM, BUCHSTABEN, PASSFORMEN, GROESSENHILFE, DICKE_OHNE_ZUGABE,
 FORMAT: 1, UMFANG_MIN, UMFANG_MAX, UMFANG_STANDARD,
 MUSTER_MAX: 40, NAME_MAX: 12, PERLEN_MAX: 400, SPALTEN_MIN: 4, SPALTEN_MAX: 16,
@@ -586,44 +593,80 @@ const setzePassform = (e, pf) => mit(e, k => { k.passform = pf; });
 const setzeAnhaenger = (e, a) => mit(e, k => { k.anhaenger = a; });
 const setzeRunden = (e, n) => mit(e, k => { k.runden = n; });
 
+const nummer = name => E.FARBEN.findIndex(f => f.name === name);
 function zufall(e, zahlen) {
 let i = 0;
 const naechste = () => { const v = Array.isArray(zahlen) ? Number(zahlen[i++]) : 0; return Number.isFinite(v) && v >= 0 && v < 1 ? v : 0; };
-const farben = liste => {
-const f = verschieden(liste);
-if (f.length < 2) while (f.length < 3) {
-const frei = E.FARBEN.map((_, k) => k).filter(k => !f.includes(k)); f.push(frei[Math.floor(naechste() * frei.length)]);
-}
-return f;
-};
-const verteile = (n, f) => {
-const liste = Array.from({ length: n }, () => f[Math.floor(naechste() * f.length)]), plaetze = liste.map((_, k) => k);
-for (let k = n - 1; k > 0; k--) { const j = Math.floor(naechste() * (k + 1)); [plaetze[k], plaetze[j]] = [plaetze[j], plaetze[k]]; }
-f.slice(0, n).forEach((farbe, k) => { liste[plaetze[k]] = farbe; });
+const wahl = n => Math.floor(naechste() * n);
+const fam = E.FAMILIEN[wahl(E.FAMILIEN.length)].farben.map(nummer), rest = fam.slice(1);
+const farben = [fam[0]];
+for (let k = 1 + wahl(2); k > 0 && rest.length; k--) farben.push(rest.splice(wahl(rest.length), 1)[0]);
+const fuelle = n => {
+const f = farben.slice(0, Math.max(1, Math.min(farben.length, n))), liste = Array.from({ length: n }, () => (naechste() < 0.5 ? f[0] : f[wahl(f.length)]));
+const plaetze = liste.map((_, k) => k);
+for (let k = n - 1; k > 0; k--) { const j = wahl(k + 1); [plaetze[k], plaetze[j]] = [plaetze[j], plaetze[k]]; }
+f.forEach((farbe, k) => { if (k < n) liste[plaetze[k]] = farbe; });
 return liste;
 };
 return mit(e, k => {
-if (E.istRaster(k.technik)) { k.raster.zellen = verteile(k.raster.zellen.length, farben(k.raster.zellen)); return; }
+if (E.istRaster(k.technik)) {
+const S = k.raster.spalten, Z = k.raster.reihen, halb = Math.ceil(S / 2), f = farben, m = f.length;
+const gross = [4, 5, 6, 7, 8].filter(t => Z % t === 0), klein = [2, 3].filter(t => Z % t === 0 && t < Z);
+const wahlen = gross.length ? gross : klein, p = wahlen.length ? wahlen[wahl(wahlen.length)] : Z, art = wahl(3), zellen = [];
+const motiv = (zz, d) => {
+const mitte = halb - 1 - d, c = (p - 1) / 2;   // mitte: 0 in der Mitte des Bandes, d: 0 am Rand
+if (art === 0) return f[Math.floor((Math.abs(zz - c) + mitte) / 2) % m];   // breite Rauten
+if (art === 1) { const v = (zz + mitte) % p; return v < p / 2 || m < 2 ? f[0] : f[1 + (v % (m - 1))]; }
+return d === 0 ? f[m - 1] : zz < p / 2 ? f[0] : f[Math.min(1, m - 1)];
+};
+for (let z = 0; z < Z; z++) for (let s2 = 0; s2 < S; s2++) zellen.push(motiv(z % p, Math.min(s2, S - 1 - s2)));
+k.raster.zellen = zellen;
+return;
+}
 const vorlage = k.muster.length ? k.muster : Array.from({ length: 8 }, () => ({ groesse: 6, form: 'rund', farbe: 0 }));
-const neu = verteile(vorlage.length, farben(k.muster.map(p => p.farbe)));
-k.muster = vorlage.map((p, i) => ({ farbe: neu[i], groesse: p.groesse, form: p.form }));
+const n = vorlage.length, halbe = fuelle(Math.ceil(n / 2));
+k.muster = vorlage.map((p, j) => ({ farbe: halbe[Math.min(j, n - 1 - j)], groesse: p.groesse, form: p.form }));
 });
 }
-const STUFEN = [0, 0, 1, 0, 1, 1];
-function farbverlauf(e, von, bis) {
+const NAH = 60;
+const rgb = hex => [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16));
+function farbweg(von, bis) {
 von = ganz(von, E.FARBEN.length, 0); bis = ganz(bis, E.FARBEN.length, 0);
+if (von === bis) return [von];
+const a = rgb(E.FARBEN[von].hex), b = rgb(E.FARBEN[bis].hex), weg = [von];
+for (let t = 1; t < 8; t++) {
+const punkt = a.map((x, k) => x + (b[k] - x) * t / 8);
+let beste = von, abstand = Infinity;
+E.FARBEN.forEach((f, k) => {
+const c = rgb(f.hex), d = c.reduce((s, x, j) => s + (x - punkt[j]) ** 2, 0);
+if (d < abstand) { abstand = d; beste = k; }
+});
+if (abstand > NAH * NAH) continue;   // keine Palettenfarbe nah genug an der Geraden: kein Umweg über fremde Farben
+const da = weg.indexOf(beste);
+if (da >= 0) weg.length = da + 1; else weg.push(beste);
+}
+const ende = weg.indexOf(bis);
+if (ende >= 0) weg.length = ende + 1; else weg.push(bis);
+while (weg.length > 6) weg.splice(Math.floor(weg.length / 2), 1);
+return weg;
+}
+function farbverlauf(e, von, bis) {
+const weg = farbweg(von, bis), L = weg.length;
 return mit(e, k => {
 if (!E.istRaster(k.technik)) {
-const p = k.muster[0] || { groesse: 6, form: 'rund' };
-k.muster = Array.from({ length: 12 }, (_, i) => ({ farbe: STUFEN[Math.min(i, 11 - i)] ? bis : von, groesse: p.groesse, form: p.form }));
+const p = k.muster[0] || { groesse: 6, form: 'rund' }, T = E.TECHNIKEN[k.technik] || E.TECHNIKEN.gummi;
+const runde = (k.umfang + T.zugabe) / E.perlenLaenge(p), n = Math.min(E.MUSTER_MAX, Math.max(8, 2 * Math.round(runde / 2))), h = n / 2;
+const w = L <= h ? weg : Array.from({ length: h }, (_, j) => weg[Math.round(j * (L - 1) / (h - 1))]), lw = w.length;
+const stufe = j => w[Math.floor(j * lw / h)];
+k.muster = Array.from({ length: n }, (_, j) => ({ farbe: stufe(Math.min(j, n - 1 - j)), groesse: p.groesse, form: p.form }));
 return;
 }
 const S = k.raster.spalten, R = Math.min(E.REIHEN_MAX, Math.max(24, k.raster.reihen)), zellen = [];
 const ordnung = Array.from({ length: S }, (_, c) => c).sort((a, b) => (a * 0.618034) % 1 - (b * 0.618034) % 1), rang = [];
-ordnung.forEach((c, i) => { rang[c] = i; });
+ordnung.forEach((c, j) => { rang[c] = j; });
 for (let z = 0; z < R; z++) {
-const t = 1 - Math.abs(2 * z / (R - 1) - 1), n = Math.min(S, Math.round(t * (S + 1)));
-for (let s = 0; s < S; s++) zellen.push(rang[(s + 3 * z) % S] < n ? bis : von);
+const u = Math.min(1, (1 - Math.abs(2 * z / (R - 1) - 1)) * (R - 1) / (R - 2)) * (L - 1), a = Math.min(L - 1, Math.floor(u + 1e-9)), n = a < L - 1 ? Math.min(S, Math.round((u - a) * (S + 1))) : 0;
+for (let s2 = 0; s2 < S; s2++) zellen.push(rang[(s2 + 3 * z) % S] < n ? weg[a + 1] : weg[a]);
 }
 k.raster = { spalten: S, reihen: R, zellen };
 });
@@ -683,7 +726,7 @@ ablegen: () => kopie({ jetzt, zurueck })
 }
 
 return { bereinige, neu, verlauf, perleAnfuegen, letztePerleWeg, perleEntfernen, setzeUmfang, setzeName, setzeTechnik, setzeTitel, setzePassform, setzeRaster, setzeMuster, spiegeln, spiegelnRaster,
-setzeSpalten, setzeMusterreihen, malFeld, fuelleRaster, setzeAnhaenger, setzeRunden, setzeStueck, setzeGarn, zufall, farbverlauf };
+setzeSpalten, setzeMusterreihen, malFeld, fuelleRaster, setzeAnhaenger, setzeRunden, setzeStueck, setzeGarn, zufall, farbverlauf, farbweg };
 })();
 
 })();
@@ -3187,16 +3230,18 @@ d.body.appendChild(ansicht); d.getElementById('bild-schliessen').focus();
 }
 
 function schnellBlock(e) {
-const a = z.auswahl, st = K.stueck(e.stueck); if (a.bis === undefined) a.bis = 12;
+const a = z.auswahl, st = K.stueck(e.stueck); if (a.bis === undefined) a.bis = 12; if (a.von === undefined) a.von = a.farbe;
 const zahlen = () => Array.from({ length: 1000 }, () => Math.random());
-const ziel = el('select', { class: 'feld', id: 'verlauf-bis', style: 'text-transform:none;letter-spacing:0', 'aria-label': 'Farbverlauf nach Farbe', onchange: ev => { a.bis = Number(ev.target.value); } },
-FARBEN.map((f, i) => el('option', { value: String(i), selected: i === a.bis }, f.name)));
+const farbwahl = (id, wert, label, setze) => el('select', { class: 'feld', id, style: 'text-transform:none;letter-spacing:0', 'aria-label': label, onchange: ev => setze(Number(ev.target.value)) },
+FARBEN.map((f, i) => el('option', { value: String(i), selected: i === wert }, f.name)));
+const start = farbwahl('verlauf-von', a.von, 'Farbverlauf von Farbe', v => { a.von = v; }), ziel = farbwahl('verlauf-bis', a.bis, 'Farbverlauf nach Farbe', v => { a.bis = v; });
 return el('div', { class: 'block', id: 'schnell' },
 el('h3', {}, 'Schnell gestalten'),
 el('div', { class: 'werkzeuge', style: 'grid-template-columns:1fr 1fr' },
 el('button', { type: 'button', class: 'knopf', id: 'zufall', onclick: () => { aendere(x => W.zufall(x, zahlen())); z.verlauf.schliesse(); } }, 'Zufall'),
-el('button', { type: 'button', class: 'knopf', id: 'verlauf', onclick: () => { aendere(x => W.farbverlauf(x, a.farbe, a.bis)); z.verlauf.schliesse(); } }, 'Farbverlauf')),
-el('label', { for: 'verlauf-bis', class: 'unter' }, 'Verlauf von ' + FARBEN[a.farbe].name + ' nach'), ziel,
+el('button', { type: 'button', class: 'knopf', id: 'verlauf', onclick: () => { aendere(x => W.farbverlauf(x, a.von, a.bis)); z.verlauf.schliesse(); } }, 'Farbverlauf')),
+el('div', { class: 'werkzeuge', style: 'grid-template-columns:1fr 1fr' },
+el('label', { class: 'unter stapel', style: 'gap:4px' }, 'Verlauf von', start), el('label', { class: 'unter stapel', style: 'gap:4px' }, 'nach', ziel)),
 ...(st.paar ? [] : [el('h3', {}, 'Anhänger in der Mitte'),
 B.wahl(K.anhaenger(), e.anhaenger, h => { aendere(x => W.setzeAnhaenger(x, h)); baue(); }, 'Anhänger', true)]),
 ...(K.istRaster(e.technik) || e.technik === 'makramee' || (e.stueck !== 'armband' && e.stueck !== 'fuss') ? [] : [el('h3', {}, e.stueck === 'fuss' ? 'Runden um den Knöchel' : 'Runden ums Handgelenk'),
