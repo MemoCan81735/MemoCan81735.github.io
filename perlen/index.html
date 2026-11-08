@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2b3446">
-<meta name="description" content="Perlenarmbänder planen: Ideen, Vorschau, Einkaufsliste und Anleitung, direkt im Browser.">
+<meta name="description" content="Perlenschmuck planen (Armband, Kette, Fußkettchen, Ohrringe): Ideen, Vorschau, Einkaufsliste und Anleitung, direkt im Browser.">
 <link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/perlen-192.png">
 <link rel="apple-touch-icon" href="../bilder/symbole/perlen-192.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -197,22 +197,38 @@ const TECHNIKEN = {
 gummi: { name: 'Gummiband', zugabe: 10, verschluss: 0, raster: false },
 faden: { name: 'Schmuckfaden mit Verschluss', zugabe: 15, verschluss: 15, raster: false },
 peyote: { name: 'Peyote mit Nadel', zugabe: 15, verschluss: 20, raster: true },
-loom: { name: 'Webrahmen', zugabe: 15, verschluss: 20, raster: true }
+loom: { name: 'Webrahmen', zugabe: 15, verschluss: 20, raster: true },
+brick: { name: 'Brick Stitch mit Nadel', zugabe: 15, verschluss: 20, raster: true },
+makramee: { name: 'Makramee mit Schiebeknoten', zugabe: 10, verschluss: 0, raster: false }
 };
+const UMFANG_MIN = 120, UMFANG_MAX = 240, UMFANG_STANDARD = 165;
+const STUECKE = {
+armband: { name: 'Armband', masz: 'Handgelenk', min: UMFANG_MIN, max: UMFANG_MAX, standard: UMFANG_STANDARD, paar: false },
+fuss: { name: 'Fußkettchen', masz: 'Knöchel', min: 190, max: 300, standard: 230, paar: false,
+hilfe: [{ name: 'Kind', umfang: 200 }, { name: 'Erwachsene', umfang: 230 }, { name: 'Groß', umfang: 260 }] },
+kette: { name: 'Kette', masz: 'Länge der Kette', min: 350, max: 700, standard: 450, paar: false,
+hilfe: [{ name: 'Kurz', umfang: 400 }, { name: 'Mittel', umfang: 450 }, { name: 'Lang', umfang: 550 }, { name: 'Sehr lang', umfang: 650 }] },
+ohrringe: { name: 'Ohrringe', masz: 'Länge je Ohrring', min: 20, max: 70, standard: 45, paar: true,
+hilfe: [{ name: 'Kurz', umfang: 30 }, { name: 'Mittel', umfang: 45 }, { name: 'Lang', umfang: 60 }] }
+};
+const OESE_MM = 8, MAKRAMEE_ANTEIL = 0.4, KNOTEN_MM = 4;
+const GARNE = ['Schwarz', 'Braun', 'Weiß', 'Rot', 'Nazarblau', 'Türkis'];
 const DELICA = { breite: 1.3, laenge: 1.6, proGramm: 190, proTuetchen: 950 };
 const PREISE = { strang4: 2.5, strang6: 2.9, strang8: 3.5, strang10: 3.9, delica: 3.9, abc: 3.5, gummi: 2.5, schmuck: 3.0, perlenfaden: 2.5,
-karabiner: 2.0, biegering: 1.5, anhaenger: 2.0, quetsch: 1.5, kaschier: 1.5, klemmen: 2.5 };
+karabiner: 2.0, biegering: 1.5, anhaenger: 2.0, quetsch: 1.5, kaschier: 1.5, klemmen: 2.5, garn: 3.0, ohrhaken: 2.5, kettelstift: 2.0 };
 const PREIS_NAMEN = { strang4: 'Strang 4 mm', strang6: 'Strang 6 mm', strang8: 'Strang 8 mm', strang10: 'Strang 10 mm', delica: 'Delica-Tütchen 5 g',
 abc: 'ABC-Mischbeutel', gummi: 'Rolle Gummiband', schmuck: 'Rolle Schmuckfaden', perlenfaden: 'Spule Perlenfaden', karabiner: 'Beutel Karabiner',
-biegering: 'Beutel Biegeringe', quetsch: 'Beutel Quetschperlen', kaschier: 'Beutel Kaschierperlen', klemmen: 'Beutel Klemmenden', anhaenger: 'Anhänger' };
+biegering: 'Beutel Biegeringe', quetsch: 'Beutel Quetschperlen', kaschier: 'Beutel Kaschierperlen', klemmen: 'Beutel Klemmenden', anhaenger: 'Anhänger',
+garn: 'Rolle Makramee-Garn', ohrhaken: 'Beutel Ohrhaken', kettelstift: 'Beutel Kettelstifte' };
 const LOCH_MM = { 4: 0.8, 6: 1.0, 8: 1.0, 10: 1.2, wuerfel: 3.5, delica: 0.8 };
-const FADEN_MM = { gummi: 0.8, gummiDuenn: 0.5, schmuck: 0.38, perlenfaden: 0.3 };
+const FADEN_MM = { gummi: 0.8, gummiDuenn: 0.5, schmuck: 0.38, perlenfaden: 0.3, garn: 0.8 };
 const LOCH_SPIEL_MM = 0.2, FADEN_STUECK_CM = 150, ABC_BEUTEL = 100;
 const STRANG = { 4: 100, 6: 66, 8: 50, 10: 40 };
 const KLEMMEN = [10, 13, 16, 20, 25, 30];
 const WUERFEL_MM = 6;
 const PASSFORMEN = { eng: -5, normal: 0, locker: 10 };
 const GROESSENHILFE = [{ name: 'Kind', umfang: 140 }, { name: 'Jugend', umfang: 155 }, { name: 'Erwachsene', umfang: 165 }, { name: 'Groß', umfang: 185 }];
+STUECKE.armband.hilfe = GROESSENHILFE;
 const DICKE_OHNE_ZUGABE = 4;
 const BUCHSTABEN = /[A-ZÄÖÜ]/;
 
@@ -231,6 +247,7 @@ if (p.form === 'tropfen') return Math.round(p.groesse * 1.3 * 10) / 10;
 return p.form === 'rondelle' ? Math.round(p.groesse * 0.6 * 10) / 10 : p.groesse;
 }
 function passform(v) { return typeof v === 'string' && Object.prototype.hasOwnProperty.call(PASSFORMEN, v) ? v : 'normal'; }
+function stueck(v) { return typeof v === 'string' && Object.prototype.hasOwnProperty.call(STUECKE, v) ? v : 'armband'; }
 function istRaster(technik) { return !!(TECHNIKEN[technik] && TECHNIKEN[technik].raster); }
 function pruefsumme(text) {
 let h = 0x811c9dc5;
@@ -244,8 +261,9 @@ return h.toString(16);
 }
 
 return {
+STUECKE, OESE_MM, MAKRAMEE_ANTEIL, KNOTEN_MM, GARNE, stueck,
 FARBEN, FORMEN, ANHAENGER, GROESSEN, TECHNIKEN, DELICA, STRANG, PREISE, PREIS_NAMEN, LOCH_MM, FADEN_MM, LOCH_SPIEL_MM, FADEN_STUECK_CM, ABC_BEUTEL, KLEMMEN, WUERFEL_MM, BUCHSTABEN, PASSFORMEN, GROESSENHILFE, DICKE_OHNE_ZUGABE,
-FORMAT: 1, UMFANG_MIN: 120, UMFANG_MAX: 240, UMFANG_STANDARD: 165,
+FORMAT: 1, UMFANG_MIN, UMFANG_MAX, UMFANG_STANDARD,
 MUSTER_MAX: 40, NAME_MAX: 12, PERLEN_MAX: 400, SPALTEN_MIN: 4, SPALTEN_MAX: 16,
 REIHEN_MIN: 1, REIHEN_MAX: 60, RUNDEN_MAX: 3, ENTWUERFE_MAX: 20, UNDO_TIEFE: 50,
 klemme, perlenLaenge, istRaster, passform, pruefsumme, pruefsummeZahlen
@@ -267,7 +285,9 @@ const d = e.muster.reduce((s, p) => s + p.groesse, 0) / e.muster.length;
 return Math.ceil(Math.PI * Math.max(0, d - E.DICKE_OHNE_ZUGABE) - 1e-9);
 }
 
+const paar = e => !!E.STUECKE[E.stueck(e.stueck)].paar;
 function strecke(e) {
+if (paar(e)) return Math.max(4, e.umfang - E.OESE_MM);
 const t = E.TECHNIKEN[e.technik] || E.TECHNIKEN.gummi;
 return (E.istRaster(e.technik) ? 1 : e.runden || 1) * (e.umfang + t.zugabe + E.PASSFORMEN[E.passform(e.passform)] + dickenZugabe(e)) - t.verschluss;
 }
@@ -279,12 +299,13 @@ return Array.from(e.name || '').map(b => ({ farbe: WEISS, groesse: E.WUERFEL_MM,
 function folge(e) {
 if (E.istRaster(e.technik) || !e.muster.length) return [];
 const m = mitte(e);
-const rest = strecke(e) - m.reduce((s, p) => s + E.perlenLaenge(p), 0);
+const makramee = e.technik === 'makramee', platz = makramee ? E.MAKRAMEE_ANTEIL * strecke(e) : strecke(e);
+const rest = platz - m.reduce((s, p) => s + E.perlenLaenge(p), 0);
 const seq = [];
 let summe = 0;
 for (let k = 0; seq.length < E.PERLEN_MAX - m.length; k++) {
 const p = e.muster[k % e.muster.length], l = E.perlenLaenge(p);
-if (summe + l > rest + l / 2) break;
+if (makramee ? (summe + l > rest + 1e-9 && (seq.length || m.length)) : summe + l > rest + l / 2) break;
 seq.push({ farbe: p.farbe, groesse: p.groesse, form: p.form });
 summe += l;
 }
@@ -309,7 +330,7 @@ const mm = x => x.toLocaleString('de-DE') + ' mm';
 function lochPruefung(e, perlen) {
 const loecher = perlen.map(p => E.LOCH_MM[p.form === 'delica' ? 'delica' : p.buchstabe ? 'wuerfel' : p.groesse]);
 const kleinstes = loecher.length ? Math.min(...loecher) : null;
-let faden = E.istRaster(e.technik) ? E.FADEN_MM.perlenfaden : e.technik === 'faden' ? E.FADEN_MM.schmuck : E.FADEN_MM.gummi;
+let faden = E.istRaster(e.technik) ? E.FADEN_MM.perlenfaden : e.technik === 'makramee' ? E.FADEN_MM.garn : e.technik === 'faden' ? E.FADEN_MM.schmuck : E.FADEN_MM.gummi;
 if (e.technik === 'gummi' && kleinstes !== null && faden + E.LOCH_SPIEL_MM > kleinstes + 1e-9) faden = E.FADEN_MM.gummiDuenn;
 const passt = kleinstes === null || faden + E.LOCH_SPIEL_MM <= kleinstes + 1e-9;
 const text = kleinstes === null ? 'Keine Perlen: Lochprüfung entfällt (Faden ' + mm(faden) + ').'
@@ -320,6 +341,7 @@ return { kleinstes, faden, passt, text };
 function bestellmenge(n) { return n > 0 ? Math.max(Math.ceil(n * 1.1 - 1e-9), n + 2) : 0; }
 const auf10cm = mm => Math.ceil(mm / 100 - 1e-9) * 10;
 const farbname = i => E.FARBEN[i].name;
+const mal = e => (paar(e) ? 2 : 1);
 
 const preisVon = (opt, k) => {
 if (opt && opt.preise && typeof opt.preise[k] === 'number') { if (opt.genutzt) opt.genutzt.add(k); return opt.preise[k]; }
@@ -327,8 +349,9 @@ return E.PREISE[k];
 };
 const vorratVon = (opt, id) => (opt && opt.vorrat && Number.isInteger(opt.vorrat[id]) && opt.vorrat[id] > 0 ? opt.vorrat[id] : 0);
 function perlenPositionen(e, opt) {
+const mal = paar(e) ? 2 : 1;   // S-018: Ohrringe als Paar
 if (E.istRaster(e.technik)) {
-const z = raster(e).zaehlung;
+const z = {}, roh = raster(e).zaehlung; for (const k of Object.keys(roh)) z[k] = roh[k] * mal;
 return Object.keys(z).map(Number).sort((a, b) => a - b).map(f => {
 const id = 'delica-' + f, vorrat = vorratVon(opt, id), bestellen = Math.max(0, bestellmenge(z[f]) - vorrat);
 const k = packungen(bestellen, E.DELICA.proTuetchen), gramm = bestellen ? Math.max(1, Math.ceil(bestellen / E.DELICA.proGramm)) : 0;
@@ -341,7 +364,7 @@ const gruppen = new Map();
 for (const p of folge(e)) {
 const id = p.buchstabe ? 'buchstabe-' + p.buchstabe : 'perle-' + p.farbe + '-' + p.groesse + '-' + p.form;
 if (!gruppen.has(id)) gruppen.set(id, { id, farbe: p.farbe, groesse: p.groesse, form: p.form, buchstabe: p.buchstabe, anzahl: 0 });
-gruppen.get(id).anzahl++;
+gruppen.get(id).anzahl += mal;
 }
 const alle = Array.from(gruppen.values());
 const perlen = alle.filter(g => !g.buchstabe).map(g => {
@@ -366,7 +389,7 @@ return perlen;
 }
 
 function musterPasst(e) {
-if (!E.istRaster(e.technik)) return { glatt: true, wiederholungen: 0, vorschlag: null };
+if (!E.istRaster(e.technik) || paar(e)) return { glatt: true, wiederholungen: 0, vorschlag: null };
 const mr = e.raster.reihen, R0 = raster(e).reihen;
 const glatt = R0 % mr === 0;
 let vorschlag = null;
@@ -385,7 +408,10 @@ const WERKZEUG = {
 gummi: ['Schere', 'Schmuckkleber oder klarer Nagellack', 'Perlenstopper oder Klammer', 'Perlenmatte oder Schale'],
 faden: ['Seitenschneider', 'Quetschzange oder Flachzange', 'Perlenstopper oder Klammer', 'Perlenmatte oder Schale'],
 peyote: ['Perlennadel Größe 10 oder 12', 'Schere', 'Fadenwachs', 'Perlenmatte', 'Flachzange für die Klemmenden'],
-loom: ['Perlenwebrahmen', 'Perlennadel Größe 10 oder 12 (lang)', 'Schere', 'Perlenmatte', 'Flachzange für die Klemmenden']
+loom: ['Perlenwebrahmen', 'Perlennadel Größe 10 oder 12 (lang)', 'Schere', 'Perlenmatte', 'Flachzange für die Klemmenden'],
+brick: ['Perlennadel Größe 10 oder 12', 'Schere', 'Fadenwachs', 'Perlenmatte', 'Flachzange für die Klemmenden'],
+makramee: ['Schere', 'Klemmbrett oder Klebeband zum Festhalten', 'Maßband', 'Schmuckkleber für die Fadenenden'],
+ohrringe: ['Rundzange für die Ösen', 'Flachzange', 'Seitenschneider', 'Perlenmatte oder Schale']
 };
 
 function einkauf(e, opt) {
@@ -396,18 +422,31 @@ const faden = [], verschluss = [];
 if (E.istRaster(e.technik)) {
 const r = raster(e);
 const mp = musterPasst(e);
-if (!mp.glatt) hinweise.push('Das Muster wiederholt sich ' + mp.wiederholungen.toLocaleString('de-DE') + ' mal und bricht am Verschluss ab' + (mp.vorschlag ? '; glatt wird es bei ' + (mp.vorschlag / 10).toLocaleString('de-DE') + ' cm Handgelenk.' : '.'));
-if (e.technik === 'peyote') {
-if (r.spalten % 2) hinweise.push('Peyote mit ungerader Spaltenzahl braucht am Rand eine besondere Wende; für den Anfang ist eine gerade Zahl einfacher.');
-faden.push({ id: 'faden-peyote', name: 'Perlenfaden (Nymo oder Miyuki), etwa', cm: auf10cm(r.reihen * 2 * (r.breite + 3) + 600), preis: preisVon(opt, 'perlenfaden') });
+if (!mp.glatt) hinweise.push('Das Muster wiederholt sich ' + mp.wiederholungen.toLocaleString('de-DE') + ' mal und bricht am Verschluss ab' + (mp.vorschlag ? '; glatt wird es bei ' + (mp.vorschlag / 10).toLocaleString('de-DE') + ' cm ' + E.STUECKE[E.stueck(e.stueck)].masz + '.' : '.'));
+if (paar(e)) hinweise.push('Ohrringe: zwei gleiche Stücke weben; die Mengen sind schon für beide gerechnet.');
+if (e.technik === 'peyote' || e.technik === 'brick') {
+if (r.spalten % 2) hinweise.push((e.technik === 'brick' ? 'Brick Stitch' : 'Peyote') + ' mit ungerader Spaltenzahl braucht am Rand eine besondere Wende; für den Anfang ist eine gerade Zahl einfacher.');
+faden.push({ id: 'faden-' + e.technik, name: 'Perlenfaden (Nymo oder Miyuki), etwa', cm: auf10cm(r.reihen * 2 * (r.breite + 3) * mal(e) + 600), preis: preisVon(opt, 'perlenfaden') });
 } else {
-faden.push({ id: 'faden-kette', name: 'Kettfäden: ' + (r.spalten + 1) + ' Fäden, zusammen etwa', cm: auf10cm((r.spalten + 1) * (P + 600)), preis: preisVon(opt, 'perlenfaden'), stuecke: r.spalten + 1 });
-faden.push({ id: 'faden-schuss', name: 'Schussfaden (Perlenfaden), etwa', cm: auf10cm(r.reihen * (2 * r.breite + 10) + 600), preis: 0, packung: 'von derselben Spule wie die Kettfäden' });
+faden.push({ id: 'faden-kette', name: 'Kettfäden: ' + (r.spalten + 1) + ' Fäden, zusammen etwa', cm: auf10cm((r.spalten + 1) * (P + 600) * mal(e)), preis: preisVon(opt, 'perlenfaden'), stuecke: r.spalten + 1 });
+faden.push({ id: 'faden-schuss', name: 'Schussfaden (Perlenfaden), etwa', cm: auf10cm(r.reihen * (2 * r.breite + 10) * mal(e) + 600), preis: 0, packung: 'von derselben Spule wie die Kettfäden' });
 }
 const k = klemmbreite(r.breite);
-verschluss.push({ id: 'klemmen', name: 'Klemmenden ' + k + ' mm', anzahl: 2 }, { id: 'karabiner', name: 'Karabiner', anzahl: 1 },
+if (paar(e)) verschluss.push({ id: 'ohrhaken', name: 'Ohrhaken', anzahl: 2 }, { id: 'biegering', name: 'Biegeringe 5 mm', anzahl: 2 });
+else verschluss.push({ id: 'klemmen', name: 'Klemmenden ' + k + ' mm', anzahl: 2 }, { id: 'karabiner', name: 'Karabiner', anzahl: 1 },
 { id: 'biegering', name: 'Biegeringe 5 mm', anzahl: 2 });
 for (const f of faden) if (f.id !== 'faden-kette') { f.stuecke = stuecke(f.cm); if (f.stuecke > 1) hinweise.push(f.name.replace(/, etwa$/, '') + ': in ' + f.stuecke + ' Stücken zu höchstens 1,5 m schneiden.'); }
+} else if (paar(e)) {
+verschluss.push({ id: 'kettelstift', name: 'Kettelstifte ' + (P <= 42 ? 50 : 70) + ' mm', anzahl: 2 }, { id: 'ohrhaken', name: 'Ohrhaken', anzahl: 2 });
+hinweise.push('Ohrringe: Perlen auf den Kettelstift fädeln, oben mit der Rundzange eine Öse biegen und in den Ohrhaken hängen. Die Mengen sind für beide Ohrringe.');
+if (!e.muster.length) hinweise.push('Muster leer: füge im Designer Perlen hinzu.');
+} else if (e.technik === 'makramee') {
+const perlenLaenge = folge(e).reduce((s, p) => s + E.perlenLaenge(p), 0), geknuepft = Math.max(0, P - perlenLaenge);
+faden.push({ id: 'faden-kern', name: 'Makramee-Garn 0,8 mm ' + farbname(e.garn) + ', Kernfaden', cm: auf10cm(P + 400), preis: preisVon(opt, 'garn'), stuecke: 1 },
+{ id: 'faden-knuepf', name: 'Knüpffaden (gleiches Garn), 2 Stück zusammen', cm: auf10cm(4 * geknuepft + 400), preis: 0, stuecke: 2, packung: 'von derselben Rolle' },
+{ id: 'faden-schiebe', name: 'Faden für den Schiebeknoten (gleiches Garn)', cm: 50, preis: 0, stuecke: 1, packung: 'von derselben Rolle' });
+hinweise.push('Makramee: kein Verschluss nötig, der Schiebeknoten macht das Armband verstellbar.');
+if (!e.muster.length) hinweise.push('Muster leer: das Band wird ganz geknüpft.');
 } else {
 faden.push(e.technik === 'gummi'
 ? { id: 'faden-gummi', name: 'Gummiband ' + mm(loch.faden), cm: auf10cm(P + 200), preis: preisVon(opt, 'gummi'), stuecke: 1 }
@@ -422,14 +461,15 @@ verschluss.push({ id: 'anhaenger', name: 'Anhänger ' + E.ANHAENGER[e.anhaenger]
 const b = verschluss.find(v => v.id === 'biegering');
 if (b) { b.anzahl++; b.name = 'Biegeringe 5 mm'; } else verschluss.push({ id: 'biegering', name: 'Biegering 5 mm', anzahl: 1 });
 }
-if (e.runden > 1 && !E.istRaster(e.technik)) hinweise.push('Wickelarmband: ' + e.runden + ' Runden ums Handgelenk, die Strecke ist schon mit allen Runden gerechnet.');
+if (e.runden > 1 && !E.istRaster(e.technik) && e.technik !== 'makramee') hinweise.push('Wickelarmband: ' + e.runden + ' Runden ums Handgelenk, die Strecke ist schon mit allen Runden gerechnet.');
 if (!E.istRaster(e.technik) && e.name) hinweise.push('Buchstabenwürfel gibt es als ABC-Mischbeutel. Achte darauf, dass jeder Buchstabe deines Namens mindestens so oft drin ist wie angegeben, plus einer Reserve.');
 if (E.istRaster(e.technik)) hinweise.push('Faden in Stücken von höchstens 1,5 m verarbeiten und nachsetzen, wenn er kurz wird; die Länge oben ist die Gesamtmenge.');
 if (e.technik === 'gummi') hinweise.push('Kein Verschluss nötig: Gummiband mit doppeltem Knoten schließen und mit Kleber sichern.');
 hinweise.push('Fadenlängen sind großzügige Schätzwerte. Reserve bei Perlen: 10 %, mindestens 2.');
-const werkzeug = WERKZEUG[e.technik].map((name, i) => ({ id: 'werkzeug-' + e.technik + '-' + i, name }));
+const wz = paar(e) && !E.istRaster(e.technik) ? 'ohrringe' : e.technik;
+const werkzeug = WERKZEUG[wz].map((name, i) => ({ id: 'werkzeug-' + wz + '-' + i, name }));
 for (const v of verschluss) { v.preis = preisVon(opt, v.id); v.packung = '1 Beutel'; }
-for (const f of faden) if (!f.packung) f.packung = f.id === 'faden-gummi' || f.id === 'faden-schmuck' ? '1 Rolle' : '1 Spule';
+for (const f of faden) if (!f.packung) f.packung = f.id === 'faden-gummi' || f.id === 'faden-schmuck' || f.id === 'faden-kern' ? '1 Rolle' : '1 Spule';
 const gesamt = aufFuenfzigCent(perlen.concat(faden, verschluss).reduce((s, x) => s + x.preis, 0));
 const eigene = opt && opt.genutzt ? opt.genutzt.size : 0;   // nur Preise, die in dieser Liste vorkommen
 hinweise.push(eigene ? 'Preis mit deinen eigenen Preisen gerechnet, ohne Werkzeug.' : 'Preis geschätzt, ohne Werkzeug; je Laden kann es anders sein.');
@@ -500,17 +540,24 @@ return { spalten, reihen, zellen };
 
 function bereinige(roh) {
 const e = roh && typeof roh === 'object' && !Array.isArray(roh) ? roh : {};
+const stueck = E.stueck(e.stueck), S = E.STUECKE[stueck];
+let technik = Object.prototype.hasOwnProperty.call(E.TECHNIKEN, e.technik) ? e.technik : 'gummi';
+if (S.paar && (technik === 'gummi' || technik === 'makramee')) technik = 'faden';
 const b = {
 titel: typeof e.titel === 'string' ? e.titel.slice(0, 40) : '',
-technik: Object.prototype.hasOwnProperty.call(E.TECHNIKEN, e.technik) ? e.technik : 'gummi',
-umfang: E.klemme(e.umfang, E.UMFANG_MIN, E.UMFANG_MAX, E.UMFANG_STANDARD),
+technik,
+umfang: E.klemme(e.umfang, S.min, S.max, S.standard),
 passform: E.passform(e.passform),
 name: name(e.name),
 anhaenger: typeof e.anhaenger === 'string' && Object.prototype.hasOwnProperty.call(E.ANHAENGER, e.anhaenger) ? e.anhaenger : '',
 runden: E.klemme(e.runden, 1, E.RUNDEN_MAX, 1),
 muster: [],
-raster: null
+raster: null,
+stueck,
+garn: E.GARNE.map(n => E.FARBEN.findIndex(f => f.name === n)).includes(e.garn) ? e.garn : E.FARBEN.findIndex(f => f.name === E.GARNE[0])
 };
+if (S.paar) { b.name = ''; b.anhaenger = ''; }
+if ((stueck !== 'armband' && stueck !== 'fuss') || b.technik === 'makramee') b.runden = 1;   // Makramee: ein Band mit Schiebeknoten, keine Wickelrunden
 b.muster = Array.isArray(e.muster) ? e.muster.slice(0, E.MUSTER_MAX).map(perle) : null;
 b.raster = raster(e.raster, verschieden((b.muster || []).map(p => p.farbe)).slice(0, 4));
 if (!b.muster) b.muster = verschieden(b.raster.zellen).slice(0, 3).map(f => ({ farbe: f, groesse: 6, form: 'rund' }));
@@ -529,7 +576,9 @@ const mit = (e, f) => { const k = kopie(e); f(k); return bereinige(k); };
 const perleAnfuegen = (e, p) => mit(e, k => { if (k.muster.length < E.MUSTER_MAX) k.muster.push(perle(p)); });
 const letztePerleWeg = e => mit(e, k => { k.muster.pop(); });
 const perleEntfernen = (e, i) => mit(e, k => { if (i >= 0 && i < k.muster.length) k.muster.splice(i, 1); });
-const setzeUmfang = (e, mm) => mit(e, k => { k.umfang = E.klemme(mm, E.UMFANG_MIN, E.UMFANG_MAX, E.UMFANG_STANDARD); });
+const setzeUmfang = (e, mm) => mit(e, k => { const S = E.STUECKE[E.stueck(k.stueck)]; k.umfang = E.klemme(mm, S.min, S.max, S.standard); });
+const setzeStueck = (e, s) => mit(e, k => { k.stueck = s; });
+const setzeGarn = (e, g) => mit(e, k => { k.garn = g; });
 const setzeName = (e, n) => mit(e, k => { k.name = name(n); });
 const setzeTechnik = (e, t) => mit(e, k => { k.technik = t; });
 const setzeTitel = (e, t) => mit(e, k => { k.titel = t; });
@@ -634,7 +683,7 @@ ablegen: () => kopie({ jetzt, zurueck })
 }
 
 return { bereinige, neu, verlauf, perleAnfuegen, letztePerleWeg, perleEntfernen, setzeUmfang, setzeName, setzeTechnik, setzeTitel, setzePassform, setzeRaster, setzeMuster, spiegeln, spiegelnRaster,
-setzeSpalten, setzeMusterreihen, malFeld, fuelleRaster, setzeAnhaenger, setzeRunden, zufall, farbverlauf };
+setzeSpalten, setzeMusterreihen, malFeld, fuelleRaster, setzeAnhaenger, setzeRunden, setzeStueck, setzeGarn, zufall, farbverlauf };
 })();
 
 })();
@@ -818,7 +867,21 @@ entwurf: { technik: 'gummi', muster: [p(NAZAR, 8), p(WEISS, 8)] } },
 { titel: 'Lila und Weiß', gruppe: 'verein', beschreibung: 'Vereinsfarben im Wechsel, Name frei wählbar.',
 entwurf: { technik: 'gummi', muster: [p(LILA, 8), p(WEISS, 8)] } },
 { titel: 'Gelb und Grün', gruppe: 'verein', beschreibung: 'Vereinsfarben im Wechsel, Name frei wählbar.',
-entwurf: { technik: 'gummi', muster: [p(GELB, 8), p(GRUEN, 8)] } }
+entwurf: { technik: 'gummi', muster: [p(GELB, 8), p(GRUEN, 8)] } },
+{ titel: 'Brick-Ohrringe Nazar', gruppe: 'zeichen', beschreibung: 'Ohrringe im Ziegelstich mit dem Blauen Auge, zweimal pro Ohrring.', entwurf: { technik: 'brick', stueck: 'ohrringe', umfang: 40,
+raster: gerechnet(7, 10, (z, s) => { const d = Math.max(Math.abs(s - 3) * 1.25, Math.abs(z - 4.5)); return d < 1.3 ? SCHWARZ : d < 2.6 ? HIMMEL : d < 3.8 ? WEISS : NAZAR; }) } },
+{ titel: 'Brick-Band Wellen', beschreibung: 'Armband im Ziegelstich: Türkis und Weiß wie Meereswellen.', entwurf: { technik: 'brick', umfang: 165,
+raster: gerechnet(8, 10, (z, s) => { const m = Math.round(3 + 2.5 * Math.sin(z / 10 * Math.PI * 2)); return s === m || s === m + 1 ? TUERKIS : WEISS; }) } },
+{ titel: 'Makramee Schwarz und Gold', beschreibung: 'Geknüpftes Band mit Perlen in der Mitte und Schiebeknoten.',
+entwurf: { technik: 'makramee', garn: SCHWARZ, muster: [p(SCHWARZ, 8), p(GOLD, 6)] } },
+{ titel: 'Makramee Türkis', beschreibung: 'Braunes Garn mit Türkis und Weiß, verstellbar.',
+entwurf: { technik: 'makramee', garn: BRAUN, muster: [p(TUERKIS, 8), p(WEISS, 6), p(TUERKIS, 8)] } },
+{ titel: 'Fußkettchen Sommer', beschreibung: 'Kleine Perlen in Türkis, Weiß und Koralle für den Knöchel.',
+entwurf: { technik: 'faden', stueck: 'fuss', umfang: 230, muster: [p(TUERKIS, 4), p(WEISS, 4), p(KORALLE, 4), p(WEISS, 4)] } },
+{ titel: 'Lange Perlmuttkette', beschreibung: 'Kette mit 45 cm in Perlmutt und Gold.',
+entwurf: { technik: 'faden', stueck: 'kette', umfang: 450, muster: [p(PERLMUTT, 8), p(GOLD, 6, 'rondelle')] } },
+{ titel: 'Tropfen-Ohrringe', beschreibung: 'Hängende Ohrringe mit Tropfenperle in Türkis und Gold.',
+entwurf: { technik: 'faden', stueck: 'ohrringe', umfang: 45, muster: [p(GOLD, 6, 'rondelle'), p(TUERKIS, 8), p(GOLD, 6, 'rondelle'), p(WEISS, 6, 'tropfen')] } }
 ];
 
 const IDEEN = roh.map(i => ({ titel: i.titel, gruppe: i.gruppe || '', beschreibung: i.beschreibung, entwurf: W.bereinige(Object.assign({ titel: i.titel }, i.entwurf)) }));
@@ -902,13 +965,49 @@ tipps: [
 'Der Schussfaden muss beim Rückweg wirklich über den Kettfäden laufen, sonst fallen die Perlen heraus.',
 'Ein Muster mit hellem Hintergrund verzeiht unregelmäßige Perlen besser als ein dunkler.'
 ]
+},
+brick: {
+titel: 'Brick Stitch mit Nadel',
+schritte: [
+'Etwa 1,5 m Perlenfaden abschneiden, wachsen und eine Perlennadel einfädeln. 15 cm Fadenende hängen lassen.',
+'Erste Reihe als Leiter: zwei Perlen aufnehmen, noch einmal durch beide nähen, so dass sie nebeneinander stehen. Jede weitere Perle genauso anfügen, bis die Leiter so viele Perlen hat wie das Muster Spalten.',
+'Zweite Reihe: zwei Perlen aufnehmen, unter die Fadenbrücke zwischen den ersten beiden Perlen der Leiter stechen und zurück durch die zweite Perle. Sie sitzt jetzt eine halbe Perle versetzt.',
+'Jede weitere Perle: aufnehmen, unter die nächste Brücke stechen, zurück durch die Perle. Am Ende der Reihe wenden; so wächst das Band Reihe für Reihe wie eine Ziegelmauer.',
+'Nach jeder Reihe mit dem Raster im Designer vergleichen. Dort ist jede zweite Reihe um eine halbe Perle versetzt, genau wie im Band.',
+'Wird der Faden kurz (etwa 15 cm), durch einige Perlen zurücknähen, abschneiden und einen neuen Faden genauso einziehen.',
+'Fertig: die Enden in die Klemmenden legen und zudrücken, Karabiner mit Biegeringen anbringen. Bei Ohrringen stattdessen oben einen Biegering durch die Randperle und in den Ohrhaken.'
+],
+tipps: [
+'Die Leiter ist der schwerste Teil: gleichmäßig straff nähen, sonst wird das ganze Stück schief.',
+'Brick Stitch ist ideal für Ohrringe: Reihen können kürzer werden, so entstehen Dreiecke und Fransen.',
+'Delica-Perlen liegen wie Ziegel dicht nebeneinander, das gibt klare Muster.'
+]
+},
+makramee: {
+titel: 'Makramee mit Schiebeknoten',
+schritte: [
+'Kernfaden aus Makramee-Garn 0,8 mm abschneiden: Armbandlänge plus 40 cm. Zwei Knüpffäden abschneiden, wie die Einkaufsliste angibt.',
+'Den Kernfaden mit einer Klammer oder Klebeband auf einem Klemmbrett festmachen und straff halten.',
+'Links mit den Knüpffäden Kreuzknoten um den Kernfaden knüpfen, bis die angegebene Länge erreicht ist.',
+'Die Perlen nach der Vorschau auf den Kernfaden auffädeln; sie sitzen in der Mitte des Armbands.',
+'Nach den Perlen wieder Kreuzknoten knüpfen, bis das Band genauso lang ist wie links.',
+'Beide Enden des Kernfadens nebeneinanderlegen und mit einem eigenen Faden einen Schiebeknoten aus etwa 6 Kreuzknoten darum knüpfen.',
+'Alle Fadenenden knapp abschneiden und mit einem Tropfen Kleber sichern; an die Kernfadenenden je eine kleine Perle knoten.'
+],
+tipps: [
+'Immer mit derselben Seite beginnen (links über den Kern), sonst dreht sich das Band zur Spirale.',
+'Die Knoten gleich fest ziehen, dann wird das Band gleichmäßig breit.',
+'Perlen mit mindestens 1 mm Loch nehmen, das Garn ist 0,8 mm dick.'
+]
 }
 };
 const BILDER = {
 gummi: ['messen', 'dehnen', 'stopper', 'auffaedeln', 'anprobe', 'knoten', 'einziehen'],
 faden: ['messen', 'abschneiden', 'verschluss', 'quetschen', { szene: 'auffaedeln', verschluss: true }, { szene: 'verschluss', spiegel: true, ende: true }, { szene: 'quetschen', spiegel: true, ende: true }],
 peyote: ['nadel', 'peyote_start', 'peyote_auslassen', 'peyote', { szene: 'vergleichen', versatz: true }, 'faden_neu', { szene: 'klemmen', versatz: true }],
-loom: ['kettfaeden', 'schuss', 'loom_unter', 'loom_druecken', 'loom_zurueck', 'loom', 'klemmen']
+loom: ['kettfaeden', 'schuss', 'loom_unter', 'loom_druecken', 'loom_zurueck', 'loom', 'klemmen'],
+brick: ['nadel', 'leiter', { szene: 'brick', erste: true }, 'brick', { szene: 'vergleichen', quer: true }, { szene: 'faden_neu', quer: true }, { szene: 'klemmen', quer: true }],
+makramee: ['abschneiden', { szene: 'stopper', garn: true }, 'kreuzknoten', { szene: 'auffaedeln', garn: true }, { szene: 'kreuzknoten', perlen: true }, 'schiebeknoten', { szene: 'abschneiden', ende: true }]
 };
 const alsBild = b => (typeof b === 'string' ? { szene: b } : Object.assign({}, b));
 const MESSEN = [
@@ -949,6 +1048,22 @@ F('Eine Perle fehlt im Muster', 'Reihe falsch abgezählt.', 'Jede Reihe vor dem 
 F('Kettfäden reißen beim Abnehmen', 'Zu kurze Enden oder Kettfäden zu straff.', 'Mindestens 30 cm Enden lassen und vor dem Abnehmen Spannung lösen.'),
 F('Band ist zu schmal oder zu breit', 'Spaltenzahl passt nicht zur Klemme.', 'Die Einkaufsliste nennt die passende Klemmenbreite; Spalten im Designer anpassen.'),
 F('Muster bricht am Verschluss ab', 'Länge passt nicht zu den Musterreihen.', 'Den Umfang nehmen, den der Hinweis im Designer nennt, dann geht das Muster glatt auf.')
+],
+brick: [
+F('Leiter verdreht sich', 'Die Perlen der Leiter sind nur einmal vernäht.', 'Durch jede Leiterperle zweimal nähen und die Leiter flach auf die Matte legen.'),
+F('Reihe wird schief', 'Unter die falsche Fadenbrücke gestochen.', 'Immer unter die nächste Brücke der Vorreihe stechen, keine auslassen; im Arbeitsmodus Reihe für Reihe vorgehen.'),
+F('Erste Perle einer Reihe steht ab', 'Die Reihe nicht mit zwei Perlen begonnen.', 'Jede Reihe mit zwei Perlen beginnen und zurück durch die zweite nähen.'),
+F('Band wird zum Ende schmaler', 'Am Rand eine Brücke vergessen.', 'Nach jeder Reihe die Perlen zählen: jede Reihe hat so viele Perlen wie das Raster Spalten.'),
+F('Faden reißt', 'Faden scheuert an scharfen Perlenkanten oder ist zu lang.', 'Gewachsten Faden in Stücken bis 1,5 m nehmen und rechtzeitig nachsetzen.'),
+F('Ohrringe sind ungleich', 'Beim zweiten Ohrring andere Fadenspannung.', 'Beide Ohrringe nacheinander am selben Tag arbeiten und nebeneinanderlegen.')
+],
+makramee: [
+F('Band dreht sich zur Spirale', 'Immer nur mit derselben Hälfte des Kreuzknotens geknüpft.', 'Abwechselnd links und rechts beginnen: erst links über den Kern, dann rechts über den Kern.'),
+F('Knoten sind ungleich groß', 'Mal fest, mal locker gezogen.', 'Jeden Knoten gleich stark zuziehen und nach oben an den vorigen schieben.'),
+F('Perlen gehen nicht auf das Garn', 'Perlenloch kleiner als 1 mm.', 'Die Einkaufsliste prüft das Loch; größere Perlen oder Perlen mit großem Loch nehmen.'),
+F('Schiebeknoten rutscht von allein', 'Zu wenige oder zu lockere Knoten.', 'Mindestens 6 feste Kreuzknoten knüpfen; dann gleitet er nur mit etwas Zug.'),
+F('Fadenenden gehen auf', 'Enden zu knapp oder nicht gesichert.', 'Enden 2 bis 3 mm stehen lassen und mit einem Tropfen Schmuckkleber sichern.'),
+F('Knüpffaden reicht nicht', 'Kreuzknoten brauchen etwa viermal so viel Faden wie das Band lang ist.', 'Die Einkaufsliste rechnet das schon; lieber etwas mehr abschneiden.')
 ]
 };
 return {
@@ -974,6 +1089,45 @@ return { cx: breite / 2, cy: hoehe * 0.43, rx, ry: rx * NEIGUNG };
 }
 const massstab = tiefe => 0.86 + 0.14 * (tiefe + 1) / 2;
 
+function makramee(e, breite, hoehe) {
+const f = R.folge(e), P = R.strecke(e), r0 = rahmen(breite, hoehe, 0), s = (2 * Math.PI * r0.rx) / P;
+const laengen = f.map(E.perlenLaenge), L = laengen.reduce((a, b) => a + b, 0), start = (P - L) / 2;
+const ort = pos => { const w = 1.5 * Math.PI - 2 * Math.PI * pos / P, tiefe = Math.sin(w); return { w, tiefe, k: massstab(tiefe), x: r0.cx + r0.rx * Math.cos(w), y: r0.cy + r0.ry * Math.sin(w) }; };
+let lauf = start;
+const perlen = f.map((p, i) => {
+const o = ort(lauf + laengen[i] / 2); lauf += laengen[i];
+return { x: o.x, y: o.y, r: (p.groesse / 2) * s * o.k, laenge: laengen[i] * s * o.k, winkel: o.w, tiefe: o.tiefe, farbe: p.farbe, form: p.form, buchstabe: p.buchstabe || '', reihe: i, spalte: 0, versatz: 0 };
+});
+const knoten = [], n = Math.max(0, Math.round((P - L) / E.KNOTEN_MM)), schritt = n ? (P - L) / n : 0;
+for (let i = 0; i < n; i++) {
+const pos = (start + L + (i + 0.5) * schritt) % P, o = ort(pos);
+knoten.push({ x: o.x, y: o.y, r: 1.6 * s * o.k, laenge: E.KNOTEN_MM * s * 0.95 * o.k, winkel: o.w, tiefe: o.tiefe, farbe: e.garn });
+}
+knoten.sort((a, b) => a.tiefe - b.tiefe);
+return { ring: r0, mmPx: s, perlen, knoten };
+}
+
+function ohrringe(e, breite, hoehe) {
+const r0 = rahmen(breite, hoehe, 0), P = R.strecke(e), oben = hoehe * 0.2, haken = Math.max(6, hoehe * 0.06), y0 = oben + haken * 1.7;   // oben Platz für die Tasten, unten für die Zahlen
+const raster = E.istRaster(e.technik), r = raster ? R.raster(e) : null, f = raster ? [] : R.folge(e);
+const quer = raster ? r.breite : Math.max(4, ...f.map(p => p.groesse));
+const s = Math.min((hoehe * 0.84 - y0) / P, breite * 0.2 / quer), xs = [breite * 0.32, breite * 0.68], perlen = [];
+xs.forEach((x, k) => {
+if (raster) {
+for (let z = 0; z < r.reihen; z++) for (let sp = 0; sp < r.spalten; sp++) {
+const q = e.technik === 'brick' && z % 2 ? 0.5 : 0;
+const v = e.technik === 'peyote' && sp % 2 ? 0.5 : 0;   // Peyote: jede zweite Spalte eine halbe Perle versetzt
+perlen.push({ x: x + (sp + q - (r.spalten - 1) / 2) * E.DELICA.breite * s * 0.92, y: y0 + (z + 0.5 + v) * E.DELICA.laenge * s, r: (E.DELICA.breite / 2) * s, laenge: E.DELICA.laenge * s,
+winkel: 0, tiefe: 0, farbe: r.zelle(z, sp), form: 'delica', buchstabe: '', reihe: z, spalte: sp, versatz: 0, quer: q, ohrring: k });
+}
+return;
+}
+let y = y0;
+f.forEach((p, i) => { const l = E.perlenLaenge(p) * s; perlen.push({ x, y: y + l / 2, r: (p.groesse / 2) * s, laenge: l, winkel: 0, tiefe: 0, farbe: p.farbe, form: p.form, buchstabe: '', reihe: i, spalte: 0, versatz: 0, ohrring: k }); y += l; });
+});
+return { art: 'ohrringe', ring: r0, mmPx: s, perlen, haken: xs.map(x => ({ x, y: oben + haken, r: haken, unten: y0 })) };
+}
+
 function aufgefaedelt(e, breite, hoehe) {
 const f = R.folge(e);
 const laengen = f.map(E.perlenLaenge), gesamt = laengen.reduce((a, b) => a + b, 0) || 1;
@@ -995,21 +1149,22 @@ const r = R.raster(e), P = R.strecke(e);
 const r0 = rahmen(breite, hoehe, 0);
 const s = (2 * Math.PI * r0.rx) / P;
 const bandHoehe = r.breite * s;
-const versetzt = e.technik === 'peyote';
+const versetzt = e.technik === 'peyote', brick = e.technik === 'brick';
 const perlen = [];
 for (let z = 0; z < r.reihen; z++) for (let sp = 0; sp < r.spalten; sp++) {
-const versatz = versetzt && sp % 2 === 1 ? 0.5 : 0;
+const versatz = versetzt && sp % 2 === 1 ? 0.5 : 0, quer = brick && z % 2 === 1 ? 0.5 : 0;   // S-018: Brick: jede zweite Reihe quer versetzt
 const w = 1.5 * Math.PI - 2 * Math.PI * (z + 0.5 + versatz) / r.reihen;   // vorn wie im Editor: Reihen nach rechts
 const tiefe = Math.sin(w), k = massstab(tiefe);
-perlen.push({ x: r0.cx + r0.rx * Math.cos(w), y: r0.cy + r0.ry * Math.sin(w) + (sp - (r.spalten - 1) / 2) * E.DELICA.breite * s * 0.92,
+perlen.push({ x: r0.cx + r0.rx * Math.cos(w), y: r0.cy + r0.ry * Math.sin(w) + (sp + quer - (r.spalten - 1) / 2) * E.DELICA.breite * s * 0.92,
 r: (E.DELICA.breite / 2) * s * k, laenge: E.DELICA.laenge * s * k, winkel: w, tiefe, farbe: r.zelle(z, sp), form: 'delica', buchstabe: '',
-reihe: z, spalte: sp, versatz });
+reihe: z, spalte: sp, versatz, quer });
 }
 return { ring: r0, mmPx: s, bandHoehe, perlen };
 }
 
 function geometrie(entwurf, breite, hoehe) {
-const g = E.istRaster(entwurf.technik) ? raster(entwurf, breite, hoehe) : aufgefaedelt(entwurf, breite, hoehe);
+const g = E.STUECKE[E.stueck(entwurf.stueck)].paar ? ohrringe(entwurf, breite, hoehe) : E.istRaster(entwurf.technik) ? raster(entwurf, breite, hoehe)
+: entwurf.technik === 'makramee' ? makramee(entwurf, breite, hoehe) : aufgefaedelt(entwurf, breite, hoehe);
 const n = g.perlen.length, idx = new Array(n);
 for (let i = 0; i < n; i++) idx[i] = i;
 const alt = g.perlen;
@@ -1190,12 +1345,78 @@ groessen: () => E.GROESSEN.slice(),
 techniken: () => Object.keys(E.TECHNIKEN).map(id => ({ id, name: E.TECHNIKEN[id].name, raster: E.TECHNIKEN[id].raster })),
 preisArten: () => Object.keys(E.PREISE).map(id => ({ id, name: E.PREIS_NAMEN[id], schaetzung: E.PREISE[id] })),
 passformen: () => Object.keys(E.PASSFORMEN).map(id => ({ id, name: id.charAt(0).toUpperCase() + id.slice(1), mm: E.PASSFORMEN[id] })),
-groessenhilfe: () => kopie(E.GROESSENHILFE),
+groessenhilfe: st => kopie(E.STUECKE[E.stueck(st)].hilfe),
+stuecke: () => Object.keys(E.STUECKE).map(id => Object.assign({ id }, kopie(E.STUECKE[id]))),
+stueck: st => Object.assign({ id: E.stueck(st) }, kopie(E.STUECKE[E.stueck(st)])),
+garne: () => E.GARNE.map(n => ({ id: E.FARBEN.findIndex(f => f.name === n), name: n })),
 istRaster: E.istRaster,
 perlenLaenge: E.perlenLaenge,
 grenzen: () => ({ umfangMin: E.UMFANG_MIN, umfangMax: E.UMFANG_MAX, musterMax: E.MUSTER_MAX, nameMax: E.NAME_MAX,
 spaltenMin: E.SPALTEN_MIN, spaltenMax: E.SPALTEN_MAX, reihenMin: E.REIHEN_MIN, reihenMax: E.REIHEN_MAX, entwuerfeMax: E.ENTWUERFE_MAX })
 };
+})();
+
+})();
+
+(function(){
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.szenenSchmuck = (function () {
+function erzeuge(h) {
+const { delica, linie, bogen, rechteck, reihe, weich, brickLage, brickFolge } = h;
+const knoten = (x, y, k, f) => rechteck(x - 5 * (f === undefined ? 1 : f), y - 7, 10 * (f === undefined ? 1 : f), 14, k.garn, { rund: 4 });
+return {
+leiter(q, k) {
+const sp = k.raster.spalten, n = 1 + q * (sp - 1), aus = [], weg = [];
+for (let s = 0; s < sp; s++) {
+const [x, y] = brickLage(k, 0, s);
+if (n >= s + 1) { aus.push(delica(k, 0, s, x, y)); weg.push(x - k.dx / 3, y, x + k.dx / 3, y); }
+else if (n > s) { aus.push(delica(k, 0, s, x + 60 * (1 - weich(n - s)), y, 0.4 + 0.6 * weich(n - s))); }
+}
+if (weg.length >= 4) aus.push(linie(weg, 'hinweis', 1.5));
+return aus;
+},
+brick(q, k, b) {
+const ord = brickFolge(k), sp = k.raster.spalten, aus = [];
+const bis = b && b.erste ? Math.min(ord.length, 2 * sp) : ord.length, n = sp + q * (bis - sp);
+ord.slice(0, bis).forEach(([z, s], i) => {
+const [x, y] = brickLage(k, z, s);
+if (n >= i + 1) aus.push(delica(k, z, s, x, y));
+else if (n > i) {
+aus.push(delica(k, z, s, x, y, 0.3 + 0.7 * weich(n - i)));
+const [xv, yv] = brickLage(k, z - 1, Math.min(sp - 1, s + (z % 2 ? 0 : 0))), yb = yv + k.dy / 2;
+aus.push(linie([xv - k.dx / 2, yb, xv + k.dx / 2, yb], 'hinweis', 2), linie([x, y, Math.min(304, x + 60), y - 24], 'metall', 2));
+}
+});
+return aus;
+},
+kreuzknoten(q, k, b) {
+const mitPerlen = !!(b && b.perlen), aus = [linie([20, 90, 300, 90], k.garn, 3)], n = q * 9;
+const x0 = mitPerlen ? 196 : 46;
+if (mitPerlen) { for (let i = 0; i < 8; i++) aus.push(knoten(28 + i * 12, 90, k)); aus.push(...reihe(k.perlen.slice(0, 5), 124, 90, 66)); }
+for (let i = 0; i < 9; i++) {
+const x = x0 + i * 12;
+if (x > 270) break;
+if (n >= i + 1) aus.push(knoten(x, 90, k));
+else if (n > i) {
+const f = weich(n - i), r = 16 * (1 - f) + 6;
+aus.push(bogen(x - r / 2, 90, r, r * 0.8, k.garn, { dicke: 2.5 }), bogen(x + r / 2, 90, r, r * 0.8, k.garn, { dicke: 2.5 }), knoten(x, 90, k, f));
+}
+}
+return aus;
+},
+schiebeknoten(q, k) {
+const aus = [linie([20, 84, 230, 84], k.garn, 3), linie([90, 96, 300, 96], k.garn, 3)], n = q * 6;
+for (let i = 0; i < 6; i++) {
+if (n < i + 0.2) break;
+aus.push(rechteck(130 + i * 11 - 5, 76, 10 * Math.min(1, n - i), 28, k.garn, { rund: 4 }));
+}
+if (q > 0.85) { const d = 30 * weich((q - 0.85) / 0.15); aus.push(linie([200, 120, 200 + d, 120], 'hinweis', 2), linie([200 + d, 120, 194 + d, 115], 'hinweis', 2)); }
+return aus;
+}
+};
+}
+return { erzeuge };
 })();
 
 })();
@@ -1259,7 +1480,7 @@ return q;
 const r = w.raster, sp = Math.min(RASTER_MAX, r.spalten), re = Math.min(RASTER_MAX, r.reihen), s0 = Math.floor((r.spalten - sp) / 2), zellen = [];
 for (let z = 0; z < re; z++) for (let s = 0; s < sp; s++) zellen.push(r.zellen[z * r.spalten + s0 + s]);
 const f = Math.min(1.5, 200 / (re * DX + DX / 2), 128 / (sp * DY));
-return { perlen, raster: { spalten: sp, reihen: re, zellen, s0, spaltenGesamt: r.spalten }, umfang: w.umfang, dx: DX * f, dy: DY * f };
+return { perlen, raster: { spalten: sp, reihen: re, zellen, s0, spaltenGesamt: r.spalten }, umfang: w.umfang, dx: DX * f, dy: DY * f, garn: w.garn };
 }
 
 function reihe(perlen, x0, y, b) {
@@ -1282,6 +1503,16 @@ const sp2 = []; for (let s = par; s < sp; s += 2) sp2.push(s);
 if (runter) sp2.reverse(); runter = !runter;
 for (const s of sp2) aus.push([z, s]);
 }
+return aus;
+}
+function brickLage(k, z, s, xm) {
+const sp = k.raster.spalten, re = k.raster.reihen;
+const x0 = (xm === undefined ? B / 2 : xm) - re * k.dx / 2, y0 = H / 2 - (sp + 0.5) * k.dy / 2;
+return [x0 + z * k.dx + k.dx / 2, y0 + s * k.dy + k.dy / 2 + (z % 2 ? k.dy / 2 : 0)];
+}
+function brickFolge(k) {
+const aus = [];
+for (let z = 0; z < k.raster.reihen; z++) for (let j = 0; j < k.raster.spalten; j++) aus.push([z, z % 2 ? k.raster.spalten - 1 - j : j]);
 return aus;
 }
 function zelle(k, z, s) { return k.raster.zellen[z * k.raster.spalten + s]; }
@@ -1433,28 +1664,29 @@ if (weg.length >= 4) aus.push(linie(weg, 'hinweis', 1.5));
 return aus;
 },
 vergleichen(q, k, b) {
-const sp = k.raster.spalten, re = k.raster.reihen, v = !!(b && b.versatz), wert = q * (re - 1), aus = [];
+const sp = k.raster.spalten, re = k.raster.reihen, v = !!(b && b.versatz), qu = !!(b && b.quer), wert = q * (re - 1), aus = [];
 const bx = Math.min(14, 164 / (re + 0.5)), by = Math.min(12, 140 / sp), px = Math.min(9, 80 / (re + 0.5)), py = Math.min(9, 116 / sp);
 for (let z = 0; z < re; z++) for (let s = 0; s < sp; s++) {
-const x = 20 + z * bx + bx / 2 + (v && s % 2 ? bx / 2 : 0), y = 90 - sp * by / 2 + s * by + by / 2;
+const x = 20 + z * bx + bx / 2 + (v && s % 2 ? bx / 2 : 0), y = 90 - sp * by / 2 + s * by + by / 2 + (qu && z % 2 ? by / 2 : 0);
 aus.push(Object.assign(delica(k, z, s, x, y), { laenge: bx - 1, r: (by - 1) / 2 }));
-aus.push(Object.assign(rechteck(214 + z * px + (v && s % 2 ? px / 2 : 0), 90 - sp * py / 2 + s * py, px - 1, py - 1, zelle(k, z, s), { rund: 1 }), { z, s }));
+aus.push(Object.assign(rechteck(214 + z * px + (v && s % 2 ? px / 2 : 0), 90 - sp * py / 2 + s * py + (qu && z % 2 ? py / 2 : 0), px - 1, py - 1, zelle(k, z, s), { rund: 1 }), { z, s }));
 }
 aus.push(rechteck(200, 22, 104, 136, 'metall', { rund: 12, dicke: 3 }));
 aus.push(rechteck(20 + wert * bx - 1, 90 - sp * by / 2 - 3, bx + 2 + (v ? bx / 2 : 0), sp * by + 6, 'hinweis', { dicke: 2.5, rund: 3 }));
 aus.push(rechteck(214 + wert * px - 1.5, 90 - sp * py / 2 - 2, px + 2 + (v ? px / 2 : 0), sp * py + 3, 'hinweis', { dicke: 2.5, rund: 2 }));
 return aus;
 },
-faden_neu(q, k) {
-const ord = peyoteFolge(k), aus = ord.map(([z, s]) => { const [x, y] = lage(k, z, s, true, 140); return delica(k, z, s, x, y); });
+faden_neu(q, k, b) {
+const qu = !!(b && b.quer), ord = qu ? brickFolge(k) : peyoteFolge(k), ort = (z, s) => (qu ? brickLage(k, z, s, 140) : lage(k, z, s, true, 140));
+const aus = ord.map(([z, s]) => { const [x, y] = ort(z, s); return delica(k, z, s, x, y); });
 const weg = [304, 24];
-for (const [z, s] of ord.slice(-8).reverse()) weg.push(...lage(k, z, s, true, 140));
+for (const [z, s] of ord.slice(-8).reverse()) weg.push(...ort(z, s));
 aus.push(linie(teilweg(weg, q), 'hinweis', 2));
 return aus;
 },
 klemmen(q, k, b) {
-const sp = k.raster.spalten, re = Math.min(6, k.raster.reihen), v = !!(b && b.versatz), aus = [], hoch = sp * k.dy + 8, x0 = 130;
-for (let z = 0; z < re; z++) for (let s = 0; s < sp; s++) aus.push(delica(k, z, s, x0 + z * k.dx + k.dx / 2 + (v && s % 2 ? k.dx / 2 : 0), 90 - sp * k.dy / 2 + s * k.dy + k.dy / 2));
+const sp = k.raster.spalten, re = Math.min(6, k.raster.reihen), v = !!(b && b.versatz), qu = !!(b && b.quer), aus = [], hoch = sp * k.dy + 8, x0 = 130;
+for (let z = 0; z < re; z++) for (let s = 0; s < sp; s++) aus.push(delica(k, z, s, x0 + z * k.dx + k.dx / 2 + (v && s % 2 ? k.dx / 2 : 0), 90 - sp * k.dy / 2 + s * k.dy + k.dy / 2 + (qu && z % 2 ? k.dy / 2 : 0)));
 const x = 40 + (x0 - 14 - 40) * weich(q / 0.45);
 aus.push(rechteck(x, 90 - hoch / 2, 14, hoch, 'metall', { rund: 3 }));
 if (q > 0.4 && q < 0.65) { const z = weich((q - 0.4) / 0.2); aus.push(rechteck(x - 18 + 14 * z, 70, 8, 40, 'werkzeug', { rund: 3 }), rechteck(x + 24 - 14 * z, 70, 8, 40, 'werkzeug', { rund: 3 })); }
@@ -1489,12 +1721,13 @@ return loomReihe(k, z, f < 0.35 ? 'unter' : f < 0.65 ? 'druecken' : 'zurueck', f
 }
 };
 
+Object.assign(SZENEN, Perlen.control.szenenSchmuck.erzeuge({ delica, linie, bogen, rechteck, reihe, weich, brickLage, brickFolge }));
 const STICHWORT = {
 messen: /handgelenk/i, dehnen: /dehn/i, stopper: /stopper|klammer/i, auffaedeln: /auffädeln/i, anprobe: /prüfen/i, knoten: /knoten/i,
 einziehen: /in die nächste/i, abschneiden: /abschneiden/i, verschluss: /karabiner|biegering/i, quetschen: /quetsch/i, nadel: /nadel/i,
 peyote_start: /reihe 1 und 2/i, peyote_auslassen: /auslassen/i, peyote: /überspringen/i, vergleichen: /vergleichen/i, faden_neu: /neuen faden/i,
 klemmen: /klemmenden/i, kettfaeden: /kettfäden spannen/i, schuss: /schussfaden/i, loom_unter: /unter die kettfäden/i, loom_druecken: /drücken/i,
-loom_zurueck: /zurück/i, loom: /reihe für reihe/i
+loom_zurueck: /zurück/i, loom: /reihe für reihe/i, leiter: /leiter/i, brick: /brücke/i, kreuzknoten: /kreuzknoten/i, schiebeknoten: /schiebeknoten/i
 };
 const BESCHREIBUNG = {
 messen: 'Maßband wird um das Handgelenk gelegt, die Zentimeter zählen hoch', dehnen: 'Gummiband wird abgeschnitten und zweimal gedehnt',
@@ -1508,7 +1741,9 @@ vergleichen: 'Markierung wandert Reihe für Reihe über Band und Designer', fade
 klemmen: 'Klemmende wird auf das Bandende geschoben, Ringe kommen dazu', kettfaeden: 'Kettfäden werden einer nach dem anderen gespannt',
 schuss: 'Schussfaden wird am äußersten Kettfaden angeknotet', loom_unter: 'Perlen einer Reihe werden unter die Kettfäden geschoben',
 loom_druecken: 'Finger drückt die Perlen zwischen die Kettfäden', loom_zurueck: 'Nadel läuft oben über den Kettfäden zurück durch die Reihe',
-loom: 'Band wächst Reihe für Reihe am Webrahmen'
+loom: 'Band wächst Reihe für Reihe am Webrahmen',
+leiter: 'Perlen der ersten Reihe werden nebeneinander zur Leiter genäht', brick: 'neue Perle wird unter die markierte Fadenbrücke der Vorreihe genäht, versetzt wie ein Ziegel',
+kreuzknoten: 'Knüpffäden schlingen sich um den Kernfaden, Knoten reiht sich an Knoten', schiebeknoten: 'Knoten werden um beide Fadenenden geknüpft, dann gleitet der Knoten'
 };
 
 function spiegle(t) {
@@ -1557,12 +1792,30 @@ anfang: ['Alle Perlen der Reihe auf den Faden fädeln, Perle 1 zuerst.',
 durchgang: ['Eine Perle in der gezeigten Farbe aufnehmen.',
 'Eine Perle der Reihe darunter überspringen.',
 'Durch die nächste hochstehende Perle stechen und festziehen.',
-'So in Pfeilrichtung weiter, bis alle Perlen des Durchgangs sitzen.']
+'So in Pfeilrichtung weiter, bis alle Perlen des Durchgangs sitzen.'],
+leiter: ['Erste Reihe als Leiter: zwei Perlen aufnehmen, noch einmal durch beide, so dass sie nebeneinander stehen.',
+'Jede weitere Perle aufnehmen und durch die vorige und die neue Perle zurücknähen, bis die Reihe fertig ist.'],
+brick: ['Zwei Perlen aufnehmen, unter die Fadenbrücke zwischen den ersten Perlen der Vorreihe stechen, zurück durch die zweite Perle.',
+'Dann je Perle: aufnehmen, unter die nächste Brücke stechen, zurück durch diese Perle.',
+'Die Reihe sitzt eine halbe Perle versetzt zur Vorreihe, wie Ziegel in einer Mauer.'],
+knoten: ['Die beiden Knüpffäden links und rechts um den Kernfaden legen.',
+'Kreuzknoten: linken Faden über den Kern, rechten darüber, unter dem Kern durch und durch die linke Schlaufe; dann spiegelbildlich.',
+'Knoten an Knoten schieben, bis die gezeigte Länge geknüpft ist.'],
+schiebe: ['Beide Enden des Kernfadens nebeneinanderlegen.',
+'Mit einem eigenen Faden etwa 6 Kreuzknoten um beide Enden knüpfen, dann die Fadenenden abschneiden und mit Kleber sichern.',
+'Der Knoten lässt sich jetzt verschieben: so wird das Armband weiter oder enger.']
 };
 const mitHilfe = s => Object.assign(s, { handgriffe: HANDGRIFFE[s.art].slice() });
 
 function schritte(roh) {
 const e = W.bereinige(roh);
+if (e.technik === 'makramee') {
+const f = R.folge(e), P = R.strecke(e), L = f.reduce((s, p) => s + E.perlenLaenge(p), 0), seite = Math.round((P - L) / 2) / 10;
+const knoten = (titel, wo) => mitHilfe({ art: 'knoten', titel, text: 'Etwa ' + seite.toLocaleString('de-DE') + ' cm Kreuzknoten ' + wo, richtung: null, reihe: null, perlen: [] });
+return [knoten('Knoten links', 'knüpfen')].concat(f.map((p, i) => mitHilfe({ art: 'perle', titel: 'Perle ' + (i + 1) + ' von ' + f.length, text: perlenText(p), richtung: null, reihe: null,
+perlen: [{ farbe: p.farbe, groesse: p.groesse, form: p.form, buchstabe: p.buchstabe || '' }] })),
+[knoten('Knoten rechts', 'bis zum Ende knüpfen'), mitHilfe({ art: 'schiebe', titel: 'Schiebeknoten', text: 'Enden zusammenlegen und mit dem Schiebeknoten schließen', richtung: null, reihe: null, perlen: [] })]);
+}
 if (!E.istRaster(e.technik)) {
 const f = R.folge(e);
 return f.map((p, i) => mitHilfe({ art: 'perle', titel: 'Perle ' + (i + 1) + ' von ' + f.length, text: perlenText(p), richtung: null, reihe: null,
@@ -1570,6 +1823,9 @@ perlen: [{ farbe: p.farbe, groesse: p.groesse, form: p.form, buchstabe: p.buchst
 }
 const r = R.raster(e), feld = (z, s) => ({ farbe: r.zelle(z, s), groesse: E.DELICA.laenge, form: 'delica', buchstabe: '', reihe: z, spalte: s });
 const alle = z => Array.from({ length: r.spalten }, (_, s) => feld(z, s));
+if (e.technik === 'brick') return Array.from({ length: r.reihen }, (_, z) => mitHilfe({ art: z ? 'brick' : 'leiter', titel: 'Reihe ' + (z + 1) + ' von ' + r.reihen,
+text: z ? r.spalten + ' Perlen an die Brücken der Reihe ' + z + ' nähen' + (z % 2 ? ', eine halbe Perle versetzt' : '') : 'Leiter aus ' + r.spalten + ' Perlen',
+richtung: z % 2 ? 'links' : 'rechts', reihe: z, perlen: z % 2 ? alle(z).reverse() : alle(z) }));
 if (e.technik === 'loom') return Array.from({ length: r.reihen }, (_, z) => mitHilfe({ art: 'reihe', titel: 'Reihe ' + (z + 1) + ' von ' + r.reihen,
 text: r.spalten + ' Perlen auffädeln, Perle 1 kommt nach links', richtung: null, reihe: z, perlen: alle(z) }));
 const n = 2 * r.reihen - 1, liste = [mitHilfe({ art: 'anfang', titel: 'Durchgang 1 und 2', text: 'Anfang: alle ' + r.spalten + ' Perlen der ersten Reihe auffädeln',
@@ -1947,10 +2203,10 @@ var Perlen = globalThis.Perlen = globalThis.Perlen || {};
 Perlen.control = Perlen.control || {};
 Perlen.control.link = (function () {
 const E = Perlen.entity, W = Perlen.control.entwurf;
-const VERSION = 1, PRAEFIX = 'perle-', BASIS = 'https://memocan81735.github.io/perlen/', MAX_ZEICHEN = 1600;
+const VERSION = 2, PRAEFIX = 'perle-', BASIS = 'https://memocan81735.github.io/perlen/', MAX_ZEICHEN = 1600;
 const ABC = 'abcdefghijklmnopqrstuvwxyz234567', BUCHSTABEN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ';
 const TECHNIKEN = Object.keys(E.TECHNIKEN), PASSFORMEN = Object.keys(E.PASSFORMEN), ANHAENGER = [''].concat(Object.keys(E.ANHAENGER));
-const FORMEN = ['rund', 'rondelle', 'herz', 'tropfen'];
+const FORMEN = ['rund', 'rondelle', 'herz', 'tropfen'], STUECKE = Object.keys(E.STUECKE);
 const KAPUTT = 'Der Link ist unvollständig oder kaputt (vielleicht beim Kopieren gekürzt).';
 
 function utf8(text) {
@@ -2000,7 +2256,7 @@ function ausBytes(bytes) { const s = summe(bytes); return base32(bytes.concat([s
 
 function kodiere(roh) {
 const e = W.bereinige(roh), b = [VERSION];
-b.push(TECHNIKEN.indexOf(e.technik), PASSFORMEN.indexOf(e.passform), ANHAENGER.indexOf(e.anhaenger), e.runden, e.umfang - E.UMFANG_MIN);
+b.push(TECHNIKEN.indexOf(e.technik), PASSFORMEN.indexOf(e.passform), ANHAENGER.indexOf(e.anhaenger), e.runden, e.umfang >> 8, e.umfang & 255, STUECKE.indexOf(e.stueck), e.garn);
 const name = Array.from(e.name); b.push(name.length); for (const z of name) b.push(BUCHSTABEN.indexOf(z));
 const titel = utf8(e.titel); b.push(titel.length); b.push(...titel);
 b.push(e.muster.length);
@@ -2030,8 +2286,11 @@ try {
 let i = 0;
 const n = () => { if (i >= daten.length) throw new Error('Ende'); return daten[i++]; };
 const stueck = k => { if (i + k > daten.length) throw new Error('Ende'); const x = daten.slice(i, i + k); i += k; return x; };
-if (n() !== VERSION) throw new Error('Version');
-const e = { technik: TECHNIKEN[n()], passform: PASSFORMEN[n()], anhaenger: ANHAENGER[n()], runden: n(), umfang: E.UMFANG_MIN + n() };
+const version = n();
+if (version < 1 || version > VERSION) throw new Error('Version');
+const e = { technik: TECHNIKEN[n()], passform: PASSFORMEN[n()], anhaenger: ANHAENGER[n()], runden: n() };
+if (version === 1) e.umfang = E.UMFANG_MIN + n();
+else { e.umfang = (n() << 8) | n(); e.stueck = STUECKE[n()]; e.garn = n(); }
 const nl = n(); if (nl > E.NAME_MAX) throw new Error('Name');
 e.name = stueck(nl).map(x => BUCHSTABEN[x] || '').join('');
 e.titel = ausUtf8(stueck(n()));
@@ -2568,19 +2827,49 @@ else if (p.form === 'rondelle') rondelle(ctx, geo, p, f);
 else kugel(ctx, p, f);
 }
 
+function knoten(ctx, k) {
+const c = rgb((FARBEN[k.farbe] || FARBEN[0]).hex), basis = mische(c, SCHWARZ, 1 - licht(k));
+ctx.save(); ctx.translate(k.x, k.y); ctx.rotate(Math.atan2(Math.cos(k.winkel), -Math.sin(k.winkel)));
+const l = Math.max(1.5, k.laenge / 2 + 0.4), d = Math.max(1.5, k.r);
+ctx.fillStyle = css(basis); ctx.beginPath(); ctx.roundRect(-l, -d, 2 * l, 2 * d, Math.min(l, d) * 0.6); ctx.fill();
+ctx.strokeStyle = css(mische(basis, WEISS, 0.35), 0.7); ctx.lineWidth = Math.max(0.6, d * 0.22);
+ctx.beginPath(); ctx.moveTo(-l * 0.6, -d * 0.8); ctx.quadraticCurveTo(0, 0, -l * 0.6, d * 0.8); ctx.moveTo(l * 0.6, -d * 0.8); ctx.quadraticCurveTo(0, 0, l * 0.6, d * 0.8); ctx.stroke();
+ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.moveTo(l, -d); ctx.lineTo(l, d); ctx.stroke();
+ctx.restore();
+}
+function ohrringe(ctx, geo) {
+ctx.save(); ctx.lineCap = 'round';
+for (const [k, hk] of geo.haken.entries()) {
+const eigene = geo.perlen.filter(p => p.ohrring === k), ende = eigene.reduce((m, p) => Math.max(m, p.y), hk.unten);
+ctx.strokeStyle = 'rgba(235,235,240,0.6)'; ctx.lineWidth = 1.2;
+ctx.beginPath(); ctx.moveTo(hk.x, hk.unten); ctx.lineTo(hk.x, ende); ctx.stroke();
+ctx.strokeStyle = '#d9d2c0'; ctx.lineWidth = Math.max(1.5, hk.r * 0.18);
+ctx.beginPath(); ctx.arc(hk.x, hk.y, hk.r, Math.PI * 0.95, Math.PI * 2.25); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(hk.x - hk.r * 0.95, hk.y + hk.r * 0.2); ctx.lineTo(hk.x - hk.r * 1.1, hk.y + hk.r * 1.1); ctx.stroke();
+ctx.beginPath(); ctx.arc(hk.x, hk.unten - hk.r * 0.35, hk.r * 0.3, 0, Math.PI * 2); ctx.stroke();
+}
+ctx.restore();
+for (const p of geo.perlen) perle(ctx, geo, p);
+}
+
 function vorschau(canvas, geo, b, h, dpr) {
 const ctx = canvas.getContext('2d');
 ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 hintergrund(ctx, b, h);
-if (!geo.perlen.length) return;
+if (geo.art === 'ohrringe') { ohrringe(ctx, geo); return; }
+const kn = geo.knoten || [];
+if (!geo.perlen.length && !kn.length) return;
 schatten(ctx, geo);
-const raster = geo.perlen[0].form === 'delica';
+const raster = geo.perlen.length > 0 && geo.perlen[0].form === 'delica';
 if (!raster) faden(ctx, geo, false);
+for (const k of kn) if (k.tiefe <= 0) knoten(ctx, k);
 let vorn = false;
+const vorderseite = () => { faden(ctx, geo, true); vorn = true; for (const k of kn) if (k.tiefe > 0) knoten(ctx, k); };
 for (const p of geo.perlen) {
-if (!raster && !vorn && p.tiefe > 0) { faden(ctx, geo, true); vorn = true; }
+if (!raster && !vorn && p.tiefe > 0) vorderseite();
 perle(ctx, geo, p);
 }
+if (!raster && !vorn) vorderseite();
 if (geo.anhaenger) anhaenger(ctx, geo.anhaenger, geo.anhaenger.oben);
 }
 
@@ -2772,14 +3061,15 @@ Perlen.ui.designer = (function () {
 const B = Perlen.ui.bauteile, K = Perlen.control.katalog, W = Perlen.control.entwurf, R = Perlen.control.rechner, BM = Perlen.control.bildmuster;
 const el = (...a) => B.el(...a);
 const FARBEN = K.farben(), G = K.grenzen();
-const TECHNIK = { gummi: 'Gummiband', faden: 'Mit Verschluss', peyote: 'Peyote', loom: 'Webrahmen' };
+const TECHNIK = { gummi: 'Gummiband', faden: 'Mit Verschluss', peyote: 'Peyote', loom: 'Webrahmen', brick: 'Brick Stitch', makramee: 'Makramee' };
 const cm = mm => (mm / 10).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' cm';
 
 function erzeuge(app) {
 const z = app.zustand;
 let wurzel = null, teile = {}, ziehen = null, offen = false, klein = false, breite = 0, fensterBreite = 0;
 const aktuell = () => (ziehen ? ziehen.entwurf : z.verlauf.zustand());
-const aendere = (fn, gruppe) => { if (z.verlauf.aendere(fn, gruppe)) { if (teile.technik !== aktuell().technik) baue(); else aktualisiere(); } };
+const neuBauen = e => teile.technik !== e.technik || teile.stueck !== e.stueck;
+const aendere = (fn, gruppe) => { if (z.verlauf.aendere(fn, gruppe)) { if (neuBauen(aktuell())) baue(); else aktualisiere(); } };
 
 function palette() {
 return el('div', { class: 'palette', role: 'group', 'aria-label': 'Farbe' }, FARBEN.map((f, i) =>
@@ -2815,22 +3105,30 @@ if (neu.muster.length === m.length) { B.melde(m.length === 2 && !doppelt ? 'Bei 
 aendere(x => W.spiegeln(x, doppelt));
 }
 function namensBlock() {
+teile.name.hidden = K.stueck(aktuell().stueck).paar;
 return el('div', { class: 'block' },
-el('label', { for: 'name' }, el('h3', {}, 'Name in Buchstabenwürfeln (bis ' + G.nameMax + ' Buchstaben)')), teile.name,
+el('label', { for: 'name', hidden: K.stueck(aktuell().stueck).paar }, el('h3', {}, 'Name in Buchstabenwürfeln (bis ' + G.nameMax + ' Buchstaben)')), teile.name,
 el('label', { for: 'titel' }, el('h3', {}, 'Titel des Entwurfs')), teile.titel);
 }
 
 function einstellungen(e) {
-const um = d => el('button', { type: 'button', class: 'knopf', 'aria-label': d > 0 ? 'Handgelenk größer' : 'Handgelenk kleiner', onclick: () => aendere(x => W.setzeUmfang(x, x.umfang + d)) }, d > 0 ? '+' : '−');
+const st = K.stueck(e.stueck);
+const um = d => el('button', { type: 'button', class: 'knopf', 'aria-label': st.masz + (d > 0 ? ' größer' : ' kleiner'), onclick: () => aendere(x => W.setzeUmfang(x, x.umfang + d)) }, d > 0 ? '+' : '−');
 teile.kurz = el('span', { class: 'kurz-wert' });
+const techniken = K.techniken().filter(t => !st.paar || (t.id !== 'gummi' && t.id !== 'makramee'));
 const d = el('details', { class: 'block einstellungen', id: 'einstellungen' },
-el('summary', {}, el('span', { class: 'kurz-text' }, el('span', { class: 'kurz-titel' }, 'Technik und Handgelenk'), teile.kurz)),
+el('summary', {}, el('span', { class: 'kurz-text' }, el('span', { class: 'kurz-titel' }, 'Schmuckstück, Technik und Größe'), teile.kurz)),
 el('div', { class: 'stapel' },
-B.wahl(K.techniken().map(t => ({ id: t.id, name: TECHNIK[t.id] })), e.technik, t => aendere(x => W.setzeTechnik(x, t)), 'Technik', true),
-el('div', { class: 'zeile', style: 'justify-content:space-between' }, teile.wert, el('span', { class: 'unter' }, 'Handgelenk gemessen, Zugabe rechnet die App dazu')),
+el('h3', {}, 'Schmuckstück'),
+B.wahl(K.stuecke().map(s => ({ id: s.id, name: s.name })), e.stueck, s => aendere(x => W.setzeStueck(x, s)), 'Schmuckstück', true),
+el('h3', {}, 'Technik'),
+B.wahl(techniken.map(t => ({ id: t.id, name: TECHNIK[t.id] })), e.technik, t => aendere(x => W.setzeTechnik(x, t)), 'Technik', true),
+...(e.technik === 'makramee' ? [el('h3', {}, 'Garnfarbe'),
+B.wahl(K.garne().map(g => ({ id: g.id, name: g.name })), e.garn, g => aendere(x => W.setzeGarn(x, g)), 'Garnfarbe', true)] : []),
+el('div', { class: 'zeile', style: 'justify-content:space-between' }, teile.wert, el('span', { class: 'unter', id: 'masz' }, st.masz + (st.paar ? ' gemessen' : ' gemessen, Zugabe rechnet die App dazu'))),
 el('div', { class: 'regler' }, um(-5), teile.umfang, um(5)),
 el('h3', {}, 'Größenhilfe, wenn du nicht messen kannst'),
-teile.hilfe = B.wahl(K.groessenhilfe().map(g => ({ id: g.umfang, name: g.name })), e.umfang, u => aendere(x => W.setzeUmfang(x, u)), 'Größenhilfe', true),
+teile.hilfe = B.wahl(K.groessenhilfe(e.stueck).map(g => ({ id: g.umfang, name: g.name })), e.umfang, u => aendere(x => W.setzeUmfang(x, u)), 'Größenhilfe', true),
 el('h3', {}, 'Passform'),
 teile.passform = B.wahl(K.passformen(), e.passform, pf => aendere(x => W.setzePassform(x, pf)), 'Passform'),
 teile.dicke = el('p', { class: 'hinweis', id: 'dicke' })));
@@ -2889,7 +3187,7 @@ d.body.appendChild(ansicht); d.getElementById('bild-schliessen').focus();
 }
 
 function schnellBlock(e) {
-const a = z.auswahl; if (a.bis === undefined) a.bis = 12;
+const a = z.auswahl, st = K.stueck(e.stueck); if (a.bis === undefined) a.bis = 12;
 const zahlen = () => Array.from({ length: 1000 }, () => Math.random());
 const ziel = el('select', { class: 'feld', id: 'verlauf-bis', style: 'text-transform:none;letter-spacing:0', 'aria-label': 'Farbverlauf nach Farbe', onchange: ev => { a.bis = Number(ev.target.value); } },
 FARBEN.map((f, i) => el('option', { value: String(i), selected: i === a.bis }, f.name)));
@@ -2899,9 +3197,9 @@ el('div', { class: 'werkzeuge', style: 'grid-template-columns:1fr 1fr' },
 el('button', { type: 'button', class: 'knopf', id: 'zufall', onclick: () => { aendere(x => W.zufall(x, zahlen())); z.verlauf.schliesse(); } }, 'Zufall'),
 el('button', { type: 'button', class: 'knopf', id: 'verlauf', onclick: () => { aendere(x => W.farbverlauf(x, a.farbe, a.bis)); z.verlauf.schliesse(); } }, 'Farbverlauf')),
 el('label', { for: 'verlauf-bis', class: 'unter' }, 'Verlauf von ' + FARBEN[a.farbe].name + ' nach'), ziel,
-el('h3', {}, 'Anhänger in der Mitte'),
-B.wahl(K.anhaenger(), e.anhaenger, h => { aendere(x => W.setzeAnhaenger(x, h)); baue(); }, 'Anhänger', true),
-...(K.istRaster(e.technik) ? [] : [el('h3', {}, 'Runden ums Handgelenk'),
+...(st.paar ? [] : [el('h3', {}, 'Anhänger in der Mitte'),
+B.wahl(K.anhaenger(), e.anhaenger, h => { aendere(x => W.setzeAnhaenger(x, h)); baue(); }, 'Anhänger', true)]),
+...(K.istRaster(e.technik) || e.technik === 'makramee' || (e.stueck !== 'armband' && e.stueck !== 'fuss') ? [] : [el('h3', {}, e.stueck === 'fuss' ? 'Runden um den Knöchel' : 'Runden ums Handgelenk'),
 B.wahl(Array.from({ length: K.rundenMax() }, (_, i) => ({ id: i + 1, name: i ? (i + 1) + ' Runden' : '1 Runde' })), e.runden, n => { aendere(x => W.setzeRunden(x, n)); baue(); }, 'Runden')]));
 }
 
@@ -2984,11 +3282,15 @@ el('div', { class: 'raster-huelle' }, teile.raster),
 el('div', { class: 'regler' }, schritt('Spalten', -1), el('span', { id: 'spalten', style: 'text-align:center;font-weight:700' }), schritt('Spalten', 1)),
 el('div', { class: 'regler' }, schritt('Reihen', -1), el('span', { id: 'reihen', style: 'text-align:center;font-weight:700' }), schritt('Reihen', 1)),
 teile.passt = el('div', { class: 'zeile', id: 'passt' }),
-el('p', { class: 'hinweis' }, e.technik === 'peyote' ? 'Peyote: jede zweite Spalte sitzt eine halbe Perle versetzt.' : 'Webrahmen: Perlen sitzen in geraden Reihen zwischen den Kettfäden.'));
+el('p', { class: 'hinweis' }, e.technik === 'peyote' ? 'Peyote: jede zweite Spalte sitzt eine halbe Perle versetzt.' : e.technik === 'brick' ? 'Brick Stitch: jede zweite Reihe sitzt eine halbe Perle versetzt, wie Ziegel in einer Mauer.' : 'Webrahmen: Perlen sitzen in geraden Reihen zwischen den Kettfäden.'));
 }
 
 function zelleBei(ev) {
 const e = aktuell(), r = teile.raster.getBoundingClientRect(), g = teile.rasterGroesse;
+if (e.technik === 'brick') {
+const reihe = Math.floor((ev.clientX - r.left) / g);
+return { s: Math.floor((ev.clientY - r.top - (reihe % 2 ? g / 2 : 0)) / g), z: reihe };
+}
 const s = Math.floor((ev.clientY - r.top) / g), versatz = e.technik === 'peyote' && s % 2 ? g / 2 : 0;
 return { s, z: Math.floor((ev.clientX - r.left - versatz) / g) };
 }
@@ -3000,9 +3302,9 @@ aktualisiere();
 
 function zeichneRaster() {
 const e = aktuell(), r = e.raster, c = teile.raster, breite = Math.max(200, wurzel.clientWidth - 30);
-const peyote = e.technik === 'peyote';
+const peyote = e.technik === 'peyote', brick = e.technik === 'brick';
 const g = z.auswahl.lupe ? 32 : Math.max(10, Math.min(30, Math.floor(breite / (r.reihen + (peyote ? 0.5 : 0))))); teile.rasterGroesse = g;
-const b = r.reihen * g + (peyote ? g / 2 : 0), h = r.spalten * g, dpr = 2;
+const b = r.reihen * g + (peyote ? g / 2 : 0), h = r.spalten * g + (brick ? g / 2 : 0), dpr = 2;
 c.width = b * dpr; c.height = h * dpr; c.style.width = b + 'px'; c.style.height = h + 'px';
 teile.zuBreit = b > breite + 30; c.style.touchAction = teile.zuBreit ? 'pan-x' : 'none';
 const mp = R.musterPasst(e);
@@ -3011,7 +3313,7 @@ mp.vorschlag ? el('button', { type: 'button', class: 'knopf', id: 'laenge-anpass
 ...(teile.zuBreit ? [el('span', { class: 'hinweis' }, 'Breites Raster: wischen verschiebt, tippen malt.')] : []));
 const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, b, h);
 for (let reihe = 0; reihe < r.reihen; reihe++) for (let spalte = 0; spalte < r.spalten; spalte++) {
-const v = peyote && spalte % 2 ? g / 2 : 0, px = reihe * g + v, py = spalte * g;
+const v = peyote && spalte % 2 ? g / 2 : 0, px = reihe * g + v, py = spalte * g + (brick && reihe % 2 ? g / 2 : 0);
 ctx.fillStyle = FARBEN[r.zellen[reihe * r.spalten + spalte]].hex; ctx.fillRect(px + 1, py + 1, g - 2, g - 2);
 ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(px + 2, py + 2, g - 4, 3);
 }
@@ -3035,7 +3337,7 @@ teile.hinweise.dataset.stand = hwText; teile.hinweise.hidden = !hw.length;
 teile.hinweise.replaceChildren(...hw.map(h => el('p', { class: 'hinweis warnung', 'data-art': h.art }, h.text)));
 }
 B.text(teile.wert, cm(e.umfang)); teile.umfang.value = String(e.umfang);
-B.text(teile.kurz, [TECHNIK[e.technik], cm(e.umfang)].concat(e.passform === 'normal' ? [] : [e.passform]).join(' · '));
+B.text(teile.kurz, [K.stueck(e.stueck).name, TECHNIK[e.technik], cm(e.umfang)].concat(e.passform === 'normal' ? [] : [e.passform]).join(' · '));
 for (const [gruppe, wert] of [[teile.passform, e.passform], [teile.hilfe, String(e.umfang)]])
 for (const b of gruppe.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.getAttribute('data-wert') === wert));
 const dz = R.dickenZugabe(e);
@@ -3058,14 +3360,14 @@ if (teile.name !== app.dokument.activeElement) teile.name.value = e.name;
 
 function baue() {
 if (!wurzel) return;
-const e = aktuell(); teile = { technik: e.technik };
-teile.buehne = el('canvas', { id: 'vorschau', role: 'img', 'aria-label': 'Vorschau des Armbands' });
+const e = aktuell(), st = K.stueck(e.stueck); teile = { technik: e.technik, stueck: e.stueck };
+teile.buehne = el('canvas', { id: 'vorschau', role: 'img', 'aria-label': 'Vorschau: ' + st.name });
 teile.zahlen = el('div', { class: 'zahlen', id: 'zahlen' });
 teile.wert = el('span', { class: 'wert', id: 'umfangwert' });
-teile.umfang = el('input', { type: 'range', id: 'umfang', min: String(G.umfangMin), max: String(G.umfangMax), step: '5', 'aria-label': 'Handgelenkumfang in Millimetern',
+teile.umfang = el('input', { type: 'range', id: 'umfang', min: String(st.min), max: String(st.max), step: '5', 'aria-label': st.masz + ' in Millimetern',
 oninput: ev => aendere(x => W.setzeUmfang(x, Number(ev.target.value)), 'umfang'), onchange: () => z.verlauf.schliesse() });
 teile.zurueck = el('button', { type: 'button', class: 'ecke links', id: 'zurueck', 'aria-label': 'Rückgängig', title: 'Rückgängig',
-onclick: () => { if (z.verlauf.rueckgaengig()) { if (teile.technik !== aktuell().technik) baue(); else aktualisiere(); } } }, B.icon('zurueck'));
+onclick: () => { if (z.verlauf.rueckgaengig()) { if (neuBauen(aktuell())) baue(); else aktualisiere(); } } }, B.icon('zurueck'));
 klein = false; teile.weg = 0;
 teile.huelle = el('div', { class: 'buehne' }, teile.buehne, teile.zurueck,
 el('button', { type: 'button', class: 'ecke rechts', id: 'speichern', 'aria-label': 'Speichern', onclick: () => app.speichere() }, B.icon('speichern'), el('span', {}, 'Speichern')), teile.zahlen);
@@ -3085,7 +3387,7 @@ fensterBreite = f.innerWidth;
 f.addEventListener('resize', () => { if (!teile.huelle || f.innerWidth === fensterBreite) return; fensterBreite = f.innerWidth; zurueckGross(); aktualisiere(); });
 },
 baue, aktualisiere,
-oeffne(neu) { ziehen = null; if (z.verlauf.setze(neu) || teile.technik !== neu.technik) baue(); }
+oeffne(neu) { ziehen = null; if (z.verlauf.setze(neu) || neuBauen(neu)) baue(); }
 };
 }
 return { erzeuge };
@@ -3218,7 +3520,8 @@ Perlen.ui.app = (function () {
 const B = Perlen.ui.bauteile, K = Perlen.control.katalog, W = Perlen.control.entwurf, R = Perlen.control.rechner;
 const el = (...a) => B.el(...a);
 const FARBEN = K.farben();
-const TECHNIK_KURZ = { gummi: 'Gummiband', faden: 'Mit Verschluss', peyote: 'Peyote', loom: 'Webrahmen' };
+const TECHNIK_KURZ = { gummi: 'Gummiband', faden: 'Mit Verschluss', peyote: 'Peyote', loom: 'Webrahmen', brick: 'Brick Stitch', makramee: 'Makramee' };
+const masz = e => { const st = K.stueck(e.stueck); return (e.stueck === 'armband' ? '' : st.name + ' · ') + st.masz + ' ' + (e.umfang / 10).toLocaleString('de-DE') + ' cm'; };
 const REITER = [{ id: 'ideen', name: 'Ideen' }, { id: 'designer', name: 'Designer' }, { id: 'einkauf', name: 'Einkauf' }, { id: 'anleitung', name: 'Anleitung' }];
 
 const app = {
@@ -3274,7 +3577,7 @@ const teil = (titel, zeilen) => el('div', { class: 'block' }, el('h3', {}, titel
 const text = () => R.listenText(ek, titelVon(e));
 bereiche.einkauf.replaceChildren(
 el('div', { class: 'stapel' }, el('h2', {}, 'Einkaufsliste'), el('p', { class: 'unter', style: 'margin:0' },
-titelVon(e) + ' · ' + K.techniken().find(t => t.id === e.technik).name + ' · Handgelenk ' + (e.umfang / 10).toLocaleString('de-DE') + ' cm')),
+titelVon(e) + ' · ' + K.techniken().find(t => t.id === e.technik).name + ' · ' + masz(e))),
 el('div', { class: 'werkzeuge', style: 'grid-template-columns:1fr 1fr' },
 el('button', { type: 'button', class: 'knopf', id: 'kopieren', onclick: () => sitzungTeilen(text(), true) }, 'Kopieren'),
 el('button', { type: 'button', class: 'knopf haupt', id: 'teilen', onclick: () => sitzungTeilen(text(), false) }, 'Teilen')),
@@ -3312,7 +3615,7 @@ zahlFeld('vorrat-' + p.id, v[p.id] ? String(v[p.id]) : '', 'Vorrat ' + p.name, w
 function preisBlock(ek) {
 const arten = new Set();
 for (const p of ek.perlen) arten.add(p.buchstabe ? 'abc' : p.form === 'delica' ? 'delica' : 'strang' + p.groesse);
-for (const f of ek.faden) if (f.preis > 0 || f.id !== 'faden-schuss') arten.add({ 'faden-gummi': 'gummi', 'faden-schmuck': 'schmuck' }[f.id] || 'perlenfaden');
+for (const f of ek.faden) if (!/von derselben/.test(f.packung || '')) arten.add({ 'faden-gummi': 'gummi', 'faden-schmuck': 'schmuck', 'faden-kern': 'garn' }[f.id] || 'perlenfaden');
 for (const x of ek.verschluss) arten.add(x.id);
 const pr = material.preise(), art = {}; for (const a of K.preisArten()) art[a.id] = a;
 const komma = x => x.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -3491,7 +3794,7 @@ return d;
 function auffrischen() { app.zustand.daten = sitzung.stand(); }
 function kurzinfo(e) {
 const n = K.istRaster(e.technik) ? R.raster(e).reihen * e.raster.spalten : R.folge(e).length;
-return n + ' Perlen · Handgelenk ' + (e.umfang / 10).toLocaleString('de-DE') + ' cm';
+return n + ' Perlen · ' + masz(e);
 }
 
 app.speichere = function () {
