@@ -3234,7 +3234,15 @@ const a = z.auswahl, st = K.stueck(e.stueck); if (a.bis === undefined) a.bis = 1
 const zahlen = () => Array.from({ length: 1000 }, () => Math.random());
 const farbwahl = (id, wert, label, setze) => el('select', { class: 'feld', id, style: 'text-transform:none;letter-spacing:0', 'aria-label': label, onchange: ev => setze(Number(ev.target.value)) },
 FARBEN.map((f, i) => el('option', { value: String(i), selected: i === wert }, f.name)));
-const start = farbwahl('verlauf-von', a.von, 'Farbverlauf von Farbe', v => { a.von = v; }), ziel = farbwahl('verlauf-bis', a.bis, 'Farbverlauf nach Farbe', v => { a.bis = v; });
+const weg = el('div', { class: 'zeile', id: 'verlauf-weg', role: 'img', style: 'flex-wrap:wrap;gap:4px 10px' });
+const zeigeWeg = () => {
+const w = W.farbweg(a.von, a.bis);
+weg.setAttribute('aria-label', 'Farbweg: ' + w.map(i => FARBEN[i].name).join(', '));
+weg.replaceChildren(...w.map(i => el('span', { class: 'unter', 'data-farbe': String(i), style: 'display:inline-flex;align-items:center;gap:4px' },
+el('span', { class: 'punkt', style: 'margin-right:0;background:' + FARBEN[i].hex }), FARBEN[i].name)));
+};
+const start = farbwahl('verlauf-von', a.von, 'Farbverlauf von Farbe', v => { a.von = v; zeigeWeg(); }), ziel = farbwahl('verlauf-bis', a.bis, 'Farbverlauf nach Farbe', v => { a.bis = v; zeigeWeg(); });
+zeigeWeg();
 return el('div', { class: 'block', id: 'schnell' },
 el('h3', {}, 'Schnell gestalten'),
 el('div', { class: 'werkzeuge', style: 'grid-template-columns:1fr 1fr' },
@@ -3242,6 +3250,7 @@ el('button', { type: 'button', class: 'knopf', id: 'zufall', onclick: () => { ae
 el('button', { type: 'button', class: 'knopf', id: 'verlauf', onclick: () => { aendere(x => W.farbverlauf(x, a.von, a.bis)); z.verlauf.schliesse(); } }, 'Farbverlauf')),
 el('div', { class: 'werkzeuge', style: 'grid-template-columns:1fr 1fr' },
 el('label', { class: 'unter stapel', style: 'gap:4px' }, 'Verlauf von', start), el('label', { class: 'unter stapel', style: 'gap:4px' }, 'nach', ziel)),
+weg,
 ...(st.paar ? [] : [el('h3', {}, 'Anhänger in der Mitte'),
 B.wahl(K.anhaenger(), e.anhaenger, h => { aendere(x => W.setzeAnhaenger(x, h)); baue(); }, 'Anhänger', true)]),
 ...(K.istRaster(e.technik) || e.technik === 'makramee' || (e.stueck !== 'armband' && e.stueck !== 'fuss') ? [] : [el('h3', {}, e.stueck === 'fuss' ? 'Runden um den Knöchel' : 'Runden ums Handgelenk'),
