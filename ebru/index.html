@@ -3896,6 +3896,7 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
   }
   window.addEventListener('resize', () => { groesse(); });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => groesse());
+  if (window.ResizeObserver) { let fw = 0, fh = 0; new ResizeObserver(() => { const r = flaeche.getBoundingClientRect(); if (Math.round(r.width) !== fw || Math.round(r.height) !== fh) { fw = Math.round(r.width); fh = Math.round(r.height); if (fw !== cssW || fh !== cssH) groesse(); } }).observe(flaeche); } /* F-113: Fläche ändert sich ohne Fenster-Ereignis (Leiste wächst nach dem Start), sonst wird das Bild gestaucht und Tropfen erscheinen über dem Finger */
   window.addEventListener('orientationchange', () => setTimeout(groesse, 200));
   // Bild aus beiden Ebenen, frisch gezeichnet (WebGL ist ohne preserveDrawingBuffer nur direkt nach dem Zeichnen lesbar); für Tests und Prüfungen
   function glBild() { const c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height; glB.zeichne(s.becken, glSicht, true); c.getContext('2d').drawImage(glB.leinwand, 0, 0, c.width, c.height); return c; }
