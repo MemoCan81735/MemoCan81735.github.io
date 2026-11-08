@@ -1,4 +1,4 @@
-// S-W18: Ebru auf der Seite. Aufruf: NODE_PATH=$(npm root -g) node werkstatt/tests/ebru_test.js [Ordner]
+// S-W18: Ebru auf der Seite (seit S-W21 Ebru 2.0 mit klassischer Fassung für Geräte ohne WebGL 2). Aufruf: NODE_PATH=$(npm root -g) node werkstatt/tests/ebru_test.js [Ordner]
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 const wurzel = path.resolve(process.argv[2] || path.join(__dirname, '../..'));
@@ -37,5 +37,17 @@ let fehler = 0; const ok = (n, b, m = '') => { console.log((b ? 'OK     ' : 'FEH
     ok(`${fall}: keine Seitenfehler`, fe.length === 0, fe.join(' | '));
     await ctx.close();
   }
+  // S-W21: Ebru 2.0 zeichnet über die Grafikkarte; ohne WebGL 2 führt der Hinweis zur klassischen Fassung, die selbst läuft
+  { const ctx = await b.newContext({ viewport: { width: 412, height: 915 } }), p = await ctx.newPage(), fe = []; p.on('pageerror', e => fe.push(String(e)));
+    await p.goto(`http://localhost:${port}/ebru/`); await p.waitForFunction(() => window.__ebru && window.__ebru.sitzung());
+    const gl = await p.evaluate(() => (window.__ebru.gl ? window.__ebru.gl() : null)); ok('PS-6: Ebru 2.0 mit WebGL 2 (Grafikkarte)', !!gl && gl.version === 2 && !gl.verloren, JSON.stringify(gl));
+    ok('PS-6: Titel Ebru', (await p.title()) === 'Ebru', await p.title()); ok('PS-6: keine Seitenfehler', fe.length === 0, fe.join(' | ')); await ctx.close(); }
+  { const ctx = await b.newContext({ viewport: { width: 412, height: 915 } }), p = await ctx.newPage(), fe = [], fehlt = []; p.on('pageerror', e => fe.push(String(e))); p.on('response', r => { if (r.status() >= 400) fehlt.push(r.url()); });
+    await p.addInitScript(() => { const alt = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { return t === 'webgl2' ? null : alt.call(this, t, ...a); }; });
+    await p.goto(`http://localhost:${port}/ebru/`); await p.waitForTimeout(1500);
+    const h = await p.evaluate(() => { const d = document.getElementById('ohne-webgl'), a = d && d.querySelector('a'); return { sichtbar: !!d && !d.hidden, href: a && a.getAttribute('href') }; });
+    ok('PS-7: ohne WebGL 2 Hinweis mit Verweis auf die klassische Fassung', h.sichtbar && h.href === '../ebru-klassisch/', JSON.stringify(h));
+    await p.click('#ohne-webgl a'); await p.waitForFunction(() => window.__ebru && window.__ebru.sitzung(), null, { timeout: 10000 });
+    ok('PS-7: klassische Fassung läuft', p.url().endsWith('/ebru-klassisch/'), p.url()); ok('PS-7: alle Dateien da, keine Seitenfehler', fehlt.length === 0 && fe.length === 0, fehlt.concat(fe).join(' | ')); await ctx.close(); }
   await b.close(); srv.close(); process.exit(fehler ? 1 : 0);
 })();

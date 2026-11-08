@@ -15,7 +15,7 @@ import shutil
 import sys
 import tempfile
 
-SEITEN = ["index.html", "driftpokal/index.html", "luftdrift/index.html", "etappenrennen/index.html", "ula/index.html", "ebru/index.html", "perlen/index.html", "brettspiele/index.html"]
+SEITEN = ["index.html", "driftpokal/index.html", "luftdrift/index.html", "etappenrennen/index.html", "ula/index.html", "ebru/index.html", "ebru-klassisch/index.html", "perlen/index.html", "brettspiele/index.html"]
 SPIELE = SEITEN[1:]
 # Fremde Bibliotheken: E-Mail-Adressen der Autoren in deren Lizenztexten sind erlaubt.
 FREMD = ("brettspiele/lib/", "luftdrift/three.min.js", "etappenrennen/three.min.js", "ula/three.min.js")
