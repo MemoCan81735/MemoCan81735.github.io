@@ -9,7 +9,7 @@ t, n = re.subn(r'<link rel="(preconnect|stylesheet)" href="https://fonts\.[^"]*"
 assert n == 2, n
 t = t.replace('<meta name="claude:viewport-fit-sides" content="cover">\n', "", 1)
 kopf, rumpf = t.split('<div id="app"></div>', 1)
-alt = "el('span', { class: 'unter' }, 'Armbänder planen')"
+alt = "el('span', { class: 'unter' }, 'Schmuck planen')"
 assert rumpf.count(alt) == 1
 # Zurück-Link steht fest im HTML (Seitenprüfung S4) und wird beim Aufbau in den Kopf der App verschoben
 rumpf = rumpf.replace(alt, "document.querySelector('a.ng-zurueck')", 1)
@@ -21,7 +21,7 @@ kopf = kopf.replace("</style>", css, 1)
 seite = ('<!doctype html>\n<html lang="de">\n<head>\n<meta charset="utf-8">\n'
          '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
          '<meta name="theme-color" content="#2b3446">\n'
-         '<meta name="description" content="Perlenarmbänder planen: Ideen, Vorschau, Einkaufsliste und Anleitung, direkt im Browser.">\n'
+         '<meta name="description" content="Perlenschmuck planen (Armband, Kette, Fußkettchen, Ohrringe): Ideen, Vorschau, Einkaufsliste und Anleitung, direkt im Browser.">\n'
          '<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/perlen-192.png">\n'
          '<link rel="apple-touch-icon" href="../bilder/symbole/perlen-192.png">\n'
          '<link rel="manifest" href="manifest.webmanifest">\n'
