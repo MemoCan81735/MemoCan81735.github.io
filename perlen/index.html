@@ -159,6 +159,7 @@ html.arbeitet, html.arbeitet body { overflow: hidden; }
 .arbeit-feld { width: 34px; height: 40px; border-radius: 6px; display: grid; place-items: end center; font-size: 0.7rem; font-weight: 800; color: rgba(0,0,0,0.55); padding-bottom: 2px; box-shadow: inset 0 3px 0 rgba(255,255,255,0.35); }
 .klein-feld { width: 6.5em; min-height: 44px; text-align: right; padding: 8px 10px; font-size: 1rem; }
 .pfad { display: grid; gap: 10px; } .stufe { display: grid; gap: 6px; padding: 12px; border-radius: 14px; border: 1px solid var(--linie); } .stufe.naechste { border-color: var(--akzent); background: var(--akzent-zart); } .stufe.erledigt b { color: var(--gedaempft); } .stufe .zeile { justify-content: space-between; } .geschafft { display: flex; align-items: center; gap: 8px; min-height: 44px; } .geschafft input { width: 24px; height: 24px; } .fehler { border-top: 1px solid var(--linie); padding: 10px 0; } .fehler summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; cursor: pointer; } .fehler p { margin: 6px 0; } .hinweis.warnung { border-left: 4px solid var(--akzent); padding-left: 10px; margin: 0; }
+.heute { display: grid; gap: 12px; } .heute-idee { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; } .heute-idee canvas { width: 96px; height: 77px; border-radius: 12px; background: var(--matte); } .heute-idee > div, .heute-aufgabe { display: grid; gap: 4px; min-width: 0; } .heute small { color: var(--gedaempft); font-size: 0.85rem; line-height: 1.35; } .galerie { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; } .foto { margin: 0; display: grid; gap: 6px; min-width: 0; } .foto img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; background: var(--matte); display: block; } .foto figcaption { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; } .foto .werkzeuge { grid-template-columns: 1fr; gap: 6px; }
 .eingaben { display: grid; gap: 8px; } .eingabe { display: flex; align-items: center; justify-content: space-between; gap: 10px; } .eingabe label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; } .eingabe .klein { display: block; width: 100%; }
 .arbeit-band { display: block; max-width: 100%; height: auto; border-radius: 4px; }
 .arbeit-hilfe { justify-self: stretch; text-align: left; border-top: 1px solid rgba(255,255,255,0.18); padding-top: 12px; }
@@ -1750,19 +1751,19 @@ const roh = m.daten.entwuerfe, gut = roh.filter(e => e && typeof e === 'object' 
 return { ok: true, entwuerfe: gut.slice(0, E.ENTWUERFE_MAX * 5).map(W.bereinige), uebersprungen: roh.length - Math.min(gut.length, E.ENTWUERFE_MAX * 5), fehler: '' };
 }
 
-function alsTab(verlauf, reiter) { return JSON.stringify({ format: 1, verlauf, reiter }); }
+function alsTab(verlauf, reiter, link) { return JSON.stringify({ format: 1, verlauf, reiter, link: link || '' }); }
 function liesTab(text) {
 let d = null;
 try { d = JSON.parse(text); } catch (x) { return null; }
 if (!d || typeof d !== 'object' || d.format !== 1 || !d.verlauf || typeof d.verlauf !== 'object') return null;
-return { verlauf: d.verlauf, reiter: REITER.includes(d.reiter) ? d.reiter : 'ideen' };
+return { verlauf: d.verlauf, reiter: REITER.includes(d.reiter) ? d.reiter : 'ideen', link: typeof d.link === 'string' && /^[a-z2-7]{1,1600}$/.test(d.link) ? d.link : '' };
 }
 
 function starte(fenster) {
 const tab = Perlen.boundary.speicher.erzeugeTab(fenster), datei = Perlen.boundary.datei.erzeuge(fenster);
 return {
 tabLesen: () => liesTab(tab.lies(TAB_SCHLUESSEL)),
-tabAblegen: (verlauf, reiter) => tab.schreibe(TAB_SCHLUESSEL, alsTab(verlauf, reiter)),
+tabAblegen: (verlauf, reiter, link) => tab.schreibe(TAB_SCHLUESSEL, alsTab(verlauf, reiter, link)),
 dateiLesen: d => datei.liesText(d, MAX_ZEICHEN)
 };
 }
@@ -1943,6 +1944,281 @@ return { hinweise };
 
 (function(){
 var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.link = (function () {
+const E = Perlen.entity, W = Perlen.control.entwurf;
+const VERSION = 1, PRAEFIX = 'perle-', BASIS = 'https://memocan81735.github.io/perlen/', MAX_ZEICHEN = 1600;
+const ABC = 'abcdefghijklmnopqrstuvwxyz234567', BUCHSTABEN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ';
+const TECHNIKEN = Object.keys(E.TECHNIKEN), PASSFORMEN = Object.keys(E.PASSFORMEN), ANHAENGER = [''].concat(Object.keys(E.ANHAENGER));
+const FORMEN = ['rund', 'rondelle', 'herz', 'tropfen'];
+const KAPUTT = 'Der Link ist unvollständig oder kaputt (vielleicht beim Kopieren gekürzt).';
+
+function utf8(text) {
+const b = [];
+for (const z of text) {
+const c = z.codePointAt(0);
+if (c < 0x80) b.push(c);
+else if (c < 0x800) b.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+else if (c < 0x10000) b.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+else b.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+}
+return b;
+}
+function ausUtf8(b) {
+let s = '', i = 0;
+const folge = () => { const x = b[i++]; if (x === undefined || (x & 0xc0) !== 0x80) throw new Error('utf8'); return x & 63; };
+while (i < b.length) {
+const x = b[i++];
+let c;
+if (x < 0x80) c = x;
+else if ((x & 0xe0) === 0xc0) c = ((x & 31) << 6) | folge();
+else if ((x & 0xf0) === 0xe0) { c = (x & 15) << 12; c |= folge() << 6; c |= folge(); }
+else if ((x & 0xf8) === 0xf0) { c = (x & 7) << 18; c |= folge() << 12; c |= folge() << 6; c |= folge(); if (c > 0x10ffff) throw new Error('utf8'); }
+else throw new Error('utf8');
+s += String.fromCodePoint(c);
+}
+return s;
+}
+function summe(bytes) { return parseInt(E.pruefsummeZahlen(bytes), 16) & 0xffff; }
+function base32(bytes) {
+let s = '', puffer = 0, bits = 0;
+for (const x of bytes) { puffer = (puffer << 8) | x; bits += 8; while (bits >= 5) { bits -= 5; s += ABC[(puffer >> bits) & 31]; } puffer &= (1 << bits) - 1; }
+if (bits) s += ABC[(puffer << (5 - bits)) & 31];
+return s;
+}
+function ausBase32(s) {
+const b = []; let puffer = 0, bits = 0;
+for (const z of s) {
+const v = ABC.indexOf(z); if (v < 0) return null;
+puffer = (puffer << 5) | v; bits += 5;
+if (bits >= 8) { bits -= 8; b.push((puffer >> bits) & 255); }
+puffer &= (1 << bits) - 1;
+}
+return b;
+}
+function ausBytes(bytes) { const s = summe(bytes); return base32(bytes.concat([s >> 8, s & 255])); }
+
+function kodiere(roh) {
+const e = W.bereinige(roh), b = [VERSION];
+b.push(TECHNIKEN.indexOf(e.technik), PASSFORMEN.indexOf(e.passform), ANHAENGER.indexOf(e.anhaenger), e.runden, e.umfang - E.UMFANG_MIN);
+const name = Array.from(e.name); b.push(name.length); for (const z of name) b.push(BUCHSTABEN.indexOf(z));
+const titel = utf8(e.titel); b.push(titel.length); b.push(...titel);
+b.push(e.muster.length);
+for (const p of e.muster) b.push(p.farbe, E.GROESSEN.indexOf(p.groesse) | (FORMEN.indexOf(p.form) << 2));
+const r = e.raster, tabelle = r.zellen.filter((x, i) => r.zellen.indexOf(x) === i), breite = Math.ceil(Math.log2(tabelle.length));
+b.push(r.spalten, r.reihen, tabelle.length, ...tabelle);
+let puffer = 0, bits = 0;
+for (const z of r.zellen) { puffer = (puffer << breite) | tabelle.indexOf(z); bits += breite; while (bits >= 8) { bits -= 8; b.push((puffer >> bits) & 255); } puffer &= (1 << bits) - 1; }
+if (bits) b.push((puffer << (8 - bits)) & 255);
+return ausBytes(b);
+}
+const link = e => BASIS + '#' + PRAEFIX + kodiere(e);
+const istLink = text => typeof text === 'string' && /perle-[a-z2-7]{8,}/i.test(text);
+
+function lies(text) {
+const nein = (fehler, neuer) => ({ ok: false, entwurf: null, neuer: !!neuer, fehler });
+if (typeof text !== 'string' || !text.trim()) return nein('Kein Link: bitte den Link der Perlenwerkstatt einfügen.');
+const m = /perle-([a-z2-7]*)/i.exec(text);
+if (!m) return nein('Das ist kein Link der Perlenwerkstatt.');
+if (m[1].length > MAX_ZEICHEN) return nein('Der Link ist zu lang für einen Entwurf der Perlenwerkstatt.');
+const b = ausBase32(m[1].toLowerCase());
+if (!b || b.length < 3) return nein(KAPUTT);
+const daten = b.slice(0, -2), s = summe(daten);
+if (b[b.length - 2] !== s >> 8 || b[b.length - 1] !== (s & 255)) return nein(KAPUTT);
+if (daten[0] > VERSION) return nein('Dieser Link stammt aus einer neueren Version der App. Bitte die App neu laden.', true);
+try {
+let i = 0;
+const n = () => { if (i >= daten.length) throw new Error('Ende'); return daten[i++]; };
+const stueck = k => { if (i + k > daten.length) throw new Error('Ende'); const x = daten.slice(i, i + k); i += k; return x; };
+if (n() !== VERSION) throw new Error('Version');
+const e = { technik: TECHNIKEN[n()], passform: PASSFORMEN[n()], anhaenger: ANHAENGER[n()], runden: n(), umfang: E.UMFANG_MIN + n() };
+const nl = n(); if (nl > E.NAME_MAX) throw new Error('Name');
+e.name = stueck(nl).map(x => BUCHSTABEN[x] || '').join('');
+e.titel = ausUtf8(stueck(n()));
+e.muster = [];
+const ml = n(); if (ml > E.MUSTER_MAX) throw new Error('Muster');
+for (let k = 0; k < ml; k++) { const farbe = n(), x = n(); e.muster.push({ farbe, groesse: E.GROESSEN[x & 3], form: FORMEN[(x >> 2) & 3] }); }
+const spalten = n(), reihen = n(), tl = n();
+if (spalten < E.SPALTEN_MIN || spalten > E.SPALTEN_MAX || reihen < E.REIHEN_MIN || reihen > E.REIHEN_MAX || tl < 1 || tl > E.FARBEN.length) throw new Error('Raster');
+const tabelle = stueck(tl), breite = Math.ceil(Math.log2(tl)), zellen = [];
+let puffer = 0, bits = 0;
+for (let k = 0; k < spalten * reihen; k++) {
+while (bits < breite) { puffer = (puffer << 8) | n(); bits += 8; }
+bits -= breite; const v = (puffer >> bits) & ((1 << breite) - 1); puffer &= (1 << bits) - 1;
+if (v >= tl) throw new Error('Feld');
+zellen.push(tabelle[v]);
+}
+if (i !== daten.length) throw new Error('Rest');
+e.raster = { spalten, reihen, zellen };
+return { ok: true, entwurf: W.bereinige(e), neuer: false, fehler: '' };
+} catch (x) { return nein(KAPUTT); }
+}
+
+function starte(fenster) {
+const a = Perlen.boundary.adresse.erzeuge(fenster);
+return {
+ausAdresse() { const m = a.marke(); return m.toLowerCase().indexOf(PRAEFIX) === 0 ? Object.assign(lies(m), { code: m.slice(PRAEFIX.length).toLowerCase() }) : null; },
+leere: () => a.leere(),
+beiAenderung: fn => a.beiAenderung(fn)
+};
+}
+
+return { BASIS, PRAEFIX, MAX_ZEICHEN, kodiere, link, lies, istLink, ausBytes, starte };
+})();
+
+})();
+
+(function(){
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.heute = (function () {
+const E = Perlen.entity;
+const farbe = name => E.FARBEN.findIndex(f => f.name === name);
+const WARM = ['Rot', 'Koralle', 'Orange', 'Gelb', 'Rosa', 'Gold', 'Braun'].map(farbe);
+const KUEHL = ['Grün', 'Mint', 'Türkis', 'Himmelblau', 'Nazarblau', 'Nachtblau', 'Lila', 'Silber', 'Weiß'].map(farbe);
+const farben = e => { const l = E.istRaster(e.technik) ? e.raster.zellen : e.muster.map(p => p.farbe); return l.filter((x, i) => l.indexOf(x) === i); };
+const gleichePerle = (a, b) => a.farbe === b.farbe && a.groesse === b.groesse && a.form === b.form;
+function spiegel(e) {
+if (!E.istRaster(e.technik)) { const m = e.muster; return m.length >= 3 && m.every((p, i) => gleichePerle(p, m[m.length - 1 - i])); }
+const r = e.raster, S = r.spalten;
+for (let z = 0; z < r.reihen; z++) for (let s = 0; s < S; s++) if (r.zellen[z * S + s] !== r.zellen[z * S + S - 1 - s]) return false;
+return farben(e).length >= 2;
+}
+const aufgefaedelt = e => !E.istRaster(e.technik);
+const AUFGABEN = [
+{ id: 'zwei', titel: 'Nur zwei Farben', text: 'Ein Armband mit genau zwei Farben. Wenig Farben wirken oft am edelsten.', pruefe: e => farben(e).length === 2 },
+{ id: 'drei', titel: 'Genau drei Farben', text: 'Drei Farben, die gut zusammenpassen: zum Beispiel eine kräftige, eine helle und ein Metall.', pruefe: e => farben(e).length === 3 },
+{ id: 'viele', titel: 'Bunt wie ein Basar', text: 'Mindestens sechs verschiedene Farben in einem Armband.', pruefe: e => farben(e).length >= 6 },
+{ id: 'spiegel', titel: 'Spiegelbildlich', text: 'Das Muster sieht von beiden Seiten gleich aus (Tipp: die Taste "Spiegeln").', pruefe: spiegel },
+{ id: 'metall', titel: 'Ein Hauch Glanz', text: 'Mit Gold oder Silber.', pruefe: e => farben(e).some(f => E.FARBEN[f].metall) },
+{ id: 'warm', titel: 'Nur warme Farben', text: 'Rot, Koralle, Orange, Gelb, Rosa, Gold oder Braun, mindestens zwei davon, sonst nichts.', pruefe: e => farben(e).length >= 2 && farben(e).every(f => WARM.includes(f)) },
+{ id: 'kuehl', titel: 'Nur kühle Farben', text: 'Grün, Mint, Türkis, Blau, Lila, Silber oder Weiß, mindestens zwei davon, sonst nichts.', pruefe: e => farben(e).length >= 2 && farben(e).every(f => KUEHL.includes(f)) },
+{ id: 'formen', titel: 'Drei Formen', text: 'Aufgefädelt mit mindestens drei Perlenformen, zum Beispiel rund, Rondelle und Herz.', pruefe: e => aufgefaedelt(e) && new Set(e.muster.map(p => p.form)).size >= 3 },
+{ id: 'anhaenger', titel: 'Mit Anhänger', text: 'Ein aufgefädeltes Armband mit Anhänger vorn in der Mitte.', pruefe: e => aufgefaedelt(e) && !!e.anhaenger },
+{ id: 'name', titel: 'Für einen lieben Menschen', text: 'Ein Name mit mindestens drei Buchstaben in Buchstabenwürfeln.', pruefe: e => aufgefaedelt(e) && e.name.length >= 3 },
+{ id: 'wickel', titel: 'Wickelarmband', text: 'Ein aufgefädeltes Armband mit zwei oder drei Runden.', pruefe: e => aufgefaedelt(e) && e.runden >= 2 },
+{ id: 'gewebt', titel: 'Einmal weben', text: 'Ein Band mit Peyote oder Webrahmen.', pruefe: e => E.istRaster(e.technik) }
+];
+
+function tagNummer(datum) {
+const m = typeof datum === 'string' ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(datum) : null;
+if (!m) return null;
+const j = +m[1], mo = +m[2], t = +m[3];
+const schalt = (j % 4 === 0 && j % 100 !== 0) || j % 400 === 0, lang = [31, schalt ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+if (mo < 1 || mo > 12 || t < 1 || t > lang[mo - 1]) return null;
+const y = mo <= 2 ? j - 1 : j, era = Math.floor(y / 400), yoe = y - era * 400;
+const doy = Math.floor((153 * (mo + (mo > 2 ? -3 : 9)) + 2) / 5) + t - 1, doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy;
+return era * 146097 + doe - 719468;
+}
+const ggt = (a, b) => (b ? ggt(b, a % b) : a);
+function schritt(n, ab) { let s = ab; while (n > 2 && (ggt(s, n) !== 1 || s % n === 1 || s % n === n - 1)) s++; return s; }
+const rest = (a, n) => ((a % n) + n) % n;
+
+function fuer(datum) {
+const tag = tagNummer(datum);
+if (tag === null) return null;
+const ideen = Perlen.control.ideen.liste(), idee = ideen[rest(tag * schritt(ideen.length, 29), ideen.length)];
+const a = AUFGABEN[rest(tag * schritt(AUFGABEN.length, 5), AUFGABEN.length)];
+return { datum, idee: { titel: idee.titel, beschreibung: idee.beschreibung, entwurf: idee.entwurf }, aufgabe: { id: a.id, titel: a.titel, text: a.text } };
+}
+function erfuellt(id, e) {
+const a = AUFGABEN.find(x => x.id === id);
+return !!(a && e && typeof e === 'object' && a.pruefe(Perlen.control.entwurf.bereinige(e)));
+}
+const haken = datum => 'tag:' + datum;
+function stand(h, heute) {
+const jetzt = tagNummer(heute), tage = new Set();
+if (jetzt !== null && h && typeof h === 'object')
+for (const k of Object.keys(h)) { const t = k.indexOf('tag:') === 0 && h[k] === true ? tagNummer(k.slice(4)) : null; if (t !== null && t <= jetzt) tage.add(t); }
+const heuteDa = jetzt !== null && tage.has(jetzt);
+let serie = 0, t = heuteDa ? jetzt : jetzt - 1;
+while (jetzt !== null && tage.has(t)) { serie++; t--; }
+return { tage: tage.size, serie, heute: heuteDa };
+}
+
+return { aufgaben: () => AUFGABEN.map(a => ({ id: a.id, titel: a.titel, text: a.text })), fuer, erfuellt, haken, stand };
+})();
+
+})();
+
+(function(){
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.galerie = (function () {
+const W = Perlen.control.entwurf;
+const SCHLUESSEL = 'perlenwerkstatt.galerie', FORMAT = 1, MAX = 12, FOTO_MAX = 200000, FOTO_SEITE = 480, QUALITAET = 0.7;
+const FOTO = /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/, DATUM = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+const fotoOk = f => typeof f === 'string' && f.length <= FOTO_MAX && FOTO.test(f);
+const titel = t => (typeof t === 'string' ? t.slice(0, 40) : '');
+const entwurf = e => (e && typeof e === 'object' && !Array.isArray(e) ? W.bereinige(e) : null);
+function eintrag(x) {
+if (!x || typeof x !== 'object' || Array.isArray(x) || !fotoOk(x.foto) || typeof x.datum !== 'string' || !DATUM.test(x.datum)) return null;
+return { id: typeof x.id === 'string' ? x.id.slice(0, 24) : '', titel: titel(x.titel), datum: x.datum, foto: x.foto, entwurf: entwurf(x.entwurf) };
+}
+
+function erzeuge(speicher) {
+let liste = [], ok = true, neuer = false, fremd = null, geladen = false;
+const kopie = () => liste.map(x => Object.assign({}, x, { entwurf: x.entwurf ? JSON.parse(JSON.stringify(x.entwurf)) : null }));
+const stand = () => { if (!geladen) laden(); return { ok, neuer, eintraege: kopie() }; };
+function laden() {
+geladen = true; liste = []; ok = true; neuer = false; fremd = null;
+let roh = null;
+try { roh = speicher.lies(SCHLUESSEL); } catch (x) { ok = false; return { ok, neuer, eintraege: [] }; }
+if (roh === null || roh === undefined) return { ok, neuer, eintraege: [] };
+let d = null;
+try { d = JSON.parse(roh); } catch (x) { d = null; }
+if (d && typeof d === 'object' && Number.isInteger(d.format) && d.format > FORMAT) { neuer = true; return { ok, neuer, eintraege: [] }; }
+if (!d || d.format !== FORMAT || !Array.isArray(d.eintraege)) { fremd = roh; return { ok, neuer, eintraege: [] }; }
+const ids = new Set(), alle = new Set(d.eintraege.map(x => (x && typeof x.id === 'string' ? x.id.slice(0, 24) : '')));
+for (const x of d.eintraege) {
+const e = eintrag(x);
+if (!e || liste.length >= MAX) continue;
+if (!e.id || ids.has(e.id)) { let k = liste.length; while (alle.has('g' + k + '-' + e.datum) || ids.has('g' + k + '-' + e.datum)) k++; e.id = 'g' + k + '-' + e.datum; }
+ids.add(e.id); liste.push(e);
+}
+return { ok, neuer, eintraege: kopie() };
+}
+function schreibe() {
+try {
+if (fremd !== null) { if (speicher.schreibe(SCHLUESSEL + '.alt', fremd) === false) return false; fremd = null; }
+return speicher.schreibe(SCHLUESSEL, JSON.stringify({ format: FORMAT, eintraege: liste })) !== false;
+} catch (x) { return false; }
+}
+function hinzu(foto, t, datum, e) {
+stand();
+if (neuer) return { ok: false, grund: 'neuer' };
+if (!fotoOk(foto)) return { ok: false, grund: 'foto' };
+if (typeof datum !== 'string' || !DATUM.test(datum)) return { ok: false, grund: 'datum' };
+if (liste.length >= MAX) return { ok: false, grund: 'voll' };
+let n = liste.length; while (liste.some(x => x.id === 'g' + n + '-' + datum)) n++;
+const neu = { id: 'g' + n + '-' + datum, titel: titel(t), datum, foto, entwurf: entwurf(e) };
+liste.push(neu);
+if (!schreibe()) { liste.pop(); return { ok: false, grund: 'speicher' }; }
+return { ok: true, grund: '', id: neu.id };
+}
+function loesche(id) {
+stand();
+const i = liste.findIndex(x => x.id === id);
+if (i < 0 || neuer) return false;
+const alt = liste.splice(i, 1)[0];
+if (!schreibe()) { liste.splice(i, 0, alt); return false; }
+return true;
+}
+return { laden, stand, hinzu, loesche };
+}
+
+function starte(fenster) {
+const bild = Perlen.boundary.bild.erzeuge(fenster);
+return Object.assign(erzeuge(Perlen.boundary.speicher.erzeuge(fenster)), { fotoLesen: d => bild.alsJpeg(d, FOTO_SEITE, QUALITAET, FOTO_MAX) });
+}
+
+return { SCHLUESSEL, FORMAT, MAX, FOTO_MAX, erzeuge, starte };
+})();
+
+})();
+
+(function(){
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
 Perlen.boundary = Perlen.boundary || {};
 Perlen.boundary.speicher = {
 erzeuge(fenster) {
@@ -1957,6 +2233,21 @@ const ss = () => { try { return fenster.sessionStorage || null; } catch (x) { re
 return {
 lies(k) { const s = ss(); if (!s) return null; try { return s.getItem(k); } catch (x) { return null; } },
 schreibe(k, v) { const s = ss(); if (!s) return false; try { s.setItem(k, v); return true; } catch (x) { return false; } }
+};
+}
+};
+
+})();
+
+(function(){
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.boundary = Perlen.boundary || {};
+Perlen.boundary.adresse = {
+erzeuge(fenster) {
+return {
+marke() { try { return String(fenster.location.hash || '').replace(/^#/, ''); } catch (x) { return ''; } },
+leere() { try { fenster.history.replaceState(null, '', fenster.location.pathname + fenster.location.search); return true; } catch (x) { return false; } },
+beiAenderung(fn) { try { fenster.addEventListener('hashchange', fn); } catch (x) { /* ohne Ereignis nur beim Start */ } }
 };
 }
 };
@@ -2016,6 +2307,31 @@ const f = Math.min(1, maxSeite / Math.max(w, h)), b = Math.max(1, Math.round(w *
 const c = fenster.document.createElement('canvas'); c.width = b; c.height = ho;
 const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, b, ho);
 ende({ breite: b, hoehe: ho, daten: ctx.getImageData(0, 0, b, ho).data });
+} catch (x) { ende(null); }
+};
+img.onerror = () => ende(null);
+img.src = url;
+} catch (x) { ende(null); }
+});
+},
+alsJpeg(datei, maxSeite, qualitaet, maxZeichen) {
+return new Promise(fertig => {
+let url = null, fertigGemeldet = false;
+const ende = x => { if (fertigGemeldet) return; fertigGemeldet = true; try { if (url) fenster.URL.revokeObjectURL(url); } catch (f) { /* schon frei */ } fertig(x); };
+try {
+if (!datei || !/^image\//.test(datei.type || '')) return ende(null);
+url = fenster.URL.createObjectURL(datei);
+fenster.setTimeout(() => ende(null), 10000);
+const img = new fenster.Image();
+img.onload = () => {
+try {
+const w = img.naturalWidth, h = img.naturalHeight;
+if (!w || !h) return ende(null);
+const f = Math.min(1, maxSeite / Math.max(w, h)), c = fenster.document.createElement('canvas');
+c.width = Math.max(1, Math.round(w * f)); c.height = Math.max(1, Math.round(h * f));
+const ctx = c.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+for (const q of [qualitaet, qualitaet - 0.2, qualitaet - 0.4].filter(x => x > 0.25)) { const d = c.toDataURL('image/jpeg', q); if (d.length <= maxZeichen && /^data:image\/jpeg/.test(d)) return ende(d); }
+ende(null);
 } catch (x) { ende(null); }
 };
 img.onerror = () => ende(null);
@@ -2538,6 +2854,26 @@ if (r === 'geteilt') B.melde('Bild geteilt'); else if (r === 'abgebrochen') B.me
 });
 } }, 'Als Bild teilen');
 }
+function linkTeilen() {
+return el('button', { type: 'button', class: 'knopf gross', id: 'link-teilen', onclick: () => app.teileLink(aktuell()).then(r => {
+const m = { geteilt: 'Link geteilt', kopiert: 'Link kopiert', abgebrochen: 'Teilen abgebrochen' }[r.ergebnis];
+if (m) B.melde(m); else zeigeLink(r.link);
+}) }, 'Als Link teilen');
+}
+function zeigeLink(link) {
+const d = app.dokument, alt = d.getElementById('link-ansicht'); if (alt) alt.remove();
+const taste = ev => { if (ev.key === 'Escape') zu(); };
+const zu = () => { d.removeEventListener('keydown', taste); const a = d.getElementById('link-ansicht'); if (a) a.remove(); const b = d.getElementById('link-teilen'); if (b) b.focus(); };
+const feld = el('textarea', { class: 'feld', id: 'link-text', readonly: true, rows: '4', style: 'text-transform:none;letter-spacing:0;font-size:0.85rem;padding:10px 12px;word-break:break-all' });
+feld.value = link;
+const ansicht = el('div', { class: 'arbeit', id: 'link-ansicht', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Link zum Entwurf' },
+el('div', { class: 'arbeit-innen', style: 'grid-template-rows:auto auto auto 1fr' },
+el('div', { class: 'zeile', style: 'justify-content:space-between' }, el('h3', {}, 'Link zum Entwurf'),
+el('button', { type: 'button', class: 'knopf', id: 'link-schliessen', 'aria-label': 'Schließen', onclick: zu }, '✕')),
+el('p', { class: 'hinweis' }, 'Kopieren war nicht möglich. Link lange drücken, alles markieren und kopieren.'), feld));
+d.addEventListener('keydown', taste);
+d.body.appendChild(ansicht); feld.focus(); feld.select();
+}
 function zeigeBild(url) {
 const d = app.dokument, alt = d.getElementById('bild-ansicht'); if (alt) alt.remove();
 const taste = ev => { if (ev.key === 'Escape') zu(); };
@@ -2736,7 +3072,7 @@ el('button', { type: 'button', class: 'ecke rechts', id: 'speichern', 'aria-labe
 const raster = K.istRaster(e.technik), gestalten = raster ? rasterBlock() : musterBlock();
 teile.hinweise = el('div', { class: 'stapel', id: 'hinweise', role: 'status' }); gestalten.prepend(teile.hinweise);
 const basteln = el('button', { type: 'button', class: 'knopf haupt gross', id: 'basteln', onclick: () => app.arbeite(aktuell()) }, 'Jetzt basteln');
-wurzel.replaceChildren(teile.huelle, gestalten, ...(raster ? [textBlock()] : []), einstellungen(e), schnellBlock(e), bildBlock(e), ...(raster ? [] : [namensBlock()]), basteln, bildTeilen());
+wurzel.replaceChildren(teile.huelle, gestalten, ...(raster ? [textBlock()] : []), einstellungen(e), schnellBlock(e), bildBlock(e), ...(raster ? [] : [namensBlock()]), basteln, bildTeilen(), linkTeilen());
 aktualisiere();
 }
 
@@ -2889,7 +3225,7 @@ const app = {
 zustand: { reiter: 'ideen', auswahl: { farbe: 8, form: 'rund', groesse: 6 }, anleitung: 'gummi', daten: { entwuerfe: [], haken: {} }, speicherOk: true },
 messung: null
 };
-let fenster = null, material = null, offen = {}, sitzung = null, designer = null, arbeit = null, tab = null, bereiche = {}, reiterKnoepfe = {};
+let fenster = null, material = null, offen = {}, sitzung = null, designer = null, arbeit = null, tab = null, galerie = null, linkStart = null, loeschFoto = '', bereiche = {}, reiterKnoepfe = {};
 
 const titelVon = e => e.titel || TECHNIK_KURZ[e.technik];
 const NEUER = 'Deine Entwürfe stammen aus einer neueren Version der App: bitte die Seite neu laden. Bis dahin wird nichts gespeichert.';
@@ -2912,8 +3248,10 @@ el('button', { type: 'button', class: 'knopf', 'aria-label': 'Entwurf ' + titelV
 bereiche.ideen.replaceChildren(...[
 el('div', { class: 'stapel' }, el('h2', {}, 'Ideen zum Nachmachen'), el('p', { class: 'unter', style: 'margin:0' }, 'Antippen, dann im Designer anpassen: Farben, Länge, Name.')),
 pfadBlock(),
+heuteBlock(),
 filter,
 eigene.length ? el('div', { class: 'block', id: 'meine' }, el('h3', {}, 'Meine Entwürfe (' + eigene.length + ')'), el('div', { class: 'entwuerfe' }, eigene)) : null,
+galerieBlock(),
 sicherungBlock(),
 z.speicherOk ? null : el('p', { class: 'hinweis' }, 'Speichern ist in diesem Browser nicht möglich (privater Modus?). Alles andere funktioniert.'),
 el('div', { class: 'ideen' }, karten)].filter(Boolean));
@@ -3004,6 +3342,66 @@ if (!sitzung.hakeAb(id, ev.target.checked) && z.speicherOk) B.melde('Haken nicht
 })));
 }
 
+function heuteBlock() {
+const z = app.zustand, H = Perlen.control.heute, datum = app.heute(), h = H.fuer(datum);
+if (!h) return null;
+const st = H.stand(z.daten.haken, datum), erfuellt = H.erfuellt(h.aufgabe.id, z.verlauf.zustand());
+const c = el('canvas', { 'aria-hidden': 'true' });
+fenster.requestAnimationFrame(() => B.zeichneRing(c, h.idee.entwurf, 120));
+const zahl = st.tage ? st.tage + (st.tage === 1 ? ' Tag' : ' Tage') + ' geschafft, ' + st.serie + ' in Folge' : 'Noch kein Tag geschafft';
+return el('div', { class: 'block heute', id: 'heute' },
+el('div', { class: 'zeile', style: 'justify-content:space-between' }, el('h3', {}, 'Heute'), el('span', { class: 'unter', id: 'heute-stand' }, zahl)),
+el('div', { class: 'heute-idee' }, c,
+el('div', {}, el('span', { class: 'unter' }, 'Tagesmuster'), el('b', { id: 'heute-idee' }, h.idee.titel), el('small', {}, h.idee.beschreibung),
+el('button', { type: 'button', class: 'knopf', id: 'heute-anfangen', 'aria-label': 'Tagesmuster anfangen: ' + h.idee.titel, onclick: () => oeffne(h.idee.entwurf) }, 'Anfangen'))),
+el('div', { class: 'heute-aufgabe' }, el('span', { class: 'unter' }, 'Aufgabe des Tages'), el('b', { id: 'heute-aufgabe', 'data-aufgabe': h.aufgabe.id }, h.aufgabe.titel), el('small', {}, h.aufgabe.text),
+el('p', { class: 'hinweis', id: 'heute-pruefung' }, st.heute ? 'Heute geschafft. Morgen gibt es eine neue Aufgabe.' : erfuellt ? 'Dein Entwurf im Designer erfüllt die Aufgabe.' : 'Dein Entwurf im Designer erfüllt sie noch nicht.'),
+el('button', { type: 'button', class: 'knopf haupt', id: 'heute-geschafft', disabled: st.heute || !erfuellt, onclick: () => {
+if (!H.erfuellt(h.aufgabe.id, z.verlauf.zustand())) return;
+const ok = sitzung.hakeAb(H.haken(datum), true);
+auffrischen(); zeichne('ideen');
+B.melde(ok || !z.speicherOk ? 'Aufgabe geschafft' : 'Haken nicht gespeichert');
+const n = fenster.document.getElementById('heute-stand'); if (n) { n.setAttribute('tabindex', '-1'); n.focus(); }
+} }, st.heute ? 'Geschafft ✓' : 'Geschafft')));
+}
+
+const GRUND = { voll: 'Galerie voll (12 Fotos): erst ein Foto löschen', speicher: 'Nicht gespeichert: der Speicher des Browsers ist voll oder gesperrt',
+neuer: 'Die Galerie stammt aus einer neueren Version der App: bitte die Seite neu laden', foto: 'Das Foto ließ sich nicht lesen oder ist zu groß', datum: 'Das Datum fehlt' };
+const datumDe = d => d.slice(8, 10) + '.' + d.slice(5, 7) + '.' + d.slice(0, 4);
+function galerieBlock() {
+const z = app.zustand;
+if (!galerie) galerie = Perlen.control.galerie.starte(fenster);
+const st = galerie.stand(), n = st.eintraege.length, voll = n >= Perlen.control.galerie.MAX;
+const fokus = id => fenster.setTimeout(() => { const k = fenster.document.getElementById(id); if (k) k.focus(); }, 0);
+const datei = el('input', { type: 'file', accept: 'image/*', id: 'galerie-datei', class: 'versteckt', tabindex: '-1', 'aria-hidden': 'true', onchange: ev => {
+const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
+if (!f) return;
+B.melde('Foto wird verkleinert …');
+galerie.fotoLesen(f).then(d => {
+if (!d) { B.melde(GRUND.foto); return; }
+const e = z.verlauf.zustand(), r = galerie.hinzu(d, e.titel || 'Mein Armband', app.heute(), e);
+offen.galerie = true; zeichne('ideen');
+B.melde(r.ok ? 'Foto in der Galerie' : GRUND[r.grund]);
+});
+} });
+const fotos = st.eintraege.slice().reverse().map(x => el('figure', { class: 'foto', 'data-foto': x.id },
+el('img', { src: x.foto, alt: 'Foto: ' + (x.titel || 'Mein Armband') }),
+el('figcaption', {}, el('b', {}, x.titel || 'Mein Armband'), el('span', { class: 'unter' }, datumDe(x.datum))),
+el('div', { class: 'werkzeuge' }, loeschFoto === x.id
+? [el('button', { type: 'button', class: 'knopf haupt', id: 'foto-ja', onclick: () => { const ok = galerie.loesche(x.id); loeschFoto = ''; zeichne('ideen'); B.melde(ok ? 'Foto gelöscht' : 'Nicht gelöscht: dieser Browser erlaubt kein Speichern'); fokus('galerie-hinzu'); } }, 'Ja, löschen'),
+el('button', { type: 'button', class: 'knopf', id: 'foto-nein', onclick: () => { loeschFoto = ''; zeichne('ideen'); } }, 'Abbrechen')]
+: [el('button', { type: 'button', class: 'knopf', 'data-foto-oeffnen': x.id, disabled: !x.entwurf, onclick: () => oeffne(x.entwurf) }, 'Entwurf öffnen'),
+el('button', { type: 'button', class: 'knopf', 'data-foto-loeschen': x.id, 'aria-label': 'Foto ' + (x.titel || 'Mein Armband') + ' löschen', onclick: () => { loeschFoto = x.id; zeichne('ideen'); fokus('foto-nein'); } }, 'Löschen')])));
+return klappe('galerie',
+el('summary', {}, el('span', { class: 'kurz-text' }, el('span', { class: 'kurz-titel' }, 'Meine Galerie'), el('span', { class: 'kurz-wert', id: 'galerie-zahl' }, n + ' von ' + Perlen.control.galerie.MAX))),
+el('div', { class: 'stapel' },
+el('p', { class: 'hinweis' }, st.neuer ? GRUND.neuer : !st.ok ? 'Fotos lassen sich in diesem Browser nicht speichern (privater Modus?).'
+: 'Fotografiere dein fertiges Armband. Das Foto bleibt nur auf diesem Gerät, zusammen mit dem Entwurf aus dem Designer.'),
+el('button', { type: 'button', class: 'knopf haupt', id: 'galerie-hinzu', disabled: voll || st.neuer, onclick: () => datei.click() }, voll ? 'Galerie voll (12)' : 'Foto hinzufügen'),
+datei,
+n ? el('div', { class: 'galerie' }, fotos) : null));
+}
+
 function sicherungBlock() {
 const z = app.zustand, SI = Perlen.control.sicherung;
 const feld = el('textarea', { class: 'feld', id: 'sichern-text', rows: '3', autocomplete: 'off', placeholder: 'Gesicherten Text hier einfügen', style: 'text-transform:none;letter-spacing:0;font-size:0.9rem;padding:10px 12px;min-height:88px' });
@@ -3026,6 +3424,7 @@ el('button', { type: 'button', class: 'knopf haupt', id: 'sichern-laden', onclic
 el('button', { type: 'button', class: 'knopf', id: 'sichern-datei-waehlen', onclick: () => datei.click() }, 'Datei wählen'))));
 }
 function ladeText(t) {
+if (Perlen.control.link.istLink(t) && !/^\s*\{/.test(t)) { oeffneLink(Perlen.control.link.lies(t)); return; }
 const r = Perlen.control.sicherung.lies(t);
 if (!r.ok) { B.melde(r.fehler); return; }
 if (app.zustand.daten.neuer) { B.melde(NEUER); return; }
@@ -3074,6 +3473,11 @@ zeichne(r);
 fenster.scrollTo(0, 0);
 }
 
+function oeffneLink(r) {
+if (!r.ok) { B.melde(r.fehler, 6000); return; }
+oeffne(r.entwurf);
+B.melde('Entwurf aus dem Link geöffnet. Zum Behalten speichern.', 5000);
+}
 function oeffne(e) {
 if (app.zustand.reiter !== 'designer') zeige('designer');
 designer.oeffne(e);
@@ -3105,6 +3509,13 @@ auffrischen();
 app.zeige = zeige;
 app.arbeite = e => arbeit.oeffne(e);
 app.teileBild = (c, titel) => sitzung.teileBild(c, titel);
+app.teileLink = e => {
+const l = Perlen.control.link.link(e), titel = e.titel || 'Mein Armband';
+const text = titel + ', mein Perlenarmband aus der Perlenwerkstatt: ' + l;
+app.letzterText = text;
+return sitzung.teile('Perlenarmband: ' + titel, text).then(r => ({ ergebnis: r, link: l }));
+};
+app.heute = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 app.jetzt = () => fenster.performance.now();
 
 app.starte = function (f) {
@@ -3126,11 +3537,23 @@ designer = Perlen.ui.designer.erzeuge(app);
 designer.haenge(bereiche.designer);
 arbeit = Perlen.ui.arbeit.erzeuge(app, f);
 if (z.daten.neuer) B.melde(NEUER, 6000); else if (!z.speicherOk) B.melde('Speichern ist hier nicht möglich, alles andere geht');
-const ablegen = () => tab.tabAblegen(z.verlauf.ablegen(), z.reiter);
+const ablegen = () => tab.tabAblegen(z.verlauf.ablegen(), z.reiter, app.letzterLink);
 f.document.addEventListener('visibilitychange', () => { if (f.document.visibilityState === 'hidden') ablegen(); });
 f.addEventListener('pagehide', ablegen);
 app.ablegen = ablegen;
 zeige(zurueck ? zurueck.reiter : 'ideen');
+linkStart = Perlen.control.link.starte(f);
+app.letzterLink = zurueck ? zurueck.link : '';
+const ausLink = beimStart => {
+const r = linkStart.ausAdresse();
+if (!r) return;
+linkStart.leere();
+if (beimStart && r.code === app.letzterLink) return;
+if (r.ok) { app.letzterLink = r.code; ablegen(); }   // nur geöffnete Links merken; ein kaputter Link meldet sich jedes Mal
+oeffneLink(r);
+};
+ausLink(true);
+linkStart.beiAenderung(() => ausLink(false));
 };
 return app;
 })();
