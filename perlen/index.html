@@ -38,7 +38,7 @@ h1 span { color: var(--akzent); }
 h2 { font: 700 1.2rem/1.2 var(--schrift-titel); margin: 0; text-wrap: balance; }
 h3 { font: 700 0.78rem/1.2 var(--schrift); text-transform: uppercase; letter-spacing: 0.08em; color: var(--gedaempft); margin: 0; }
 .unter { color: var(--gedaempft); font-size: 0.9rem; }
-section[hidden] { display: none; }
+section[hidden], [hidden] { display: none !important; }
 .stapel { display: grid; gap: 12px; }
 .zeile { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .knopf { min-height: 44px; min-width: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--linie); background: var(--flaeche); font-weight: 700; cursor: pointer; }
@@ -158,6 +158,7 @@ html.arbeitet, html.arbeitet body { overflow: hidden; }
 .arbeit-felder { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; max-width: 100%; }
 .arbeit-feld { width: 34px; height: 40px; border-radius: 6px; display: grid; place-items: end center; font-size: 0.7rem; font-weight: 800; color: rgba(0,0,0,0.55); padding-bottom: 2px; box-shadow: inset 0 3px 0 rgba(255,255,255,0.35); }
 .klein-feld { width: 6.5em; min-height: 44px; text-align: right; padding: 8px 10px; font-size: 1rem; }
+.pfad { display: grid; gap: 10px; } .stufe { display: grid; gap: 6px; padding: 12px; border-radius: 14px; border: 1px solid var(--linie); } .stufe.naechste { border-color: var(--akzent); background: var(--akzent-zart); } .stufe.erledigt b { color: var(--gedaempft); } .stufe .zeile { justify-content: space-between; } .geschafft { display: flex; align-items: center; gap: 8px; min-height: 44px; } .geschafft input { width: 24px; height: 24px; } .fehler { border-top: 1px solid var(--linie); padding: 10px 0; } .fehler summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; cursor: pointer; } .fehler p { margin: 6px 0; } .hinweis.warnung { border-left: 4px solid var(--akzent); padding-left: 10px; margin: 0; }
 .eingaben { display: grid; gap: 8px; } .eingabe { display: flex; align-items: center; justify-content: space-between; gap: 10px; } .eingabe label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; } .eingabe .klein { display: block; width: 100%; }
 .arbeit-band { display: block; max-width: 100%; height: auto; border-radius: 4px; }
 .arbeit-hilfe { justify-self: stretch; text-align: left; border-top: 1px solid rgba(255,255,255,0.18); padding-top: 12px; }
@@ -915,7 +916,42 @@ const MESSEN = [
 'Diesen Wert im Designer eintragen. Die App rechnet die Bequemlichkeitszugabe selbst dazu.',
 'Typische Werte: Kinder 13 bis 15 cm, Frauen 15 bis 17 cm, Männer 17 bis 20 cm.'
 ];
+const F = (problem, ursache, abhilfe) => ({ problem, ursache, abhilfe });
+const FEHLER = {
+gummi: [
+F('Armband ist zu eng', 'Zu wenig Zugabe oder große Perlen machen den Innenkreis kleiner.', 'Im Designer Passform "Locker" wählen oder 1 cm mehr eintragen; bei 8 und 10 mm Perlen rechnet die App die Dicke schon mit.'),
+F('Knoten geht auf', 'Einfacher Knoten oder Gummi nicht vorgedehnt.', 'Doppelten Chirurgenknoten machen, mit einem Tropfen Kleber sichern und den Knoten in eine Perle ziehen.'),
+F('Gummi leiert aus', 'Gummi vor dem Auffädeln nicht vorgedehnt oder zu dünn für schwere Perlen.', 'Gummi zwei- bis dreimal langziehen; bei großen Perlen 1 mm Gummi nehmen.'),
+F('Lücke zwischen den Perlen', 'Gummi beim Knoten nicht straff genug.', 'Vor dem Knoten die Perlen zusammenschieben und das Gummi leicht spannen.'),
+F('Gummi reißt beim Anziehen', 'Scharfkantige Perlenlöcher (Metall, Glas) scheuern.', 'Kaschier- oder Spacerperlen mit glattem Loch zwischen scharfe Perlen setzen, Gummi doppelt legen.'),
+F('Perlen passen nicht auf das Gummi', 'Loch kleiner als das Gummi.', 'Die Einkaufsliste prüft das Loch; dünneres Gummi nehmen oder Perlen mit größerem Loch (mindestens 1,2 mm bei 1-mm-Gummi).')
+],
+faden: [
+F('Armband ist steif und knickt', 'Faden zu straff gezogen.', 'Vor dem Quetschen etwas Luft lassen, so dass sich die Perlen noch bewegen.'),
+F('Quetschperle hält nicht', 'Mit flacher Zange nur angedrückt oder zu großer Faden.', 'Mit der Quetschzange erst in der Kerbe, dann vorn zudrücken; Faden 0,38 mm passt zu 2-mm-Quetschperlen.'),
+F('Verschluss sitzt schief', 'Biegering nicht ganz geschlossen.', 'Biegering seitlich auf- und zubiegen, nie auseinanderziehen.'),
+F('Fadenende sticht', 'Rest zu lang abgeschnitten.', 'Faden durch einige Perlen zurückführen und dicht an der Perle abschneiden.'),
+F('Armband zu lang', 'Länge des Verschlusses vergessen.', 'Die App zieht den Verschluss schon ab; beim Nachmessen Verschluss mitzählen.')
+],
+peyote: [
+F('Erste Reihen rutschen durcheinander', 'Die ersten zwei Reihen liegen lose auf dem Faden.', 'Mit Stopperperle starten und die ersten drei Reihen zwischen den Fingern festhalten, erst dann loslassen.'),
+F('Band wellt sich', 'Faden mal fest, mal locker gezogen.', 'Nach jeder Perle gleich stark anziehen; lieber etwas fester als zu locker.'),
+F('Muster verrutscht um eine Perle', 'Eine Perle zu viel oder zu wenig in einer Reihe.', 'Nach jeder Reihe zählen: in jeder Reihe die halbe Spaltenzahl; im Arbeitsmodus Schritt für Schritt vorgehen.'),
+F('Faden ist zu früh zu Ende', 'Das ist normal: ein Fadenstück reicht nur für einige Reihen, längere Stücke verknoten sich.', 'Stücke von höchstens 1,5 m nehmen; wenn noch etwa 15 cm übrig sind, neuen Faden durch einige Reihen einweben und weiterarbeiten.'),
+F('Lücken im Band', 'Perlen ungleich groß.', 'Delica-Perlen nehmen, sie sind gleichmäßig; unförmige Perlen aussortieren.'),
+F('Kanten sind ungleich', 'Am Rand in die falsche Perle gestochen.', 'Am Ende jeder Reihe in die hochstehende Perle der Vorreihe wenden.')
+],
+loom: [
+F('Band wellt sich', 'Schussfaden zu fest gezogen oder Kettfäden ungleich gespannt.', 'Kettfäden gleich stark spannen; Schussfaden nur so fest ziehen, dass die Perlen gerade liegen.'),
+F('Perlen stehen hoch', 'Schussfaden auf dem Rückweg nicht über den Kettfäden.', 'Auf dem Rückweg die Nadel oberhalb der Kettfäden durch alle Perlen führen.'),
+F('Eine Perle fehlt im Muster', 'Reihe falsch abgezählt.', 'Jede Reihe vor dem Einlegen mit dem Musterbild vergleichen; der Arbeitsmodus zeigt die Reihe groß.'),
+F('Kettfäden reißen beim Abnehmen', 'Zu kurze Enden oder Kettfäden zu straff.', 'Mindestens 30 cm Enden lassen und vor dem Abnehmen Spannung lösen.'),
+F('Band ist zu schmal oder zu breit', 'Spaltenzahl passt nicht zur Klemme.', 'Die Einkaufsliste nennt die passende Klemmenbreite; Spalten im Designer anpassen.'),
+F('Muster bricht am Verschluss ab', 'Länge passt nicht zu den Musterreihen.', 'Den Umfang nehmen, den der Hinweis im Designer nennt, dann geht das Muster glatt auf.')
+]
+};
 return {
+fehler: t => JSON.parse(JSON.stringify(FEHLER[FEHLER[t] ? t : 'gummi'])),
 fuer: t => { const id = INHALT[t] ? t : 'gummi'; return Object.assign(JSON.parse(JSON.stringify(INHALT[id])), { bilder: BILDER[id].map(alsBild) }); },
 messen: () => MESSEN.slice(),
 messbild: () => ({ szene: 'messen' })
@@ -1848,6 +1884,65 @@ return { TEXT_MAX, normal, raster, zeichen: () => Object.keys(Z) };
 
 (function(){
 var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.lernen = (function () {
+const PFAD = [
+{ id: 's1', titel: 'Dein erstes Gummiband', idee: 'Regenbogen', lernst: 'Perlen auffädeln, Gummi vordehnen und mit dem Chirurgenknoten schließen.' },
+{ id: 's2', titel: 'Ein Name in Buchstaben', idee: 'Namensarmband', lernst: 'Buchstabenwürfel in die Mitte setzen, so dass der Name lesbar ist.' },
+{ id: 's3', titel: 'Mit Verschluss', idee: 'Perlmutt elegant', lernst: 'Schmuckfaden, Quetschperlen, Kaschierperlen und Karabiner verwenden.' },
+{ id: 's4', titel: 'Erstes Peyote', idee: 'Zickzack', lernst: 'Mit der Nadel versetzt weben: jede zweite Perle, Reihe für Reihe.' },
+{ id: 's5', titel: 'Erster Webrahmen', idee: 'Sternenhimmel', lernst: 'Kettfäden spannen und eine ganze Reihe auf einmal einlegen.' },
+{ id: 's6', titel: 'Ein Motiv weben', idee: 'Tulpe (Lale)', lernst: 'Ein Bild Reihe für Reihe nach dem Muster weben; danach eigene Motive oder Text.' }
+];
+const haken = id => 'lernen:' + id;
+function stand(h) {
+const ok = id => !!(h && typeof h === 'object' && h[haken(id)] === true);
+const offen = PFAD.find(s => !ok(s.id));
+return { geschafft: PFAD.filter(s => ok(s.id)).length, naechste: offen ? offen.id : null };
+}
+return { pfad: () => PFAD.map(s => Object.assign({}, s)), stand, haken };
+})();
+
+})();
+
+(function(){
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+Perlen.control = Perlen.control || {};
+Perlen.control.pruefung = (function () {
+const E = Perlen.entity, R = Perlen.control.rechner;
+const rgb = i => { const h = E.FARBEN[i].hex; return [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16)); };
+const abstand = (a, b) => { const x = rgb(a), y = rgb(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]); };
+const AEHNLICH = 50, NAME_ANTEIL = 0.4;
+const cm = mm => (mm / 10).toLocaleString('de-DE');
+
+function hinweise(e) {
+const h = [], dazu = (art, text) => h.push({ art, text });
+if (E.istRaster(e.technik)) {
+const S = e.raster.spalten, m = R.musterPasst(e);
+if (!m.glatt && m.vorschlag) dazu('naht', 'Das Muster bricht am Verschluss ab. Bei ' + cm(m.vorschlag) + ' cm Handgelenk geht es glatt auf.');
+if (e.technik === 'loom' && S < 5) dazu('schmal', 'Sehr schmales Band (' + S + ' Spalten) liegt unruhig und verzieht sich leicht. Mindestens 5 Spalten nehmen.');
+if (e.technik === 'peyote' && S > 12) dazu('breit', 'Peyote mit ' + S + ' Spalten wird steif und braucht lange. Für den Anfang bis 12 Spalten.');
+return h;
+}
+const m = e.muster;
+if (!m.length) { dazu('leer', 'Das Muster ist leer: tippe Farben an und dann "Perle anfügen".'); return h; }
+if (m.length > 1 && m.some((p, i) => { const q = m[(i + 1) % m.length]; return p.farbe !== q.farbe && p.groesse === q.groesse && p.form === q.form && abstand(p.farbe, q.farbe) < AEHNLICH; }))
+dazu('aehnlich', 'Nachbarn kaum zu unterscheiden: zwei ähnliche Farben liegen nebeneinander. Eine hellere oder dunklere Farbe dazwischen hilft.');
+if (e.technik === 'gummi' && m.filter(p => p.groesse === 10).length * 2 >= m.length)
+dazu('schwer', 'Viele 10-mm-Perlen sind schwer und dehnen das Gummi: 1 mm Gummi nehmen und den Knoten doppelt sichern.');
+if (e.name && e.name.length * E.WUERFEL_MM > NAME_ANTEIL * R.strecke(e))
+dazu('name', 'Der Name nimmt mehr als 40 % des Armbands ein. Ein kürzerer Name oder ein größeres Handgelenk wirkt ruhiger.');
+if (e.technik === 'gummi' && e.runden >= 3)
+dazu('wickel', e.runden + ' Runden Gummiband tragen viel Gewicht: kräftiges Gummi nehmen und den Knoten mit Kleber sichern.');
+return h;
+}
+return { hinweise };
+})();
+
+})();
+
+(function(){
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
 Perlen.boundary = Perlen.boundary || {};
 Perlen.boundary.speicher = {
 erzeuge(fenster) {
@@ -2597,6 +2692,12 @@ const zahlen = [geo.perlen.length + ' Perlen', cm(P)];
 if (raster) zahlen.push(R.raster(e).breite.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' mm breit');
 if (!raster && !e.muster.length) zahlen.push('Muster leer');
 B.text(teile.zahlen, zahlen.join(' · '));
+const hw = Perlen.control.pruefung.hinweise(e);
+const hwText = JSON.stringify(hw);
+if (teile.hinweise.dataset.stand !== hwText) {
+teile.hinweise.dataset.stand = hwText; teile.hinweise.hidden = !hw.length;
+teile.hinweise.replaceChildren(...hw.map(h => el('p', { class: 'hinweis warnung', 'data-art': h.art }, h.text)));
+}
 B.text(teile.wert, cm(e.umfang)); teile.umfang.value = String(e.umfang);
 B.text(teile.kurz, [TECHNIK[e.technik], cm(e.umfang)].concat(e.passform === 'normal' ? [] : [e.passform]).join(' · '));
 for (const [gruppe, wert] of [[teile.passform, e.passform], [teile.hilfe, String(e.umfang)]])
@@ -2633,6 +2734,7 @@ klein = false; teile.weg = 0;
 teile.huelle = el('div', { class: 'buehne' }, teile.buehne, teile.zurueck,
 el('button', { type: 'button', class: 'ecke rechts', id: 'speichern', 'aria-label': 'Speichern', onclick: () => app.speichere() }, B.icon('speichern'), el('span', {}, 'Speichern')), teile.zahlen);
 const raster = K.istRaster(e.technik), gestalten = raster ? rasterBlock() : musterBlock();
+teile.hinweise = el('div', { class: 'stapel', id: 'hinweise', role: 'status' }); gestalten.prepend(teile.hinweise);
 const basteln = el('button', { type: 'button', class: 'knopf haupt gross', id: 'basteln', onclick: () => app.arbeite(aktuell()) }, 'Jetzt basteln');
 wurzel.replaceChildren(teile.huelle, gestalten, ...(raster ? [textBlock()] : []), einstellungen(e), schnellBlock(e), bildBlock(e), ...(raster ? [] : [namensBlock()]), basteln, bildTeilen());
 aktualisiere();
@@ -2809,6 +2911,7 @@ el('button', { type: 'button', class: 'knopf', 'aria-label': 'Entwurf ' + titelV
 });
 bereiche.ideen.replaceChildren(...[
 el('div', { class: 'stapel' }, el('h2', {}, 'Ideen zum Nachmachen'), el('p', { class: 'unter', style: 'margin:0' }, 'Antippen, dann im Designer anpassen: Farben, Länge, Name.')),
+pfadBlock(),
 filter,
 eigene.length ? el('div', { class: 'block', id: 'meine' }, el('h3', {}, 'Meine Entwürfe (' + eigene.length + ')'), el('div', { class: 'entwuerfe' }, eigene)) : null,
 sicherungBlock(),
@@ -2883,6 +2986,24 @@ el('label', { for: 'preis-' + k }, art[k].name, el('span', { class: 'klein' }, '
 zahlFeld('preis-' + k, typeof pr[k] === 'number' ? komma(pr[k]) : '', 'Preis ' + art[k].name + ' in Euro', w => gespeichert(material.setzePreis(k, w)), true))))));
 }
 
+function pfadBlock() {
+const z = app.zustand, L = Perlen.control.lernen, l = Perlen.control.ideen.liste(), pfad = L.pfad(), st = L.stand(z.daten.haken);
+const auf = offen.pfad === undefined ? st.geschafft < pfad.length : offen.pfad;   // offen, bis alles geschafft ist oder man zuklappt
+return el('details', { class: 'block einstellungen', id: 'pfad', open: auf, ontoggle: ev => { offen.pfad = ev.target.open; } },
+el('summary', {}, el('span', { class: 'kurz-text' }, el('span', { class: 'kurz-titel' }, 'Einsteigerpfad'),
+el('span', { class: 'kurz-wert', id: 'pfad-stand' }, st.geschafft + ' von ' + pfad.length + ' geschafft'))),
+el('div', { class: 'pfad' }, pfad.map((s, k) => {
+const id = L.haken(s.id), an = z.daten.haken[id] === true, idee = l.find(i => i.titel === s.idee);
+return el('div', { class: 'stufe' + (s.id === st.naechste ? ' naechste' : an ? ' erledigt' : ''), 'data-stufe': s.id },
+el('b', {}, (k + 1) + '. ' + s.titel), el('span', { class: 'unter' }, s.lernst),
+el('div', { class: 'zeile' },
+el('button', { type: 'button', class: 'knopf', 'data-anfangen': s.id, 'aria-label': 'Anfangen: ' + s.titel, disabled: !idee, onclick: () => oeffne(idee.entwurf) }, 'Anfangen'),
+el('label', { class: 'geschafft' }, el('input', { type: 'checkbox', id: 'pfad-' + s.id, 'aria-label': 'Geschafft: ' + s.titel, checked: an, onchange: ev => {
+offen.pfad = true;
+if (!sitzung.hakeAb(id, ev.target.checked) && z.speicherOk) B.melde('Haken nicht gespeichert'); auffrischen(); zeichne('ideen'); const n = fenster.document.getElementById('pfad-' + s.id); if (n) n.focus(); } }), 'Geschafft')));
+})));
+}
+
 function sicherungBlock() {
 const z = app.zustand, SI = Perlen.control.sicherung;
 const feld = el('textarea', { class: 'feld', id: 'sichern-text', rows: '3', autocomplete: 'off', placeholder: 'Gesicherten Text hier einfügen', style: 'text-transform:none;letter-spacing:0;font-size:0.9rem;padding:10px 12px;min-height:88px' });
@@ -2935,7 +3056,10 @@ el('div', { class: 'block' }, el('h3', {}, 'Handgelenk messen'), BILD.erzeuge(AL
 el('ol', { class: 'schritte', id: 'messen' }, AL.messen().map(s => el('li', {}, s)))),
 el('div', { class: 'block' }, el('h2', {}, a.titel), el('p', { class: 'hinweis' }, 'Die Bilder zeigen dein Armband aus dem Designer. Tippe auf ein Bild, um es anzuhalten oder abzuspielen.'),
 el('ol', { class: 'schritte', id: 'schritte' }, a.schritte.map((s, i) => el('li', {}, el('span', {}, s), BILD.erzeuge(a.bilder[i], kontext))))),
-el('div', { class: 'block' }, el('h3', {}, 'Tipps gegen typische Fehler'), el('ul', { class: 'tipps', id: 'tipps' }, a.tipps.map(s => el('li', {}, s)))));
+el('div', { class: 'block' }, el('h3', {}, 'Tipps gegen typische Fehler'), el('ul', { class: 'tipps', id: 'tipps' }, a.tipps.map(s => el('li', {}, s)))),
+el('div', { class: 'block', id: 'fehlerhilfe' }, el('h3', {}, 'Etwas ist schiefgegangen?'),
+AL.fehler(z.anleitung).map(f => el('details', { class: 'fehler' }, el('summary', {}, f.problem),
+el('p', {}, el('b', {}, 'Ursache: '), f.ursache), el('p', {}, el('b', {}, 'So geht es: '), f.abhilfe)))));
 BILD.aufraeumen();   // alte Bilder der vorigen Technik loslassen
 }
 
