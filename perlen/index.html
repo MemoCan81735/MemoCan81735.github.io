@@ -3232,8 +3232,25 @@ d.body.appendChild(ansicht); d.getElementById('bild-schliessen').focus();
 function schnellBlock(e) {
 const a = z.auswahl, st = K.stueck(e.stueck); if (a.bis === undefined) a.bis = 12; if (a.von === undefined) a.von = a.farbe;
 const zahlen = () => Array.from({ length: 1000 }, () => Math.random());
-const farbwahl = (id, wert, label, setze) => el('select', { class: 'feld', id, style: 'text-transform:none;letter-spacing:0', 'aria-label': label, onchange: ev => setze(Number(ev.target.value)) },
-FARBEN.map((f, i) => el('option', { value: String(i), selected: i === wert }, f.name)));
+const tafel = el('div', { class: 'palette', id: 'verlauf-tafel', role: 'group', hidden: true, style: 'grid-template-columns:repeat(auto-fill,minmax(64px,1fr))' });
+let tafelFuer = '';
+const kreis = i => el('span', { class: 'punkt', style: 'margin-right:0;flex:none;background:' + FARBEN[i].hex });
+const farbwahl = (id, wert, label, setze) => {
+const taste = el('button', { type: 'button', class: 'feld', id, 'aria-label': label, 'aria-expanded': 'false', 'data-farbe': String(wert),
+style: 'display:flex;align-items:center;gap:8px;min-height:44px;text-align:left;text-transform:none;letter-spacing:0', onclick: () => oeffne(taste, setze) }, kreis(wert), FARBEN[wert].name);
+return taste;
+};
+const oeffne = (taste, setze) => {
+const zu = tafelFuer === taste.id;
+for (const t of [start, ziel]) t.setAttribute('aria-expanded', 'false');
+tafelFuer = zu ? '' : taste.id; tafel.hidden = zu;
+if (zu) return;
+taste.setAttribute('aria-expanded', 'true'); tafel.setAttribute('aria-label', taste.getAttribute('aria-label'));
+const jetzt = Number(taste.dataset.farbe);
+tafel.replaceChildren(...FARBEN.map((f, i) => el('button', { type: 'button', 'data-farbe': String(i), 'aria-pressed': String(i === jetzt),
+style: 'display:flex;flex-direction:column;align-items:center;gap:2px;min-height:44px;padding:4px 0;border-radius:10px;border:2px solid ' + (i === jetzt ? 'currentColor' : 'transparent') + ';background:none;font:inherit;font-size:11px;color:inherit;cursor:pointer',
+onclick: () => { taste.dataset.farbe = String(i); taste.replaceChildren(kreis(i), f.name); setze(i); oeffne(taste, setze); } }, kreis(i), el('span', { style: 'max-width:100%;overflow-wrap:anywhere;line-height:1.1' }, f.name))));
+};
 const weg = el('div', { class: 'zeile', id: 'verlauf-weg', role: 'img', style: 'flex-wrap:wrap;gap:4px 10px' });
 const zeigeWeg = () => {
 const w = W.farbweg(a.von, a.bis);
@@ -3250,7 +3267,7 @@ el('button', { type: 'button', class: 'knopf', id: 'zufall', onclick: () => { ae
 el('button', { type: 'button', class: 'knopf', id: 'verlauf', onclick: () => { aendere(x => W.farbverlauf(x, a.von, a.bis)); z.verlauf.schliesse(); } }, 'Farbverlauf')),
 el('div', { class: 'werkzeuge', style: 'grid-template-columns:1fr 1fr' },
 el('label', { class: 'unter stapel', style: 'gap:4px' }, 'Verlauf von', start), el('label', { class: 'unter stapel', style: 'gap:4px' }, 'nach', ziel)),
-weg,
+tafel, weg,
 ...(st.paar ? [] : [el('h3', {}, 'Anhänger in der Mitte'),
 B.wahl(K.anhaenger(), e.anhaenger, h => { aendere(x => W.setzeAnhaenger(x, h)); baue(); }, 'Anhänger', true)]),
 ...(K.istRaster(e.technik) || e.technik === 'makramee' || (e.stueck !== 'armband' && e.stueck !== 'fuss') ? [] : [el('h3', {}, e.stueck === 'fuss' ? 'Runden um den Knöchel' : 'Runden ums Handgelenk'),
