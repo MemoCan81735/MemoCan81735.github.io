@@ -3398,7 +3398,8 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
   o = rest > 0.0 ? acc + rest * ${farbe('C', 'karte(M, p)')} : acc; }`;
   const FS_BACK = `uniform sampler2D C, M; void main() { o = ${farbe('C', 'karte(M, einheit())')}; }`;
   const FS_ID = 'void main() { o = vec4(einheit(), 0.0, 1.0); }';
-  const FS_ZEIGE = `uniform sampler2D C, M; uniform vec3 P[4]; in vec2 u; void main() { vec4 w = lin(C, karte(M, u)); float a = clamp(w.r + w.g + w.b + w.a, 0.0, 1.0);
+  const FS_ZEIGE = `uniform sampler2D C, M; uniform vec3 P[4]; uniform float sp; in vec2 u; void main() { vec4 w = lin(C, karte(M, u)); float a = clamp(w.r + w.g + w.b + w.a, 0.0, 1.0);
+  if (sp > 1.0) { vec4 q = pow(max(w, 0.0), vec4(sp)); float qw = pow(1.0 - a, sp), s = q.r + q.g + q.b + q.a + qw; if (s > 0.0) { w = q / s; a = 1.0 - qw / s; } }
   o = vec4(w.r * P[0] + w.g * P[1] + w.b * P[2] + w.a * P[3], a); }`;
   const VS_FLAECHE = '#version 300 es\nin vec2 a; uniform vec2 s; void main() { gl_Position = vec4(a.x * s.x - 1.0, a.y * s.y - 1.0, 0.0, 1.0); }';
   const FS_FLAECHE = '#version 300 es\nprecision mediump float; uniform vec4 c; out vec4 o; void main() { o = c; }';
@@ -3502,7 +3503,7 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
       zeige(sicht, farben, kipp, schirmH) { // in den aktuellen Bildpuffer (PixiJS), vormultipliziert über dem Wasser; farben: 4 x [r, g, b] in 0..1; schirmH: Höhe der Leinwand in Einheiten (kann von der Beckenhöhe abweichen)
         const p = P.zeige; gl.useProgram(p); gl.uniform1i(p.u('mId'), mId ? 1 : 0);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, C[0].t); gl.uniform1i(p.u('C'), 0); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, M[0].t); gl.uniform1i(p.u('M'), 1);
-        gl.uniform3fv(p.u('P'), new Float32Array([].concat(...farben))); gl.uniform2f(p.u('s'), 2 / breite, 2 / (schirmH || hoehe)); gl.uniform1f(p.u('dy'), (sicht && sicht.versatzY) || 0); gl.uniform1f(p.u('kipp'), kipp || 1);
+        gl.uniform3fv(p.u('P'), new Float32Array([].concat(...farben))); gl.uniform2f(p.u('s'), 2 / breite, 2 / (schirmH || hoehe)); gl.uniform1f(p.u('dy'), (sicht && sicht.versatzY) || 0); gl.uniform1f(p.u('kipp'), kipp || 1); gl.uniform1f(p.u('sp'), g.Ebru.ui.farbfeld.SCHAERFE || 1);
         gl.disable(gl.STENCIL_TEST); gl.disable(gl.DEPTH_TEST); gl.disable(gl.SCISSOR_TEST); gl.disable(gl.CULL_FACE); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         gl.bindVertexArray(vRechteck); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       },
@@ -3519,7 +3520,7 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
     function aufraeumen() { if (gl.isContextLost()) return; for (const p of angelegt.prog) gl.deleteProgram(p); for (const t of angelegt.tex) gl.deleteTexture(t); for (const f of angelegt.fb) gl.deleteFramebuffer(f); for (const b of angelegt.buf) gl.deleteBuffer(b); for (const v of angelegt.vao) gl.deleteVertexArray(v); }
     return api;
   }
-  g.Ebru.ui = g.Ebru.ui || {}; g.Ebru.ui.farbfeld = { erzeuge, PX };
+  g.Ebru.ui = g.Ebru.ui || {}; g.Ebru.ui.farbfeld = { erzeuge, PX, SCHAERFE: 2 };
 })(globalThis);
 
 })();
