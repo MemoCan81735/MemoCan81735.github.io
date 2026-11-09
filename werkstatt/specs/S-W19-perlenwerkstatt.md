@@ -20,6 +20,7 @@ Nachtrag 08.11.2026: Stand mit S-018 der App (Kette, Fußkettchen und Ohrringe, 
 Nachtrag 08.11.2026: Stand mit S-019 der App (Zufall mit Farbfamilien und Spiegelmustern, Farbverlauf mit Zwischenfarben und wählbarer Startfarbe) neu gebaut, gleiche Prüfungen grün.
 Nachtrag 08.11.2026: Stand mit S-020 der App (Farbweg des Verlaufs als Farbreihe vor dem Tippen) neu gebaut, gleiche Prüfungen grün.
 Nachtrag 09.11.2026: Stand mit S-021 der App (Farbtafel mit Farbkreisen für den Farbverlauf) neu gebaut, gleiche Prüfungen grün.
+Nachtrag 09.11.2026: Farbtafel trennt Farbnamen auch bei großer Schrift nicht mehr im Wort (F-46 der App), gleiche Prüfungen grün.
 
 ## Anwendungsfall
 - U-1: Der Besucher öffnet die Startseite, sieht die neue Rubrik "Basteln" mit der Karte Perlenwerkstatt, tippt "Planen" und sieht in unter 3 s zwölf Ideen.
