@@ -3232,7 +3232,7 @@ d.body.appendChild(ansicht); d.getElementById('bild-schliessen').focus();
 function schnellBlock(e) {
 const a = z.auswahl, st = K.stueck(e.stueck); if (a.bis === undefined) a.bis = 12; if (a.von === undefined) a.von = a.farbe;
 const zahlen = () => Array.from({ length: 1000 }, () => Math.random());
-const tafel = el('div', { class: 'palette', id: 'verlauf-tafel', role: 'group', hidden: true, style: 'grid-template-columns:repeat(auto-fill,minmax(64px,1fr))' });
+const tafel = el('div', { class: 'palette', id: 'verlauf-tafel', role: 'group', hidden: true, style: 'grid-template-columns:repeat(auto-fill,minmax(80px,1fr))' });
 let tafelFuer = '';
 const kreis = i => el('span', { class: 'punkt', style: 'margin-right:0;flex:none;background:' + FARBEN[i].hex });
 const farbwahl = (id, wert, label, setze) => {
@@ -3249,7 +3249,7 @@ taste.setAttribute('aria-expanded', 'true'); tafel.setAttribute('aria-label', ta
 const jetzt = Number(taste.dataset.farbe);
 tafel.replaceChildren(...FARBEN.map((f, i) => el('button', { type: 'button', 'data-farbe': String(i), 'aria-pressed': String(i === jetzt),
 style: 'display:flex;flex-direction:column;align-items:center;gap:2px;min-height:44px;padding:4px 0;border-radius:10px;border:2px solid ' + (i === jetzt ? 'currentColor' : 'transparent') + ';background:none;font:inherit;font-size:11px;color:inherit;cursor:pointer',
-onclick: () => { taste.dataset.farbe = String(i); taste.replaceChildren(kreis(i), f.name); setze(i); oeffne(taste, setze); } }, kreis(i), el('span', { style: 'max-width:100%;overflow-wrap:anywhere;line-height:1.1' }, f.name))));
+onclick: () => { taste.dataset.farbe = String(i); taste.replaceChildren(kreis(i), f.name); setze(i); oeffne(taste, setze); } }, kreis(i), el('span', { style: 'max-width:100%;white-space:nowrap;line-height:1.1' }, f.name))));
 };
 const weg = el('div', { class: 'zeile', id: 'verlauf-weg', role: 'img', style: 'flex-wrap:wrap;gap:4px 10px' });
 const zeigeWeg = () => {
