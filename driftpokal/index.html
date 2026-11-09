@@ -17425,6 +17425,31 @@ class ShadowCacheUI {
 const POST_LOOK = { levels: 5, knee: 0.01, grade: true, vignette: 0.32 };
 // Leuchten wie bisher: three's UnrealBloomPass legte das Leuchten mit Alpha = 3 × Stärke über das Bild (Alphakanal der Summe),
 // wirksam also (3 × Stärke)² mal das weichgezeichnete Helle. Hier zählen alle Stufen einfach (je normiert), daher geteilt durch ihre Zahl.
+// S-W22 (08.11.2026): Sonnenblendung und Tempo-Sog im Schlussdurchgang. Schalter und Grenzen; Rechnung ohne Zeit und Zufall (rein).
+const FX_LOOK = { glare: true, sog: true, glareMax: 0.6, glareNear: 20, glareFar: 60, sogUp: 5, sogDown: 2.2 };
+class FxMathUI {
+  // Winkel in Grad zwischen Blickrichtung a und Sonnenrichtung b; bei Länge 0 oder ungültigen Zahlen 180 (keine Blendung)
+  static angle(a, b){
+    const la = Math.hypot(a.x, a.y, a.z), lb = Math.hypot(b.x, b.y, b.z);
+    if (!(la > 1e-9) || !(lb > 1e-9) || !Number.isFinite(la + lb)) return 180;
+    const c = (a.x * b.x + a.y * b.y + a.z * b.z) / (la * lb);
+    return Math.acos(Math.max(-1, Math.min(1, c))) * 180 / Math.PI;
+  }
+  // Blendung 0 bis glareMax: nur klarer Tag (kein Regen, keine Nacht), Sonne über dem Horizont, Blick nahe an der Sonne
+  static glare(angleDeg, tag){
+    if (!tag || tag.rain || tag.night || !(tag.el > 0.02) || !Number.isFinite(angleDeg) || angleDeg < 0) return 0;
+    const near = FX_LOOK.glareNear, far = FX_LOOK.glareFar;
+    if (angleDeg >= far) return 0;
+    const t = angleDeg <= near ? 1 : 1 - (angleDeg - near) / (far - near);
+    return FX_LOOK.glareMax * t * t * (3 - 2 * t);
+  }
+  // Sog 0 bis 1: baut bei Turbo in 0,2 s auf, klingt danach in 0,45 s ab
+  static sogStep(v, boosting, dt){
+    if (!Number.isFinite(v)) v = 0;
+    if (!Number.isFinite(dt) || dt < 0) return Math.max(0, Math.min(1, v));
+    return Math.max(0, Math.min(1, v + (boosting ? FX_LOOK.sogUp : -FX_LOOK.sogDown) * dt));
+  }
+}
 POST_LOOK.bloomOf = (strength) => (3 * strength) * (3 * strength) / POST_LOOK.levels;
 class PostChainUI {
   constructor(renderer){
@@ -17464,9 +17489,10 @@ class PostChainUI {
       }`);
     // Schluss: Leuchten dazu, ACES wie in three (Faktor 1/0,6), sRGB, dann Farbstimmung und Vignette wie vorher
     this.uFinal = { tScene: { value: null }, tBloom: { value: null }, uBloom: { value: POST_LOOK.bloomOf(0.3) }, uExposure: { value: 1.05 },
-      uTint: { value: this.tint }, uVignette: { value: 0.32 }, uLift: { value: 0 }, uSat: { value: 1 } };
+      uTint: { value: this.tint }, uVignette: { value: 0.32 }, uLift: { value: 0 }, uSat: { value: 1 },
+      uGlare: { value: new T.Vector3(0.5, 0.5, 0) }, uSog: { value: 0 }, uAspect: { value: 1.8 } };
     this.mFinal = mat(this.uFinal, `uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uBloom; uniform float uExposure;
-      uniform vec3 uTint; uniform float uVignette; uniform float uLift; uniform float uSat; varying vec2 vUv;
+      uniform vec3 uTint; uniform float uVignette; uniform float uLift; uniform float uSat; uniform vec3 uGlare; uniform float uSog; uniform float uAspect; varying vec2 vUv;
       vec3 dpFit(vec3 v){ vec3 a = v * (v + 0.0245786) - 0.000090537; vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081; return a / b; }
       vec3 dpAces(vec3 c){
         const mat3 inM = mat3(vec3(0.59719, 0.07600, 0.02840), vec3(0.35458, 0.90834, 0.13383), vec3(0.04823, 0.01566, 0.83777));
@@ -17474,13 +17500,32 @@ class PostChainUI {
         c *= uExposure / 0.6; c = outM * dpFit(inM * c); return clamp(c, 0.0, 1.0);
       }
       void main(){
-        vec3 c = texture2D(tScene, vUv).rgb + texture2D(tBloom, vUv).rgb * uBloom;
+        vec3 c;
+        if (uSog > 0.001){
+          // Tempo-Sog (S-W22): radiale Unschärfe zum Bildrand hin, rot und blau leicht versetzt
+          vec2 d = vUv - vec2(0.5, 0.52); float w = uSog * smoothstep(0.12, 0.75, length(d)) * 0.035;
+          c = (texture2D(tScene, vUv).rgb + texture2D(tScene, vUv - d * w).rgb + texture2D(tScene, vUv - d * w * 2.0).rgb
+            + texture2D(tScene, vUv - d * w * 3.0).rgb + texture2D(tScene, vUv - d * w * 4.0).rgb) * 0.2;
+          c.r = mix(c.r, texture2D(tScene, vUv - d * w * 4.6).r, 0.3); c.b = mix(c.b, texture2D(tScene, vUv - d * w * 0.6).b, 0.3);
+        } else c = texture2D(tScene, vUv).rgb;
+        c += texture2D(tBloom, vUv).rgb * uBloom;
         c = sRGBTransferOETF(vec4(dpAces(c), 1.0)).rgb;
         c = mix(vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))), c, uSat);
         c *= uTint;
         c = c * (1.0 - uLift) + uLift * 0.06;
         vec2 d = vUv - 0.5; float v = 1.0 - uVignette * smoothstep(0.35, 0.95, dot(d, d) * 2.2);
-        gl_FragColor = vec4(c * v, 1.0);
+        c *= v;
+        if (uGlare.z > 0.001){
+          // Sonnenblendung (S-W22): Hof und Strahlen um die Sonne, außerhalb von 0,5 Bildhöhen null
+          vec2 g = (vUv - uGlare.xy) * vec2(uAspect, 1.0); float r = length(g);
+          if (r < 0.5){
+            float a = atan(g.y, g.x);
+            float halo = exp(-r * r * 18.0) * 0.9 + exp(-r * 3.5) * 0.25;
+            float rays = pow(abs(cos(a * 3.0 + 0.4)), 24.0) * exp(-r * 5.0) * 0.5;
+            c += vec3(1.0, 0.93, 0.78) * uGlare.z * (halo + rays) * (1.0 - smoothstep(0.25, 0.5, r));
+          }
+        }
+        gl_FragColor = vec4(c, 1.0);
       }`);
     this.fxaaRes = new T.Vector2(1 / 800, 1 / 400);
     this.mFxaa = new T.ShaderMaterial({ uniforms: { tDiffuse: { value: null }, resolution: { value: this.fxaaRes } },
@@ -17580,6 +17625,7 @@ class Renderer3DUI {
     this.camera = new T.PerspectiveCamera(52, 2, 0.8, 7000);
     this.scene.add(this.camera);
     this.hemi = new T.HemisphereLight("#d6ecff", "#4f7a3c", 0.55);
+    if (win) win.__fxRenderer = this;      // Zugang für die Tests (S-W22)
     this.sun = new T.DirectionalLight("#fff2dc", 3.0);
     this.sun.castShadow = true;
     this.sun.shadow.bias = -0.0004; this.sun.shadow.normalBias = 0.45;
@@ -18482,6 +18528,7 @@ class Renderer3DUI {
       this.friendTag.scale.set(s, s, 1);
       this.friendTag.position.set(friend.x, friend.z + 11 + s * 0.4 + Math.sin(this.time * 4) * 0.6, friend.y);
     }
+    this._updateFx(focus, dt);
     this._effects(view, dt, events || [], this.camera.position.x, this.camera.position.z);
     this._updateRain(dt);
     this._updateStorm(dt);
@@ -18491,6 +18538,24 @@ class Renderer3DUI {
       this.cssH * this.renderer.getPixelRatio() / (2 * Math.tan(this.camera.fov * Math.PI / 360));
     this._draw();
     this.stillShown = dt === 0; this.dirty = false;
+  }
+
+  // Sonnenblendung und Tempo-Sog (S-W22): Werte für den Schlussdurchgang
+  _updateFx(focus, dt){
+    const U = this.postChain.uFinal;
+    let g = 0, sx = 0.5, sy = 0.5;
+    if (FX_LOOK.glare && this.sunDir && this.look){
+      const cam = this.camera; cam.updateMatrixWorld();
+      const fwd = cam.getWorldDirection(this._fxV1 || (this._fxV1 = new THREE.Vector3()));
+      g = FxMathUI.glare(FxMathUI.angle(fwd, this.sunDir), { rain: !!this.look.rain, night: !!this.look.night, el: this.sunDir.y });
+      if (g > 0){
+        const p = (this._fxV2 || (this._fxV2 = new THREE.Vector3())).copy(this.sunDir).multiplyScalar(1000).add(cam.position).project(cam);
+        sx = p.x * 0.5 + 0.5; sy = p.y * 0.5 + 0.5;
+      }
+    }
+    U.uGlare.value.set(sx, sy, g);
+    U.uSog.value = FX_LOOK.sog ? FxMathUI.sogStep(U.uSog.value, !!(focus && focus.boosting), dt) : 0;
+    U.uAspect.value = this.cssW > 0 && this.cssH > 0 ? this.cssW / this.cssH : 1.8;
   }
 
   // Studio-Bilder der Karts für die Fahrerwahl (einmal erzeugt, dann aus dem Speicher)
