@@ -8,27 +8,27 @@
 - A-2: Regeln werden im Spiel erklärt (Übung beim ersten Start und Regelkarten hinter "?"), wie bei Mühle.
 - A-3: Gleiche Optik und Bedienung wie die anderen Spiele: 3D-Brett, Animation, Ton, Konfetti, Zug zurück, Tipp, Stufen Leicht/Mittel/Stark.
 - A-4: Zweck: kurze Partien (unter 10 Minuten) am Handy; Zielgruppe: Betreiber und Freunde, auch Anfänger; Plattform: Handy im Browser, keine Fremdserver; keine neuen personenbezogenen Daten.
-- **Offene Entscheidungen für die Freigabe:** (1) Regelvariante, (2) Umfang der ersten Stufe, siehe unten.
+- A-5: Regeln der türkischen Dame (Dama), gewählt vom Betreiber auf der Auswahlkarte am 10.11.2026.
 
-## Vorschlag zur Regelvariante (Empfehlung kursiv)
-- *Türkische Dame (Dama): 8 × 8, 16 Steine je Seite auf Reihe 2 und 3, ziehen und schlagen nur vorwärts und seitwärts, Dame zieht beliebig weit gerade, Schlagzwang mit Mehrfachsprung, Mehrheitsregel nicht nötig.*
+## Regelvariante (gewählt: türkische Dame)
+- *Türkische Dame (Dama): 8 × 8, 16 Steine je Seite auf Reihe 2 und 3, ziehen und schlagen nur vorwärts und seitwärts, Dame zieht beliebig weit gerade (auch zurück) und schlägt aus der Ferne, Schlagzwang mit Mehrfachsprung, Mehrheitsregel (wer mehr Steine schlagen kann, muss das tun), geschlagene Steine verschwinden sofort, keine Kehrtwende um 180 Grad innerhalb eines Zugs, Umwandlung am Zugende.*
 - Internationale Dame (10 × 10, Dame fliegt diagonal), englische Dame (8 × 8, diagonal, Dame zieht einen Schritt).
-- Begründung der Empfehlung: Türkische Dame ist das Spiel, das der Betreiber vermutlich kennt; die Regeln sind kurz und gut als Übung zu erklären. Wahl durch den Betreiber steht aus.
+- Begründung der Empfehlung: Türkische Dame ist das Spiel, das der Betreiber vermutlich kennt; die Regeln sind kurz und gut als Übung zu erklären. Nicht gewählt: internationale und englische Dame.
 
 ## Anwendungsfall 1: Erster Start (Übung)
 - Akteur: Spieler am Handy; Ziel: die Regeln in unter 2 Minuten verstehen; Auslöser: erster Tipp auf Reiter "Dame"
-- U-1: Übung "1 von 4: Ziehen" mit leuchtendem Stein und Zielfeld
+- U-1: Übung "1 von 5: Ziehen" mit leuchtendem Stein und Zielfeld
 - U-2: Schlagen mit Pflicht (Zielfeld leuchtet, andere Züge sind gesperrt, Hinweis "Schlagen ist Pflicht")
 - U-3: Mehrfachsprung in einem Zug
-- U-4: Dame werden und als Dame ziehen
+- U-4: Dame werden (Schritt 4) und als Dame aus der Ferne schlagen (Schritt 5)
 - Alternativen: Überspringen, falsches Feld tippen (Hinweis), Neuladen (Übung beginnt neu), Speicher blockiert (Spiel läuft)
-- Erfolgsmaß: 4 Schritte mit je einem Tippziel
+- Erfolgsmaß: 5 Schritte, zu jeder Zeit genau ein leuchtendes Tippziel
 
 ## Anwendungsfall 2: Partie gegen den Computer
 - U-5: Weiß (Spieler) beginnt; ziehbare Steine tragen Ring, Zielfelder leuchten nach Antippen, Statuszeile in Klartext
 - U-6: bei Schlagzwang tragen nur schlagfähige Steine den Ring; Hinweis in der Statuszeile
 - U-7: Computer zieht in gewählter Stufe, Rechenzeit stark unter 1,5 s je Zug (im Worker)
-- U-8: Ende: Sieg, Niederlage oder Unentschieden (dreifache Stellung oder 20 Züge ohne Schlag und ohne Steinzug); Konfetti und Ton nur beim Sieg
+- U-8: Ende: Sieg, Niederlage oder Unentschieden (dreifache Stellung oder 40 Halbzüge in Folge ohne Schlag und ohne Zug eines einfachen Steins); Konfetti und Ton nur beim Sieg
 - U-9: Zug zurück, Tipp (Lernhilfe) und zu zweit am Handy
 - Alternativen: Neuladen mitten in der Partie (Stand bleibt), Doppeltippen, Neustart während der Computer rechnet
 
@@ -36,10 +36,10 @@
 - U-10: "?" zeigt 3 Karten (Ziehen, Schlagen, Dame); Schließen lässt die Stellung unverändert; Übung wiederholen möglich
 
 ## Rechenmodell (verbindlich, Variante nach Freigabe; hier türkische Dame)
-- Entity `DameEntity`: Brett 8 × 8 (64 Felder), Zug- und Schlagregeln, Schlagzwang, Mehrfachsprung (ein Zug besteht aus der ganzen Sprungfolge), Umwandlung auf der letzten Reihe, Zähler für dreifache Stellung und Zugregel; kein Zufall, keine Zeit.
+- Entity `DameEntity`: Brett 8 × 8 (64 Felder), Zug- und Schlagregeln, Schlagzwang mit Mehrheitsregel, Mehrfachsprung (ein Zug besteht aus der ganzen Sprungfolge, der Spieler tippt sie Feld für Feld), Umwandlung auf der letzten Reihe, Zähler für dreifache Stellung und Zugregel; kein Zufall, keine Zeit.
 - Boundary `DameBoundary`: legale Züge, Zielfelder, schlagfähige Steine, Tipp.
 - Control: Stufen (Tiefe 1/2/4, Knotengrenze 60 000, Fehlerquote 0,4 / 0,15 / 0 über hineingereichten Zufall), Übung als eigene Entity, Pause bei offener Hilfe.
-- Daten: Einstellungen `brettspiele.einstellungen` bleiben Formatversion 1; neues optionales Feld `dameEinfuehrung: true`; Spielstand `brettspiele.dame` mit Formatversion 1; kaputte oder fehlende Daten fallen auf Standard zurück.
+- Daten: Einstellungen `brettspiele.einstellungen` bleiben Formatversion 1; neues optionales Feld `dameEinfuehrung: true`; laufende Partie und Statistik wie bei den anderen Spielen im Gerätespeicher `dameDB`, Spielstand mit `formatversion: 1`; kaputte oder fehlende Daten fallen auf Standard zurück.
 - Optik: 3D-Brett wie Schach, Steine mit eigener Form (Scheibe, Dame mit Krone aus Aufsatz), Kontrast Stein zu Feld gemessen wie in S-W06.
 
 ## Akzeptanzkriterien
@@ -48,10 +48,10 @@
 | AK-1 | Start: 16 Steine je Seite auf den richtigen Reihen, Weiß beginnt | `da_regeln` |
 | AK-2 | Zugregeln: Stein zieht 1 Feld vor oder seitwärts, nie rückwärts; Dame beliebig weit gerade | `da_regeln` |
 | AK-3 | Schlagzwang: gibt es einen Schlag, sind alle anderen Züge unzulässig | `da_schlag` |
-| AK-4 | Mehrfachsprung wird als ein Zug ausgeführt, alle übersprungenen Steine fallen erst am Zugende | `da_schlag` |
-| AK-5 | Umwandlung auf der letzten Reihe; bei Sprung endet er dort, wenn kein Weitersprung als Stein möglich | `da_dame` |
-| AK-6 | Ende: kein Stein oder kein legaler Zug verliert; dreifache Stellung und 20 Züge ohne Schlag sind Unentschieden, werden gezählt | `da_ende` |
-| AK-7 | Übung: genau 4 Schritte, je 1 Tippziel, falsches Feld ändert nichts; nach der Übung gespeichert (`dameEinfuehrung`), kaputte Einstellungen oder blockierter Speicher stoppen nichts | `da_uebung` |
+| AK-4 | Mehrfachsprung wird als ein Zug ausgeführt, jeder übersprungene Stein verschwindet sofort; Mehrheitsregel: nur Folgen mit der höchsten Zahl geschlagener Steine sind zulässig; keine Kehrtwende | `da_schlag` |
+| AK-5 | Umwandlung auf der letzten Reihe am Zugende; Dame zieht und schlägt beliebig weit gerade, landet auf jedem freien Feld hinter dem geschlagenen Stein | `da_dame` |
+| AK-6 | Ende: kein Stein oder kein legaler Zug verliert; dreifache Stellung und 40 Halbzüge ohne Schlag und ohne Steinzug sind Unentschieden, werden gezählt | `da_ende` |
+| AK-7 | Übung: genau 5 Schritte, je Zeitpunkt 1 Tippziel, falsches Feld ändert nichts; nach der Übung gespeichert (`dameEinfuehrung`), kaputte Einstellungen oder blockierter Speicher stoppen nichts | `da_uebung` |
 | AK-8 | Markierung: Ringe, Zielfelder, Tippfläche je Feld mindestens 44 × 44 px bei 412 px Breite | `da_markierung` |
 | AK-9 | Stärke: stark schlägt Leicht in mindestens 18 von 20 Partien, Mittel schlägt Leicht in mindestens 14 von 20; Rechenzeit im Mittel unter 400 ms, höchstens 1500 ms; gleiche Saat gleiche Züge | `da_staerke` |
 | AK-10 | "?" öffnet 3 Karten, Stellung bleibt unverändert, Computer zieht nicht während die Karten offen sind | `da_hilfe` |
@@ -66,14 +66,14 @@
 | PS-3 | Fehlerfall | Rückwärtszug eines Steins wird abgelehnt | AK-2 |
 | PS-4 | Normal | Einfacher Schlag mit Pflicht | AK-3 |
 | PS-5 | Missbrauch | Nicht schlagen, obwohl möglich: Zug abgelehnt | AK-3 |
-| PS-6 | Grenzwert | Zwei Schläge zur Auswahl: beide erlaubt, kein Mehrheitszwang | AK-3 |
-| PS-7 | Normal | Mehrfachsprung über 3 Steine, Steine fallen am Zugende | AK-4 |
-| PS-8 | Grenzwert | Sprungfolge darf denselben Stein nicht zweimal nehmen | AK-4 |
+| PS-6 | Grenzwert | Zwei Schläge mit gleicher Zahl: beide erlaubt; Schlag mit 1 Stein neben Folge mit 2 Steinen: nur die längere erlaubt | AK-3 |
+| PS-7 | Normal | Mehrfachsprung über 3 Steine, jeder Stein verschwindet sofort | AK-4 |
+| PS-8 | Grenzwert | Dame darf im Zug nicht um 180 Grad wenden; abbiegen ist erlaubt | AK-4 |
 | PS-9 | Normal | Umwandlung und Damenzug | AK-5 |
 | PS-10 | Grenzwert | Dame schlägt über weite Strecke, Stein dahinter blockiert | AK-5 |
 | PS-11 | Normal | Letzter Stein geschlagen: Partie endet | AK-6 |
-| PS-12 | Grenzwert | Stellung zweimal, dann dreimal; 19 und 20 Züge ohne Schlag | AK-6 |
-| PS-13 | Normal | Übung 1 bis 4 durchtippen | AK-7 |
+| PS-12 | Grenzwert | Stellung zweimal, dann dreimal; 39 und 40 Halbzüge ohne Schlag | AK-6 |
+| PS-13 | Normal | Übung 1 bis 5 durchtippen | AK-7 |
 | PS-14 | Fehlerfall | Falsches Feld in jeder Übung; Einstellungen kaputt; Speicher blockiert | AK-7 |
 | PS-15 | Normal | Markierungen in Ziehen, Schlagzwang, Mehrfachsprung | AK-8 |
 | PS-16 | Normal | 20 Partien stark gegen leicht, 20 mittel gegen leicht | AK-9 |
@@ -85,11 +85,11 @@
 | PS-22 | Normal | Bilder aller Übungsschritte und Zustände | AK-12 |
 
 ## Gegenproben
-- Verstoß (muss rot machen): Rückwärtszug erlaubt, Schlagzwang entfernt, Mehrfachsprung zerlegt, Steine fallen schon mitten im Sprung, Remis ohne Zählung, Tippfläche 30 px, Übung ohne Speichern, "?" verändert die Stellung, Computer ignoriert Schlagzwang.
-- Fehlalarm (darf nicht anschlagen): PS-6 (zwei Schläge, beide erlaubt), PS-8 (gleiche Dame zieht weiter ohne Stein zweimal zu nehmen), PS-21 (alter gültiger Stand lädt weiter).
+- Verstoß (muss rot machen): Rückwärtszug erlaubt, Schlagzwang entfernt, Mehrheitsregel entfernt, Kehrtwende erlaubt, Stein zieht schräg, Remis ohne Zählung, Tippfläche 30 px, Übung ohne Speichern, "?" verändert die Stellung, Computer ignoriert Schlagzwang.
+- Fehlalarm (darf nicht anschlagen): PS-6 (zwei gleich lange Schläge, beide erlaubt), PS-8 (Abbiegen im Sprung ist erlaubt), PS-21 (alter gültiger Stand lädt weiter).
 
 ## Nicht Teil dieser Änderung
 - Dame-Schule mit Aufgaben, andere Regelvarianten, Mehrspieler im Netz.
 
 ## Betroffene Schichten
-Neue Entity, Boundary, Control und UI für Dame in `brettspiele/index.html`; neues gespeichertes Feld `dameEinfuehrung` und Spielstand `brettspiele.dame` (Freigabe für Speichern erforderlich).
+Neue Entity, Boundary, Control und UI für Dame in `brettspiele/index.html`; neues gespeichertes Feld `dameEinfuehrung` und Gerätespeicher `dameDB` (mit der Wahl von Dame und Regelvariante am 10.11.2026 freigegeben; Status wird beim Baubeginn auf "freigegeben" gesetzt, zusammen mit Technischem Design, Kritischen Testfällen und Querschnitt).
