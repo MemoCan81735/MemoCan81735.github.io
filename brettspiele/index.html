@@ -41,6 +41,7 @@
     --ot-cell: min(44px, calc((100vw - 58px) / 8));
     --ch-square: min(44px, calc((100vw - 32px) / 8));
     --mu-board: min(340px, 84vw);
+    --da-feld: min(44px, calc((100vw - 32px) / 8));
     --ma-store: min(46px, 11.5vw);
     --ma-pit: min(44px, calc((100vw - 52px - 2 * var(--ma-store)) / 6));
   }
@@ -143,7 +144,7 @@
     box-shadow: 0 4px 14px rgba(52,199,89,0.4);
   }
 
-  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols) { margin-top: 24px; display: flex; gap: 12px; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols) { margin-top: 24px; display: flex; gap: 12px; }
   button.action {
     background: var(--ios-blue);
     color: white;
@@ -167,7 +168,7 @@
   button.action:disabled { opacity: 0.4; cursor: default; }
 
   /* iOS-Segmented-Control-Optik statt Radiobuttons */
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) {
     margin-top: 18px;
     display: flex;
     background: var(--segment-bg);
@@ -176,7 +177,7 @@
     position: relative;
     font-size: 0.85rem;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) label {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -188,21 +189,21 @@
     color: var(--ios-label);
     transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) input {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) input {
     position: absolute;
     opacity: 0;
     pointer-events: none;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label:has(input:checked),
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label.active {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) label:has(input:checked),
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) label.active {
     background: var(--surface);
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label:has(input:not(:checked)):not(.active) {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) label:has(input:not(:checked)):not(.active) {
     color: var(--ios-secondary-label);
   }
 
-  :is(#stats, #c4stats, #otstats, #mustats, #chstats, #mastats) {
+  :is(#stats, #c4stats, #otstats, #mustats, #chstats, #mastats, #dastats) {
     margin-top: 20px;
     display: flex;
     gap: 10px;
@@ -290,6 +291,7 @@
   .brett3d { width: min(400px, 96vw); aspect-ratio: 1 / 0.95; touch-action: pan-y; border-radius: 20px; overflow: hidden;
     background: radial-gradient(ellipse at 50% 35%, #ffffff 0%, #e4e9f1 70%, #d3dae5 100%); box-shadow: 0 8px 24px rgba(0,0,0,0.14); }
   .brett3d.chess { aspect-ratio: 1 / 0.92; background: radial-gradient(ellipse at 50% 40%, #fdf8f0 0%, #e8dccb 75%, #d8c8b2 100%); }
+  .brett3d.dame { aspect-ratio: 1 / 0.92; background: radial-gradient(ellipse at 50% 40%, #f6efe2 0%, #e4d6bd 75%, #d3c1a2 100%); }
   .brett3d canvas { display: block; width: 100%; height: 100%; }
   .brett3d[hidden] { display: none; }
 
@@ -480,6 +482,67 @@
   .mu-hilfe-knoepfe { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
   @media (prefers-reduced-motion: reduce) { .mu-point.ziel::before { animation: none; } }
 
+  /* --- Dame (türkische Dame, S-W23): Raster aus 64 Tippflächen, Steine als eigene Zeichnung --- */
+  #dastatus {
+    font-weight: 500;
+    line-height: 1.35;
+    margin-bottom: 16px;
+    min-height: 40px;
+    max-width: min(380px, 94vw);
+    font-size: 0.85rem;
+    text-align: center;
+    white-space: pre-line;
+    color: var(--ios-secondary-label);
+  }
+  #daboard {
+    background: #5e4829;
+    padding: 6px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+  #dafelder { position: relative; display: grid; grid-template-columns: repeat(8, var(--da-feld)); grid-template-rows: repeat(8, var(--da-feld)); }
+  .da-feld {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    width: var(--da-feld); height: var(--da-feld); padding: 0; margin: 0; border: 0; border-radius: 0;
+    background: #9a7f52; box-shadow: inset 0 0 0 1px rgba(60,40,10,0.35);
+    cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  }
+  .da-feld.zuletzt { background-image: linear-gradient(rgba(255,214,10,0.38), rgba(255,214,10,0.38)); }
+  .da-stein { width: calc(100% - 4px); height: calc(100% - 4px); display: block; pointer-events: none; }
+  .da-feld.neu .da-stein { animation: ploppen 0.2s cubic-bezier(.3,1.6,.5,1); }
+  .da-feld.ziel::before {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 46%; height: 46%; margin: -23% 0 0 -23%; border-radius: 50%;
+    background: #34c759; box-shadow: 0 0 0 2px rgba(255,255,255,0.85); animation: daPuls 1.2s ease-in-out infinite; pointer-events: none; z-index: 2;
+  }
+  .da-feld.weg::before {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 26%; height: 26%; margin: -13% 0 0 -13%; border-radius: 50%;
+    background: #ff9f0a; box-shadow: 0 0 0 2px rgba(255,255,255,0.8); pointer-events: none; z-index: 2;
+  }
+  .da-feld.ziehbar::after, .da-feld.selected::after {
+    content: ''; position: absolute; inset: 1px; border-radius: 50%; border: 3px solid #0a84ff; pointer-events: none; z-index: 2;
+  }
+  .da-feld.selected::after { border-width: 4px; box-shadow: 0 0 10px rgba(10,132,255,0.8); }
+  .da-x { position: absolute; left: 50%; top: 50%; width: 52%; height: 52%; margin: -26% 0 0 -26%; pointer-events: none; z-index: 1; }
+  .da-feld.tipp { outline: 3px solid #ff9f0a; outline-offset: -3px; }
+  .da-blase { position: absolute; transform: translate(-50%, calc(var(--da-feld) * 0.5 + 6px)); background: #34c759; color: #fff; font-weight: 700; font-size: 0.8rem;
+    padding: 6px 10px; border-radius: 12px; white-space: nowrap; pointer-events: none; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+  .da-blase.oben { transform: translate(-50%, calc(-100% - var(--da-feld) * 0.5 - 6px)); }
+  @keyframes daPuls { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+  .da-uebung { width: min(372px, 92vw); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--ios-card); border: 2px solid #34c759; border-radius: 16px; padding: 8px 10px 8px 14px; margin-bottom: 10px; }
+  .da-uebung[hidden], .da-hilfe[hidden] { display: none; }
+  .da-uebung-titel { font-weight: 700; font-size: 0.9rem; color: var(--ios-label); }
+  .da-hilfe { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,0.45); display: flex; justify-content: center; align-items: flex-start;
+    overflow-y: auto; padding: 16px; box-sizing: border-box; }
+  .da-hilfe-inhalt { background: var(--surface); color: var(--ios-label); border-radius: 20px; padding: 14px 16px; width: 100%; max-width: 380px; box-sizing: border-box; }
+  .da-hilfe-inhalt h2 { margin: 2px 0 6px; font-size: 1.1rem; }
+  .da-karte { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-muted); }
+  .da-karte svg { flex: 0 0 96px; width: 96px; height: 96px; border-radius: 8px; }
+  .da-karte h3 { margin: 0 0 3px; font-size: 0.95rem; }
+  .da-karte p { margin: 0; font-size: 0.82rem; line-height: 1.35; color: var(--ios-secondary-label); }
+  .da-hilfe-knoepfe { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+  @media (prefers-reduced-motion: reduce) { .da-feld.ziel::before, .da-feld.neu .da-stein { animation: none; } }
+
   /* --- Schach --- */
   #chstatus {
     font-size: 0.95rem;
@@ -606,7 +669,7 @@
     min-height: 16px;
   }
 
-  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode),
+  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode),
      aber nur sichtbar, wenn gegen den Computer gespielt wird. */
   #chdiff {
     display: none;
@@ -692,7 +755,7 @@
   .tab-content > h1 { display: none; }   /* S-W25: der Name steht in der Kopfzeile */
   .ton-schalter { justify-self: end; min-width: 44px; min-height: 44px; border: none; border-radius: 999px; background: var(--segment-bg); font-size: 1rem; cursor: pointer; }
   .ton-schalter[aria-pressed="false"] { opacity: 0.55; }
-  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols) { justify-content: center; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols) { justify-content: center; }
   button.action.klein { padding: 10px 16px; font-size: 0.9rem; }
   .stufen { display: none; margin-top: 10px; background: var(--segment-bg); padding: 3px; border-radius: 10px; font-size: 0.8rem; }
   .stufen.active { display: flex; }
@@ -747,7 +810,7 @@
   .tabBtn.weiter .kachel-weiter { visibility: visible; }
   #layerNote .lizenz-schach { display: none; }
   body[data-spiel="chess"] #layerNote .lizenz-schach, body[data-spiel="schule"] #layerNote .lizenz-schach { display: inline; }
-  .mu-hilfe-knopf { min-width: 44px; }
+  .mu-hilfe-knopf, .da-hilfe-knopf { min-width: 44px; }
   @media (max-width: 380px) {   /* schmale Handys: die drei Aktionen bleiben in einer Zeile */
     [data-abschnitt="aktionen"] { gap: 6px; }
     [data-abschnitt="aktionen"] button { padding-left: 9px; padding-right: 9px; font-size: 0.88rem; }
@@ -767,12 +830,13 @@
       --ot-cell: min(44px, calc((var(--qh) - 34px) / 8));
       --ch-square: min(44px, calc(var(--qh) / 8));
       --mu-board: min(340px, calc(var(--qh) - 32px));
+      --da-feld: min(44px, calc((var(--qh) - 20px) / 8));
     }
     body { padding: 8px 16px; }
     .kopfzeile { max-width: none; margin-bottom: 6px; }
     body[data-ansicht="auswahl"] #tabs { max-width: none; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
     .brett3d { width: min(400px, calc(var(--qh) / 0.95)); }
-    .brett3d.chess { width: min(400px, calc(var(--qh) / 0.92)); }
+    .brett3d.chess, .brett3d.dame { width: min(400px, calc(var(--qh) / 0.92)); }
     .tab-content.active:not(#schule-view):not(#mangala-view) { display: grid; grid-template-columns: auto minmax(280px, 1fr); column-gap: 20px; align-items: start; justify-items: center; width: 100%; max-width: 900px; }
     .tab-content.active:not(#schule-view):not(#mangala-view) > * { grid-column: 2; }
     .tab-content.active:not(#schule-view):not(#mangala-view) > [data-abschnitt="brett"] { grid-column: 1; grid-row: 1 / span 40; }
@@ -797,6 +861,7 @@
   <button class="tabBtn" type="button" data-tab="othello"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#1a8f42"/><path d="M24 6v36M6 24h36" stroke="#0b6e2f" stroke-width="2"/><circle cx="15" cy="15" r="6.5" fill="#fff"/><circle cx="33" cy="15" r="6.5" fill="#1c1c1e"/><circle cx="15" cy="33" r="6.5" fill="#1c1c1e"/><circle cx="33" cy="33" r="6.5" fill="#fff"/></svg><span class="kachel-name">Reversi</span><span class="kachel-weiter">Weiterspielen</span></button>
   <button class="tabBtn" type="button" data-tab="mangala"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="11" width="42" height="26" rx="11" fill="#7a4e2a"/><g fill="#e8d4b8"><rect x="6" y="15" width="6" height="18" rx="3"/><rect x="36" y="15" width="6" height="18" rx="3"/><circle cx="18" cy="19" r="3.4"/><circle cx="24" cy="19" r="3.4"/><circle cx="30" cy="19" r="3.4"/><circle cx="18" cy="29" r="3.4"/><circle cx="24" cy="29" r="3.4"/><circle cx="30" cy="29" r="3.4"/></g></svg><span class="kachel-name">Mangala</span><span class="kachel-weiter">Weiterspielen</span></button>
   <button class="tabBtn" type="button" data-tab="tictactoe"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#ffffff" stroke="#d8d8de"/><path d="M18 9v30M30 9v30M9 18h30M9 30h30" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"/><path d="M10 10l6 6M16 10l-6 6M32 32l6 6M38 32l-6 6" stroke="#007aff" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="24" r="3.6" fill="none" stroke="#ff3b30" stroke-width="2.6"/></svg><span class="kachel-name">Tic Tac Toe</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="dame"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#9a7f52"/><path d="M10 14h28M10 24h28M10 34h28M14 10v28M24 10v28M34 10v28" stroke="#5e4829" stroke-width="1.4"/><circle cx="14" cy="34" r="6" fill="#f4f1e8" stroke="#5c5c61" stroke-width="1.5"/><circle cx="34" cy="14" r="6" fill="#1f1f22" stroke="#000" stroke-width="1.5"/><circle cx="24" cy="24" r="6" fill="#f4f1e8" stroke="#5c5c61" stroke-width="1.5"/><path d="M19.500 26.500l-1-6 3.200 2.300 2.300-3.800 2.300 3.800 3.200-2.300-1 6z" fill="#ffcc00" stroke="#5a4300" stroke-width="1" stroke-linejoin="round"/></svg><span class="kachel-name">Dame</span><span class="kachel-weiter">Weiterspielen</span></button>
 </div>
 
 <div id="tictactoe-view" class="tab-content">
@@ -1021,6 +1086,39 @@
     <div class="stat"><span class="stat-value" id="mastatDraw">0</span><span class="stat-label">Unentschieden</span></div>
   </div>
   <button class="linkBtn" id="maresetStatsBtn">Statistik zurücksetzen</button>
+</div>
+
+<div id="dame-view" class="tab-content">
+  <h1>Dame</h1>
+  <div id="dauebung" class="da-uebung" hidden>
+    <span class="da-uebung-titel"></span>
+    <button type="button" class="action secondary klein da-ueberspringen">Überspringen</button>
+    <button type="button" class="action klein da-los" hidden>Los geht's</button>
+  </div>
+  <div id="dastatus" data-abschnitt="status">Weiß: Tippe einen Stein mit blauem Ring, dann ein grünes Feld.</div>
+  <div id="daboard" data-abschnitt="brett"><div id="dafelder"></div></div>
+
+  <div class="gruppe">Aktionen</div>
+  <div id="dacontrols" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="daresetBtn">Neu starten</button>
+  </div>
+
+  <div class="gruppe">Spielmodus</div>
+  <div id="damode" data-abschnitt="modus">
+    <label class="active"><input type="radio" name="damode" value="pvp" checked><span>2 Spieler</span></label>
+    <label><input type="radio" name="damode" value="ai"><span>Gegen Computer</span></label>
+  </div>
+
+  <div class="gruppe gruppe-optionen" hidden>Optionen</div>
+  <div class="optionen" data-abschnitt="optionen" hidden></div>
+
+  <div id="dastats" data-abschnitt="statistik">
+    <div class="stat"><span class="stat-value" id="dastatW">0</span><span class="stat-label">Siege Weiß</span></div>
+    <div class="stat"><span class="stat-value" id="dastatB">0</span><span class="stat-label">Siege Schwarz</span></div>
+    <div class="stat"><span class="stat-value" id="dastatDraw">0</span><span class="stat-label">Unentschieden</span></div>
+  </div>
+  <button class="linkBtn" id="daresetStatsBtn">Statistik zurücksetzen</button>
+  <div id="dahilfe" class="da-hilfe" hidden role="dialog" aria-modal="true" aria-label="Dame-Regeln" tabindex="-1"></div>
 </div>
 
 <div id="layerNote"><span class="datenschutz">Statistik bleibt nur auf diesem Gerät, kein Server, keine Weitergabe.</span><span class="lizenz-schach"><br>Schach-Computer: Stockfish (GPL v3), <a href="lib/STOCKFISH-LICENSE-GPL.txt">Lizenz</a> und <a href="https://github.com/nmrugg/stockfish.js/tree/v10.0.2">Quelltext</a>. Schachregeln: chess.js (<a href="lib/CHESSJS-LICENSE.txt">Lizenz</a>).</span></div>
@@ -2122,6 +2220,54 @@ const AIEngines = {
       bester = bz;
     }
     return bester;
+  },
+
+  /* S-W23: Dame (türkische Regeln). Alpha-Beta über ganze Züge; die Regeln
+     kommen aus AIEngines.dameZuege und AIEngines.dameSetze (dieselben
+     Funktionen wie in DameEntity). stand = { cells }. Liefert den besten
+     Zug { von, pfad, schlaege } oder null. Bei gleichem Wert gewinnt der
+     erste Zug, das Ergebnis ist also wiederholbar. */
+  dame(stand, spieler, tiefe, knotenMax) {
+    const andere = p => (p === 'W' ? 'B' : 'W');
+    let knoten = 0, abbruch = false;
+    const wert = (c, p) => {
+      let s = 0;
+      for (let i = 0; i < 64; i++) {
+        const v = c[i];
+        if (v === null) continue;
+        const r = i >> 3;
+        const w = v.length === 2 ? 450 : 100 + 4 * (v === 'W' ? 6 - r : r - 1);
+        s += v[0] === p ? w : -w;
+      }
+      return s;
+    };
+    // Wert aus Sicht von p, der am Zug ist. Schläge sind Pflicht, deshalb wird bei offenem Schlag weitergerechnet.
+    const suche = (c, p, t, a, b, ebene) => {
+      knoten++;
+      const zuege = AIEngines.dameZuege(c, p);
+      if (!zuege.length) return -100000 + ebene;
+      const schlag = zuege[0].schlaege.length > 0;
+      if (knoten > knotenMax) { abbruch = true; return wert(c, p); }
+      if ((t <= 0 && !schlag) || ebene >= 24) return wert(c, p);
+      let best = -Infinity;
+      for (const z of zuege) {
+        const w = -suche(AIEngines.dameSetze(c, z), andere(p), t - 1, -b, -a, ebene + 1);
+        if (w > best) best = w;
+        if (best > a) a = best;
+        if (a >= b) break;
+      }
+      return best;
+    };
+    const zuege = AIEngines.dameZuege(stand.cells, spieler);
+    if (!zuege.length) return null;
+    let best = null, bw = -Infinity;
+    for (const z of zuege) {
+      const w = -suche(AIEngines.dameSetze(stand.cells, z), andere(spieler), tiefe - 1, -Infinity, -bw, 1);
+      // Rechengrenze erreicht: nur vollständig bewertete Züge zählen (der erste gilt immer).
+      if (abbruch && best !== null) break;
+      if (w > bw) { bw = w; best = z; }
+    }
+    return best;
   }
 };
 
@@ -2131,6 +2277,7 @@ class AIStrategy {
     this._worker = null;
     this._pending = new Map();
     this._nextId = 1;
+    this.rueckfaelle = 0;   // wie oft die Seite statt des Workers gerechnet hat (Tests: bleibt 0)
     this._initWorker();
   }
 
@@ -2150,7 +2297,10 @@ class AIStrategy {
           ${AIEngines.connect4.toString()},
           ${AIEngines.othello.toString()},
           ${AIEngines.mangala.toString()},
-          ${AIEngines.muehle.toString()}
+          ${AIEngines.muehle.toString()},
+          ${AIEngines.dameZuege.toString()},
+          ${AIEngines.dameSetze.toString()},
+          ${AIEngines.dame.toString()}
         };
         self.onmessage = (e) => {
           const { id, engine, args } = e.data;
@@ -2184,13 +2334,14 @@ class AIStrategy {
   chooseMove(engine, args) {
     if (!this._worker) {
       // Synchroner Fallback im Hauptthread (z.B. sehr alte Browser).
+      this.rueckfaelle++;
       return Promise.resolve(AIEngines[engine](...args));
     }
     return new Promise((resolve, reject) => {
       const id = this._nextId++;
       this._pending.set(id, { resolve, reject });
       this._worker.postMessage({ id, engine, args });
-    }).catch(() => AIEngines[engine](...args)); // Fallback bei Worker-Fehler
+    }).catch(() => { this.rueckfaelle++; return AIEngines[engine](...args); }); // Fallback bei Worker-Fehler
   }
 }
 
@@ -3426,6 +3577,399 @@ class MuehleUebungControl {
 }
 
 /* ============================================================
+   DAME (S-W23): türkische Dame (Dama). 8 × 8, Felder 0 bis 63,
+   Feld 0 oben links. Weiß steht unten und zieht nach oben,
+   Schwarz oben und zieht nach unten. Werte je Feld: null, 'W',
+   'B' (Steine), 'WD', 'BD' (Damen).
+   ============================================================ */
+
+/* --- ENTITY: Regeln und Zustand; kein Zufall, keine Zeit --- */
+class DameEntity {
+  static RUHE_MAX = 60;   // Halbzüge ohne Schlag und ohne Schritt eines Steins nach vorn bis zum Unentschieden
+
+  /* Alle zulässigen Züge für "spieler" als { von, pfad, schlaege }.
+     Schlagzwang und Mehrheitsregel sind schon angewandt. Die Funktion
+     ist in sich geschlossen (kein this, keine Verweise nach außen),
+     weil derselbe Quelltext auch im Web Worker läuft (AIEngines). */
+  static dameZuege(cells, spieler) {
+    const R = [[-1, 0], [1, 0], [0, -1], [0, 1]];           // hoch, runter, links, rechts
+    const vor = spieler === 'W' ? 0 : 1;
+    const feld = (r, c) => (r >= 0 && r < 8 && c >= 0 && c < 8 ? r * 8 + c : -1);
+    const gegner = v => v !== null && v[0] !== spieler;
+    const schlaege = [], ruhig = [];
+    let meiste = 0;
+
+    // Schlagfolgen: Tiefensuche; geschlagene Steine verschwinden sofort.
+    const folge = (brett, pos, dame, letzte, pfad, weg) => {
+      let weiter = false;
+      const r = pos >> 3, c = pos & 7;
+      for (let d = 0; d < 4; d++) {
+        if (!dame && d !== vor && d < 2) continue;           // Stein schlägt nur vor und seitwärts
+        if (letzte >= 0 && d === (letzte ^ 1)) continue;     // keine Kehrtwende
+        const [dr, dc] = R[d];
+        let k = 1, opfer = feld(r + dr, c + dc);
+        if (dame) while (opfer >= 0 && brett[opfer] === null) { k++; opfer = feld(r + dr * k, c + dc * k); }
+        if (opfer < 0 || !gegner(brett[opfer])) continue;
+        for (let n = k + 1; ; n++) {
+          const ziel = feld(r + dr * n, c + dc * n);
+          if (ziel < 0 || brett[ziel] !== null) break;
+          weiter = true;
+          const b = brett.slice();
+          b[ziel] = b[pos]; b[pos] = null; b[opfer] = null;
+          folge(b, ziel, dame, d, [...pfad, ziel], [...weg, opfer]);
+          if (!dame) break;                                   // Stein landet direkt dahinter
+        }
+      }
+      if (!weiter && weg.length) {
+        if (weg.length > meiste) { meiste = weg.length; schlaege.length = 0; }
+        if (weg.length === meiste) schlaege.push({ von: pfad[0], pfad: pfad.slice(1), schlaege: weg });
+      }
+    };
+
+    for (let i = 0; i < 64; i++) {
+      const v = cells[i];
+      if (v === null || v[0] !== spieler) continue;
+      const dame = v.length === 2, r = i >> 3, c = i & 7;
+      folge(cells, i, dame, -1, [i], []);
+      if (meiste) continue;
+      for (let d = 0; d < 4; d++) {
+        if (!dame && d !== vor && d < 2) continue;
+        const [dr, dc] = R[d];
+        for (let n = 1; ; n++) {
+          const ziel = feld(r + dr * n, c + dc * n);
+          if (ziel < 0 || cells[ziel] !== null) break;
+          ruhig.push({ von: i, pfad: [ziel], schlaege: [] });
+          if (!dame) break;
+        }
+      }
+    }
+    return meiste ? schlaege : ruhig;
+  }
+
+  /* Brett nach einem Zug (neue Liste). Umwandlung erst am Zugende.
+     Ebenfalls in sich geschlossen, läuft auch im Worker. */
+  static dameSetze(cells, zug) {
+    const b = cells.slice();
+    let v = b[zug.von];
+    b[zug.von] = null;
+    for (const s of zug.schlaege) b[s] = null;
+    const ziel = zug.pfad[zug.pfad.length - 1];
+    if (v === 'W' && ziel < 8) v = 'WD';
+    if (v === 'B' && ziel >= 56) v = 'BD';
+    b[ziel] = v;
+    return b;
+  }
+
+  /* Prüft einen gespeicherten Stand, bevor er geladen wird. */
+  static pruefe(d) {
+    if (!d || d.formatversion !== 1 || !Array.isArray(d.cells) || d.cells.length !== 64) return false;
+    const n = { W: 0, B: 0 };
+    for (let i = 0; i < 64; i++) {
+      const v = d.cells[i];
+      if (v === null) continue;
+      if (v !== 'W' && v !== 'B' && v !== 'WD' && v !== 'BD') return false;
+      n[v[0]]++;
+      if ((v === 'W' && i < 8) || (v === 'B' && i >= 56)) return false;   // müsste Dame sein
+    }
+    if (n.W > 16 || n.B > 16) return false;
+    if (d.currentPlayer !== 'W' && d.currentPlayer !== 'B') return false;
+    if (d.finished !== false || d.winner !== null) return false;          // beendete Partien werden nie gespeichert
+    if (!Number.isInteger(d.ruhe) || d.ruhe < 0 || d.ruhe >= DameEntity.RUHE_MAX) return false;
+    if (!d.stellungen || typeof d.stellungen !== 'object' || Array.isArray(d.stellungen)) return false;
+    for (const k in d.stellungen) if (!Number.isInteger(d.stellungen[k]) || d.stellungen[k] < 1 || d.stellungen[k] > 2) return false;
+    return DameEntity.dameZuege(d.cells, d.currentPlayer).length > 0;
+  }
+
+  constructor() { this.reset(); }
+
+  reset() {
+    this.cells = Array(64).fill(null);
+    for (let i = 8; i < 24; i++) this.cells[i] = 'B';
+    for (let i = 40; i < 56; i++) this.cells[i] = 'W';
+    this.currentPlayer = 'W';
+    this.finished = false;
+    this.winner = null;
+    this.ruhe = 0;
+    this.stellungen = {};
+    this._merkeStellung();
+  }
+
+  _schluessel() { return this.currentPlayer + this.cells.map(v => (v === null ? '.' : v === 'W' ? 'w' : v === 'B' ? 'b' : v === 'WD' ? 'W' : 'B')).join(''); }
+  _merkeStellung() { const k = this._schluessel(); this.stellungen[k] = (this.stellungen[k] || 0) + 1; return this.stellungen[k]; }
+
+  zuege() { return this.finished ? [] : DameEntity.dameZuege(this.cells, this.currentPlayer); }
+
+  _finde(von, pfad) {
+    return this.zuege().find(z => z.von === von && z.pfad.length === pfad.length && z.pfad.every((f, i) => f === pfad[i])) || null;
+  }
+  kannZiehen(von, pfad) { return this._finde(von, pfad) !== null; }
+
+  // Führt einen ganzen Zug aus (bei Schlägen die ganze Folge). Liefert das Ergebnis oder null.
+  zieh(von, pfad) {
+    const zug = this._finde(von, pfad);
+    if (!zug) return null;
+    // Unumkehrbar sind Schläge und Schritte eines Steins nach vorn; Seitwärtszüge lassen sich zurücknehmen und zählen weiter.
+    const fest = zug.schlaege.length > 0 || (this.cells[von].length === 1 && (pfad[0] >> 3) !== (von >> 3));
+    this.cells = DameEntity.dameSetze(this.cells, zug);
+    const spieler = this.currentPlayer;
+    this.currentPlayer = spieler === 'W' ? 'B' : 'W';
+    if (fest) { this.ruhe = 0; this.stellungen = {}; } else this.ruhe++;
+    const oft = this._merkeStellung();
+    if (!DameEntity.dameZuege(this.cells, this.currentPlayer).length) { this.finished = true; this.winner = spieler; }
+    else if (oft >= 3 || this.ruhe >= DameEntity.RUHE_MAX) { this.finished = true; this.winner = 'Draw'; }
+    return this.finished ? { winner: this.winner, line: null } : null;
+  }
+
+  toJSON() {
+    return { formatversion: 1, cells: [...this.cells], currentPlayer: this.currentPlayer, finished: this.finished,
+      winner: this.winner, ruhe: this.ruhe, stellungen: { ...this.stellungen } };
+  }
+
+  // Ungültige Daten führen zum Neustart (nie zu einem halb geladenen Stand).
+  loadFromJSON(data) {
+    if (!DameEntity.pruefe(data)) { this.reset(); return false; }
+    this.cells = [...data.cells];
+    this.currentPlayer = data.currentPlayer;
+    this.finished = false;
+    this.winner = null;
+    this.ruhe = data.ruhe;
+    this.stellungen = { ...data.stellungen };
+    return true;
+  }
+}
+
+// Dieselben Regeln für die Suche im Worker (kein zweiter Regelcode).
+AIEngines.dameZuege = DameEntity.dameZuege;
+AIEngines.dameSetze = DameEntity.dameSetze;
+
+/* --- BOUNDARY --- */
+class DameBoundary extends GameBoundary {
+  getZuege() { return this._entity.zuege(); }
+  kannZiehen(von, pfad) { return this._entity.kannZiehen(von, pfad); }
+  ziehe(von, pfad) { return this._entity.zieh(von, pfad); }
+  getSuchStand() { return { cells: [...this._entity.cells] }; }
+  getRuhe() { return this._entity.ruhe; }
+  // Die Übung hat keinen Speicher: dort bleibt ein Ergebnis ohne Wirkung.
+  recordResult(winner) { return this._repo ? super.recordResult(winner) : Promise.resolve(); }
+  istGueltig(daten) { return DameEntity.pruefe(daten); }
+  // Geladen wird nur ein geprüfter Stand; sonst Neustart.
+  restoreEntity(data) { return this._entity.loadFromJSON(data); }
+}
+
+/* --- CONTROL: Auswahl, Pfad Feld für Feld, Computer ---
+   Auswahl und Teilpfad liegen nur im Arbeitsspeicher und verfallen
+   bei Neuladen, Zug zurück, Neustart und Moduswechsel. */
+class DameControl extends GameControl {
+  static STUFEN = {
+    leicht: { tiefe: 1, fehler: 0.4 },
+    mittel: { tiefe: 2, fehler: 0.15 },
+    stark:  { tiefe: 4, fehler: 0 }
+  };
+  static KNOTEN = 60000;
+  static TIPP_TIEFE = 2;
+  static RUHE_MAX = DameEntity.RUHE_MAX;
+
+  constructor(boundary, aiStrategy = null) {
+    super(boundary, 'B', aiStrategy);   // Weiß (Mensch) beginnt, der Computer spielt Schwarz
+    this.selected = null;
+    this.teil = [];
+    this._partie = 0;                   // zählt Neustarts, damit ein spätes Rechenergebnis verfällt
+    this.setDifficulty('mittel');
+  }
+
+  _auswahlWeg() { this.selected = null; this.teil = []; }
+  _nachZurueck() { this._auswahlWeg(); this._partie++; }
+  setPause(an) { this._pause = !!an; }
+
+  restartGame() { super.restartGame(); this.aiPlayer = 'B'; this._auswahlWeg(); this._partie++; }
+  setMode(vsAI) { this.aiPlayer = 'B'; super.setMode(vsAI); }
+
+  // Kaputter oder fremder Stand: verwerfen und neu beginnen.
+  async restoreGame() {
+    let data = null;
+    try { data = await this.boundary.loadGame(); } catch (e) { data = null; }
+    this._auswahlWeg(); this._partie++;
+    if (!data || !data.entity) return false;
+    if (!this.boundary.istGueltig(data.entity)) { this.boundary.restart(); this.boundary.clearSavedGame(); return false; }
+    this.boundary.restoreEntity(data.entity);
+    this._verlauf = [];
+    this.vsAI = !!data.vsAI;
+    return true;
+  }
+
+  // Mitten in der Sprungfolge nimmt "Zug zurück" nur die Auswahl zurück.
+  canUndo() { return (this.teil.length > 0 && !this.boundary.isGameOver()) || super.canUndo(); }
+  undoMove() {
+    if (this.teil.length) { this._auswahlWeg(); return { invalid: false }; }
+    return super.undoMove();
+  }
+
+  getSelected() { return this.selected; }
+  getRuhe() { return this.boundary.getRuhe(); }
+  // Gibt es für den Spieler am Zug einen Schlag (dann sind andere Züge gesperrt)?
+  schlagPflicht() { const z = this.boundary.getZuege(); return z.length > 0 && z[0].schlaege.length > 0; }
+  _kandidaten() {
+    if (this.selected === null) return [];
+    return this.boundary.getZuege().filter(z => z.von === this.selected && this.teil.every((f, i) => z.pfad[i] === f));
+  }
+
+  _rechne(spieler, tiefe) {
+    const args = [this.boundary.getSuchStand(), spieler, tiefe, DameControl.KNOTEN];
+    return this.aiStrategy ? this.aiStrategy.chooseMove('dame', args) : Promise.resolve(AIEngines.dame(...args));
+  }
+
+  // Tipp: Stein und erstes Feld des besten Zugs (passend zum Tippen Feld für Feld).
+  async _tippFuer(spieler) {
+    const n = this.teil.length;
+    if (n) {   // mitten im Zug: nur die Fortsetzung des begonnenen Wegs zählt
+      const k = this._kandidaten()[0];
+      return k ? { von: this.teil[n - 1], nach: k.pfad[n] } : null;
+    }
+    const z = await this._rechne(spieler, DameControl.TIPP_TIEFE);
+    if (!z || !this.boundary.kannZiehen(z.von, z.pfad)) return null;
+    return { von: z.von, nach: z.pfad[0] };
+  }
+
+  // Was die UI markiert (nur Daten). "brett" ist das Zwischenbrett: schon geschlagene Steine fehlen.
+  // Ohne Lernhilfe fehlen die Ringe (ziehbar) und der Hinweis auf die Schlagpflicht.
+  ansicht(lernen = true) {
+    const zuege = this.boundary.getZuege(), kand = this._kandidaten();
+    const brett = this.boundary.getBoardState();
+    const mensch = !this.boundary.isGameOver() && !this.isAiTurn();
+    const v = { brett, selected: null, ziele: [], ziehbar: [], weg: [], pflicht: zuege.length > 0 && zuege[0].schlaege.length > 0, imZug: this.teil.length > 0 };
+    if (!mensch) return v;
+    if (this.selected !== null && kand.length) {
+      const n = this.teil.length;
+      if (n) {
+        const stein = brett[this.selected];
+        brett[this.selected] = null; brett[this.teil[n - 1]] = stein;
+        for (const s of kand[0].schlaege.slice(0, n)) brett[s] = null;
+        v.weg = [this.selected, ...this.teil.slice(0, n - 1)];
+      }
+      v.selected = n ? this.teil[n - 1] : this.selected;
+      v.ziele = [...new Set(kand.map(z => z.pfad[n]))].sort((a, b) => a - b);
+    }
+    if (lernen && !this.teil.length) v.ziehbar = [...new Set(zuege.map(z => z.von))].sort((a, b) => a - b);
+    if (!lernen) v.pflicht = false;
+    return v;
+  }
+
+  // Die UI liefert nur das Feld; hier wird entschieden, was der Tipp bedeutet.
+  handleFeldClick(i) {
+    if (this.boundary.isGameOver() || this.isAiTurn()) return { invalid: true };
+    if (this.selected !== null) {
+      const n = this.teil.length, passend = this._kandidaten().filter(z => z.pfad[n] === i);
+      if (passend.length) {
+        this.teil.push(i);
+        const voll = passend.find(z => z.pfad.length === this.teil.length);
+        if (!voll) return { invalid: false, teilzug: true };
+        const von = this.selected, pfad = this.teil, schlaege = [...voll.schlaege];
+        this._auswahlWeg();
+        const r = this._executeMove(() => true, () => this.boundary.ziehe(von, pfad));
+        r.zug = { von, pfad: [...pfad], schlaege };   // für die Anzeige des letzten Zugs
+        return r;
+      }
+      if (n) return { invalid: true };                       // mitten im Zug zählt nur ein leuchtendes Feld
+      if (i === this.selected) { this._auswahlWeg(); return { invalid: false }; }
+    }
+    if (this.boundary.getZuege().some(z => z.von === i)) { this.selected = i; this.teil = []; return { invalid: false }; }
+    return { invalid: true };
+  }
+
+  // Ein Computerzug (ganze Schlagfolge in einem Schritt).
+  async performAiAction() {
+    if (this._pause || !this.isAiTurn()) return { invalid: true };
+    if (this._aiLaeuft) return { invalid: true };
+    this._aiLaeuft = true;
+    try {
+      const partie = this._partie;
+      let z = this._entscheideFehler() ? this._zufallsZug(this.boundary.getZuege()) : await this._rechne(this.aiPlayer, this.searchDepth);
+      if (partie !== this._partie || this._pause || !this.isAiTurn()) return { invalid: true, erneut: true };
+      // Antwort des Rechners prüfen; ein unzulässiger Zug wird durch einen zulässigen ersetzt.
+      if (!z || !Array.isArray(z.pfad) || !this.boundary.kannZiehen(z.von, z.pfad)) z = this._zufallsZug(this.boundary.getZuege());
+      if (!z) return { invalid: true };
+      const r = this._executeMove(() => true, () => this.boundary.ziehe(z.von, z.pfad));
+      r.zug = { von: z.von, pfad: [...z.pfad], schlaege: [...z.schlaege] };
+      return r;
+    } finally {
+      this._aiLaeuft = false;
+    }
+  }
+}
+
+/* S-W23: Übung beim ersten Start. Fünf feste Stellungen mit je einem leuchtenden Tippziel (ein Mehrfachsprung
+   hat eins nach dem anderen). Der Stein ist schon gewählt. Läuft auf einer eigenen Boundary (eigene Entity),
+   die echte Partie bleibt unberührt; die Regeln prüft die DameControl dieser Übung. */
+class DameUebungControl {
+  static SCHRITTE = [
+    { titel: 'Ziehen', text: 'Ein Stein zieht ein Feld nach vorn oder zur Seite. Dein Stein ist schon gewählt: tippe auf das leuchtende Feld.',
+      W: [43], B: [12, 14], von: 43, pfad: [35], gut: 'Gut gezogen! Nach vorn oder zur Seite, nie zurück und nie schräg.' },
+    { titel: 'Schlagen', text: 'Schlagen ist Pflicht! Spring über den Stein von Schwarz auf das freie Feld dahinter. Der andere Stein darf jetzt nicht ziehen.',
+      W: [35, 46], B: [27, 4, 6], von: 35, pfad: [19], gut: 'Geschlagen! Der Stein ist sofort vom Brett.' },
+    { titel: 'Mehrfachsprung', text: 'Du musst weiterspringen, solange es geht. Tippe nacheinander die leuchtenden Felder: drei Steine in einem Zug.',
+      W: [42], B: [34, 27, 20, 4], von: 42, pfad: [26, 28, 12], gut: 'Drei Steine in einem Zug! Du darfst aber nicht auf demselben Weg zurückspringen.' },
+    { titel: 'Dame werden', text: 'Wer die letzte Reihe erreicht, wird zur Dame (Krone). Ziehe deinen Stein auf das leuchtende Feld.',
+      W: [13], B: [50, 52], von: 13, pfad: [5], gut: 'Eine Dame! Sie zieht beliebig weit, auch rückwärts.' },
+    { titel: 'Dame schlägt', text: 'Die Dame zieht und schlägt beliebig weit gerade. Sie springt über den Stein von Schwarz und landet dahinter.',
+      WD: [56], B: [24, 15, 23], von: 56, pfad: [16], gut: 'Aus der Ferne geschlagen! Jetzt eine echte Partie.' }
+  ];
+
+  constructor(boundary) {
+    this.boundary = boundary;
+    this.ctl = new DameControl(boundary);
+    this.nr = -1; this.k = 0; this.geloest = false;
+  }
+
+  starte() { this.nr = 0; this._lade(); }
+  beende() { this.nr = -1; }
+  aktiv() { return this.nr >= 0 && this.nr < DameUebungControl.SCHRITTE.length; }
+  fertig() { return this.nr >= DameUebungControl.SCHRITTE.length; }
+  anzahl() { return DameUebungControl.SCHRITTE.length; }
+  schritt() { return this.aktiv() ? { nr: this.nr + 1, ...DameUebungControl.SCHRITTE[this.nr] } : null; }
+  istGeloest() { return this.geloest; }
+  getBoardState() { return this.boundary.getBoardState(); }
+  getSelected() { return this.ctl.ansicht().selected; }
+
+  _lade() {
+    const s = DameUebungControl.SCHRITTE[this.nr];
+    const cells = Array(64).fill(null);
+    for (const art of ['W', 'B', 'WD', 'BD']) (s[art] || []).forEach(i => cells[i] = art);
+    this.boundary.restoreEntity({ formatversion: 1, cells, currentPlayer: 'W', finished: false, winner: null, ruhe: 0, stellungen: {} });
+    this.ctl._verlauf = [];
+    this.ctl.selected = s.von; this.ctl.teil = [];
+    this.k = 0; this.geloest = false;
+  }
+
+  // Nur das leuchtende Feld zählt; alles andere ist ein Hinweis ohne Wirkung.
+  tippe(index) {
+    if (!this.aktiv() || this.geloest) return { invalid: true };
+    const s = DameUebungControl.SCHRITTE[this.nr];
+    if (index !== s.pfad[this.k]) return { invalid: true, hinweis: true };
+    if (this.ctl.handleFeldClick(index).invalid) return { invalid: true, hinweis: true };
+    this.k++;
+    if (this.k === s.pfad.length) this.geloest = true;
+    return { invalid: false };
+  }
+
+  // Nächster Schritt; liefert true, wenn die Übung damit geschafft ist.
+  weiter() {
+    if (!this.aktiv()) return this.fertig();
+    this.nr++;
+    if (this.aktiv()) this._lade();
+    return this.fertig();
+  }
+
+  ansicht() {
+    const v = this.ctl.ansicht(true), s = DameUebungControl.SCHRITTE[this.nr];
+    if (!s) return v;
+    if (this.geloest) { v.ziele = []; v.ziehbar = []; v.selected = null; return v; }
+    v.ziele = [s.pfad[this.k]];
+    v.ziehbar = v.ziehbar.filter(i => i !== v.selected);
+    return v;
+  }
+}
+
+/* ============================================================
    SCHACH — fünftes Spiel, gleiches BCE-Muster, aber die
    Entity-Rolle wird an chess.js delegiert statt selbst
    geschrieben (siehe <head>: CDN-Einbindung). Genau dafür ist
@@ -4386,6 +4930,291 @@ class MuehleUI extends GameUI {
   }
 }
 
+/* --- DameUI: Raster aus 64 Tippflächen, Steine als eigene SVG-Zeichnung, spricht nur mit DameControl --- */
+class DameUI extends GameUI {
+  static FARBE = { W: 'Weiß', B: 'Schwarz' };
+  static NAME = { W: 'weißer Stein', B: 'schwarzer Stein', WD: 'weiße Dame', BD: 'schwarze Dame' };
+  static KRONE = '<path d="M10 27.500l-2-13 7 5 5-8.500 5 8.500 7-5-2 13z" fill="#ffcc00" stroke="#4a3600" stroke-width="1.600" stroke-linejoin="round"/>'
+    + '<path d="M10 27.500h20v3.500H10z" fill="#ffcc00" stroke="#4a3600" stroke-width="1.600" stroke-linejoin="round"/>';
+
+  // Ein Stein als eigene Zeichnung: Scheibe mit Innenring, die Dame zusätzlich mit Krone.
+  static steinSvg(art, klasse = 'da-stein', attr = '') {
+    const w = art[0] === 'W', dame = art.length === 2;
+    const scheibe = w ? '<circle cx="20" cy="20" r="18.500" fill="#f4f1e8" stroke="#4d4d52" stroke-width="1.600"/><circle cx="20" cy="20" r="12.500" fill="none" stroke="#bdb8ab" stroke-width="1.500"/>'
+      : '<circle cx="20" cy="20" r="18.500" fill="#1f1f22" stroke="#000" stroke-width="1.600"/><circle cx="20" cy="20" r="12.500" fill="none" stroke="#5a5a62" stroke-width="1.500"/>';
+    return `<svg class="${klasse}" viewBox="0 0 40 40" aria-hidden="true"${attr}>${scheibe}${dame ? `<g class="da-krone">${DameUI.KRONE}</g>` : ''}</svg>`;
+  }
+
+  // Mini-Brett für die Regelkarten: ganzes Brett mit festen Beispielsteinen und grünen Zielfeldern.
+  static miniBrett({ W = [], B = [], WD = [], BD = [], ziele = [] }) {
+    let s = '<svg viewBox="0 0 80 80" aria-hidden="true"><rect width="80" height="80" fill="#9a7f52"/>';
+    for (let k = 1; k < 8; k++) s += `<path d="M${k * 10} 0v80M0 ${k * 10}h80" stroke="#6f5a38" stroke-width="0.6"/>`;
+    const pos = i => [(i % 8) * 10, Math.floor(i / 8) * 10];
+    ziele.forEach(i => { const [x, y] = pos(i); s += `<circle cx="${x + 5}" cy="${y + 5}" r="2.800" fill="#34c759" stroke="#fff" stroke-width="0.8"/>`; });
+    const stein = (art, i) => { const [x, y] = pos(i); s += DameUI.steinSvg(art, 'da-mini', ` x="${x + 0.5}" y="${y + 0.5}" width="9" height="9"`); };
+    W.forEach(i => stein('W', i)); B.forEach(i => stein('B', i)); WD.forEach(i => stein('WD', i)); BD.forEach(i => stein('BD', i));
+    return s + '</svg>';
+  }
+
+  constructor(control) {
+    super(control, {
+      statusId: 'dastatus',
+      resetBtnId: 'daresetBtn',
+      modeName: 'damode',
+      resetStatsBtnId: 'daresetStatsBtn',
+      statEls: { W: 'dastatW', B: 'dastatB', draws: 'dastatDraw' }
+    });
+    this.boardEl = document.getElementById('daboard');
+    this.felderEl = document.getElementById('dafelder');
+    this.uebungEl = document.getElementById('dauebung');
+    this.hilfeEl = document.getElementById('dahilfe');
+    this.uebung = DameUI.neueUebung ? DameUI.neueUebung() : null;
+    this._letzter = null;   // letzter Zug { von, pfad, schlaege } für die Anzeige
+
+    this._baueDameKnoepfe();
+    this._baueHilfe();
+    this.uebungEl.querySelector('.da-ueberspringen').addEventListener('click', () => this._uebungUeberspringen());
+    this.uebungEl.querySelector('.da-los').addEventListener('click', () => this._uebungLos());
+    if (this.uebung && !(GameUI.einst && GameUI.einst.dameEinfuehrung())) this._starteUebung();
+    this.init();
+  }
+
+  _baueDameKnoepfe() {
+    this.hilfeBtn = document.createElement('button');
+    this.hilfeBtn.type = 'button'; this.hilfeBtn.className = 'action secondary klein da-hilfe-knopf hilfe-knopf';
+    this.hilfeBtn.textContent = '?'; this.hilfeBtn.setAttribute('aria-label', 'Regeln');
+    this.hilfeBtn.addEventListener('click', () => this._hilfeOeffnen());
+    this.optionenEl.appendChild(this.hilfeBtn);
+    this.lernenBtn = document.createElement('button');
+    this.lernenBtn.type = 'button'; this.lernenBtn.className = 'action secondary klein lernen-knopf';
+    this.lernenBtn.addEventListener('click', () => this.setzeLernen(!this._lernen()));
+    this.optionenEl.appendChild(this.lernenBtn);
+    this._lernenKnopf();
+  }
+
+  _lernen() { return GameUI.einst ? GameUI.einst.lernen(this.spiel) : true; }
+  setzeLernen(an) {
+    if (GameUI.einst) GameUI.einst.setzeLernen(this.spiel, an);
+    this._lernenKnopf();
+    this.render();
+  }
+  _lernenKnopf() { this.lernenBtn.textContent = this._lernen() ? 'Lernhilfe an' : 'Lernhilfe aus'; }
+
+  _baueHilfe() {
+    const karte = (titel, text, brett) => `<div class="da-karte">${DameUI.miniBrett(brett)}<div><h3>${titel}</h3><p>${text}</p></div></div>`;
+    this.hilfeEl.innerHTML = `<div class="da-hilfe-inhalt"><h2>So geht Dame</h2>`
+      + karte('1. Ziehen', 'Ein Stein zieht ein Feld nach vorn oder zur Seite, nie zurück und nie schräg. Weiß beginnt und zieht nach oben.', { W: [43], B: [10, 12], ziele: [35, 42, 44] })
+      + karte('2. Schlagen', 'Schlagen ist Pflicht: Spring über einen Stein des Gegners auf das freie Feld dahinter. Du musst weiterspringen, solange es geht, und den Weg mit den meisten Steinen nehmen. Geschlagene Steine verschwinden sofort.', { W: [43], B: [35, 19], ziele: [27, 11] })
+      + karte('3. Dame', 'Wer die letzte Reihe erreicht, wird zur Dame (Krone). Sie zieht und schlägt beliebig weit, aber nur gerade, auch rückwärts. Wer keinen Stein mehr hat oder nicht ziehen kann, verliert. Dieselbe Stellung dreimal oder 60 Züge ohne Schlag und ohne Schritt nach vorn: unentschieden.', { WD: [35], B: [14], ziele: [32, 33, 34, 36, 37, 38, 39, 27, 19, 11, 3, 43, 51, 59] })
+      + `<div class="da-hilfe-knoepfe"><button type="button" class="action secondary klein da-hilfe-uebung">Übung wiederholen</button>`
+      + `<button type="button" class="action klein da-hilfe-schliessen">Schließen</button></div></div>`;
+    this.hilfeEl.querySelector('.da-hilfe-schliessen').addEventListener('click', () => this._hilfeSchliessen());
+    this.hilfeEl.querySelector('.da-hilfe-uebung').addEventListener('click', () => { this.hilfeEl.hidden = true; this._starteUebung(); });
+    this.hilfeEl.addEventListener('click', (e) => { if (e.target === this.hilfeEl) this._hilfeSchliessen(); });
+    this.hilfeEl.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !this.hilfeEl.hidden) this._hilfeSchliessen(); });
+  }
+  _hilfeOeffnen() { this.hilfeEl.hidden = false; this._pausiert(); try { this.hilfeEl.focus({ preventScroll: true }); } catch (e) { } }
+  _hilfeSchliessen() { this.hilfeEl.hidden = true; this._weiterNachPause(); try { this.hilfeBtn.focus({ preventScroll: true }); } catch (e) { } }
+
+  // --- Übung (fünf Schritte auf eigener Entity) ---
+  _starteUebung() {
+    clearTimeout(this._uebungTimer);
+    this._uebungGeschafft = false;
+    this._uebungStatus = null;
+    this.uebung.starte();
+    this._pausiert();
+    this.render();
+  }
+  _speichereEinfuehrung() { if (GameUI.einst) GameUI.einst.setzeDameEinfuehrung(); }
+  _uebungUeberspringen() {
+    clearTimeout(this._uebungTimer);
+    this.uebung.beende();
+    this._uebungGeschafft = false;
+    this._uebungStatus = null;
+    this._speichereEinfuehrung();
+    this.render();
+    this._weiterNachPause();
+  }
+  _uebungLos() {
+    this._uebungGeschafft = false;
+    this.render();
+    this._weiterNachPause();
+  }
+  _uebungTipp(index) {
+    const r = this.uebung.tippe(index);
+    if (r.invalid) {
+      if (r.hinweis) { this._uebungStatus = 'Nicht dort: tippe auf das leuchtende Feld.'; this.render(); }
+      return;
+    }
+    this._uebungStatus = this.uebung.istGeloest() ? this.uebung.schritt().gut : null;
+    this._animieren = true;
+    try { this.render(); } finally { this._animieren = false; }
+    this._rueckmeldung(null, true);
+    if (this.uebung.istGeloest()) {
+      clearTimeout(this._uebungTimer);
+      this._uebungTimer = setTimeout(() => this._uebungWeiter(), 1500);
+    }
+  }
+  _uebungWeiter() {
+    clearTimeout(this._uebungTimer);
+    this._uebungStatus = null;
+    if (this.uebung.weiter()) {
+      this.uebung.beende();
+      this._uebungGeschafft = true;
+      this._speichereEinfuehrung();
+      if (typeof konfetti === 'function') konfetti();
+    }
+    this.render();
+  }
+  _uebungZeigen() {
+    const aktiv = this.uebung && this.uebung.aktiv();
+    this.uebungEl.hidden = !(aktiv || this._uebungGeschafft);
+    if (this.uebungEl.hidden) return;
+    const titel = this.uebungEl.querySelector('.da-uebung-titel');
+    if (aktiv) { const s = this.uebung.schritt(); titel.textContent = `Übung ${s.nr} von ${this.uebung.anzahl()}: ${s.titel}`; }
+    else titel.textContent = 'Geschafft! Jetzt eine echte Partie.';
+    this.uebungEl.querySelector('.da-ueberspringen').hidden = !aktiv;
+    this.uebungEl.querySelector('.da-los').hidden = aktiv;
+  }
+
+  // --- Pause: während Übung oder Regelkarten wartet der Computer ---
+  _pausiert() {
+    const p = !!(this.uebung && this.uebung.aktiv()) || !!this._uebungGeschafft || !this.hilfeEl.hidden;
+    this.control.setPause(p);
+    return p;
+  }
+  _weiterNachPause() {
+    if (!this._pausiert() && this.control.isAiTurn()) setTimeout(() => this.runAiTurn(), this.aiDelayMs);
+  }
+  async runAiTurn() {
+    if (this._pausiert()) return;
+    const outcome = await this.performAiMove();
+    if (outcome.invalid) { if (outcome.erneut) this._weiterNachPause(); return; }
+    if (outcome.zug) this._letzter = outcome.zug;
+    this.afterMove(outcome.result);
+  }
+  performAiMove() { return this.control.performAiAction(); }
+
+  _knoepfeAktualisieren() {
+    super._knoepfeAktualisieren();
+    if (this.uebung && this.uebung.aktiv()) {
+      if (this.undoBtn) this.undoBtn.disabled = true;
+      if (this.tippBtn) this.tippBtn.disabled = true;
+    }
+  }
+
+  handleReset() { this._letzter = null; this._hinweis = null; super.handleReset(); }
+  handleModeChange(vsAI) { this._letzter = null; super.handleModeChange(vsAI); }
+  handleUndo() {
+    if (this.control.isAiTurn()) return;
+    const mitten = this.control.teil.length > 0;
+    const outcome = this.control.undoMove();
+    if (outcome.invalid) return;
+    if (!mitten) this._letzter = null;
+    this.render();
+  }
+
+  // Ein Tipp auf ein Feld; die Bedeutung (Stein wählen, Feld im Pfad, Ziel) entscheidet die Control.
+  handleSquareClick(index) {
+    if (this.uebung && this.uebung.aktiv()) return this._uebungTipp(index);
+    if (this._uebungGeschafft) this._uebungLos();
+    if (this._pausiert() || this.control.isAiTurn()) return;
+    const outcome = this.control.handleFeldClick(index);
+    if (outcome.invalid) {
+      // Ein eigener Stein, der nicht ziehen darf, weil geschlagen werden muss: kurzer Hinweis (auch ohne Lernhilfe)
+      const wert = this.control.getBoardState()[index];
+      if (wert && wert[0] === this.control.getCurrentPlayer() && !this.control.isGameOver() && this.control.schlagPflicht()) this._kurzHinweis('Schlagen ist Pflicht.');
+      return;
+    }
+    this._hinweis = null;
+    if (outcome.zug) { this._letzter = outcome.zug; this.afterMove(outcome.result); }
+    else this.render();
+  }
+
+  // Daten für das räumliche Brett: dieselben Markierungen wie in 2D, aus dem letzten render()
+  ansichtsDaten() { return this._v || { brett: this.control.getBoardState(), selected: null, ziele: [], ziehbar: [], weg: [], zuletzt: [], geschlagen: [], letzter: null }; }
+  _kurzHinweis(text) {
+    clearTimeout(this._hinweisTimer);
+    this._hinweis = text;
+    this.render();
+    this._hinweisTimer = setTimeout(() => { this._hinweis = null; this.render(); }, 2500);
+  }
+  _feldElemente() { return this.felderEl.querySelectorAll('.da-feld'); }
+  _tippFelder(zug) { return [zug.von, zug.nach]; }
+
+  render() {
+    const ueb = !!(this.uebung && this.uebung.aktiv());
+    const v = ueb ? this.uebung.ansicht() : this.control.ansicht(this._lernen());
+    const S = k => new Set(v[k]);
+    const ziele = S('ziele'), ziehbar = S('ziehbar'), weg = S('weg');
+    const L = ueb ? null : this._letzter;
+    const zuletzt = new Set(L ? [L.von, ...L.pfad] : []), geschlagen = new Set(L ? L.schlaege : []);
+
+    const { neu } = this._aenderungen(v.brett);
+    this._v = { ...v, zuletzt: [...zuletzt], geschlagen: [...geschlagen].filter(i => !v.brett[i]), letzter: L };
+    this.felderEl.innerHTML = '';
+    v.brett.forEach((val, i) => {
+      const btn = document.createElement('button');
+      let cls = 'da-feld';
+      if (val && neu.has(i)) cls += ' neu';
+      if (i === v.selected) cls += ' selected';
+      else if (ziehbar.has(i)) cls += ' ziehbar';
+      if (ziele.has(i)) cls += ' ziel';
+      if (weg.has(i)) cls += ' weg';
+      if (zuletzt.has(i)) cls += ' zuletzt';
+      if (geschlagen.has(i) && !val) cls += ' geschlagen';
+      btn.className = cls;
+      btn.type = 'button';
+      btn.setAttribute('aria-label', `Feld ${i + 1}, ` + (val ? DameUI.NAME[val] : 'frei'));
+      if (val) btn.insertAdjacentHTML('beforeend', DameUI.steinSvg(val));
+      else if (cls.includes('geschlagen')) btn.insertAdjacentHTML('beforeend', '<svg class="da-x" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.500 1.500l7 7M8.500 1.500l-7 7" stroke="#ff3b30" stroke-width="2" stroke-linecap="round"/></svg>');
+      btn.addEventListener('click', () => this.handleSquareClick(i));
+      this.felderEl.appendChild(btn);
+    });
+    if (ueb && v.ziele.length === 1) {
+      const z = v.ziele[0], blase = document.createElement('div');
+      const reihe = Math.floor(z / 8), unten = reihe < 7 && !v.brett[z + 8], oben = reihe > 0 && !v.brett[z - 8];   // dorthin, wo sie keinen Stein verdeckt
+      blase.className = 'da-blase' + ((unten ? false : oben ? true : reihe >= 4) ? ' oben' : '');
+      blase.textContent = 'Hier tippen';
+      blase.style.left = (((z % 8) + 0.5) / 8 * 100) + '%';
+      blase.style.top = ((Math.floor(z / 8) + 0.5) / 8 * 100) + '%';
+      this.felderEl.appendChild(blase);
+    }
+    if (ueb) this.statusEl.textContent = this._uebungStatus || this.uebung.schritt().text;
+    else if (!this.control.isGameOver()) this.statusEl.textContent = this._hinweis || this._statusText(v);
+    this._uebungZeigen();
+  }
+
+  // Klartext je Zustand: was ist jetzt zu tun?
+  _statusText(v) {
+    if (this.control.isAiTurn()) return 'Der Computer (Schwarz) überlegt …';
+    const p = this.control.getCurrentPlayer();
+    const du = this.control.vsAI && p !== this.control.aiPlayer;
+    const vor = du ? '' : `${DameUI.FARBE[p]}: `;
+    const lernen = this._lernen();
+    if (v.imZug) return `${vor}Weiter schlagen: tippe das nächste grüne Feld.`;
+    if (v.selected !== null) return `${vor}${v.pflicht ? 'Schlagen ist Pflicht: ' : ''}Tippe ein grünes Feld.`;
+    if (v.pflicht) return `${vor}Schlagen ist Pflicht: Tippe einen Stein mit blauem Ring.`;
+    return `${vor}${lernen ? 'Tippe einen Stein mit blauem Ring, dann ein grünes Feld.' : 'Tippe einen Stein, dann ein grünes Feld.'}`;
+  }
+
+  renderGameOver(result) {
+    this.render();
+    const F = DameUI.FARBE;
+    if (result.winner === 'Draw') {
+      this.statusEl.textContent = this.control.getRuhe() >= DameControl.RUHE_MAX ? 'Unentschieden: 60 Züge ohne Schlag und ohne Schritt nach vorn.' : 'Unentschieden: dieselbe Stellung kam dreimal vor.';
+      return;
+    }
+    const verlierer = result.winner === 'W' ? 'B' : 'W';
+    const steine = this.control.getBoardState().filter(x => x && x[0] === verlierer).length;
+    const grund = steine === 0 ? `${F[verlierer]} hat keinen Stein mehr.` : `${F[verlierer]} kann nicht mehr ziehen.`;
+    let kopf;
+    if (this.control.vsAI) kopf = result.winner === this.control.aiPlayer ? 'Der Computer gewinnt.' : 'Du gewinnst! 🎉';
+    else kopf = `${F[result.winner]} gewinnt! 🎉`;
+    this.statusEl.textContent = `${kopf}\n${grund}`;
+  }
+}
+
 /* --- ChessUI: eigene DOM-Schicht, spricht nur mit ChessControl --- */
 class ChessUI extends GameUI {
   static NAMEN = { p: 'Bauer', r: 'Turm', n: 'Springer', b: 'Läufer', q: 'Dame', k: 'König' };
@@ -4820,14 +5649,14 @@ class Ansicht3D {
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.huelle.appendChild(this.renderer.domElement);
     this.szene = new T.Scene();
-    this.kamera = new T.PerspectiveCamera(this.art === 'chess' ? 40 : 34, 1, 0.1, 100);
+    this.kamera = new T.PerspectiveCamera(this.art === 'connect4' ? 34 : 40, 1, 0.1, 100);
     this.szene.add(new T.HemisphereLight(0xffffff, 0x606878, 0.55));
     const sonne = new T.DirectionalLight(0xffffff, 0.95); sonne.position.set(-5, 11, 8); this.szene.add(sonne);
     const gegen = new T.DirectionalLight(0xbfd4ff, 0.3); gegen.position.set(6, 4, -6); this.szene.add(gegen);
     this.ray = new T.Raycaster(); this.ziele = [];
     this.figuren = new T.Group(); this.szene.add(this.figuren);
     this.markGruppe = new T.Group(); this.szene.add(this.markGruppe);
-    if (this.art === 'connect4') this._baueC4(); else this._baueSchach();
+    if (this.art === 'connect4') this._baueC4(); else if (this.art === 'dame') this._baueDame(); else this._baueSchach();
     this._eingabe();
     if (window.ResizeObserver) new ResizeObserver(() => { if (this.aktiv) { this._groesse(); this._bild(); } }).observe(this.huelle);
   }
@@ -4875,7 +5704,7 @@ class Ansicht3D {
     const r = this.renderer.domElement.getBoundingClientRect();
     const v = new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
     this.ray.setFromCamera(v, this.kamera);
-    const treffer = this.ray.intersectObjects(this.art === 'chess' ? [...this.figuren.children, ...this.ziele] : this.ziele, true);
+    const treffer = this.ray.intersectObjects(this.art !== 'connect4' ? [...this.figuren.children, ...this.ziele] : this.ziele, true);
     for (const t of treffer) { let o = t.object; while (o && o.userData.feld === undefined) o = o.parent; if (o) return o.userData.feld; }
     return null;
   }
@@ -4971,7 +5800,11 @@ class Ansicht3D {
     // Kanten mit geteilten Normalen (Kreuz, Zinnen, Pferdekopf) reißen beim Aufblähen auf: dort eine vergrößerte Kopie ohne Aufblähen
     this.konturEckig = { w: kontur(0x0b0b0e, 0), b: kontur(0xe6e6e6, 0) };
     this._konturGeo = new Map();
-    this.markGeo = { feld: new T.PlaneGeometry(1, 1), punkt: new T.CircleGeometry(0.15, 20), ring: new T.RingGeometry(0.36, 0.48, 32) };
+    this._markenInit();
+  }
+  _markenInit(ringInnen = 0.36, ringAussen = 0.48) {
+    const T = THREE;
+    this.markGeo = { feld: new T.PlaneGeometry(1, 1), punkt: new T.CircleGeometry(0.15, 20), ring: new T.RingGeometry(ringInnen, ringAussen, 32) };
     this.markMat = {
       auswahl: new T.MeshBasicMaterial({ color: 0xffd60a, transparent: true, opacity: 0.55 }),
       ziel: new T.MeshBasicMaterial({ color: 0x34c759, transparent: true, opacity: 0.85 }),
@@ -4979,6 +5812,88 @@ class Ansicht3D {
       schach: new T.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.6 }),
       tipp: new T.MeshBasicMaterial({ color: 0x0a84ff, transparent: true, opacity: 0.9 }),
     };
+  }
+
+  // ---------- Dame (S-W23): Holzbrett, flache Scheiben, Dame mit Aufsatz und goldener Krone ----------
+  _baueDame() {
+    const T = THREE, H = Ansicht3D.HOLZ;
+    const holz = (farbe, sd) => new T.MeshStandardMaterial({ color: farbe, roughness: 0.6, map: this._holzTextur(sd) });
+    const feldMat = H.hell.map(sd => holz(0x9a7e52, sd));
+    const feldGeo = new T.BoxGeometry(0.97, 0.1, 0.97);
+    for (let i = 0; i < 64; i++) {
+      const m = new T.Mesh(feldGeo, feldMat[((Math.floor(i / 8) * 3 + (i % 8)) >> 1) & 1]); m.position.copy(this._feldPos(i)).setY(-0.05);
+      m.userData.feld = i; this.szene.add(m); this.ziele.push(m);
+    }
+    const fugen = new T.Mesh(new T.BoxGeometry(8, 0.1, 8), new T.MeshStandardMaterial({ color: 0x3e2f18, roughness: 0.8 }));
+    fugen.position.y = -0.08; this.szene.add(fugen);
+    const rahmen = new T.Mesh(new T.BoxGeometry(8.8, 0.3, 8.8), new T.MeshStandardMaterial({ color: 0x5a3a26, roughness: 0.5, map: this._holzTextur(H.rahmen) }));
+    rahmen.position.y = -0.21; this.szene.add(rahmen);
+    const v2 = pts => pts.map(([x, y]) => new T.Vector2(x, y));
+    const profil = [[0, 0], [0.34, 0], [0.38, 0.03], [0.38, 0.12], [0.34, 0.16], [0.25, 0.16], [0.25, 0.185], [0, 0.185]];
+    const scheibe = (dy) => { const g = new T.LatheGeometry(v2(profil), 36); g.translate(0, dy, 0); return g; };
+    const krone = [];
+    const ring = new T.TorusGeometry(0.19, 0.04, 8, 28); ring.rotateX(Math.PI / 2); ring.translate(0, 0.43, 0); krone.push(ring);
+    for (let k = 0; k < 6; k++) { const w = k * Math.PI / 3, z = new T.ConeGeometry(0.05, 0.15, 8); z.translate(Math.sin(w) * 0.19, 0.5, Math.cos(w) * 0.19); krone.push(z); }
+    this.scheibeGeo = { stein: [scheibe(0)], dame: [scheibe(0), scheibe(0.185)] };
+    this.kroneGeo = krone;
+    this.scheibeMat = { W: new T.MeshStandardMaterial({ color: 0xf4f1e8, roughness: 0.45 }), B: new T.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.4 }) };
+    this.kroneMat = new T.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.3, metalness: 0.4 });
+    this._markenInit(0.41, 0.5);
+    this.markGeo.klein = new T.CircleGeometry(0.1, 16);
+    this.markMat.ring = new T.MeshBasicMaterial({ color: 0x0a84ff, transparent: true, opacity: 0.95 });
+    this.markMat.tipp = new T.MeshBasicMaterial({ color: 0xff9f0a, transparent: true, opacity: 0.95 });   // Tipp orange, Ziehbar-Ring blau
+    this.markMat.weg = new T.MeshBasicMaterial({ color: 0xff9f0a, transparent: true, opacity: 0.95 });
+    this.markMat.geschlagen = new T.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.75 });
+  }
+  _scheibe(wert) {
+    const g = new THREE.Group(), dame = wert.length === 2;
+    for (const geo of this.scheibeGeo[dame ? 'dame' : 'stein']) g.add(new THREE.Mesh(geo, this.scheibeMat[wert[0]]));
+    if (dame) for (const geo of this.kroneGeo) { const m = new THREE.Mesh(geo, this.kroneMat); m.position.y = 0.185; g.add(m); }
+    g.userData.wert = wert;
+    return g;
+  }
+  _dameMarken(v) {
+    this.markGruppe.clear();
+    this._auswahl = v && v.selected !== null && v.selected !== undefined ? v.selected : null;
+    if (!v) return;
+    const flach = (geo, mat, i, y, art) => { const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.position.copy(this._feldPos(i)).setY(y); m.userData.feld = i; m.userData.art = art; this.markGruppe.add(m); };
+    const G = this.markGeo, M = this.markMat;
+    for (const i of v.zuletzt || []) flach(G.feld, M.zuletzt, i, 0.005, 'zuletzt');
+    for (const i of v.geschlagen || []) flach(G.klein, M.geschlagen, i, 0.012, 'geschlagen');
+    if (this._auswahl !== null) flach(G.feld, M.auswahl, this._auswahl, 0.006, 'auswahl');
+    for (const i of v.ziehbar || []) flach(G.ring, M.ring, i, 0.02, 'ziehbar');
+    for (const i of v.weg || []) flach(G.klein, M.weg, i, 0.02, 'weg');
+    for (const i of v.ziele || []) flach(G.punkt, M.ziel, i, 0.02, 'ziel');
+  }
+  _dame(brett, alt, animieren, jetzt) {
+    const v = this.ui.ansichtsDaten();
+    this._dameMarken(v);
+    this.figuren.clear(); this.anim = [];
+    brett.forEach((w, i) => {
+      if (!w) return;
+      const g = this._scheibe(w); g.position.copy(this._feldPos(i));
+      if (this._auswahl === i) g.position.y = 0.25;
+      g.userData.feld = i; this.figuren.add(g); this.stuecke.set(i, g);
+    });
+    const L = v && v.letzter;
+    if (!animieren || !alt || !L) return;
+    // Der ziehende Stein läuft den Weg ab dem letzten Feld, auf dem er vorher schon stand; geschlagene Scheiben versinken, wenn er über sie springt.
+    const pts = [L.von, ...L.pfad], ziel = pts[pts.length - 1], g = this.stuecke.get(ziel), farbe = brett[ziel] && brett[ziel][0];
+    if (!g || !farbe) return;
+    let k0 = 0;
+    for (let k = pts.length - 2; k >= 0; k--) if (alt[pts[k]] && alt[pts[k]][0] === farbe) { k0 = k; break; }
+    const P = pts.map(f => this._feldPos(f)), n = pts.length - 1 - k0, S = 260, ende = this._feldPos(ziel);
+    g.position.copy(P[k0]);
+    this.anim.push({ t0: jetzt, dauer: n * S, f: (t) => {
+      const x = Math.min(n - 1e-6, t / S), k = Math.floor(x), u = x - k;
+      g.position.lerpVectors(P[k0 + k], P[k0 + k + 1], u * u * (3 - 2 * u)); g.position.y = Math.sin(u * Math.PI) * 0.4;
+    }, ende: () => { g.position.copy(ende); } });
+    L.schlaege.forEach((sf, j) => {
+      if (j < k0 || !alt[sf] || brett[sf]) return;
+      const weg = this._scheibe(alt[sf]); weg.position.copy(this._feldPos(sf)); this.figuren.add(weg);
+      const start = (j - k0 + 0.5) * S;
+      this.anim.push({ t0: jetzt, dauer: start + 250, f: (t) => { if (t > start) weg.position.y = -(t - start) / 250 * 1.2; }, ende: () => { this.figuren.remove(weg); } });
+    });
   }
   _holzTextur(seed) {
     const { werte, groesse: n } = Ansicht3D.holzFaktor(seed);
@@ -5014,7 +5929,7 @@ class Ansicht3D {
   // ---------- Stellung zeichnen ----------
   aktualisieren(gewinnLinie, sofort) {
     if (!this.aktiv) return;
-    const brett = this.ui.control.getBoardState().slice();
+    const brett = (this.art === 'dame' ? this.ui.ansichtsDaten().brett : this.ui.control.getBoardState()).slice();
     const alt = this._alt, animieren = !sofort && !!alt && !!this.ui._animieren;
     this._alt = brett;
     this._markenWeg();
@@ -5046,6 +5961,8 @@ class Ansicht3D {
       this.anim = this.anim.filter(a => a.mesh && bleibt.has(a.mesh));
       if (gewinnLinie && !this._gewinn) this._gewinnBis = jetzt + 3000;
       this._gewinn = gewinnLinie || null;
+    } else if (this.art === 'dame') {
+      this._dame(brett, alt, animieren, jetzt);
     } else {
       this.figuren.clear(); this.anim = [];
       this._schachMarken(brett);
@@ -5475,16 +6392,16 @@ class EinstellungenBoundary {
         return { ton: d.ton !== false, stufen: (d.stufen && typeof d.stufen === 'object') ? { ...d.stufen } : {},
           ansicht: (d.ansicht && typeof d.ansicht === 'object') ? { ...d.ansicht } : {},
           lernen: (d.lernen && typeof d.lernen === 'object') ? { ...d.lernen } : {},
-          muehleEinfuehrung: d.muehleEinfuehrung === true, zuletzt: typeof d.zuletzt === 'string' ? d.zuletzt : null };
+          muehleEinfuehrung: d.muehleEinfuehrung === true, dameEinfuehrung: d.dameEinfuehrung === true, zuletzt: typeof d.zuletzt === 'string' ? d.zuletzt : null };
       }
     } catch (e) { /* kaputte Daten: Standardwerte */ }
-    return { ton: true, stufen: {}, ansicht: {}, lernen: {}, muehleEinfuehrung: false, zuletzt: null };
+    return { ton: true, stufen: {}, ansicht: {}, lernen: {}, muehleEinfuehrung: false, dameEinfuehrung: false, zuletzt: null };
   }
   speichere(e) {
     try {
       this._speicher.setItem(EinstellungenBoundary.SCHLUESSEL,
         JSON.stringify({ formatversion: EinstellungenBoundary.FORMAT, ton: e.ton, stufen: e.stufen, ansicht: e.ansicht, lernen: e.lernen,
-          muehleEinfuehrung: e.muehleEinfuehrung === true, ...(typeof e.zuletzt === 'string' ? { zuletzt: e.zuletzt } : {}) }));
+          muehleEinfuehrung: e.muehleEinfuehrung === true, ...(e.dameEinfuehrung === true ? { dameEinfuehrung: true } : {}), ...(typeof e.zuletzt === 'string' ? { zuletzt: e.zuletzt } : {}) }));
     } catch (err) { /* Speicher voll oder gesperrt: Einstellung gilt nur bis zum Neuladen */ }
   }
 }
@@ -5504,6 +6421,9 @@ class EinstellungenControl {
   // S-W15: Mühle-Übung gesehen (gilt bei gesperrtem Speicher nur bis zum Neuladen)
   muehleEinfuehrung() { return this._e.muehleEinfuehrung === true; }
   setzeMuehleEinfuehrung() { this._e.muehleEinfuehrung = true; this._b.speichere(this._e); }
+  // S-W23: Dame-Übung gesehen (gleiche Regel wie bei Mühle)
+  dameEinfuehrung() { return this._e.dameEinfuehrung === true; }
+  setzeDameEinfuehrung() { this._e.dameEinfuehrung = true; this._b.speichere(this._e); }
   // S-W25: zuletzt gespieltes Spiel (ob es das Spiel gibt, prüft die Auswahl)
   zuletzt() { return typeof this._e.zuletzt === 'string' ? this._e.zuletzt : null; }
   setzeZuletzt(spiel) { if (this._e.zuletzt === spiel) return; this._e.zuletzt = spiel; this._b.speichere(this._e); }
@@ -5744,9 +6664,9 @@ const aiStrategy = new AIStrategy();
 const speicher = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 GameUI.einst = new EinstellungenControl(new EinstellungenBoundary(speicher));
 GameUI.klang = new Klang();
-GameUI.NAMEN = { tictactoe: 'Tic Tac Toe', connect4: 'Vier gewinnt', othello: 'Reversi', muehle: 'Mühle', chess: 'Schach', mangala: 'Mangala' };
+GameUI.NAMEN = { tictactoe: 'Tic Tac Toe', connect4: 'Vier gewinnt', othello: 'Reversi', muehle: 'Mühle', chess: 'Schach', mangala: 'Mangala', dame: 'Dame' };
 GameUI.STUFEN_TEXT = { leicht: 'Leicht', mittel: 'Mittel', stark: 'Stark' };
-GameUI.ANSICHT_3D = ['connect4', 'chess'];
+GameUI.ANSICHT_3D = ['connect4', 'chess', 'dame'];
 (function tonSchalter() {
   const b = document.querySelector('.ton-schalter');
   const zeige = () => { const an = GameUI.einst.istTonAn(); b.textContent = an ? '🔊' : '🔇'; b.setAttribute('aria-pressed', String(an)); };
@@ -5788,6 +6708,15 @@ wireGame({
   dbName: 'mangalaDB',
   EntityCls: MangalaEntity, BoundaryCls: MangalaBoundary,
   ControlCls: MangalaControl, UICls: MangalaUI,
+  controlExtraArgs: [aiStrategy]
+});
+
+// S-W23: Dame, Übung auf eigener Entity (wie bei Mühle hier zusammengesetzt)
+DameUI.neueUebung = () => new DameUebungControl(new DameBoundary(new DameEntity(), new StatsEntity(), null));
+wireGame({
+  dbName: 'dameDB',
+  EntityCls: DameEntity, BoundaryCls: DameBoundary,
+  ControlCls: DameControl, UICls: DameUI,
   controlExtraArgs: [aiStrategy]
 });
 

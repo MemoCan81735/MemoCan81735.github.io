@@ -12,9 +12,9 @@ node werkstatt/seite_handy.js
 python3 werkstatt/tests/strecken_test.py
 python3 werkstatt/tests/wahrzeichen_test.py
 node werkstatt/tests/saeulen_test.js
-for t in ebru perlen etappe ula aufbau brett muehle brett3d schach_figuren lernen schule optik stimmung effekte strecken wahrzeichen luft teilen; do node "werkstatt/tests/${t}_test.js"; done
+for t in ebru perlen etappe ula aufbau brett muehle dame brett3d schach_figuren lernen schule optik stimmung effekte strecken wahrzeichen luft teilen; do node "werkstatt/tests/${t}_test.js"; done
 if [ "${1:-schnell}" = voll ]; then
-  for g in etappe aufbau brett muehle brett3d schach_figuren lernen schule optik stimmung effekte strecken wahrzeichen luft teilen; do python3 "werkstatt/tests/gegenproben_${g}.py"; done
+  for g in etappe aufbau brett muehle dame brett3d schach_figuren lernen schule optik stimmung effekte strecken wahrzeichen luft teilen; do python3 "werkstatt/tests/gegenproben_${g}.py"; done
   python3 werkstatt/tests/gegenproben_saeulen.py
 fi
 echo "Alle Prüfungen grün (${1:-schnell})."
