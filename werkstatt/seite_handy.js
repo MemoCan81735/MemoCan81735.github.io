@@ -70,7 +70,7 @@ const melde = (pruefung, ok, text) => {
           const raus = reiter.filter(x => x.l < 0 || x.r > innerWidthOf(vp) + 0.5 || x.l < x.el - 0.5 || x.r > x.er + 0.5);
           melde('D5_reiter_sichtbar', reiter.length >= 7 && raus.length === 0, `${reiter.length} Reiter, abgeschnitten: ${raus.map(x => x.t).join(', ')}`);
           const ungestaltet = [];
-          for (const tab of ['tictactoe', 'connect4', 'othello', 'muehle', 'chess', 'mangala']) {
+          for (const tab of ['tictactoe', 'connect4', 'othello', 'muehle', 'chess', 'mangala', 'tavla']) {
             await p.evaluate(t => document.querySelector(`.tabBtn[data-tab="${t}"]`).click(), tab);
             await p.waitForTimeout(200);
             const r = await p.evaluate(t => {

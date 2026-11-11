@@ -169,6 +169,7 @@ Geändert wird nur `brettspiele/index.html`: neue Klassen getrennt eingefügt, b
 - Messwerte: Stark je Wurf p95 etwa 30 bis 35 ms, höchstens 55 ms (Grenze 1000 ms); Stark gewinnt 19 von 20 Partien gegen Leicht.
 - Tests: 15 Tests in `tavla_test.js`, etwa 40 Gegenproben in `gegenproben_tavla.py`, alle erkannt.
 - Unabhängige Prüfung (zweiter Agent, nur gegen Spec und Regeln) fand: Zug zurück konnte den Computerzug zurücknehmen; Fehlzug nur je Runde statt je Steinzug; Speicher prüfte Rest und Mars nicht genau genug; unnötige Gegnerschleife bei Bar. Alles behoben, je mit Test und Gegenprobe. Offen und akzeptiert: Marker-Geometrien in 3D ohne `dispose()` (kleines Speicherleck), Computer-Plan beim Abtragen mit zwei möglichen Würfeln (harmlos).
+- Nach dem Zusammenführen mit S-W25 (Kacheln, Kopfzeile, Abschnitte): Tavla hat eine eigene Kachel, keine eigene Überschrift, die Abschnitte status, brett, aktionen, modus, optionen (3D, ?, Lernhilfe), statistik; Würfeln und Abtragen stehen in einer Zeile über dem Brett, das 3D-Brett ist 1:1,36, damit im Hochformat (412 × 915) alles ohne Scrollen passt. Im Querformat scrollt die Seite senkrecht (13 Reihen zu 44 px), `aufbau_test.js` nimmt Tavla dort wie Mangala von den Brett-Prüfungen aus.
 - Gerätetest am Handy offen (Abnahmeliste `werkstatt/abnahme/S-W24-tavla.md`).
 
 ## Nicht Teil dieser Änderung

@@ -37,12 +37,12 @@
     /* Responsive Zellgrößen: fester Wunschwert, aber nie breiter
        als der Bildschirm hergibt (Brett + Padding + Body-Padding). */
     --ttt-cell: min(92px, 24vw);
-    --c4-slot: min(42px, 10.8vw);
-    --ot-cell: min(38px, 10.3vw);
-    --ch-square: min(38px, 10.6vw);
+    --c4-slot: min(44px, calc((100vw - 88px) / 7));
+    --ot-cell: min(44px, calc((100vw - 58px) / 8));
+    --ch-square: min(44px, calc((100vw - 32px) / 8));
     --mu-board: min(340px, 84vw);
-    --ma-pit: min(42px, 9vw);
-    --ma-store: min(52px, 12vw);
+    --ma-store: min(46px, 11.5vw);
+    --ma-pit: min(44px, calc((100vw - 52px - 2 * var(--ma-store)) / 6));
   }
 
   /* --- Dunkelmodus: folgt der Systemeinstellung. Nur Variablen
@@ -77,7 +77,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;   /* S-W25: oben beginnen, die Kopfzeile springt nicht */
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
     background:
       radial-gradient(circle at 20% 15%, #ffe1ec 0%, transparent 45%),
@@ -143,7 +143,7 @@
     box-shadow: 0 4px 14px rgba(52,199,89,0.4);
   }
 
-  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols) { margin-top: 24px; display: flex; gap: 12px; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #tacontrols) { margin-top: 24px; display: flex; gap: 12px; }
   button.action {
     background: var(--ios-blue);
     color: white;
@@ -157,6 +157,7 @@
     transition: transform 0.12s ease, opacity 0.12s ease;
     box-shadow: 0 4px 12px rgba(0,122,255,0.3);
   }
+  button.action { min-height: 44px; min-width: 44px; }
   button.action:active { transform: scale(0.96); opacity: 0.85; }
   button.action.secondary {
     background: var(--segment-bg);
@@ -166,7 +167,7 @@
   button.action:disabled { opacity: 0.4; cursor: default; }
 
   /* iOS-Segmented-Control-Optik statt Radiobuttons */
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #tamode) {
     margin-top: 18px;
     display: flex;
     background: var(--segment-bg);
@@ -175,32 +176,33 @@
     position: relative;
     font-size: 0.85rem;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #tamode) label {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 6px 16px;
+    min-height: 44px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 500;
     color: var(--ios-label);
     transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) input {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #tamode) input {
     position: absolute;
     opacity: 0;
     pointer-events: none;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label:has(input:checked),
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label.active {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #tamode) label:has(input:checked),
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #tamode) label.active {
     background: var(--surface);
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode) label:has(input:not(:checked)):not(.active) {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #tamode) label:has(input:not(:checked)):not(.active) {
     color: var(--ios-secondary-label);
   }
 
-  :is(#stats, #c4stats, #otstats, #mustats, #chstats, #mastats) {
+  :is(#stats, #c4stats, #otstats, #mustats, #chstats, #mastats, #tastats) {
     margin-top: 20px;
     display: flex;
     gap: 10px;
@@ -238,6 +240,7 @@
     font-weight: 500;
     cursor: pointer;
     padding: 4px 8px;
+    min-height: 44px;
   }
   .linkBtn:active { opacity: 0.6; }
 
@@ -275,21 +278,8 @@
   #tabs::-webkit-scrollbar { display: none; }
   .tabBtn {
     border: none;
-    background: none;
-    padding: 8px 14px;
-    border-radius: 9px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--ios-secondary-label);
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .tabBtn.active {
-    background: var(--surface);
-    color: var(--ios-label);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    transition: transform 0.12s ease;
   }
 
   .tab-content { display: none; flex-direction: column; align-items: center; }
@@ -573,20 +563,23 @@
   .lern-satz[hidden], .warnung[hidden] { display: none; }
   /* S-W09: Gruppen, Symbole und größere Knöpfe im Reiter Schach */
   .gruppe { margin: 22px 0 -10px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; color: var(--ios-secondary-label); text-align: center; }
-  #choptionen { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  #chess-view button.action { min-height: 44px; }
-  #chess-view #chcontrols { gap: 8px; }
-  #chess-view #chcontrols button { padding-left: 14px; padding-right: 14px; }   /* Aktionen: drei Knöpfe mit Symbol in eine Zeile */
+  .optionen { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .optionen[hidden], .gruppe[hidden] { display: none; }
+  .optionen .teilen-knopf { order: 9; }
+  .optionen button { white-space: nowrap; }
+  #chengine:empty { display: none; }
+  [data-abschnitt="aktionen"] { gap: 8px; flex-wrap: nowrap; }
+  [data-abschnitt="aktionen"] button { padding-left: 14px; padding-right: 14px; font-size: 0.95rem; white-space: nowrap; }   /* Aktionen: drei Knöpfe mit Symbol in eine Zeile (S-W25: in allen Spielen) */
   @supports ((-webkit-mask-image: url(x)) or (mask-image: url(x))) {
-    #chess-view :is(#chresetBtn, #chundoBtn, .tipp-knopf, .ansicht-knopf, .lernen-knopf)::before {
+    .tab-content :is(.neu-knopf, .zurueck, .tipp-knopf, .ansicht-knopf, .lernen-knopf)::before {
       content: ''; display: inline-block; width: 1.15em; height: 1.15em; margin-right: 7px; vertical-align: -0.2em; background-color: currentColor;
       -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain;
     }
-    #chess-view #chresetBtn::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.5-5.8'/%3E%3Cpath d='M20 4v5h-5'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.5-5.8'/%3E%3Cpath d='M20 4v5h-5'/%3E%3C/svg%3E"); }
-    #chess-view #chundoBtn::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E"); }
-    #chess-view .tipp-knopf::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 21h4'/%3E%3Cpath d='M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 21h4'/%3E%3Cpath d='M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z'/%3E%3C/svg%3E"); }
-    #chess-view .ansicht-knopf::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 4.5v9L12 21l-8-4.5v-9z'/%3E%3Cpath d='M12 12l8-4.5M12 12 4 7.5M12 12v9'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 4.5v9L12 21l-8-4.5v-9z'/%3E%3Cpath d='M12 12l8-4.5M12 12 4 7.5M12 12v9'/%3E%3C/svg%3E"); }
-    #chess-view .lernen-knopf::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2z'/%3E%3Cpath d='M12 6v14'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2z'/%3E%3Cpath d='M12 6v14'/%3E%3C/svg%3E"); }
+    .tab-content .neu-knopf::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.5-5.8'/%3E%3Cpath d='M20 4v5h-5'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.5-5.8'/%3E%3Cpath d='M20 4v5h-5'/%3E%3C/svg%3E"); }
+    .tab-content .zurueck::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E"); }
+    .tab-content .tipp-knopf::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 21h4'/%3E%3Cpath d='M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 21h4'/%3E%3Cpath d='M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z'/%3E%3C/svg%3E"); }
+    .tab-content .ansicht-knopf::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 4.5v9L12 21l-8-4.5v-9z'/%3E%3Cpath d='M12 12l8-4.5M12 12 4 7.5M12 12v9'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 4.5v9L12 21l-8-4.5v-9z'/%3E%3Cpath d='M12 12l8-4.5M12 12 4 7.5M12 12v9'/%3E%3C/svg%3E"); }
+    .tab-content .lernen-knopf::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2z'/%3E%3Cpath d='M12 6v14'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2z'/%3E%3Cpath d='M12 6v14'/%3E%3C/svg%3E"); }
   }
   /* Schachschule (S-W08) */
   #schule-view h2 { font-size: 1.05rem; margin: 18px 0 4px; text-align: center; }
@@ -613,7 +606,7 @@
     min-height: 16px;
   }
 
-  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode),
+  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #tamode),
      aber nur sichtbar, wenn gegen den Computer gespielt wird. */
   #chdiff {
     display: none;
@@ -629,6 +622,7 @@
     align-items: center;
     justify-content: center;
     padding: 5px 14px;
+    min-height: 44px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 500;
@@ -659,9 +653,9 @@
     display: grid;
     grid-template-columns: var(--ma-store) repeat(6, var(--ma-pit)) var(--ma-store);
     grid-template-rows: repeat(2, var(--ma-pit));
-    gap: 5px;
+    gap: 3px;
     background: linear-gradient(160deg, #8a5a34, #6b4423);
-    padding: 8px;
+    padding: 6px;
     border-radius: 24px;
     box-shadow: 0 8px 24px rgba(107,68,35,0.35), inset 0 0 0 1px rgba(255,255,255,0.15);
   }
@@ -692,15 +686,17 @@
   #mastore-b { grid-column: 1; }
 
   /* --- S-W02: Kopfzeile, Knöpfe, Stufen, Spielgefühl --- */
-  .kopfzeile { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 420px; margin-bottom: 12px; }
-  .kopfzeile .ng-zurueck { margin: 0; }
-  .ton-schalter { min-width: 40px; min-height: 36px; border: none; border-radius: 999px; background: var(--segment-bg); font-size: 1rem; cursor: pointer; }
+  .kopfzeile { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; width: 100%; max-width: 420px; min-height: 44px; margin-bottom: 10px; }
+  .kopfzeile .ng-zurueck { margin: 0; justify-self: start; min-height: 44px; white-space: nowrap; }
+  .kopfzeile h1 { margin: 0; font-size: 1.25rem; text-align: center; white-space: nowrap; outline: none; }
+  .tab-content > h1 { display: none; }   /* S-W25: der Name steht in der Kopfzeile */
+  .ton-schalter { justify-self: end; min-width: 44px; min-height: 44px; border: none; border-radius: 999px; background: var(--segment-bg); font-size: 1rem; cursor: pointer; }
   .ton-schalter[aria-pressed="false"] { opacity: 0.55; }
-  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols) { flex-wrap: wrap; justify-content: center; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #tacontrols) { justify-content: center; }
   button.action.klein { padding: 10px 16px; font-size: 0.9rem; }
   .stufen { display: none; margin-top: 10px; background: var(--segment-bg); padding: 3px; border-radius: 10px; font-size: 0.8rem; }
   .stufen.active { display: flex; }
-  .stufen label { display: flex; align-items: center; justify-content: center; padding: 5px 14px; border-radius: 8px; cursor: pointer;
+  .stufen label { display: flex; align-items: center; justify-content: center; padding: 5px 14px; min-height: 44px; border-radius: 8px; cursor: pointer;
     font-weight: 500; color: var(--ios-secondary-label); transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease; }
   .stufen input { position: absolute; opacity: 0; pointer-events: none; }
   .stufen label:has(input:checked), .stufen label.active { background: var(--surface); color: var(--ios-label); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
@@ -736,36 +732,67 @@
   }
 
   /* Zurück zur Spieleseite */
-  .ng-zurueck { align-self: flex-start; display: inline-flex; align-items: center; min-height: 36px; margin: 0 0 12px; padding: 0 14px;
+  .ng-zurueck { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; margin: 0 0 12px; padding: 0 14px;
     border-radius: 999px; background: var(--segment-bg); color: var(--ios-label); font-size: 0.85rem; font-weight: 600; text-decoration: none; }
   #layerNote a { color: inherit; }
-  /* Schmale Bildschirme: alle sechs Reiter sichtbar, drei pro Zeile statt Wischen */
-  @media (max-width: 600px) {
-    #tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 420px; overflow: visible; }
-    .tabBtn { padding: 9px 4px; text-align: center; }
+  /* --- S-W25: Auswahl mit Kacheln (die Kacheln sind die früheren Reiter) --- */
+  #tabs { display: none; }
+  body[data-ansicht="auswahl"] #tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 420px; background: none; padding: 0; margin: 6px 0 0; overflow: visible; }
+  .tabBtn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 108px; padding: 12px 4px 8px; border-radius: 20px;
+    background: var(--surface); color: var(--ios-label); box-shadow: 0 2px 10px rgba(0,0,0,0.08); white-space: normal; font-size: 0.82rem; font-weight: 700; text-align: center; }
+  .tabBtn:active { transform: scale(0.96); }
+  .tabBtn svg { width: 48px; height: 48px; }
+  .kachel-weiter { font-size: 0.68rem; font-weight: 700; color: var(--ios-blue); visibility: hidden; }
+  .tabBtn.weiter { outline: 3px solid var(--ios-blue); outline-offset: -3px; }
+  .tabBtn.weiter .kachel-weiter { visibility: visible; }
+  #layerNote .lizenz-schach { display: none; }
+  body[data-spiel="chess"] #layerNote .lizenz-schach, body[data-spiel="schule"] #layerNote .lizenz-schach { display: inline; }
+  .mu-hilfe-knopf { min-width: 44px; }
+  @media (max-width: 380px) {   /* schmale Handys: die drei Aktionen bleiben in einer Zeile */
+    [data-abschnitt="aktionen"] { gap: 6px; }
+    [data-abschnitt="aktionen"] button { padding-left: 9px; padding-right: 9px; font-size: 0.88rem; }
+  }
+  @media (max-width: 345px) {   /* sehr schmal: Name kleiner, Aktionen dürfen umbrechen */
+    .kopfzeile h1 { font-size: 1rem; }
+    .kopfzeile .ng-zurueck { padding: 0 10px; }
+    [data-abschnitt="aktionen"] { flex-wrap: wrap; }
+  }
+  /* --- S-W25: Querformat am Handy: Brett links, Bedienung rechts --- */
+  @media (orientation: landscape) and (max-height: 560px) {
+    :root {
+      --qh: calc(100vh - 68px);   /* Höhe unter der Kopfzeile */
+      --qh: calc(100svh - 68px);  /* ohne die Adressleiste des Browsers, wo das Gerät es kennt */
+      --ttt-cell: min(92px, calc((var(--qh) - 44px) / 3));
+      --c4-slot: min(44px, calc((var(--qh) - 50px) / 6));
+      --ot-cell: min(44px, calc((var(--qh) - 34px) / 8));
+      --ch-square: min(44px, calc(var(--qh) / 8));
+      --mu-board: min(340px, calc(var(--qh) - 32px));
+    }
+    body { padding: 8px 16px; }
+    .kopfzeile { max-width: none; margin-bottom: 6px; }
+    body[data-ansicht="auswahl"] #tabs { max-width: none; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+    .brett3d { width: min(400px, calc(var(--qh) / 0.95)); }
+    .brett3d.chess { width: min(400px, calc(var(--qh) / 0.92)); }
+    .tab-content.active:not(#schule-view):not(#mangala-view) { display: grid; grid-template-columns: auto minmax(280px, 1fr); column-gap: 20px; align-items: start; justify-items: center; width: 100%; max-width: 900px; }
+    .tab-content.active:not(#schule-view):not(#mangala-view) > * { grid-column: 2; }
+    .tab-content.active:not(#schule-view):not(#mangala-view) > [data-abschnitt="brett"] { grid-column: 1; grid-row: 1 / span 40; }
+    .tab-content.active:not(#schule-view):not(#mangala-view) > [data-abschnitt="status"] { margin-bottom: 0; }
+    [data-abschnitt="aktionen"] { margin-top: 18px; }
   }
 
   /* --- Tavla (S-W24): hochkantes Brett, jede Reihe mindestens 44 px --- */
-  :is(#tacontrols) { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  :is(#tamode) { margin-top: 18px; display: flex; background: var(--segment-bg); padding: 3px; border-radius: 10px; position: relative; font-size: 0.85rem; }
-  :is(#tamode) label { display: flex; align-items: center; justify-content: center; padding: 6px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; color: var(--ios-label);
-    transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease; }
-  :is(#tamode) input { position: absolute; opacity: 0; pointer-events: none; }
-  :is(#tamode) label:has(input:checked), :is(#tamode) label.active { background: var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-  :is(#tamode) label:has(input:not(:checked)):not(.active) { color: var(--ios-secondary-label); }
-  :is(#tastats) { margin-top: 20px; display: flex; gap: 10px; }
-  #tastatus { font-size: 0.95rem; font-weight: 500; margin-bottom: 12px; min-height: 40px; max-width: min(400px, 92vw); text-align: center; color: var(--ios-secondary-label); }
-  #tawurf { display: flex; align-items: center; justify-content: center; gap: 14px; width: min(400px, 96vw); margin-bottom: 12px; min-height: 56px; }
-  #tawuerfel { display: flex; gap: 8px; min-width: 56px; min-height: 52px; align-items: center; }
+  #tastatus { font-size: 0.95rem; font-weight: 500; margin-bottom: 6px; min-height: 28px; max-width: min(400px, 92vw); text-align: center; color: var(--ios-secondary-label); }
+  #tawurf { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(400px, 96vw); margin-bottom: 6px; min-height: 48px; }
+  #tawuerfel { display: flex; gap: 6px; min-width: 56px; min-height: 48px; align-items: center; }
   .ta-wuerfel { width: 48px; height: 48px; border-radius: 10px; background: #fbf6ea; box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 0 0 1px #d8cdb4; }
   .ta-wuerfel svg { width: 100%; height: 100%; fill: #b3261e; }
   .ta-wuerfel.benutzt { opacity: 0.4; transform: scale(0.86); }
   .ta-wuerfel.wirft { animation: taWurf 0.42s ease-out; }
   @keyframes taWurf { 0% { transform: rotate(-200deg) scale(0.4); opacity: 0.2; } 70% { transform: rotate(12deg) scale(1.1); } 100% { transform: none; opacity: 1; } }
-  #tawurfBtn { position: relative; min-height: 48px; min-width: 120px; }
+  #tawurfBtn { position: relative; min-height: 48px; min-width: 100px; }
   #tawurfBtn.ziel, #taab.ziel { outline: 4px solid #34c759; outline-offset: 2px; }
   #taboard { width: min(400px, 96vw); box-sizing: border-box; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(13, 44px); column-gap: 3px; row-gap: 0;
-    background: linear-gradient(160deg, #b98a55, #9a6a3c); padding: 8px; border-radius: 20px; box-shadow: 0 8px 24px rgba(107,68,35,0.35), inset 0 0 0 1px rgba(255,255,255,0.15); }
+    background: linear-gradient(160deg, #b98a55, #9a6a3c); padding: 4px 8px; border-radius: 20px; box-shadow: 0 8px 24px rgba(107,68,35,0.35), inset 0 0 0 1px rgba(255,255,255,0.15); }
   .ta-punkt { position: relative; display: flex; align-items: center; min-width: 44px; min-height: 44px; padding: 0 6px; border: none; cursor: pointer; font: inherit; color: inherit; box-sizing: border-box;
     background: transparent; overflow: hidden; }
   .ta-punkt::before { content: ''; position: absolute; inset: 3px 0; z-index: 0; background: #e8d4b8; }
@@ -799,50 +826,56 @@
   .ta-bar-gruppe .ta-stein { margin-right: -12px; }
   .ta-bar.quelle::after { content: ''; position: absolute; inset: 2px; border: 3px solid #0a84ff; border-radius: 8px; pointer-events: none; }
   .ta-bar.selected::after { border-color: #ffd60a; }
-  .ta-ab { position: relative; display: flex; justify-content: space-between; align-items: center; width: min(400px, 96vw); box-sizing: border-box; min-height: 48px; margin-top: 10px; padding: 0 16px; border: none; border-radius: 14px;
+  .ta-ab { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; min-width: 0; box-sizing: border-box; min-height: 48px; margin: 0; padding: 0 8px; border: none; border-radius: 14px;
     background: var(--segment-bg); color: var(--ios-label); font: 700 0.95rem system-ui, sans-serif; cursor: pointer; }
-  .ta-ab-zahl { font-weight: 500; font-size: 0.8rem; color: var(--ios-secondary-label); }
+  .ta-ab-zahl { font-weight: 500; font-size: 0.7rem; white-space: nowrap; color: var(--ios-secondary-label); }
   .ta-blase { top: 2px; right: 6px; left: auto; transform: none; z-index: 6; }
   .ta-punkt .ta-blase { top: 50%; transform: translateY(-50%); right: auto; left: 52%; }
   .ta-punkt.rechts .ta-blase { left: auto; right: 52%; }
   #tavla-view button.action, #tavla-view .ta-hilfe-knopf, #tavla-view .lernen-knopf { min-height: 44px; min-width: 44px; }
-  .brett3d.tavla { aspect-ratio: 1 / 1.5; }
+  .brett3d.tavla { aspect-ratio: 1 / 1.36; }
   @media (prefers-reduced-motion: reduce) { .ta-wuerfel.wirft, .ta-punkt.neu .ta-stein { animation: none !important; } }
 </style>
 </head>
-<body>
+<body data-ansicht="auswahl">
 
 <div class="kopfzeile">
-  <a class="ng-zurueck" href="../">← Alle Spiele</a>
+  <a class="ng-zurueck" id="kopfZurueck" href="../">‹ Alle Spiele</a>
+  <h1 id="kopfName" tabindex="-1">Brettspiele</h1>
   <button class="ton-schalter" type="button" aria-label="Ton an oder aus" aria-pressed="true">🔊</button>
 </div>
 
 <div id="tabs">
-  <button class="tabBtn active" data-tab="tictactoe">Tic Tac Toe</button>
-  <button class="tabBtn" data-tab="connect4">Vier gewinnt</button>
-  <button class="tabBtn" data-tab="othello">Reversi</button>
-  <button class="tabBtn" data-tab="muehle">Mühle</button>
-  <button class="tabBtn" data-tab="chess">Schach</button>
-  <button class="tabBtn" data-tab="mangala">Mangala</button>
-  <button class="tabBtn" data-tab="tavla">Tavla</button>
-  <button class="tabBtn" data-tab="schule">Schachschule</button>
+  <button class="tabBtn" type="button" data-tab="chess"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#c8a070"/><path d="M15 39h19v-4l-3-2c1-7-1-13-5-17l2-4-6 2c-6 2-9 7-9 12l5 2 4-3c0 4-3 6-5 9l-2 1z" fill="#fffdf6" stroke="#1d1d22" stroke-width="2" stroke-linejoin="round"/><circle cx="21.5" cy="18.5" r="1.4" fill="#1d1d22"/></svg><span class="kachel-name">Schach</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="schule"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#95603b"/><path d="M24 9l4.4 9.6 10.6 1-8 7 2.4 10.4L24 31.6 14.600 37l2.4-10.400-8-7 10.600-1z" fill="#ffcc00" stroke="#7a5a00" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="kachel-name">Schachschule</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="muehle"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#f4f1ea" stroke="#d8d2c4"/><g fill="none" stroke="#8e8e93" stroke-width="2"><rect x="10" y="10" width="28" height="28"/><rect x="17" y="17" width="14" height="14"/><path d="M24 10v7M24 31v7M10 24h7M31 24h7"/></g><circle cx="10" cy="10" r="4" fill="#1c1c1e"/><circle cx="24" cy="10" r="4" fill="#1c1c1e"/><circle cx="38" cy="10" r="4" fill="#1c1c1e"/><circle cx="17" cy="31" r="4" fill="#fff" stroke="#8e8e93" stroke-width="1.5"/><circle cx="31" cy="24" r="4" fill="#fff" stroke="#8e8e93" stroke-width="1.5"/></svg><span class="kachel-name">Mühle</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="connect4"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="6" width="40" height="36" rx="8" fill="#0a5fd8"/><g><circle cx="13" cy="15" r="4" fill="#dfe6f0"/><circle cx="24" cy="15" r="4" fill="#dfe6f0"/><circle cx="35" cy="15" r="4" fill="#f5b800"/><circle cx="13" cy="24" r="4" fill="#dfe6f0"/><circle cx="24" cy="24" r="4" fill="#e0281e"/><circle cx="35" cy="24" r="4" fill="#e0281e"/><circle cx="13" cy="33" r="4" fill="#e0281e"/><circle cx="24" cy="33" r="4" fill="#f5b800"/><circle cx="35" cy="33" r="4" fill="#f5b800"/></g></svg><span class="kachel-name">Vier gewinnt</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="othello"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#1a8f42"/><path d="M24 6v36M6 24h36" stroke="#0b6e2f" stroke-width="2"/><circle cx="15" cy="15" r="6.5" fill="#fff"/><circle cx="33" cy="15" r="6.5" fill="#1c1c1e"/><circle cx="15" cy="33" r="6.5" fill="#1c1c1e"/><circle cx="33" cy="33" r="6.5" fill="#fff"/></svg><span class="kachel-name">Reversi</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="mangala"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="11" width="42" height="26" rx="11" fill="#7a4e2a"/><g fill="#e8d4b8"><rect x="6" y="15" width="6" height="18" rx="3"/><rect x="36" y="15" width="6" height="18" rx="3"/><circle cx="18" cy="19" r="3.4"/><circle cx="24" cy="19" r="3.4"/><circle cx="30" cy="19" r="3.4"/><circle cx="18" cy="29" r="3.4"/><circle cx="24" cy="29" r="3.4"/><circle cx="30" cy="29" r="3.4"/></g></svg><span class="kachel-name">Mangala</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="tavla"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#9a6a3c"/><g fill="#e8d4b8"><path d="M8 8l5 16-5 0zM16 8l5 16-5 0zM24 8l5 16-5 0z"/></g><g fill="#4f2e14"><path d="M13 40l5-16 5 16zM21 40l5-16 5 16zM29 40l5-16 5 16z"/></g><circle cx="38" cy="14" r="3.6" fill="#fff"/><circle cx="38" cy="34" r="3.6" fill="#111"/></svg><span class="kachel-name">Tavla</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="tictactoe"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#ffffff" stroke="#d8d8de"/><path d="M18 9v30M30 9v30M9 18h30M9 30h30" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"/><path d="M10 10l6 6M16 10l-6 6M32 32l6 6M38 32l-6 6" stroke="#007aff" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="24" r="3.6" fill="none" stroke="#ff3b30" stroke-width="2.6"/></svg><span class="kachel-name">Tic Tac Toe</span><span class="kachel-weiter">Weiterspielen</span></button>
 </div>
 
-<div id="tictactoe-view" class="tab-content active">
+<div id="tictactoe-view" class="tab-content">
   <h1>Tic Tac Toe</h1>
-  <div id="status">Spieler X ist dran</div>
-  <div id="board"></div>
+  <div id="status" data-abschnitt="status">Spieler X ist dran</div>
+  <div id="board" data-abschnitt="brett"></div>
 
-  <div id="controls">
-    <button class="action" id="resetBtn">Neu starten</button>
+  <div class="gruppe">Aktionen</div>
+  <div id="controls" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="resetBtn">Neu starten</button>
   </div>
 
-  <div id="mode">
+  <div class="gruppe">Spielmodus</div>
+  <div id="mode" data-abschnitt="modus">
     <label class="active"><input type="radio" name="mode" value="pvp" checked><span>2 Spieler</span></label>
     <label><input type="radio" name="mode" value="ai"><span>Gegen Computer</span></label>
   </div>
 
-  <div id="stats">
+  <div class="gruppe gruppe-optionen" hidden>Optionen</div>
+  <div class="optionen" data-abschnitt="optionen" hidden></div>
+
+  <div id="stats" data-abschnitt="statistik">
     <div class="stat"><span class="stat-value" id="statX">0</span><span class="stat-label">Siege X</span></div>
     <div class="stat"><span class="stat-value" id="statO">0</span><span class="stat-label">Siege O</span></div>
     <div class="stat"><span class="stat-value" id="statDraw">0</span><span class="stat-label">Unentschieden</span></div>
@@ -852,19 +885,24 @@
 
 <div id="connect4-view" class="tab-content">
   <h1>Vier gewinnt</h1>
-  <div id="c4status">Spieler Rot ist dran</div>
-  <div id="c4board"></div>
+  <div id="c4status" data-abschnitt="status">Spieler Rot ist dran</div>
+  <div id="c4board" data-abschnitt="brett"></div>
 
-  <div id="c4controls">
-    <button class="action" id="c4resetBtn">Neu starten</button>
+  <div class="gruppe">Aktionen</div>
+  <div id="c4controls" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="c4resetBtn">Neu starten</button>
   </div>
 
-  <div id="c4mode">
+  <div class="gruppe">Spielmodus</div>
+  <div id="c4mode" data-abschnitt="modus">
     <label class="active"><input type="radio" name="c4mode" value="pvp" checked><span>2 Spieler</span></label>
     <label><input type="radio" name="c4mode" value="ai"><span>Gegen Computer</span></label>
   </div>
 
-  <div id="c4stats">
+  <div class="gruppe gruppe-optionen" hidden>Optionen</div>
+  <div class="optionen" data-abschnitt="optionen" hidden></div>
+
+  <div id="c4stats" data-abschnitt="statistik">
     <div class="stat"><span class="stat-value" id="c4statR">0</span><span class="stat-label">Siege Rot</span></div>
     <div class="stat"><span class="stat-value" id="c4statY">0</span><span class="stat-label">Siege Gelb</span></div>
     <div class="stat"><span class="stat-value" id="c4statDraw">0</span><span class="stat-label">Unentschieden</span></div>
@@ -874,19 +912,24 @@
 
 <div id="othello-view" class="tab-content">
   <h1>Reversi</h1>
-  <div id="otstatus">Spieler Schwarz ist dran</div>
-  <div id="otboard"></div>
+  <div id="otstatus" data-abschnitt="status">Spieler Schwarz ist dran</div>
+  <div id="otboard" data-abschnitt="brett"></div>
 
-  <div id="otcontrols">
-    <button class="action" id="otresetBtn">Neu starten</button>
+  <div class="gruppe">Aktionen</div>
+  <div id="otcontrols" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="otresetBtn">Neu starten</button>
   </div>
 
-  <div id="otmode">
+  <div class="gruppe">Spielmodus</div>
+  <div id="otmode" data-abschnitt="modus">
     <label class="active"><input type="radio" name="otmode" value="pvp" checked><span>2 Spieler</span></label>
     <label><input type="radio" name="otmode" value="ai"><span>Gegen Computer</span></label>
   </div>
 
-  <div id="otstats">
+  <div class="gruppe gruppe-optionen" hidden>Optionen</div>
+  <div class="optionen" data-abschnitt="optionen" hidden></div>
+
+  <div id="otstats" data-abschnitt="statistik">
     <div class="stat"><span class="stat-value" id="otstatB">0</span><span class="stat-label">Siege Schwarz</span></div>
     <div class="stat"><span class="stat-value" id="otstatW">0</span><span class="stat-label">Siege Weiß</span></div>
     <div class="stat"><span class="stat-value" id="otstatDraw">0</span><span class="stat-label">Unentschieden</span></div>
@@ -901,28 +944,33 @@
     <button type="button" class="action secondary klein mu-ueberspringen">Überspringen</button>
     <button type="button" class="action klein mu-los" hidden>Los geht's</button>
   </div>
-  <div id="mustatus">Weiß: Setze auf einen grünen Punkt (noch 9 Steine)</div>
-  <div id="muboard">
+  <div id="mustatus" data-abschnitt="status">Weiß: Setze auf einen grünen Punkt (noch 9 Steine)</div>
+  <div id="muboard" data-abschnitt="brett">
     <div class="mu-board-wrap">
       <svg id="mulines" viewBox="0 0 100 100"></svg>
       <div id="mupoints"></div>
     </div>
   </div>
-  <div id="mucounters">
+  <div id="mucounters" data-abschnitt="zusatz">
     <div class="mu-vorrat" id="muvorratW"><span class="mu-vorrat-name">Vorrat Weiß</span></div>
     <div class="mu-vorrat" id="muvorratB"><span class="mu-vorrat-name">Vorrat Schwarz</span></div>
   </div>
 
-  <div id="mucontrols">
-    <button class="action" id="muresetBtn">Neu starten</button>
+  <div class="gruppe">Aktionen</div>
+  <div id="mucontrols" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="muresetBtn">Neu starten</button>
   </div>
 
-  <div id="mumode">
+  <div class="gruppe">Spielmodus</div>
+  <div id="mumode" data-abschnitt="modus">
     <label class="active"><input type="radio" name="mumode" value="pvp" checked><span>2 Spieler</span></label>
     <label><input type="radio" name="mumode" value="ai"><span>Gegen Computer</span></label>
   </div>
 
-  <div id="mustats">
+  <div class="gruppe gruppe-optionen" hidden>Optionen</div>
+  <div class="optionen" data-abschnitt="optionen" hidden></div>
+
+  <div id="mustats" data-abschnitt="statistik">
     <div class="stat"><span class="stat-value" id="mustatW">0</span><span class="stat-label">Siege Weiß</span></div>
     <div class="stat"><span class="stat-value" id="mustatB">0</span><span class="stat-label">Siege Schwarz</span></div>
     <div class="stat"><span class="stat-value" id="mustatDraw">0</span><span class="stat-label">Unentschieden</span></div>
@@ -961,8 +1009,8 @@
 
 <div id="chess-view" class="tab-content">
   <h1>Schach</h1>
-  <div id="chstatus">Weiß ist dran</div>
-  <div id="chboard"></div>
+  <div id="chstatus" data-abschnitt="status">Weiß ist dran</div>
+  <div id="chboard" data-abschnitt="brett"></div>
 
   <div id="chpromo">
     <button data-piece="q">♛</button>
@@ -977,27 +1025,27 @@
   </div>
 
   <div class="gruppe">Aktionen</div>
-  <div id="chcontrols">
-    <button class="action" id="chresetBtn">Neu starten</button>
-    <button class="action secondary" id="chundoBtn">Zug zurück</button>
+  <div id="chcontrols" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="chresetBtn">Neu starten</button>
+    <button class="action secondary zurueck" id="chundoBtn">Zug zurück</button>
   </div>
 
   <div class="gruppe">Spielmodus</div>
-  <div id="chmode">
+  <div id="chmode" data-abschnitt="modus">
     <label class="active"><input type="radio" name="chmode" value="pvp" checked><span>2 Spieler</span></label>
     <label><input type="radio" name="chmode" value="ai"><span>Gegen Computer</span></label>
   </div>
-  <div id="chdiff">
+  <div id="chdiff" data-abschnitt="stufen">
     <label><input type="radio" name="chdiff" value="leicht"><span>Leicht</span></label>
     <label class="active"><input type="radio" name="chdiff" value="mittel" checked><span>Mittel</span></label>
     <label><input type="radio" name="chdiff" value="stark"><span>Stark</span></label>
   </div>
-  <div id="chengine"></div>
+  <div id="chengine" data-abschnitt="zusatz"></div>
 
-  <div class="gruppe">Optionen</div>
-  <div id="choptionen"></div>
+  <div class="gruppe gruppe-optionen">Optionen</div>
+  <div id="choptionen" class="optionen" data-abschnitt="optionen"></div>
 
-  <div id="chstats">
+  <div id="chstats" data-abschnitt="statistik">
     <div class="stat"><span class="stat-value" id="chstatW">0</span><span class="stat-label">Siege Weiß</span></div>
     <div class="stat"><span class="stat-value" id="chstatB">0</span><span class="stat-label">Siege Schwarz</span></div>
     <div class="stat"><span class="stat-value" id="chstatDraw">0</span><span class="stat-label">Remis</span></div>
@@ -1007,19 +1055,24 @@
 
 <div id="mangala-view" class="tab-content">
   <h1>Mangala</h1>
-  <div id="mastatus">Spieler A ist dran</div>
-  <div id="maboard"></div>
+  <div id="mastatus" data-abschnitt="status">Spieler A ist dran</div>
+  <div id="maboard" data-abschnitt="brett"></div>
 
-  <div id="macontrols">
-    <button class="action" id="maresetBtn">Neu starten</button>
+  <div class="gruppe">Aktionen</div>
+  <div id="macontrols" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="maresetBtn">Neu starten</button>
   </div>
 
-  <div id="mamode">
+  <div class="gruppe">Spielmodus</div>
+  <div id="mamode" data-abschnitt="modus">
     <label class="active"><input type="radio" name="mamode" value="pvp" checked><span>2 Spieler</span></label>
     <label><input type="radio" name="mamode" value="ai"><span>Gegen Computer</span></label>
   </div>
 
-  <div id="mastats">
+  <div class="gruppe gruppe-optionen" hidden>Optionen</div>
+  <div class="optionen" data-abschnitt="optionen" hidden></div>
+
+  <div id="mastats" data-abschnitt="statistik">
     <div class="stat"><span class="stat-value" id="mastatA">0</span><span class="stat-label">Siege A</span></div>
     <div class="stat"><span class="stat-value" id="mastatB">0</span><span class="stat-label">Siege B</span></div>
     <div class="stat"><span class="stat-value" id="mastatDraw">0</span><span class="stat-label">Unentschieden</span></div>
@@ -1028,30 +1081,36 @@
 </div>
 
 <div id="tavla-view" class="tab-content">
-  <h1>Tavla</h1>
   <div id="tauebung" class="mu-uebung" hidden>
     <span class="mu-uebung-titel"></span>
     <button type="button" class="action secondary klein mu-ueberspringen">Überspringen</button>
     <button type="button" class="action klein mu-los" hidden>Los geht's</button>
   </div>
-  <div id="tastatus">Weiß: Tippe auf Würfeln</div>
-  <div id="tawurf">
-    <div id="tawuerfel"></div>
-    <button type="button" class="action" id="tawurfBtn">Würfeln</button>
-  </div>
-  <div id="taboard"></div>
-  <button type="button" id="taab" class="ta-ab">Abtragen</button>
-
-  <div id="tacontrols">
-    <button class="action" id="taresetBtn">Neu starten</button>
+  <div id="tastatus" data-abschnitt="status">Weiß: Tippe auf Würfeln</div>
+  <div id="tabrett" data-abschnitt="brett">
+    <div id="tawurf">
+      <div id="tawuerfel"></div>
+      <button type="button" class="action" id="tawurfBtn">Würfeln</button>
+      <button type="button" id="taab" class="ta-ab">Abtragen</button>
+    </div>
+    <div id="taboard"></div>
   </div>
 
-  <div id="tamode">
+  <div class="gruppe">Aktionen</div>
+  <div id="tacontrols" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="taresetBtn">Neu starten</button>
+  </div>
+
+  <div class="gruppe">Spielmodus</div>
+  <div id="tamode" data-abschnitt="modus">
     <label class="active"><input type="radio" name="tamode" value="pvp" checked><span>2 Spieler</span></label>
     <label><input type="radio" name="tamode" value="ai"><span>Gegen Computer</span></label>
   </div>
 
-  <div id="tastats">
+  <div class="gruppe gruppe-optionen" hidden>Optionen</div>
+  <div class="optionen" data-abschnitt="optionen" hidden></div>
+
+  <div id="tastats" data-abschnitt="statistik">
     <div class="stat"><span class="stat-value" id="tastatA">0</span><span class="stat-label">Siege Weiß</span></div>
     <div class="stat"><span class="stat-value" id="tastatB">0</span><span class="stat-label">Siege Schwarz</span></div>
   </div>
@@ -1059,7 +1118,7 @@
   <div id="tahilfe" class="mu-hilfe" hidden role="dialog" aria-label="Tavla-Regeln"></div>
 </div>
 
-<div id="layerNote">Statistik bleibt nur auf diesem Gerät, kein Server, keine Weitergabe.<br>Schach-Computer: Stockfish (GPL v3), <a href="lib/STOCKFISH-LICENSE-GPL.txt">Lizenz</a> und <a href="https://github.com/nmrugg/stockfish.js/tree/v10.0.2">Quelltext</a>. Schachregeln: chess.js (<a href="lib/CHESSJS-LICENSE.txt">Lizenz</a>).</div>
+<div id="layerNote"><span class="datenschutz">Statistik bleibt nur auf diesem Gerät, kein Server, keine Weitergabe.</span><span class="lizenz-schach"><br>Schach-Computer: Stockfish (GPL v3), <a href="lib/STOCKFISH-LICENSE-GPL.txt">Lizenz</a> und <a href="https://github.com/nmrugg/stockfish.js/tree/v10.0.2">Quelltext</a>. Schachregeln: chess.js (<a href="lib/CHESSJS-LICENSE.txt">Lizenz</a>).</span></div>
 
 <script>
 /* ============================================================
@@ -1483,10 +1542,13 @@ class GameUI {
     this.viewEl = this.resetBtn.closest('.tab-content');
     this.spiel = this.viewEl.id.replace('-view', '');
     const leiste = this.resetBtn.parentElement;
-    const knopf = (cls, text) => {
+    // S-W25: gleiche Abschnitte in jedem Spiel; alles außer Neu starten, Zug zurück, Tipp steht unter "Optionen"
+    this.optionenEl = this.viewEl.querySelector('.optionen');
+    this.optGruppe = this.viewEl.querySelector('.gruppe-optionen');
+    const knopf = (cls, text, ziel = leiste) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'action secondary klein ' + cls; b.textContent = text;
-      leiste.appendChild(b); return b;
+      ziel.appendChild(b); return b;
     };
     if (!leiste.querySelector('#chundoBtn')) {
       this.undoBtn = knopf('zurueck', 'Zug zurück');
@@ -1495,7 +1557,7 @@ class GameUI {
     this.tippBtn = knopf('tipp-knopf', 'Tipp');
     this.tippBtn.addEventListener('click', () => this.handleTipp());
     // S-W04: Ergebnis teilen, nur solange die Partie beendet ist
-    this.teilenBtn = knopf('teilen-knopf', 'Teilen');
+    this.teilenBtn = knopf('teilen-knopf', 'Teilen', this.optionenEl);
     this.teilenBtn.hidden = true;
     this.teilenBtn.addEventListener('click', () => { const t = this.teilenText(); if (t && window.Teilen) window.Teilen.teilen({ titel: 'Brettspiele', text: t }); });
     // Stufenwahl: Schach hat sie schon (#chdiff), die anderen bekommen sie hier.
@@ -1509,11 +1571,12 @@ class GameUI {
         l.querySelector('input').addEventListener('change', () => this.handleStufe(wert));
         this.stufenEl.appendChild(l);
       }
+      this.stufenEl.dataset.abschnitt = 'stufen';
       this.modeInputs[0].closest('div').after(this.stufenEl);
     }
     // S-W05: 3D-Ansicht für Vier gewinnt und Schach, eingeschaltet erst, wenn der Reiter sichtbar ist
     if (GameUI.ANSICHT_3D.includes(this.spiel)) {
-      this.ansichtBtn = knopf('ansicht-knopf', '3D');
+      this.ansichtBtn = knopf('ansicht-knopf', '3D', this.optionenEl);
       this.ansichtBtn.addEventListener('click', () => this.handleAnsicht());
       new MutationObserver(() => this._ansichtPruefen()).observe(this.viewEl, { attributes: true, attributeFilter: ['class'] });
       setTimeout(() => this._ansichtPruefen(), 0);
@@ -1568,6 +1631,9 @@ class GameUI {
     if (this.tippBtn) this.tippBtn.disabled = aus;
     if (this.stufenEl) this.stufenEl.classList.toggle('active', this.control.vsAI);
     if (this.teilenBtn) this.teilenBtn.hidden = !(this._ergebnis && this.control.isGameOver() && window.Teilen);
+    // S-W25: "Optionen" nur zeigen, wenn dort ein Knopf steht
+    const leer = ![...this.optionenEl.children].some(b => !b.hidden);
+    this.optionenEl.hidden = leer; this.optGruppe.hidden = leer;
   }
 
   // Text zum Teilen: Spiel, Ausgang, Stufe. Keine Namen.
@@ -3260,8 +3326,8 @@ class TavlaControl extends GameControl {
   }
   undoMove() {
     if (!this.canUndo()) return { invalid: true };
-    const v = this._verlauf.pop();
-    this.boundary.restoreEntity(v.zustand);
+    const { zustand } = this._verlauf.pop();
+    this.boundary.restoreEntity(zustand);
     this._nachZurueck();
     this._persistGame();
     return { invalid: false };
@@ -3315,7 +3381,7 @@ class TavlaControl extends GameControl {
         if (partie !== this._partie || this._pause || !this.isAiTurn() || !plan || !plan.length) return { invalid: true, erneut: true };
         this._plan = plan.slice(); z = this._plan.shift();
       }
-      if (partie !== this._partie || this._pause || !this.isAiTurn() || !z) return { invalid: true, erneut: true };
+      if (partie !== this._partie || !this.isAiTurn() || !z || this._pause) return { invalid: true, erneut: true };
       const ok = this.boundary.canMove(z.von, z.nach);
       return this._executeMove(() => ok, () => this.boundary.makeMove(z.von, z.nach));
     } finally {
@@ -4719,16 +4785,15 @@ class MuehleUI extends GameUI {
   }
 
   _baueMuehleKnoepfe() {
-    const leiste = this.resetBtn.parentElement;
     this.hilfeBtn = document.createElement('button');
-    this.hilfeBtn.type = 'button'; this.hilfeBtn.className = 'action secondary klein mu-hilfe-knopf';
+    this.hilfeBtn.type = 'button'; this.hilfeBtn.className = 'action secondary klein mu-hilfe-knopf hilfe-knopf';
     this.hilfeBtn.textContent = '?'; this.hilfeBtn.setAttribute('aria-label', 'Regeln');
     this.hilfeBtn.addEventListener('click', () => this._hilfeOeffnen());
-    leiste.appendChild(this.hilfeBtn);
+    this.optionenEl.appendChild(this.hilfeBtn);
     this.lernenBtn = document.createElement('button');
     this.lernenBtn.type = 'button'; this.lernenBtn.className = 'action secondary klein lernen-knopf';
     this.lernenBtn.addEventListener('click', () => this.setzeLernen(!this._lernen()));
-    leiste.appendChild(this.lernenBtn);
+    this.optionenEl.appendChild(this.lernenBtn);
     this._lernenKnopf();
   }
 
@@ -5397,9 +5462,9 @@ class TavlaUI extends GameUI {
 
   // ---------- Knöpfe, Lernhilfe, Regelkarten ----------
   _baueTavlaKnoepfe() {
-    const leiste = this.resetBtn.parentElement;
+    const leiste = this.optionenEl;
     this.hilfeBtn = document.createElement('button');
-    this.hilfeBtn.type = 'button'; this.hilfeBtn.className = 'action secondary klein ta-hilfe-knopf';
+    this.hilfeBtn.type = 'button'; this.hilfeBtn.className = 'action secondary klein ta-hilfe-knopf hilfe-knopf';
     this.hilfeBtn.textContent = '?'; this.hilfeBtn.setAttribute('aria-label', 'Regeln');
     this.hilfeBtn.addEventListener('click', () => this._hilfeOeffnen());
     leiste.appendChild(this.hilfeBtn);
@@ -5444,7 +5509,10 @@ class TavlaUI extends GameUI {
     this.hilfeEl.querySelector('.ta-hilfe-uebung').addEventListener('click', () => { this.hilfeEl.hidden = true; this._starteUebung(); });
     this.hilfeEl.addEventListener('click', (e) => { if (e.target === this.hilfeEl) this._hilfeSchliessen(); });
   }
-  _hilfeOeffnen() { this.hilfeEl.hidden = false; this._pausiert(); }
+  _hilfeOeffnen() {
+    this.hilfeEl.hidden = false;
+    this._pausiert();
+  }
   _hilfeSchliessen() { this.hilfeEl.hidden = true; this._weiterNachPause(); }
 
   // ---------- Übung ----------
@@ -5509,9 +5577,12 @@ class TavlaUI extends GameUI {
     if (!this._pausiert() && this.control.isAiTurn()) setTimeout(() => this.runAiTurn(), this.aiDelayMs);
   }
   async runAiTurn() {
-    if (this._pausiert()) return;   // Computer wartet, bis Übung oder Karten zu sind
+    if (this._pausiert()) return;   // Tavla-Computer wartet, bis Übung oder Regelkarten zu sind
     const outcome = await this.performAiMove();
-    if (outcome.invalid) { if (outcome.erneut) this._weiterNachPause(); return; }
+    if (outcome.invalid) {
+      if (outcome.erneut) this._weiterNachPause();
+      return;
+    }
     this.afterMove(outcome.result);
   }
   performAiMove() { return this.control.performAiAction(); }
@@ -5744,7 +5815,7 @@ class Ansicht3D {
     this.ui = ui; this.art = art; this.aktiv = false; this.drehung = 0;
     this.anim = []; this.marken = []; this.bilder = 0; this._alt = null;
     this.huelle = document.createElement('div');
-    this.huelle.className = 'brett3d ' + art; this.huelle.hidden = true;
+    this.huelle.className = 'brett3d ' + art; this.huelle.hidden = true; this.huelle.dataset.abschnitt = 'brett';
     ui.boardEl.after(this.huelle);
   }
 
@@ -6697,16 +6768,16 @@ class EinstellungenBoundary {
         return { ton: d.ton !== false, stufen: (d.stufen && typeof d.stufen === 'object') ? { ...d.stufen } : {},
           ansicht: (d.ansicht && typeof d.ansicht === 'object') ? { ...d.ansicht } : {},
           lernen: (d.lernen && typeof d.lernen === 'object') ? { ...d.lernen } : {},
-          muehleEinfuehrung: d.muehleEinfuehrung === true };
+          muehleEinfuehrung: d.muehleEinfuehrung === true, zuletzt: typeof d.zuletzt === 'string' ? d.zuletzt : null };
       }
     } catch (e) { /* kaputte Daten: Standardwerte */ }
-    return { ton: true, stufen: {}, ansicht: {}, lernen: {}, muehleEinfuehrung: false };
+    return { ton: true, stufen: {}, ansicht: {}, lernen: {}, muehleEinfuehrung: false, zuletzt: null };
   }
   speichere(e) {
     try {
       this._speicher.setItem(EinstellungenBoundary.SCHLUESSEL,
         JSON.stringify({ formatversion: EinstellungenBoundary.FORMAT, ton: e.ton, stufen: e.stufen, ansicht: e.ansicht, lernen: e.lernen,
-          muehleEinfuehrung: e.muehleEinfuehrung === true }));
+          muehleEinfuehrung: e.muehleEinfuehrung === true, ...(typeof e.zuletzt === 'string' ? { zuletzt: e.zuletzt } : {}) }));
     } catch (err) { /* Speicher voll oder gesperrt: Einstellung gilt nur bis zum Neuladen */ }
   }
 }
@@ -6726,6 +6797,9 @@ class EinstellungenControl {
   // S-W15: Mühle-Übung gesehen (gilt bei gesperrtem Speicher nur bis zum Neuladen)
   muehleEinfuehrung() { return this._e.muehleEinfuehrung === true; }
   setzeMuehleEinfuehrung() { this._e.muehleEinfuehrung = true; this._b.speichere(this._e); }
+  // S-W25: zuletzt gespieltes Spiel (ob es das Spiel gibt, prüft die Auswahl)
+  zuletzt() { return typeof this._e.zuletzt === 'string' ? this._e.zuletzt : null; }
+  setzeZuletzt(spiel) { if (this._e.zuletzt === spiel) return; this._e.zuletzt = spiel; this._b.speichere(this._e); }
 }
 
 /* Klang (UI): eigene Töne per WebAudio, keine Tondateien. */
@@ -6824,34 +6898,107 @@ const Platform = {
    initialisierten Spiel-Views um. Rührt keine Spiellogik an.
    ============================================================ */
 class TabController {
-  constructor(platform) {
-    this.tabButtons = document.querySelectorAll('.tabBtn');
-    this.homeTab = this.tabButtons[0].dataset.tab;
-    this.activeTab = this.homeTab; // eigener Zustand, nie aus dem DOM zurückgelesen
+  // S-W25: zwei Ansichten, "auswahl" (Kacheln) oder "spiel". Die Kacheln sind die Knöpfe .tabBtn.
+  static ZURUECK_MS = 400;   // so lange wartet "‹ Spiele" auf den Verlauf des Browsers
+  constructor(platform, einst = null) {
+    this.tabButtons = [...document.querySelectorAll('.tabBtn')];
+    this.namen = new Map(this.tabButtons.map(b => [b.dataset.tab, b.querySelector('.kachel-name').textContent]));
+    this.ansicht = 'auswahl';
+    this.activeTab = null; // eigener Zustand, nie aus dem DOM zurückgelesen
     this.platform = platform;
-    this.tabButtons.forEach(btn => {
-      btn.addEventListener('click', () => this.switchTo(btn.dataset.tab));
-    });
-    // Android-Zurück-Taste (nur in der App): erst zum ersten Tab,
-    // von dort beendet sie die App.
+    this.einst = einst;
+    this.zurueckEl = document.getElementById('kopfZurueck');
+    this.nameEl = document.getElementById('kopfName');
+    this.tabButtons.forEach(btn => btn.addEventListener('click', () => this.switchTo(btn.dataset.tab)));
+    this.zurueckEl.addEventListener('click', (e) => { if (this.ansicht === 'spiel') { e.preventDefault(); this.zeigeAuswahl(); } });
+    window.addEventListener('popstate', (e) => this._verlaufGeaendert(e.state));
+    // Android-Zurück-Taste (nur in der App): erst zur Auswahl, von dort beendet sie die App.
     this.platform.onBackButton(() => this.handleBack());
+    // Start: zuletzt gespieltes Spiel direkt öffnen, sonst die Auswahl
+    // Neu geladen: der Eintrag im Verlauf weiß, wo der Spieler war (im Spiel oder bewusst in der Auswahl).
+    const hier = this._eintrag(), z = einst ? einst.zuletzt() : null, direkt = z !== null && this.namen.has(z);
+    if (hier && typeof hier.spiel === 'string' && this.namen.has(hier.spiel)) this._zeigeSpiel(hier.spiel);
+    else if (hier && hier.auswahl) this._zeigeAuswahl();
+    else {
+      this._verlauf('replace', null);   // dieser Eintrag ist die Auswahl
+      if (direkt) { this._verlauf('push', z); this._zeigeSpiel(z); } else this._zeigeAuswahl();
+    }
   }
 
   getActiveTab() { return this.activeTab; }
+  getAnsicht() { return this.ansicht; }
+
+  _eintrag() { try { return window.history.state; } catch (e) { return null; } }
+  _imSpielEintrag() { const e = this._eintrag(); return !!(e && e.spiel); }
+  _verlauf(art, spiel) {
+    try { window.history[art === 'push' ? 'pushState' : 'replaceState'](spiel ? { spiel } : { auswahl: true }, ''); } catch (e) { /* Verlauf gesperrt: Knöpfe gehen trotzdem */ }
+  }
+  _zurueckFertig() { clearTimeout(this._zurueckUhr); this._zurueckLaeuft = false; }
+  _verlaufGeaendert(state) {
+    this._zurueckFertig();
+    if (this._wunsch) {   // während des Zurückgehens wurde schon das nächste Spiel gewählt
+      const s = this._wunsch; this._wunsch = null;
+      this._verlauf('push', s);
+      return;
+    }
+    const s = state && state.spiel;
+    if (typeof s === 'string' && this.namen.has(s)) this._zeigeSpiel(s); else this._zeigeAuswahl();
+  }
 
   handleBack() {
-    if (this.activeTab !== this.homeTab) this.switchTo(this.homeTab);
+    if (this.ansicht === 'spiel') this.zeigeAuswahl();
     else this.platform.exitApp();
   }
 
+  // Zur Auswahl; der Verlaufseintrag des Spiels wird dabei verlassen (ein Weg für Knopf und Zurück-Geste).
+  zeigeAuswahl() {
+    this._wunsch = null;
+    this._zeigeAuswahl();
+    if (this._imSpielEintrag() && !this._zurueckLaeuft) {
+      this._zurueckLaeuft = true;
+      try { window.history.back(); } catch (e) { this._zurueckFertig(); }
+      // Meldet sich der Verlauf nicht (kein Eintrag davor, gesperrt): nicht hängen bleiben, der Eintrag gilt dann als Auswahl
+      this._zurueckUhr = setTimeout(() => {
+        if (!this._zurueckLaeuft) return;
+        this._zurueckLaeuft = false;
+        const s = this._wunsch; this._wunsch = null;
+        this._verlauf('replace', null);
+        if (s) this._verlauf('push', s);
+      }, TabController.ZURUECK_MS);
+    }
+    this._fokus();
+  }
+  _fokus() { try { this.nameEl.focus({ preventScroll: true }); } catch (e) { } }   // Tastatur und Vorlesen: der Name der neuen Ansicht
+
   switchTo(tabName) {
-    this.activeTab = tabName;
-    this.tabButtons.forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === tabName);
-    });
-    document.querySelectorAll('.tab-content').forEach(view => {
-      view.classList.toggle('active', view.id === `${tabName}-view`);
-    });
+    if (!this.namen.has(tabName)) return;
+    if (this._zurueckLaeuft) this._wunsch = tabName;
+    else if (this.ansicht === 'spiel' || this._imSpielEintrag()) this._verlauf('replace', tabName);
+    else this._verlauf('push', tabName);
+    this._zeigeSpiel(tabName);
+    if (this.einst) this.einst.setzeZuletzt(tabName);
+    this._fokus();
+  }
+
+  _zeigeSpiel(tabName) {
+    this.activeTab = tabName; this.ansicht = 'spiel';
+    document.body.dataset.ansicht = 'spiel'; document.body.dataset.spiel = tabName;
+    this.tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
+    document.querySelectorAll('.tab-content').forEach(view => view.classList.toggle('active', view.id === `${tabName}-view`));
+    this.nameEl.textContent = this.namen.get(tabName);
+    this.zurueckEl.textContent = '‹ Spiele';
+    window.scrollTo(0, 0);
+  }
+
+  _zeigeAuswahl() {
+    this.ansicht = 'auswahl';
+    document.body.dataset.ansicht = 'auswahl'; delete document.body.dataset.spiel;
+    document.querySelectorAll('.tab-content').forEach(view => view.classList.remove('active'));   // auch die 3D-Ansichten ruhen dann
+    const z = (this.einst && this.einst.zuletzt()) || this.activeTab;
+    this.tabButtons.forEach(btn => { btn.classList.remove('active'); btn.classList.toggle('weiter', btn.dataset.tab === z); });
+    this.nameEl.textContent = 'Brettspiele';
+    this.zurueckEl.textContent = '‹ Alle Spiele';
+    window.scrollTo(0, 0);
   }
 }
 
@@ -6977,10 +7124,10 @@ if (typeof Chess !== 'undefined') {
   document.getElementById('schule-view')?.remove();
 }
 
-new TabController(Platform);
+const tabs = new TabController(Platform, GameUI.einst);
 
 // Zugang für die Tests in werkstatt/tests (nur lesend gedacht).
-window.__brett = Object.assign(spiele, { einstellungen: GameUI.einst, klang: GameUI.klang });
+window.__brett = Object.assign(spiele, { einstellungen: GameUI.einst, klang: GameUI.klang, tabs });
 
 /* Kein Service Worker auf der Spieleseite: es liegt keine sw.js bereit (Spec S-W01). */
 </script>
