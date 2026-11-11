@@ -24,6 +24,7 @@ async function seite(opts = {}) {
   });
   await p.goto(URL_);
   await p.waitForFunction(() => window.__brett && window.__brett.tictactoe, null, { timeout: 15000 });
+  await p.evaluate(() => document.querySelector('.tabBtn[data-tab=tictactoe]').click());   // S-W25: die Seite beginnt mit der Auswahl
   await p.waitForTimeout(300);
   return p;
 }

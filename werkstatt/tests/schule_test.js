@@ -29,7 +29,7 @@ async function seite({ schule = null, breite = 412, tab = 'schule' } = {}) {
 }
 async function oeffne(p, tab) {
   await p.waitForFunction(() => window.__brett && window.__brett.schule && window.__brett.chess, null, { timeout: 20000 });
-  await p.click(`.tabBtn[data-tab=${tab}]`);
+  await p.evaluate(t => document.querySelector(`.tabBtn[data-tab=${t}]`).click(), tab);   // S-W25: Kachel der Auswahl, auch wenn das Spiel schon offen ist
   await p.waitForTimeout(200);
 }
 const zu = async p => p.context().close();

@@ -13,7 +13,7 @@ FEHLER = [
     ('Kontur zu dünn', 'static KONTUR = 0.05;', 'static KONTUR = 0.01;', 'f_3d_kontur'),
     ('Kontur fehlt', 'const k = this._konturMesh(geo, wert[0]); k.userData.kontur = true; k.raycast = () => { }; g.add(k);', '', 'f_3d_kontur'),
     ('Schwarze Figuren mit dunkler Kontur', 'this.konturMat = { w: kontur(0x0b0b0e), b: kontur(0xe6e6e6) };', 'this.konturMat = { w: kontur(0x0b0b0e), b: kontur(0x0b0b0e) }; /* */', 'f_3d_kontur'),
-    ('Helle Felder fast weiß', 'const hell = new T.MeshStandardMaterial({ color: 0xc8a070', 'const hell = new T.MeshStandardMaterial({ color: 0xf4ead6', 'f_3d_kontrast'),
+    ('Helle Felder fast weiß', 'hell = H.hell.map(s => holz(0xc8a070, s))', 'hell = H.hell.map(s => holz(0xf4ead6, s))', 'f_3d_kontrast'),
 ]
 env = dict(os.environ)
 env.setdefault('NODE_PATH', subprocess.run(['npm', 'root', '-g'], capture_output=True, text=True).stdout.strip())
