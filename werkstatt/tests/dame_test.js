@@ -659,10 +659,11 @@ test('da_markierung', async () => {
   });
   // PS-33: Dame hält die gemeinsamen Regeln des Aufbaus (gemessen, nicht im Quelltext gesucht)
   const aufbauMass = await p.evaluate(() => {
+    // Dame folgt auf die sieben älteren Spiele (Tavla kommt danach)
     const k = [...document.querySelectorAll('#tabs .tabBtn')], d = document.querySelector('.tabBtn[data-tab=dame]');
     const reihe = ['status', 'brett', 'aktionen', 'modus', 'optionen', 'statistik'].map(n => { const e = document.querySelector(`#dame-view [data-abschnitt="${n}"]`); const r = e && e.getBoundingClientRect(); return e && r.height > 0 ? r.top : null; });
     const gemessen = reihe.map(x => x === null ? -1 : x);
-    return { letzte: k.length && k[k.length - 1] === d, kachelSvg: !!d.querySelector('svg'), name: d.querySelector('.kachel-name').textContent, reihe: gemessen, ak: document.getElementById('dacontrols').getBoundingClientRect().bottom };
+    return { letzte: k.indexOf(d) === k.findIndex(x => x.dataset.tab === 'tictactoe') + 1, kachelSvg: !!d.querySelector('svg'), name: d.querySelector('.kachel-name').textContent, reihe: gemessen, ak: document.getElementById('dacontrols').getBoundingClientRect().bottom };
   });
   if (!aufbauMass.letzte || !aufbauMass.kachelSvg || aufbauMass.name !== 'Dame') r.push(`PS-33: Kachel ${JSON.stringify([aufbauMass.letzte, aufbauMass.kachelSvg, aufbauMass.name])}`);
   if (aufbauMass.reihe.some(x => x < 0) || aufbauMass.reihe.some((x, i, a) => i && x < a[i - 1])) r.push(`PS-33: Abschnitte nicht in fester Reihenfolge ${aufbauMass.reihe}`);

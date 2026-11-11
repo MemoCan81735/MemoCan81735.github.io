@@ -144,7 +144,7 @@
     box-shadow: 0 4px 14px rgba(52,199,89,0.4);
   }
 
-  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols) { margin-top: 24px; display: flex; gap: 12px; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols, #tacontrols) { margin-top: 24px; display: flex; gap: 12px; }
   button.action {
     background: var(--ios-blue);
     color: white;
@@ -168,7 +168,7 @@
   button.action:disabled { opacity: 0.4; cursor: default; }
 
   /* iOS-Segmented-Control-Optik statt Radiobuttons */
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) {
     margin-top: 18px;
     display: flex;
     background: var(--segment-bg);
@@ -177,7 +177,7 @@
     position: relative;
     font-size: 0.85rem;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) label {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) label {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -189,21 +189,21 @@
     color: var(--ios-label);
     transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) input {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) input {
     position: absolute;
     opacity: 0;
     pointer-events: none;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) label:has(input:checked),
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) label.active {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) label:has(input:checked),
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) label.active {
     background: var(--surface);
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode) label:has(input:not(:checked)):not(.active) {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) label:has(input:not(:checked)):not(.active) {
     color: var(--ios-secondary-label);
   }
 
-  :is(#stats, #c4stats, #otstats, #mustats, #chstats, #mastats, #dastats) {
+  :is(#stats, #c4stats, #otstats, #mustats, #chstats, #mastats, #dastats, #tastats) {
     margin-top: 20px;
     display: flex;
     gap: 10px;
@@ -669,7 +669,7 @@
     min-height: 16px;
   }
 
-  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode),
+  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode),
      aber nur sichtbar, wenn gegen den Computer gespielt wird. */
   #chdiff {
     display: none;
@@ -755,7 +755,7 @@
   .tab-content > h1 { display: none; }   /* S-W25: der Name steht in der Kopfzeile */
   .ton-schalter { justify-self: end; min-width: 44px; min-height: 44px; border: none; border-radius: 999px; background: var(--segment-bg); font-size: 1rem; cursor: pointer; }
   .ton-schalter[aria-pressed="false"] { opacity: 0.55; }
-  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols) { justify-content: center; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols, #tacontrols) { justify-content: center; }
   button.action.klein { padding: 10px 16px; font-size: 0.9rem; }
   .stufen { display: none; margin-top: 10px; background: var(--segment-bg); padding: 3px; border-radius: 10px; font-size: 0.8rem; }
   .stufen.active { display: flex; }
@@ -843,6 +843,62 @@
     .tab-content.active:not(#schule-view):not(#mangala-view) > [data-abschnitt="status"] { margin-bottom: 0; }
     [data-abschnitt="aktionen"] { margin-top: 18px; }
   }
+
+  /* --- Tavla (S-W24): hochkantes Brett, jede Reihe mindestens 44 px --- */
+  #tastatus { font-size: 0.95rem; font-weight: 500; margin-bottom: 6px; min-height: 28px; max-width: min(400px, 92vw); text-align: center; color: var(--ios-secondary-label); }
+  #tawurf { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(400px, 96vw); margin-bottom: 6px; min-height: 48px; }
+  #tawuerfel { display: flex; gap: 6px; min-width: 56px; min-height: 48px; align-items: center; }
+  .ta-wuerfel { width: 48px; height: 48px; border-radius: 10px; background: #fbf6ea; box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 0 0 1px #d8cdb4; }
+  .ta-wuerfel svg { width: 100%; height: 100%; fill: #b3261e; }
+  .ta-wuerfel.benutzt { opacity: 0.4; transform: scale(0.86); }
+  .ta-wuerfel.wirft { animation: taWurf 0.42s ease-out; }
+  @keyframes taWurf { 0% { transform: rotate(-200deg) scale(0.4); opacity: 0.2; } 70% { transform: rotate(12deg) scale(1.1); } 100% { transform: none; opacity: 1; } }
+  #tawurfBtn { position: relative; min-height: 48px; min-width: 100px; }
+  #tawurfBtn.ziel, #taab.ziel { outline: 4px solid #34c759; outline-offset: 2px; }
+  #taboard { width: min(400px, 96vw); box-sizing: border-box; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(13, 44px); column-gap: 3px; row-gap: 0;
+    background: linear-gradient(160deg, #b98a55, #9a6a3c); padding: 4px 8px; border-radius: 20px; box-shadow: 0 8px 24px rgba(107,68,35,0.35), inset 0 0 0 1px rgba(255,255,255,0.15); }
+  .ta-punkt { position: relative; display: flex; align-items: center; min-width: 44px; min-height: 44px; padding: 0 6px; border: none; cursor: pointer; font: inherit; color: inherit; box-sizing: border-box;
+    background: transparent; overflow: hidden; }
+  .ta-punkt::before { content: ''; position: absolute; inset: 3px 0; z-index: 0; background: #e8d4b8; }
+  .ta-punkt.p1::before { background: #4f2e14; }
+  .ta-punkt.links::before { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+  .ta-punkt.rechts::before { clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+  .ta-punkt.links { justify-content: flex-start; }
+  .ta-punkt.rechts { justify-content: flex-end; }
+  .ta-nr { position: absolute; top: 1px; font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.75); z-index: 2; pointer-events: none; text-shadow: 0 0 2px rgba(0,0,0,0.6); }
+  .ta-punkt.links .ta-nr { right: 4px; } .ta-punkt.rechts .ta-nr { left: 4px; }
+  .ta-steine { position: relative; z-index: 1; display: flex; align-items: center; pointer-events: none; }
+  .ta-punkt.rechts .ta-steine { flex-direction: row-reverse; }
+  .ta-stein { width: 32px; height: 32px; border-radius: 50%; box-sizing: border-box; margin-right: -9px; box-shadow: 0 2px 3px rgba(0,0,0,0.35); }
+  .ta-punkt.rechts .ta-stein { margin-right: 0; margin-left: -9px; }
+  .ta-stein.a { background: radial-gradient(circle at 35% 30%, #ffffff, #d5d5d5); border: 2px solid #9a9aa0; }
+  .ta-stein.b { background: radial-gradient(circle at 35% 30%, #5a5a5a, #0d0d0d); border: 2px solid #0d0d0d; }
+  .ta-mehr { margin: 0 6px; font-weight: 700; font-size: 0.8rem; color: #fff; text-shadow: 0 0 3px #000; }
+  .ta-punkt:active { filter: brightness(0.9); }
+  .ta-punkt.quelle::after { content: ''; position: absolute; inset: 2px; border: 3px solid #0a84ff; border-radius: 8px; pointer-events: none; z-index: 3; }
+  .ta-punkt.selected::after { border-color: #ffd60a; border-width: 4px; box-shadow: 0 0 10px rgba(255,214,10,0.8); }
+  .ta-punkt.ziel::after, .ta-bar.ziel::after { content: ''; position: absolute; inset: 2px; background: rgba(52,199,89,0.35); border: 3px solid #34c759; border-radius: 8px; pointer-events: none; z-index: 3; }
+  .ta-punkt.schlag::after { background: rgba(255,149,0,0.4); border-color: #ff9500; }
+  .ta-punkt.gefahr .ta-stein { box-shadow: 0 0 0 3px #ff9500; }
+  .ta-warn { position: absolute; z-index: 4; top: 2px; width: 20px; height: 20px; border-radius: 50%; background: #ff9500; color: #fff; font: 700 14px/20px system-ui, sans-serif; text-align: center; pointer-events: none; }
+  .ta-punkt.links .ta-warn { left: 46%; } .ta-punkt.rechts .ta-warn { right: 46%; }
+  .ta-punkt.neu .ta-stein:last-child { animation: ploppen 0.28s cubic-bezier(.3,1.6,.5,1); }
+  .ta-punkt.tipp, .ta-bar.tipp, #taab.tipp, #tawurfBtn.tipp { outline: 3px solid #ff9f0a; outline-offset: -3px; animation: tippen 0.8s ease-out infinite; }
+  .ta-bar { grid-column: 1 / span 2; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 0 12px; border: none; border-radius: 8px; cursor: pointer; position: relative;
+    background: #5a3519; color: #f0e2c8; font: 700 0.8rem system-ui, sans-serif; box-sizing: border-box; }
+  .ta-bar-gruppe { display: flex; align-items: center; min-width: 44px; }
+  .ta-bar-gruppe .ta-stein { margin-right: -12px; }
+  .ta-bar.quelle::after { content: ''; position: absolute; inset: 2px; border: 3px solid #0a84ff; border-radius: 8px; pointer-events: none; }
+  .ta-bar.selected::after { border-color: #ffd60a; }
+  .ta-ab { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; min-width: 0; box-sizing: border-box; min-height: 48px; margin: 0; padding: 0 8px; border: none; border-radius: 14px;
+    background: var(--segment-bg); color: var(--ios-label); font: 700 0.95rem system-ui, sans-serif; cursor: pointer; }
+  .ta-ab-zahl { font-weight: 500; font-size: 0.7rem; white-space: nowrap; color: var(--ios-secondary-label); }
+  .ta-blase { top: 2px; right: 6px; left: auto; transform: none; z-index: 6; }
+  .ta-punkt .ta-blase { top: 50%; transform: translateY(-50%); right: auto; left: 52%; }
+  .ta-punkt.rechts .ta-blase { left: auto; right: 52%; }
+  #tavla-view button.action, #tavla-view .ta-hilfe-knopf, #tavla-view .lernen-knopf { min-height: 44px; min-width: 44px; }
+  .brett3d.tavla { aspect-ratio: 1 / 1.36; }
+  @media (prefers-reduced-motion: reduce) { .ta-wuerfel.wirft, .ta-punkt.neu .ta-stein { animation: none !important; } }
 </style>
 </head>
 <body data-ansicht="auswahl">
@@ -862,6 +918,7 @@
   <button class="tabBtn" type="button" data-tab="mangala"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="11" width="42" height="26" rx="11" fill="#7a4e2a"/><g fill="#e8d4b8"><rect x="6" y="15" width="6" height="18" rx="3"/><rect x="36" y="15" width="6" height="18" rx="3"/><circle cx="18" cy="19" r="3.4"/><circle cx="24" cy="19" r="3.4"/><circle cx="30" cy="19" r="3.4"/><circle cx="18" cy="29" r="3.4"/><circle cx="24" cy="29" r="3.4"/><circle cx="30" cy="29" r="3.4"/></g></svg><span class="kachel-name">Mangala</span><span class="kachel-weiter">Weiterspielen</span></button>
   <button class="tabBtn" type="button" data-tab="tictactoe"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#ffffff" stroke="#d8d8de"/><path d="M18 9v30M30 9v30M9 18h30M9 30h30" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"/><path d="M10 10l6 6M16 10l-6 6M32 32l6 6M38 32l-6 6" stroke="#007aff" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="24" r="3.6" fill="none" stroke="#ff3b30" stroke-width="2.6"/></svg><span class="kachel-name">Tic Tac Toe</span><span class="kachel-weiter">Weiterspielen</span></button>
   <button class="tabBtn" type="button" data-tab="dame"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#9a7f52"/><path d="M10 14h28M10 24h28M10 34h28M14 10v28M24 10v28M34 10v28" stroke="#5e4829" stroke-width="1.4"/><circle cx="14" cy="34" r="6" fill="#f4f1e8" stroke="#5c5c61" stroke-width="1.5"/><circle cx="34" cy="14" r="6" fill="#1f1f22" stroke="#000" stroke-width="1.5"/><circle cx="24" cy="24" r="6" fill="#f4f1e8" stroke="#5c5c61" stroke-width="1.5"/><path d="M19.500 26.500l-1-6 3.200 2.300 2.300-3.800 2.300 3.800 3.200-2.300-1 6z" fill="#ffcc00" stroke="#5a4300" stroke-width="1" stroke-linejoin="round"/></svg><span class="kachel-name">Dame</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="tavla"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#9a6a3c"/><g fill="#e8d4b8"><path d="M8 8l5 16-5 0zM16 8l5 16-5 0zM24 8l5 16-5 0z"/></g><g fill="#4f2e14"><path d="M13 40l5-16 5 16zM21 40l5-16 5 16zM29 40l5-16 5 16z"/></g><circle cx="38" cy="14" r="3.6" fill="#fff"/><circle cx="38" cy="34" r="3.6" fill="#111"/></svg><span class="kachel-name">Tavla</span><span class="kachel-weiter">Weiterspielen</span></button>
 </div>
 
 <div id="tictactoe-view" class="tab-content">
@@ -1119,6 +1176,44 @@
   </div>
   <button class="linkBtn" id="daresetStatsBtn">Statistik zurücksetzen</button>
   <div id="dahilfe" class="da-hilfe" hidden role="dialog" aria-modal="true" aria-label="Dame-Regeln" tabindex="-1"></div>
+</div>
+
+<div id="tavla-view" class="tab-content">
+  <div id="tauebung" class="mu-uebung" hidden>
+    <span class="mu-uebung-titel"></span>
+    <button type="button" class="action secondary klein mu-ueberspringen">Überspringen</button>
+    <button type="button" class="action klein mu-los" hidden>Los geht's</button>
+  </div>
+  <div id="tastatus" data-abschnitt="status">Weiß: Tippe auf Würfeln</div>
+  <div id="tabrett" data-abschnitt="brett">
+    <div id="tawurf">
+      <div id="tawuerfel"></div>
+      <button type="button" class="action" id="tawurfBtn">Würfeln</button>
+      <button type="button" id="taab" class="ta-ab">Abtragen</button>
+    </div>
+    <div id="taboard"></div>
+  </div>
+
+  <div class="gruppe">Aktionen</div>
+  <div id="tacontrols" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="taresetBtn">Neu starten</button>
+  </div>
+
+  <div class="gruppe">Spielmodus</div>
+  <div id="tamode" data-abschnitt="modus">
+    <label class="active"><input type="radio" name="tamode" value="pvp" checked><span>2 Spieler</span></label>
+    <label><input type="radio" name="tamode" value="ai"><span>Gegen Computer</span></label>
+  </div>
+
+  <div class="gruppe gruppe-optionen" hidden>Optionen</div>
+  <div class="optionen" data-abschnitt="optionen" hidden></div>
+
+  <div id="tastats" data-abschnitt="statistik">
+    <div class="stat"><span class="stat-value" id="tastatA">0</span><span class="stat-label">Siege Weiß</span></div>
+    <div class="stat"><span class="stat-value" id="tastatB">0</span><span class="stat-label">Siege Schwarz</span></div>
+  </div>
+  <button class="linkBtn" id="taresetStatsBtn">Statistik zurücksetzen</button>
+  <div id="tahilfe" class="mu-hilfe" hidden role="dialog" aria-label="Tavla-Regeln"></div>
 </div>
 
 <div id="layerNote"><span class="datenschutz">Statistik bleibt nur auf diesem Gerät, kein Server, keine Weitergabe.</span><span class="lizenz-schach"><br>Schach-Computer: Stockfish (GPL v3), <a href="lib/STOCKFISH-LICENSE-GPL.txt">Lizenz</a> und <a href="https://github.com/nmrugg/stockfish.js/tree/v10.0.2">Quelltext</a>. Schachregeln: chess.js (<a href="lib/CHESSJS-LICENSE.txt">Lizenz</a>).</span></div>
@@ -1596,7 +1691,7 @@ class GameUI {
     if (wunsch && !(this.ansicht3d && this.ansicht3d.aktiv)) {
       this._ansichtLaeuft = true;
       try {
-        if (!this.ansicht3d) this.ansicht3d = new Ansicht3D(this, this.spiel);
+        if (!this.ansicht3d) this.ansicht3d = new ((GameUI.ANSICHT_KLASSEN && GameUI.ANSICHT_KLASSEN[this.spiel]) || Ansicht3D)(this, this.spiel);
         const ok = await this.ansicht3d.einschalten();
         if (!ok) { this.ansichtBtn.disabled = true; this.ansichtBtn.textContent = '3D nicht möglich'; return; }
       } finally { this._ansichtLaeuft = false; }
@@ -2292,6 +2387,7 @@ class AIStrategy {
       // eines Objekt-Literals gültige Syntax, daher werden die
       // Funktionen hier direkt in ein Objekt-Literal eingebettet.
       const src = `
+        ${tavlaRegelwerk.toString()}
         const AIEngines = {
           ${AIEngines.tictactoe.toString()},
           ${AIEngines.connect4.toString()},
@@ -2300,7 +2396,8 @@ class AIStrategy {
           ${AIEngines.muehle.toString()},
           ${AIEngines.dameZuege.toString()},
           ${AIEngines.dameSetze.toString()},
-          ${AIEngines.dame.toString()}
+          ${AIEngines.dame.toString()},
+          tavla: ${AIEngines.tavla.toString()}
         };
         self.onmessage = (e) => {
           const { id, engine, args } = e.data;
@@ -2979,6 +3076,567 @@ class MangalaControl extends GameControl {
     return this.aiStrategy.chooseMove('mangala', [this.boundary.getBoardState(), this.aiPlayer, this.searchDepth]);
   }
 }
+
+/* ============================================================
+   TAVLA (S-W24) — türkisches Backgammon (Düz Tavla), gleiches BCE-Muster.
+   Neu: Würfel. Der Zufall kommt von außen (Control.setZufall / setWuerfelfolge),
+   Entity und Regelwerk erzeugen keine Zahlen (R-01).
+   Regelwerk: reine Funktionen auf einem Stand { pkt[24], bar{A,B}, ab{A,B} }.
+   pkt[i] > 0: Weiß (A), < 0: Schwarz (B). Weiß zieht von Index 23 nach 0
+   (Heimfeld 0 bis 5), Schwarz von 0 nach 23 (Heimfeld 18 bis 23).
+   Ein Zug: { von: Index | 'bar', nach: Index | 'ab', w: Würfel }.
+   Das Regelwerk wird per toString() auch in den Worker übernommen.
+   ============================================================ */
+function tavlaRegelwerk() {
+  const R = {};
+  const gegner = p => (p === 'A' ? 'B' : 'A');
+  const vz = p => (p === 'A' ? 1 : -1);
+  const richtung = p => (p === 'A' ? -1 : 1);
+  const weg = (p, i) => (p === 'A' ? i + 1 : 24 - i);              // Abstand bis zum Abtragen
+  const eig = (s, p, i) => Math.max(0, s.pkt[i] * vz(p));
+  const geg = (s, p, i) => Math.max(0, -s.pkt[i] * vz(p));
+  const einwurf = (p, w) => (p === 'A' ? 24 - w : w - 1);
+  const kopie = s => ({ pkt: s.pkt.slice(), bar: { A: s.bar.A, B: s.bar.B }, ab: { A: s.ab.A, B: s.ab.B } });
+  const schluessel = s => s.pkt.join(',') + '|' + s.bar.A + ',' + s.bar.B + '|' + s.ab.A + ',' + s.ab.B;
+  const ohne = (rest, w) => { const r = rest.slice(); r.splice(r.indexOf(w), 1); return r; };
+  const speicher = new Map();
+
+  R.start = () => {
+    const pkt = Array(24).fill(0);
+    pkt[23] = 2; pkt[12] = 5; pkt[7] = 3; pkt[5] = 5;
+    pkt[0] = -2; pkt[11] = -5; pkt[16] = -3; pkt[18] = -5;
+    return { pkt, bar: { A: 0, B: 0 }, ab: { A: 0, B: 0 } };
+  };
+  R.gegner = gegner;
+  R.weg = weg;
+  R.schluessel = schluessel;
+
+  // Alle Steine im Heimfeld, Bar leer: Abtragen erlaubt
+  R.heimfertig = (s, p) => {
+    if (s.bar[p] > 0) return false;
+    for (let i = 0; i < 24; i++) if (eig(s, p, i) > 0 && weg(p, i) > 6) return false;
+    return true;
+  };
+
+  // Einzelne Züge für alle verschiedenen Würfelwerte in rest (ohne Pflichtregel)
+  R.einzelzuege = (s, p, rest) => {
+    const out = [], werte = [...new Set(rest)];
+    const heim = R.heimfertig(s, p);
+    for (const w of werte) {
+      if (s.bar[p] > 0) {
+        const t = einwurf(p, w);
+        if (geg(s, p, t) < 2) out.push({ von: 'bar', nach: t, w });
+        continue;
+      }
+      for (let i = 0; i < 24; i++) {
+        if (eig(s, p, i) < 1) continue;
+        const t = i + richtung(p) * w;
+        if (t >= 0 && t < 24) { if (geg(s, p, t) < 2) out.push({ von: i, nach: t, w }); continue; }
+        if (!heim) continue;
+        if (weg(p, i) === w) { out.push({ von: i, nach: 'ab', w }); continue; }
+        if (weg(p, i) < w) {
+          let weiter = false;
+          for (let j = 0; j < 24; j++) if (eig(s, p, j) > 0 && weg(p, j) > weg(p, i)) { weiter = true; break; }
+          if (!weiter) out.push({ von: i, nach: 'ab', w });
+        }
+      }
+    }
+    return out;
+  };
+
+  // Zug ausführen: neuer Stand und ob geschlagen wurde (der alte Stand bleibt unverändert)
+  R.wende = (s, p, z) => {
+    const n = kopie(s), v = vz(p), o = gegner(p);
+    let schlag = false;
+    if (z.von === 'bar') n.bar[p]--; else n.pkt[z.von] -= v;
+    if (z.nach === 'ab') n.ab[p]++;
+    else {
+      if (geg(n, p, z.nach) === 1) { n.pkt[z.nach] = 0; n.bar[o]++; schlag = true; }
+      n.pkt[z.nach] += v;
+    }
+    return { s: n, schlag };
+  };
+
+  // Größtmögliche Zahl der noch nutzbaren Würfel ab diesem Stand
+  const laenge = (s, p, rest) => {
+    if (!rest.length) return 0;
+    const k = p + schluessel(s) + '|' + rest.slice().sort().join('');
+    if (speicher.has(k)) return speicher.get(k);
+    let m = 0;
+    for (const z of R.einzelzuege(s, p, rest)) {
+      const l = 1 + laenge(R.wende(s, p, z).s, p, ohne(rest, z.w));
+      if (l > m) m = l;
+      if (m === rest.length) break;
+    }
+    if (speicher.size > 40000) speicher.clear();
+    speicher.set(k, m);
+    return m;
+  };
+
+  // Erlaubte nächste Züge: Teil einer Folge mit größtmöglicher Würfelzahl; sonst der größere Würfel
+  R.erlaubteErste = (s, p, rest) => {
+    const alle = R.einzelzuege(s, p, rest);
+    if (!alle.length) return [];
+    const l = alle.map(z => 1 + laenge(R.wende(s, p, z).s, p, ohne(rest, z.w)));
+    const m = Math.max(...l);
+    let out = alle.filter((z, i) => l[i] === m);
+    if (m === 1 && rest.length >= 2 && new Set(rest).size === 2) {
+      const gross = Math.max(...rest);
+      if (out.some(z => z.w === gross)) out = out.filter(z => z.w === gross);
+    }
+    return out;
+  };
+
+  // Alle vollständigen Runden (Folgen von Zügen) mit Endstand, je Endstand eine
+  R.folgen = (s, p, rest, grenze = 400) => {
+    const ergebnis = new Map(), besucht = new Set();
+    const rec = (st, rr, folge) => {
+      if (ergebnis.size >= grenze) return;
+      const k = schluessel(st) + '|' + rr.slice().sort().join('');
+      if (besucht.has(k)) return;
+      besucht.add(k);
+      const zuege = st.ab[p] === 15 ? [] : R.erlaubteErste(st, p, rr);
+      if (!zuege.length) { const e = schluessel(st); if (!ergebnis.has(e)) ergebnis.set(e, { zuege: folge, s: st }); return; }
+      for (const z of zuege) rec(R.wende(st, p, z).s, ohne(rr, z.w), folge.concat([{ von: z.von, nach: z.nach, w: z.w }]));
+    };
+    rec(s, rest, []);
+    return [...ergebnis.values()];
+  };
+
+  // Eigene Einzelsteine, die der Gegner mit einem Wurf bis 6 Augen schlagen kann
+  R.gefaehrdet = (s, p) => {
+    const o = gegner(p), out = [];
+    for (let i = 0; i < 24; i++) {
+      if (eig(s, p, i) !== 1) continue;
+      let nah = 99;
+      if (s.bar[o] > 0) nah = Math.min(nah, Math.abs(i - (o === 'A' ? 24 : -1)));
+      for (let j = 0; j < 24 && s.bar[o] === 0; j++) {
+        if (eig(s, o, j) < 1) continue;
+        const d = (i - j) * richtung(o);
+        if (d >= 1) nah = Math.min(nah, d);
+      }
+      if (nah <= 6) out.push(i);
+    }
+    return out;
+  };
+
+  // Bewertung eines Stands aus Sicht von p (größer ist besser)
+  R.bewerte = (s, p) => {
+    const o = gegner(p);
+    if (s.ab[p] === 15) return 1e6;
+    if (s.ab[o] === 15) return -1e6;
+    const pips = q => { let t = s.bar[q] * 25; for (let i = 0; i < 24; i++) t += eig(s, q, i) * weg(q, i); return t; };
+    let w = pips(o) - pips(p) + 12 * (s.ab[p] - s.ab[o]) + 10 * s.bar[o] - 8 * s.bar[p];
+    let lauf = 0, best = 0;
+    for (let i = 0; i < 24; i++) {
+      const c = eig(s, p, i);
+      if (c >= 2) { w += 3 + (weg(p, i) <= 6 ? 2 : 0); lauf++; if (lauf > best) best = lauf; } else lauf = 0;
+    }
+    w += 1.5 * best * best;
+    const gef = R.gefaehrdet(s, p);
+    for (const i of gef) w -= 14 * (1 + weg(p, i) / 24);
+    for (let i = 0; i < 24; i++) {
+      if (eig(s, p, i) === 1 && !gef.includes(i)) {
+        let hinter = false;
+        for (let j = 0; j < 24 && !hinter; j++) if (eig(s, o, j) > 0 && (i - j) * richtung(o) >= 1) hinter = true;
+        if (hinter || s.bar[o] > 0) w -= 5;
+      }
+    }
+    return w;
+  };
+  return R;
+}
+
+/* --- ENTITY: Zustand und Regeln über das Regelwerk --- */
+class TavlaEntity {
+  static FORMAT = 1;
+  constructor() {
+    this.R = tavlaRegelwerk();
+    this.reset();
+  }
+
+  reset() {
+    const s = this.R.start();
+    this.cells = s.pkt; this.bar = s.bar; this.ab = s.ab;
+    this.currentPlayer = 'A';   // Weiß beginnt
+    this.phase = 'wuerfeln';    // wuerfeln | ziehen
+    this.wurf = []; this.rest = [];
+    this.finished = false; this.winner = null; this.mars = false; this.punkte = 0;
+    this.ausgesetzt = null; this.geschlagen = false; this.teilweise = false;
+    this.wurfZaehler = 0;
+  }
+
+  _s() { return { pkt: this.cells, bar: this.bar, ab: this.ab }; }
+  _wechsel() {
+    this.currentPlayer = this.currentPlayer === 'A' ? 'B' : 'A';
+    this.phase = 'wuerfeln'; this.rest = [];
+  }
+
+  // Würfel kommen von außen (Control); ungültige Werte werden abgelehnt
+  setzeWurf(a, b) {
+    if (this.finished || this.phase !== 'wuerfeln') return { invalid: true };
+    const ok = x => Number.isInteger(x) && x >= 1 && x <= 6;
+    if (!ok(a) || !ok(b)) return { invalid: true };
+    this.wurf = [a, b];
+    this.rest = a === b ? [a, a, a, a] : [a, b];
+    this.phase = 'ziehen';
+    this.wurfZaehler++;
+    this.ausgesetzt = null; this.geschlagen = false; this.teilweise = false;
+    if (!this.getValidMoves().length) {
+      const wer = this.currentPlayer;
+      this._wechsel();
+      this.ausgesetzt = wer;
+      return { invalid: false, ausgesetzt: wer };
+    }
+    return { invalid: false };
+  }
+
+  getValidMoves() {
+    if (this.finished || this.phase !== 'ziehen') return [];
+    return this.R.erlaubteErste(this._s(), this.currentPlayer, this.rest);
+  }
+
+  // Führt einen Zug aus (kleinster passender Würfel); liefert das Ergebnis der Partie oder null
+  applyMove(von, nach) {
+    const z = this.getValidMoves().filter(m => m.von === von && m.nach === nach).sort((a, b) => a.w - b.w)[0];
+    if (!z) throw new Error(`Ungültiger Zug ${von} -> ${nach}`);
+    const p = this.currentPlayer, r = this.R.wende(this._s(), p, z);
+    this.cells = r.s.pkt; this.bar = r.s.bar; this.ab = r.s.ab;
+    this.geschlagen = r.schlag;
+    this.rest.splice(this.rest.indexOf(z.w), 1);
+    if (this.ab[p] === 15) {
+      const o = this.R.gegner(p);
+      this.finished = true; this.winner = p;
+      this.mars = this.ab[o] === 0; this.punkte = this.mars ? 2 : 1;
+      this.phase = 'wuerfeln'; this.rest = [];
+      return { winner: p, mars: this.mars, punkte: this.punkte, line: null };
+    }
+    if (!this.rest.length) this._wechsel();
+    else if (!this.getValidMoves().length) { this.teilweise = true; this._wechsel(); }
+    return null;
+  }
+
+  toJSON() {
+    return { formatversion: TavlaEntity.FORMAT, cells: [...this.cells], bar: { ...this.bar }, ab: { ...this.ab },
+      currentPlayer: this.currentPlayer, phase: this.phase, wurf: [...this.wurf], rest: [...this.rest],
+      finished: this.finished, winner: this.winner, mars: this.mars, punkte: this.punkte,
+      ausgesetzt: this.ausgesetzt, geschlagen: this.geschlagen, teilweise: this.teilweise, wurfZaehler: this.wurfZaehler };
+  }
+
+  // Prüft den gespeicherten Stand vollständig; bei Fehlern neue Partie und false
+  loadFromJSON(d) {
+    if (!TavlaEntity._gueltig(d)) { this.reset(); return false; }
+    this.cells = [...d.cells]; this.bar = { A: d.bar.A, B: d.bar.B }; this.ab = { A: d.ab.A, B: d.ab.B };
+    this.currentPlayer = d.currentPlayer; this.phase = d.phase;
+    this.wurf = [...d.wurf]; this.rest = [...d.rest];
+    this.finished = d.finished; this.winner = d.winner; this.mars = d.mars; this.punkte = d.punkte;
+    this.ausgesetzt = d.ausgesetzt; this.geschlagen = d.geschlagen; this.teilweise = d.teilweise; this.wurfZaehler = d.wurfZaehler;
+    if (this.phase === 'ziehen' && !this.finished && !this.getValidMoves().length) { this.reset(); return false; }
+    return true;
+  }
+
+  static _gueltig(d) {
+    const ganz = (x, lo, hi) => Number.isInteger(x) && x >= lo && x <= hi;
+    if (!d || typeof d !== 'object' || Array.isArray(d) || d.formatversion !== TavlaEntity.FORMAT) return false;
+    if (!Array.isArray(d.cells) || d.cells.length !== 24 || !d.cells.every(v => ganz(v, -15, 15))) return false;
+    for (const k of ['bar', 'ab']) if (!d[k] || typeof d[k] !== 'object' || !ganz(d[k].A, 0, 15) || !ganz(d[k].B, 0, 15)) return false;
+    const a = d.cells.filter(v => v > 0).reduce((x, y) => x + y, 0) + d.bar.A + d.ab.A;
+    const b = -d.cells.filter(v => v < 0).reduce((x, y) => x + y, 0) + d.bar.B + d.ab.B;
+    if (a !== 15 || b !== 15) return false;
+    if (d.currentPlayer !== 'A' && d.currentPlayer !== 'B') return false;
+    if (d.phase !== 'wuerfeln' && d.phase !== 'ziehen') return false;
+    const wuerfel = x => Array.isArray(x) && x.every(v => ganz(v, 1, 6));
+    if (!wuerfel(d.wurf) || !wuerfel(d.rest) || (d.wurf.length !== 0 && d.wurf.length !== 2) || d.rest.length > 4) return false;
+    if (d.phase === 'ziehen') {
+      if (d.wurf.length !== 2 || !d.rest.length || !d.rest.every(v => d.wurf.includes(v))) return false;
+      if (d.rest.length > 2 && d.wurf[0] !== d.wurf[1]) return false;
+      const frei = d.wurf[0] === d.wurf[1] ? [d.wurf[0], d.wurf[0], d.wurf[0], d.wurf[0]] : d.wurf.slice();
+      for (const v of d.rest) { const i = frei.indexOf(v); if (i < 0) return false; frei.splice(i, 1); }
+    } else if (d.rest.length) return false;
+    if (typeof d.finished !== 'boolean' || typeof d.mars !== 'boolean' || typeof d.geschlagen !== 'boolean' || typeof d.teilweise !== 'boolean') return false;
+    if (!ganz(d.punkte, 0, 2) || !ganz(d.wurfZaehler, 0, 1e9)) return false;
+    if (d.ausgesetzt !== null && d.ausgesetzt !== 'A' && d.ausgesetzt !== 'B') return false;
+    if (d.finished) {
+      if ((d.winner !== 'A' && d.winner !== 'B') || d.ab[d.winner] !== 15 || d.phase !== 'wuerfeln' || d.rest.length) return false;
+      const verl = d.winner === 'A' ? 'B' : 'A';
+      if (d.ab[verl] === 15 || d.mars !== (d.ab[verl] === 0) || d.punkte !== (d.mars ? 2 : 1)) return false;
+    } else if (d.winner !== null || d.ab.A === 15 || d.ab.B === 15 || d.mars || d.punkte !== 0) return false;
+    return true;
+  }
+}
+
+/* --- BOUNDARY: nur die spielspezifischen Zugriffe --- */
+class TavlaBoundary extends GameBoundary {
+  getBar() { return { ...this._entity.bar }; }
+  getAb() { return { ...this._entity.ab }; }
+  getPhase() { return this._entity.phase; }
+  getWurf() { return [...this._entity.wurf]; }
+  getRest() { return [...this._entity.rest]; }
+  getWurfZaehler() { return this._entity.wurfZaehler; }
+  getValidMoves() { return this._entity.getValidMoves(); }
+  getStand() { const e = this._entity; return { pkt: [...e.cells], bar: { ...e.bar }, ab: { ...e.ab } }; }
+  getGefaehrdet(spieler) { return this._entity.R.gefaehrdet(this.getStand(), spieler); }
+  getInfo() { const e = this._entity; return { geschlagen: e.geschlagen, ausgesetzt: e.ausgesetzt, teilweise: e.teilweise, mars: e.mars, punkte: e.punkte, winner: e.winner }; }
+  canMove(von, nach) { return this._entity.getValidMoves().some(m => m.von === von && m.nach === nach); }
+  makeMove(von, nach) { return this._entity.applyMove(von, nach); }
+  roll(a, b) { return this._entity.setzeWurf(a, b); }
+  restoreEntity(data) { return this._entity.loadFromJSON(data); }
+}
+
+/* --- CONTROL: Ablauf, Würfel von außen, Computer ---
+   Der Computer führt Wurf und jeden Steinzug als eigenen Schritt aus
+   (performAiAction), die UI ruft ihn erneut auf, solange er am Zug ist. */
+class TavlaControl extends GameControl {
+  static STUFEN = {
+    leicht: { tiefe: 1, fehler: 0.3 },
+    mittel: { tiefe: 1, fehler: 0.05 },
+    stark:  { tiefe: 2, fehler: 0 }
+  };
+
+  constructor(boundary, aiStrategy = null) {
+    super(boundary, 'B', aiStrategy);   // Weiß (Mensch) beginnt, der Computer spielt Schwarz
+    this.selected = null;               // gewählte Quelle: Index oder 'bar'
+    this._folge = [];                   // hineingereichte Würfelfolge (Tests), sonst Zufall
+    this._plan = null;
+    this._partie = 0;
+    this._pause = false;
+    this.setDifficulty('mittel');
+  }
+
+  setWuerfelfolge(liste) { this._folge = Array.isArray(liste) ? liste.slice() : []; }
+  _wuerfel() {
+    if (this._folge.length) return this._folge.shift();
+    return 1 + Math.min(5, Math.floor(this._zufall() * 6));
+  }
+  setPause(an) { this._pause = !!an; }
+
+  restartGame() { super.restartGame(); this.selected = null; this._plan = null; this._partie++; }
+  _nachZurueck() { this.selected = null; this._plan = null; this._partie++; }
+
+  async restoreGame() {
+    const data = await this.boundary.loadGame();
+    if (!data || !data.entity) return false;
+    if (!this.boundary.restoreEntity(data.entity)) return false;
+    this._verlauf = [];
+    this.vsAI = !!data.vsAI;
+    this.selected = null; this._plan = null; this._partie++;
+    return true;
+  }
+
+  getPhase() { return this.boundary.getPhase(); }
+  getBar() { return this.boundary.getBar(); }
+  getAb() { return this.boundary.getAb(); }
+  getWurf() { return this.boundary.getWurf(); }
+  getRest() { return this.boundary.getRest(); }
+  getInfo() { return this.boundary.getInfo(); }
+  getWurfZaehler() { return this.boundary.getWurfZaehler(); }
+  getSelected() { return this.selected; }
+  getValidMoves() { return this.boundary.getValidMoves(); }
+
+  // Wurf: Würfel von außen, Entity prüft; nach einem Wurf kein "Zug zurück" über den Wurf hinaus
+  wuerfeln() {
+    if (this.boundary.isGameOver() || this.boundary.getPhase() !== 'wuerfeln' || this.isAiTurn()) return { invalid: true };
+    return this._wirfWurf();
+  }
+  _wirfWurf() {
+    const a = this._wuerfel(), b = this._wuerfel();
+    const r = this.boundary.roll(a, b);
+    if (r.invalid) return r;
+    this.selected = null;
+    this._persistGame();
+    return { invalid: false, wurf: [a, b], ausgesetzt: r.ausgesetzt || null, result: null };
+  }
+
+  // Zug mit zwei Tipps: erst Quelle (Index oder 'bar'), dann Ziel (Index oder 'ab')
+  tippe(ziel) {
+    if (this.boundary.isGameOver() || this.boundary.getPhase() !== 'ziehen' || this.isAiTurn()) return { invalid: true };
+    const zuege = this.boundary.getValidMoves();
+    const istQuelle = t => zuege.some(m => m.von === t);
+    if (this.selected === null) {
+      if (!istQuelle(ziel)) return { invalid: true };
+      this.selected = ziel; return { invalid: false, gewaehlt: true };
+    }
+    if (ziel === this.selected) { this.selected = null; return { invalid: false, gewaehlt: false }; }
+    if (istQuelle(ziel) && !this.boundary.canMove(this.selected, ziel)) { this.selected = ziel; return { invalid: false, gewaehlt: true }; }
+    if (!this.boundary.canMove(this.selected, ziel)) return { invalid: true };
+    const von = this.selected;
+    this.selected = null;
+    return this._executeMove(() => true, () => this.boundary.makeMove(von, ziel));
+  }
+
+  // Zug zurück nur, solange seit dem Zug nicht neu gewürfelt wurde (nie ein Wurf zurück)
+  _merke() {
+    super._merke();
+    this._verlauf[this._verlauf.length - 1].wurfNr = this.boundary.getWurfZaehler();
+  }
+  canUndo() {
+    if (this.boundary.isGameOver() || this.isAiTurn() || !this._verlauf.length) return false;
+    const v = this._verlauf[this._verlauf.length - 1];
+    if (this.vsAI && v.spieler === this.aiPlayer) return false;   // nie einen Computerzug zurücknehmen
+    return v.wurfNr === this.boundary.getWurfZaehler();
+  }
+  undoMove() {
+    if (!this.canUndo()) return { invalid: true };
+    const { zustand } = this._verlauf.pop();
+    this.boundary.restoreEntity(zustand);
+    this._nachZurueck();
+    this._persistGame();
+    return { invalid: false };
+  }
+
+  async _tippFuer() {
+    if (this.boundary.getPhase() === 'wuerfeln') return { wuerfeln: true };
+    const plan = await this._rechne(this.boundary.getCurrentPlayer(), TavlaControl.STUFEN.stark.tiefe);
+    const z = plan && plan[0];
+    return z ? { von: z.von, nach: z.nach } : null;
+  }
+
+  _rechne(spieler, tiefe) {
+    const args = [this.boundary.getStand(), spieler, this.boundary.getRest(), tiefe];
+    return this.aiStrategy ? this.aiStrategy.chooseMove('tavla', args) : Promise.resolve(AIEngines.tavla(...args));
+  }
+
+  // Ansicht für die UI: was ist ziehbar, wohin, was schlägt, was ist gefährdet
+  ansicht(lernen) {
+    const e = this.boundary, stand = e.getStand(), p = e.getCurrentPlayer();
+    const mensch = !e.isGameOver() && !this.isAiTurn() && e.getPhase() === 'ziehen';
+    const v = { pkt: stand.pkt, bar: stand.bar, ab: stand.ab, selected: this.selected, quellen: [], ziele: [], schlag: [], gefahr: [],
+      rest: e.getRest(), wurf: e.getWurf(), phase: e.getPhase(), spieler: p, mensch };
+    if (!mensch) return v;
+    const zuege = e.getValidMoves();
+    v.quellen = [...new Set(zuege.map(m => m.von))];
+    if (this.selected !== null) {
+      v.ziele = [...new Set(zuege.filter(m => m.von === this.selected).map(m => m.nach))];
+      if (lernen) v.schlag = v.ziele.filter(t => t !== 'ab' && stand.pkt[t] * (p === 'A' ? -1 : 1) === 1);
+    }
+    if (lernen) v.gefahr = e.getGefaehrdet(p);
+    return v;
+  }
+
+  // Ein Schritt des Computers: Wurf oder ein Steinzug. Die UI ruft erneut auf, solange er am Zug ist.
+  async performAiAction() {
+    if (!this.isAiTurn() || this._pause) return { invalid: true };
+    if (this._aiLaeuft) return { invalid: true };
+    this._aiLaeuft = true;
+    try {
+      const partie = this._partie;
+      if (this.boundary.getPhase() === 'wuerfeln') { this._plan = null; return this._wirfWurf(); }
+      let z = null;
+      if (this._entscheideFehler()) { this._plan = null; z = this._zufallsZug(this.boundary.getValidMoves()); }   // je Steinzug
+      else if (this._plan && this._plan.length) {
+        const c = this._plan[0];
+        if (this.boundary.canMove(c.von, c.nach)) z = this._plan.shift(); else this._plan = null;
+      }
+      if (!z) {
+        const plan = await this._rechne(this.aiPlayer, this.searchDepth);
+        if (partie !== this._partie || this._pause || !this.isAiTurn() || !plan || !plan.length) return { invalid: true, erneut: true };
+        this._plan = plan.slice(); z = this._plan.shift();
+      }
+      if (partie !== this._partie || !this.isAiTurn() || !z || this._pause) return { invalid: true, erneut: true };
+      const ok = this.boundary.canMove(z.von, z.nach);
+      return this._executeMove(() => ok, () => this.boundary.makeMove(z.von, z.nach));
+    } finally {
+      this._aiLaeuft = false;
+    }
+  }
+}
+
+/* Übung beim ersten Start (S-W24): fünf feste Stellungen mit festen Würfeln und je einem Tippziel.
+   Läuft auf einer eigenen Entity, die echte Partie bleibt unberührt. */
+class TavlaUebungControl {
+  static SCHRITTE = [
+    { titel: 'Würfeln', text: 'Weiß beginnt. Tippe auf Würfeln: zwei Würfel sagen dir, wie weit du ziehen darfst.',
+      pkt: null, w: [], ziel: 'wuerfeln', wurf: [4, 2], gut: 'Eine 4 und eine 2: du darfst zweimal ziehen.' },
+    { titel: 'Ziehen', text: 'Weiß zieht gegen den Uhrzeigersinn nach unten rechts. Dein Stein ist gewählt: tippe das leuchtende Ziel (4 Felder weit).',
+      pkt: null, w: [4, 2], gewaehlt: 12, ziel: 8, gut: 'Gezogen! Jeder Würfel ist ein eigener Zug.' },
+    { titel: 'Schlagen', text: 'Ein einzelner Gegnerstein kann geschlagen werden. Tippe das orange Ziel: Schwarz muss dann erst wieder hinein.',
+      pkt: { 23: 2, 12: 5, 6: 3, 5: 5, 7: -1, 0: -2, 11: -4, 16: -3, 18: -5 }, w: [5, 3], gewaehlt: 12, ziel: 7, gut: 'Geschlagen! Der Stein liegt jetzt auf der Bar in der Mitte.' },
+    { titel: 'Bar', text: 'Dein Stein wurde geschlagen und liegt auf der Bar. Er muss zuerst zurück ins Spiel: tippe das leuchtende Einwurf-Feld.',
+      pkt: { 23: 2, 12: 5, 7: 3, 5: 4, 0: -2, 11: -5, 16: -3, 18: -5 }, bar: { A: 1 }, w: [3, 6], gewaehlt: 'bar', ziel: 21, gut: 'Eingeworfen! Die 6 ging nicht: dort stehen zwei schwarze Steine.' },
+    { titel: 'Abtragen', text: 'Sind alle Steine im Heimfeld (unten rechts), trägst du sie ab. Wer zuerst alle 15 abgetragen hat, gewinnt. Tippe "Abtragen".',
+      pkt: { 5: 3, 4: 3, 3: 3, 2: 3, 1: 2, 0: 1, 13: -5, 14: -5, 15: -5 }, w: [3, 6], gewaehlt: 2, ziel: 'ab', gut: 'Abgetragen! Hat Schwarz noch keinen, ist es ein Mars: doppelter Sieg.' }
+  ];
+
+  constructor(boundary) { this.boundary = boundary; this.nr = -1; this.selected = null; this.geloest = false; }
+
+  starte() { this.nr = 0; this._lade(); }
+  beende() { this.nr = -1; this.selected = null; }
+  aktiv() { return this.nr >= 0 && this.nr < TavlaUebungControl.SCHRITTE.length; }
+  fertig() { return this.nr >= TavlaUebungControl.SCHRITTE.length; }
+  anzahl() { return TavlaUebungControl.SCHRITTE.length; }
+  schritt() { return this.aktiv() ? { nr: this.nr + 1, ...TavlaUebungControl.SCHRITTE[this.nr] } : null; }
+  istGeloest() { return this.geloest; }
+  getSelected() { return this.selected; }
+  getBoardState() { return this.boundary.getBoardState(); }
+
+  _lade() {
+    const s = TavlaUebungControl.SCHRITTE[this.nr];
+    const pkt = Array(24).fill(0);
+    const quelle = s.pkt || { 23: 2, 12: 5, 7: 3, 5: 5, 0: -2, 11: -5, 16: -3, 18: -5 };
+    for (const [i, v] of Object.entries(quelle)) pkt[+i] = v;
+    const bar = { A: 0, B: 0, ...(s.bar || {}) };
+    const A = pkt.filter(v => v > 0).reduce((a, b) => a + b, 0) + bar.A, B = -pkt.filter(v => v < 0).reduce((a, b) => a + b, 0);
+    const w = s.w.length ? s.w : [];
+    this.boundary.restoreEntity({ formatversion: 1, cells: pkt, bar, ab: { A: 15 - A, B: 15 - B }, currentPlayer: 'A',
+      phase: w.length ? 'ziehen' : 'wuerfeln', wurf: w, rest: w.slice(), finished: false, winner: null, mars: false, punkte: 0,
+      ausgesetzt: null, geschlagen: false, teilweise: false, wurfZaehler: 0 });
+    this.selected = s.gewaehlt ?? null;
+    this.geloest = false;
+  }
+
+  // Nur das Ziel zählt; alles andere ist ein Hinweis ohne Wirkung.
+  tippe(ziel) {
+    if (!this.aktiv() || this.geloest) return { invalid: true };
+    const s = TavlaUebungControl.SCHRITTE[this.nr];
+    if (ziel !== s.ziel) return { invalid: true, hinweis: true };
+    if (s.ziel === 'wuerfeln') this.boundary.roll(s.wurf[0], s.wurf[1]);
+    else { this.boundary.makeMove(this.selected, ziel); this.selected = null; }
+    this.geloest = true;
+    return { invalid: false };
+  }
+
+  weiter() {
+    if (!this.aktiv()) return this.fertig();
+    this.nr++;
+    if (this.aktiv()) this._lade();
+    return this.fertig();
+  }
+
+  ansicht() {
+    const s = TavlaUebungControl.SCHRITTE[this.nr], b = this.boundary, st = b.getStand();
+    const v = { pkt: st.pkt, bar: st.bar, ab: st.ab, selected: this.selected, quellen: [], ziele: [], schlag: [], gefahr: [],
+      rest: b.getRest(), wurf: b.getWurf(), phase: b.getPhase(), spieler: 'A', mensch: true };
+    if (!s || this.geloest) return v;
+    v.ziele = [s.ziel];
+    if (s.titel === 'Schlagen') v.schlag = [s.ziel];
+    return v;
+  }
+}
+
+/* KI-Engine Tavla: wählt die ganze Runde (Folge von Zügen). Tiefe 1: beste Runde nach Bewertung,
+   Tiefe 2: die besten Runden gegen alle 21 verschiedenen Würfe des Gegners prüfen. Feste Grenzen, kein Zufall, keine Uhr. */
+AIEngines.tavla = function tavla(s, p, wuerfel, tiefe) {
+  const R = tavlaRegelwerk(), o = R.gegner(p);
+  const folgen = R.folgen(s, p, wuerfel);
+  if (!folgen.length) return [];
+  const mit = folgen.map(f => ({ f, w: R.bewerte(f.s, p) })).sort((a, b) => b.w - a.w);
+  if (tiefe < 2 || mit.length === 1) return mit[0].f.zuege;
+  let beste = null, bestW = -Infinity;
+  for (const c of mit.slice(0, 6)) {
+    if (c.f.s.ab[p] === 15) return c.f.zuege;
+    let summe = 0;
+    for (let a = 1; a <= 6; a++) for (let b = a; b <= 6; b++) {
+      const rest = a === b ? [a, a, a, a] : [a, b], gew = a === b ? 1 : 2;
+      const antw = R.folgen(c.f.s, o, rest, 60);
+      let wo = antw.length ? -Infinity : R.bewerte(c.f.s, o);
+      for (const x of antw) { const v = R.bewerte(x.s, o); if (v > wo) wo = v; }
+      summe += gew * (-wo);
+    }
+    const w = summe / 36;
+    if (w > bestW) { bestW = w; beste = c; }
+  }
+  return beste.f.zuege;
+};
 
 /* ============================================================
    MÜHLE (Nine Men's Morris) — viertes Spiel, gleiches BCE-Muster
@@ -5578,6 +6236,367 @@ class MangalaUI extends GameUI {
   }
 }
 
+/* --- Tavla: "Übung gesehen" (eigener Schlüssel, getrennt von den Einstellungen; Speicher gesperrt = null) --- */
+class TavlaEinfuehrung {
+  static SCHLUESSEL = 'brettspiele.tavla';
+  static FORMAT = 1;
+  constructor(speicher) { this._speicher = speicher; }
+  gesehen() {
+    try {
+      const d = JSON.parse(this._speicher.getItem(TavlaEinfuehrung.SCHLUESSEL));
+      return !!d && d.formatversion === TavlaEinfuehrung.FORMAT && d.einfuehrung === true;
+    } catch (e) { return false; }
+  }
+  markiere() {
+    try { this._speicher.setItem(TavlaEinfuehrung.SCHLUESSEL, JSON.stringify({ formatversion: TavlaEinfuehrung.FORMAT, einfuehrung: true })); } catch (e) { /* gilt dann nur bis zum Neuladen */ }
+  }
+}
+
+/* --- TavlaUI: hochkantes Brett (zwei Spalten à 12 Reihen, Bar in der Mitte), jede Reihe mindestens 44 px --- */
+class TavlaUI extends GameUI {
+  static FARBE = { A: 'Weiß', B: 'Schwarz' };
+  static PUNKTE = { 1: [[50, 50]], 2: [[28, 28], [72, 72]], 3: [[28, 28], [50, 50], [72, 72]], 4: [[28, 28], [72, 28], [28, 72], [72, 72]],
+    5: [[28, 28], [72, 28], [50, 50], [28, 72], [72, 72]], 6: [[28, 24], [72, 24], [28, 50], [72, 50], [28, 76], [72, 76]] };
+  static wuerfelSvg(n) {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true">' + TavlaUI.PUNKTE[n].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="9"/>`).join('') + '</svg>';
+  }
+
+  constructor(control) {
+    super(control, {
+      statusId: 'tastatus',
+      resetBtnId: 'taresetBtn',
+      modeName: 'tamode',
+      resetStatsBtnId: 'taresetStatsBtn',
+      statEls: { A: 'tastatA', B: 'tastatB' },
+      aiDelayMs: 450
+    });
+    this.boardEl = document.getElementById('taboard');
+    this.wuerfelEl = document.getElementById('tawuerfel');
+    this.wurfBtn = document.getElementById('tawurfBtn');
+    this.abBtn = document.getElementById('taab');
+    this.uebungEl = document.getElementById('tauebung');
+    this.hilfeEl = document.getElementById('tahilfe');
+    this.uebung = TavlaUI.neueUebung ? TavlaUI.neueUebung() : null;
+    this._wz = this.control.getWurfZaehler();
+    this._v = null;
+    this.wurfBtn.addEventListener('click', () => this.handleWuerfeln());
+    this.abBtn.addEventListener('click', () => this.handlePunktClick('ab'));
+    this._baueTavlaKnoepfe();
+    this._baueHilfe();
+    this.uebungEl.querySelector('.mu-ueberspringen').addEventListener('click', () => this._uebungUeberspringen());
+    this.uebungEl.querySelector('.mu-los').addEventListener('click', () => this._uebungLos());
+    if (this.uebung && !(TavlaUI.einfuehrung && TavlaUI.einfuehrung.gesehen())) this._starteUebung();
+    this.init();
+  }
+
+  // ---------- Knöpfe, Lernhilfe, Regelkarten ----------
+  _baueTavlaKnoepfe() {
+    const leiste = this.optionenEl;
+    this.hilfeBtn = document.createElement('button');
+    this.hilfeBtn.type = 'button'; this.hilfeBtn.className = 'action secondary klein ta-hilfe-knopf hilfe-knopf';
+    this.hilfeBtn.textContent = '?'; this.hilfeBtn.setAttribute('aria-label', 'Regeln');
+    this.hilfeBtn.addEventListener('click', () => this._hilfeOeffnen());
+    leiste.appendChild(this.hilfeBtn);
+    this.lernenBtn = document.createElement('button');
+    this.lernenBtn.type = 'button'; this.lernenBtn.className = 'action secondary klein lernen-knopf';
+    this.lernenBtn.addEventListener('click', () => this.setzeLernen(!this._lernen()));
+    leiste.appendChild(this.lernenBtn);
+    this._lernenKnopf();
+  }
+  _lernen() { return GameUI.einst ? GameUI.einst.lernen(this.spiel) : true; }
+  setzeLernen(an) { if (GameUI.einst) GameUI.einst.setzeLernen(this.spiel, an); this._lernenKnopf(); this.render(); }
+  _lernenKnopf() { this.lernenBtn.textContent = this._lernen() ? 'Lernhilfe an' : 'Lernhilfe aus'; }
+
+  // Mini-Brett für die Regelkarten: zwei Spalten à 6 Reihen, Steine als Kreise
+  static miniBrett({ steine = [], ziele = [], pfeil = null }) {
+    let s = '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="4" y="4" width="92" height="92" rx="8" fill="#c8a27a"/>';
+    for (let r = 0; r < 6; r++) for (let c = 0; c < 2; c++) {
+      const y = 8 + r * 14.5, x0 = c === 0 ? 8 : 92, x1 = c === 0 ? 46 : 54;
+      s += `<polygon points="${x0},${y} ${x1},${y + 7} ${x0},${y + 14}" fill="${(r + c) % 2 ? '#7a4b2a' : '#e8d4b8'}"/>`;
+    }
+    ziele.forEach(([c, r]) => { s += `<circle cx="${c === 0 ? 20 : 80}" cy="${15 + r * 14.5}" r="6.5" fill="none" stroke="#34c759" stroke-width="2.6"/>`; });
+    steine.forEach(([c, r, f, n = 1]) => {
+      for (let k = 0; k < n; k++) s += `<circle cx="${(c === 0 ? 14 + k * 8 : 86 - k * 8)}" cy="${15 + r * 14.5}" r="6" fill="${f === 'A' ? '#fff' : '#1c1c1e'}" stroke="${f === 'A' ? '#9a9aa0' : '#0d0d0d'}" stroke-width="1.5"/>`;
+    });
+    if (pfeil) s += `<path d="M${pfeil[0]} ${pfeil[1]} L${pfeil[2]} ${pfeil[3]}" stroke="#ff9f0a" stroke-width="3" stroke-linecap="round" fill="none"/>`;
+    return s + '</svg>';
+  }
+  _baueHilfe() {
+    const karte = (titel, text, brett) => `<div class="mu-karte">${TavlaUI.miniBrett(brett)}<div><h3>${titel}</h3><p>${text}</p></div></div>`;
+    this.hilfeEl.innerHTML = '<div class="mu-hilfe-inhalt"><h2>So geht Tavla</h2>'
+      + karte('1. Ziel und Ziehen', 'Jeder hat 15 Steine. Weiß zieht einmal um das Brett von links unten über oben nach unten rechts ins Heimfeld. Jeder Würfel ist ein eigener Zug. Ein Pasch (zwei gleiche) gibt vier Züge. Du musst beide Würfel nutzen, wenn es geht; geht nur einer, den größeren.',
+        { steine: [[1, 3, 'A', 3]], ziele: [[1, 4]], pfeil: [60, 52, 60, 66] })
+      + karte('2. Schlagen und Bar', 'Zwei oder mehr Steine einer Farbe sperren einen Punkt. Ein einzelner Stein kann geschlagen werden: er liegt dann auf der Bar in der Mitte und muss mit einem Würfel zuerst wieder ins Spiel.',
+        { steine: [[0, 2, 'A', 1], [0, 4, 'B', 1], [1, 1, 'B', 2]], ziele: [[0, 4]], pfeil: [28, 32, 28, 56] })
+      + karte('3. Abtragen', 'Stehen alle deine Steine im Heimfeld (unten rechts), trägst du sie mit der passenden Augenzahl ab. Ist die Zahl größer als nötig, geht es nur vom höchsten besetzten Punkt.',
+        { steine: [[1, 3, 'A', 2], [1, 4, 'A', 3], [1, 5, 'A', 2]], ziele: [[1, 5]] })
+      + karte('4. Gewinnen und Mars', 'Wer zuerst alle 15 Steine abgetragen hat, gewinnt. Hat der Verlierer dann noch keinen Stein abgetragen, ist es Mars: doppelter Sieg.',
+        { steine: [[1, 5, 'A', 1], [0, 1, 'B', 5]] })
+      + '<div class="mu-hilfe-knoepfe"><button type="button" class="action secondary klein ta-hilfe-uebung">Übung wiederholen</button>'
+      + '<button type="button" class="action klein mu-hilfe-schliessen">Schließen</button></div></div>';
+    this.hilfeEl.querySelector('.mu-hilfe-schliessen').addEventListener('click', () => this._hilfeSchliessen());
+    this.hilfeEl.querySelector('.ta-hilfe-uebung').addEventListener('click', () => { this.hilfeEl.hidden = true; this._starteUebung(); });
+    this.hilfeEl.addEventListener('click', (e) => { if (e.target === this.hilfeEl) this._hilfeSchliessen(); });
+  }
+  _hilfeOeffnen() {
+    this.hilfeEl.hidden = false;
+    this._pausiert();
+  }
+  _hilfeSchliessen() { this.hilfeEl.hidden = true; this._weiterNachPause(); }
+
+  // ---------- Übung ----------
+  _starteUebung() {
+    clearTimeout(this._uebungTimer);
+    this._uebungGeschafft = false; this._uebungStatus = null;
+    this.uebung.starte();
+    this._pausiert();
+    this.render();
+  }
+  _speichereEinfuehrung() { if (TavlaUI.einfuehrung) TavlaUI.einfuehrung.markiere(); }
+  _uebungUeberspringen() {
+    clearTimeout(this._uebungTimer);
+    this.uebung.beende();
+    this._uebungGeschafft = false; this._uebungStatus = null;
+    this._speichereEinfuehrung();
+    this.render();
+    this._weiterNachPause();
+  }
+  _uebungLos() { this._uebungGeschafft = false; this.render(); this._weiterNachPause(); }
+  _uebungTipp(ziel) {
+    const r = this.uebung.tippe(ziel);
+    if (r.invalid) {
+      if (r.hinweis) { this._uebungStatus = 'Nicht dort: tippe auf das leuchtende Feld oder die leuchtende Taste.'; this.render(); }
+      return;
+    }
+    this._uebungStatus = this.uebung.schritt().gut;
+    this._animieren = true;
+    try { this.render(); } finally { this._animieren = false; }
+    this._rueckmeldung(null, true);
+    clearTimeout(this._uebungTimer);
+    this._uebungTimer = setTimeout(() => this._uebungWeiter(), 1800);
+  }
+  _uebungWeiter() {
+    clearTimeout(this._uebungTimer);
+    this._uebungStatus = null;
+    if (this.uebung.weiter()) {
+      this.uebung.beende();
+      this._uebungGeschafft = true;
+      this._speichereEinfuehrung();
+      if (typeof konfetti === 'function') konfetti();
+    }
+    this.render();
+  }
+  _uebungZeigen() {
+    const aktiv = this.uebung && this.uebung.aktiv();
+    this.uebungEl.hidden = !(aktiv || this._uebungGeschafft);
+    if (this.uebungEl.hidden) return;
+    const titel = this.uebungEl.querySelector('.mu-uebung-titel');
+    if (aktiv) { const s = this.uebung.schritt(); titel.textContent = `Übung ${s.nr} von ${this.uebung.anzahl()}: ${s.titel}`; }
+    else titel.textContent = 'Geschafft! Jetzt eine echte Partie.';
+    this.uebungEl.querySelector('.mu-ueberspringen').hidden = !aktiv;
+    this.uebungEl.querySelector('.mu-los').hidden = aktiv;
+  }
+
+  _pausiert() {
+    const p = !!(this.uebung && this.uebung.aktiv()) || !!this._uebungGeschafft || !this.hilfeEl.hidden;
+    this.control.setPause(p);
+    return p;
+  }
+  _weiterNachPause() {
+    if (!this._pausiert() && this.control.isAiTurn()) setTimeout(() => this.runAiTurn(), this.aiDelayMs);
+  }
+  async runAiTurn() {
+    if (this._pausiert()) return;   // Tavla-Computer wartet, bis Übung oder Regelkarten zu sind
+    const outcome = await this.performAiMove();
+    if (outcome.invalid) {
+      if (outcome.erneut) this._weiterNachPause();
+      return;
+    }
+    this.afterMove(outcome.result);
+  }
+  performAiMove() { return this.control.performAiAction(); }
+
+  _knoepfeAktualisieren() {
+    super._knoepfeAktualisieren();
+    if (this.uebung && this.uebung.aktiv()) {
+      if (this.undoBtn) this.undoBtn.disabled = true;
+      if (this.tippBtn) this.tippBtn.disabled = true;
+    }
+  }
+
+  // Ton und Vibration auch beim Würfeln (ein neuer Wurf zählt wie ein Zug)
+  _rueckmeldung(result, bewegt) {
+    const z = this.control.getWurfZaehler(), neu = z !== this._wz;
+    this._wz = z;
+    super._rueckmeldung(result, bewegt || neu);
+  }
+  teilenText() {
+    const t = super.teilenText();
+    return t && this._ergebnis && this._ergebnis.mars ? t + ' (Mars)' : t;
+  }
+
+  // ---------- Eingaben ----------
+  _hinweis(text) {
+    clearTimeout(this._hinweisTimer);
+    this._hinweisText = text;
+    this.render();
+    this._hinweisTimer = setTimeout(() => { this._hinweisText = null; this.render(); }, 1600);
+  }
+  handleWuerfeln() {
+    if (this.uebung && this.uebung.aktiv()) return this._uebungTipp('wuerfeln');
+    if (this._uebungGeschafft) this._uebungLos();
+    if (this._pausiert() || this.control.isAiTurn()) return;
+    this._hinweisText = null;
+    const r = this.control.wuerfeln();
+    if (r.invalid) return;
+    this._wirft = true;
+    this.afterMove(null);
+    this._wirft = false;
+  }
+  handlePunktClick(ziel) {
+    if (this.uebung && this.uebung.aktiv()) return this._uebungTipp(ziel);
+    if (this._uebungGeschafft) this._uebungLos();
+    if (this._pausiert() || this.control.isAiTurn() || this.control.isGameOver()) return;
+    this._hinweisText = null;
+    const outcome = this.control.tippe(ziel);
+    if (outcome.invalid) {
+      this._hinweis(this.control.getPhase() === 'wuerfeln' ? 'Erst würfeln.' : 'Dort kannst du nicht ziehen.');
+      return;
+    }
+    if (outcome.gewaehlt !== undefined) { this.render(); return; }
+    this.afterMove(outcome.result);
+  }
+
+  // ---------- Darstellung ----------
+  _wuerfelZeigen(v) {
+    const [a, b] = v.wurf, zeigen = a === undefined ? [] : (a === b ? [a, a, a, a] : [a, b]);
+    const frei = v.rest.slice(), benutzt = [];
+    zeigen.forEach(n => { const i = frei.indexOf(n); if (i >= 0) { frei.splice(i, 1); benutzt.push(false); } else benutzt.push(true); });
+    this.wuerfelEl.innerHTML = '';
+    zeigen.forEach((n, i) => {
+      const d = document.createElement('div');
+      d.className = 'ta-wuerfel' + (benutzt[i] ? ' benutzt' : '') + (this._wirft ? ' wirft' : '');
+      d.dataset.augen = n; d.setAttribute('role', 'img'); d.setAttribute('aria-label', `Würfel ${n}` + (benutzt[i] ? ', benutzt' : ''));
+      d.innerHTML = TavlaUI.wuerfelSvg(n);
+      this.wuerfelEl.appendChild(d);
+    });
+  }
+
+  render() {
+    const ueb = !!(this.uebung && this.uebung.aktiv());
+    const v = ueb ? this.uebung.ansicht() : this.control.ansicht(this._lernen());
+    this._v = v;
+    const S = k => new Set(v[k]);
+    const quellen = S('quellen'), ziele = S('ziele'), schlag = S('schlag'), gefahr = S('gefahr');
+    const { neu } = this._aenderungen(v.pkt);
+    this.boardEl.innerHTML = '';
+    const baue = (i, g, links) => {
+      const n = Math.abs(v.pkt[i]), besitzer = v.pkt[i] > 0 ? 'a' : v.pkt[i] < 0 ? 'b' : '';
+      const b = document.createElement('button');
+      let cls = 'ta-punkt ' + (links ? 'links' : 'rechts') + (i % 2 ? ' p1' : ' p0') + (besitzer ? ' ' + besitzer : '');
+      if (quellen.has(i)) cls += ' quelle';
+      if (v.selected === i) cls += ' selected';
+      if (ziele.has(i)) cls += ' ziel';
+      if (schlag.has(i)) cls += ' schlag';
+      if (gefahr.has(i)) cls += ' gefahr';
+      if (neu.has(i) && n) cls += ' neu';
+      b.className = cls; b.type = 'button'; b.dataset.i = i; b.style.gridRow = g + 1;
+      b.setAttribute('aria-label', `Punkt ${i + 1}, ` + (n ? `${besitzer === 'a' ? 'weiß' : 'schwarz'}, ${n} ${n === 1 ? 'Stein' : 'Steine'}` : 'frei')
+        + (ziele.has(i) ? ', Ziel' : '') + (quellen.has(i) ? ', ziehbar' : ''));
+      let html = `<span class="ta-nr">${i + 1}</span><span class="ta-steine">`;
+      for (let k = 0; k < Math.min(n, 5); k++) html += `<span class="ta-stein ${besitzer}"></span>`;
+      if (n > 5) html += `<span class="ta-mehr">+${n - 5}</span>`;
+      b.innerHTML = html + '</span>' + (gefahr.has(i) ? '<span class="ta-warn">!</span>' : '');
+      b.addEventListener('click', () => this.handlePunktClick(i));
+      this.boardEl.appendChild(b);
+      return b;
+    };
+    for (let r = 0; r < 12; r++) {
+      const g = r < 6 ? r : r + 1;
+      baue(12 + r, g, true);
+      baue(11 - r, g, false);
+    }
+    const bar = document.createElement('button');
+    bar.type = 'button';
+    bar.className = 'ta-bar' + (quellen.has('bar') ? ' quelle' : '') + (v.selected === 'bar' ? ' selected' : '');
+    bar.style.gridRow = 7;
+    bar.setAttribute('aria-label', `Bar: weiß ${v.bar.A}, schwarz ${v.bar.B}` + (quellen.has('bar') ? ', ziehbar' : ''));
+    let bh = '<span class="ta-bar-gruppe">';
+    for (let k = 0; k < v.bar.A; k++) bh += '<span class="ta-stein a"></span>';
+    bh += '</span><span class="ta-bar-name">Bar</span><span class="ta-bar-gruppe">';
+    for (let k = 0; k < v.bar.B; k++) bh += '<span class="ta-stein b"></span>';
+    bar.innerHTML = bh + '</span>';
+    bar.addEventListener('click', () => this.handlePunktClick('bar'));
+    this.boardEl.appendChild(bar);
+
+    // Abtragen
+    this.abBtn.className = 'ta-ab' + (ziele.has('ab') ? ' ziel' : '');
+    this.abBtn.innerHTML = `Abtragen<span class="ta-ab-zahl">Weiß ${v.ab.A} · Schwarz ${v.ab.B}</span>`;
+    this.abBtn.setAttribute('aria-label', `Abtragen. Weiß ${v.ab.A} von 15, Schwarz ${v.ab.B} von 15` + (ziele.has('ab') ? ', Ziel' : ''));
+
+    // Würfel und Würfeln-Knopf
+    this._wuerfelZeigen(v);
+    const darfWuerfeln = ueb ? (this.uebung.schritt().ziel === 'wuerfeln' && !this.uebung.istGeloest())
+      : (v.phase === 'wuerfeln' && !this.control.isGameOver() && !this.control.isAiTurn() && !this._pausiert());
+    this.wurfBtn.disabled = !darfWuerfeln;
+    this.wurfBtn.classList.toggle('ziel', ueb && darfWuerfeln);
+    this.wurfBtn.querySelectorAll('.mu-blase').forEach(e => e.remove());
+
+    // Sprechblase an das Ziel der Übung
+    if (ueb && !this.uebung.istGeloest()) {
+      const z = this.uebung.schritt().ziel;
+      const el = z === 'wuerfeln' ? this.wurfBtn : z === 'ab' ? this.abBtn : this.boardEl.querySelector(`.ta-punkt[data-i="${z}"]`);
+      if (el) { const bl = document.createElement('span'); bl.className = 'mu-blase ta-blase'; bl.textContent = 'Hier tippen'; el.appendChild(bl); }
+    }
+    this.statusEl.textContent = ueb ? (this._uebungStatus || this.uebung.schritt().text) : (this.control.isGameOver() ? this.statusEl.textContent : this._statusText(v));
+    this._uebungZeigen();
+  }
+
+  // Klartext je Zustand (AK-8): was ist jetzt zu tun?
+  _statusText(v) {
+    if (this._hinweisText) return this._hinweisText;
+    const F = TavlaUI.FARBE, p = v.spieler, c = this.control, info = c.getInfo();
+    const du = c.vsAI && p !== c.aiPlayer;
+    const vor = du ? '' : `${F[p]}: `;
+    const kopf = (info.geschlagen ? 'Geschlagen! ' : '') + (info.teilweise ? 'Rest verfällt. ' : '');
+    if (c.isAiTurn()) return v.phase === 'wuerfeln' ? 'Der Computer (Schwarz) würfelt …' : 'Der Computer (Schwarz) zieht …';
+    if (v.phase === 'wuerfeln') {
+      const pass = info.ausgesetzt ? `Kein Zug möglich: Runde verfällt. ` : '';
+      return `${kopf}${pass}${vor}Tippe auf Würfeln`;
+    }
+    const [a, b] = v.wurf, wurf = a === b ? `${a} und ${a} (vier Züge)` : `${a} und ${b}`;
+    if (v.selected !== null) return `${kopf}${vor}Tippe ein grünes Ziel.`;
+    if (v.bar[p] > 0) return `${kopf}${vor}Erst den Stein von der Bar einwerfen (Würfel ${wurf}).`;
+    return `${kopf}${vor}Du hast ${wurf}. Tippe einen Stein mit Ring.`;
+  }
+
+  renderGameOver(result) {
+    this.render();
+    const F = TavlaUI.FARBE, mars = result.mars;
+    let text;
+    if (this.control.vsAI) text = result.winner === this.control.aiPlayer ? 'Der Computer gewinnt' + (mars ? ' mit Mars.' : '.') : (mars ? 'Mars! Du gewinnst doppelt 🎉' : 'Du gewinnst! 🎉');
+    else text = mars ? `Mars! ${F[result.winner]} gewinnt doppelt 🎉` : `${F[result.winner]} gewinnt! 🎉`;
+    this.statusEl.textContent = text;
+    this._v = this.control.ansicht(this._lernen());
+  }
+
+  // Tipp: Markierung auf Quelle und Ziel (oder auf dem Würfeln-Knopf)
+  _elFuer(t) {
+    if (t === 'bar') return this.boardEl.querySelector('.ta-bar');
+    if (t === 'ab') return this.abBtn;
+    return this.boardEl.querySelector(`.ta-punkt[data-i="${t}"]`);
+  }
+  _tippFelder(zug) { return zug.wuerfeln ? ['wuerfeln'] : [zug.von, zug.nach]; }
+  _zeigeTipp(felder) {
+    clearTimeout(this._tippTimer);
+    const alle = () => [...this.boardEl.querySelectorAll('.tipp'), ...document.querySelectorAll('#taab.tipp, #tawurfBtn.tipp')];
+    alle().forEach(e => e.classList.remove('tipp'));
+    felder.forEach(t => { const e = t === 'wuerfeln' ? this.wurfBtn : this._elFuer(t); if (e) e.classList.add('tipp'); });
+    this._tippTimer = setTimeout(() => alle().forEach(e => e.classList.remove('tipp')), 1600);
+    if (this.ansicht3d && this.ansicht3d.aktiv) this.ansicht3d.markiere(felder.map(t => t === 'wuerfeln' ? 26 : t === 'bar' ? 24 : t === 'ab' ? 25 : t), 1600);
+  }
+}
+
 /* ============================================================
    EINSTELLUNGEN (S-W02): Ton und Stufen je Spiel.
    Boundary: liest und schreibt localStorage mit Formatversion.
@@ -6047,6 +7066,280 @@ class Ansicht3D {
     }
     this.renderer.render(this.szene, this.kamera); this.bilder++;
     if (this.anim.length || this.marken.length || leuchtet) this._bild();
+  }
+}
+
+/* --- Tavla 3D (S-W24, nur UI): eigene Klasse, damit Ansicht3D unberührt bleibt. Liest den Zustand über ui._v,
+     Tippen geht an dieselben Handler wie in 2D (Felder 0 bis 23, 24 = Bar, 25 = Abtragen, 26 = Würfel). --- */
+class TavlaAnsicht3D {
+  static ZEILE = 1.05;      // Abstand der Reihen
+  static HALB = 4;          // halbe Brettbreite
+  static zeileZ(g) { return (g - 6) * TavlaAnsicht3D.ZEILE; }
+  // Reihe im 13er-Raster für Punkt i (Bar liegt in der Mitte)
+  static reihe(i) { const r = i >= 12 ? i - 12 : 11 - i; return r < 6 ? r : r + 1; }
+  static links(i) { return i >= 12; }
+
+  constructor(ui, art) {
+    this.ui = ui; this.art = art; this.aktiv = false; this.anim = []; this.marken = []; this.bilder = 0;
+    this.huelle = document.createElement('div');
+    this.huelle.className = 'brett3d ' + art; this.huelle.hidden = true;
+    ui.boardEl.after(this.huelle);
+  }
+
+  async einschalten() {
+    if (!Ansicht3D.webglMoeglich() || !(await Ansicht3D.laden())) return false;
+    if (!this.renderer) { try { this._aufbauen(); } catch (e) { this.renderer = null; return false; } }
+    this.aktiv = true; this.huelle.hidden = false; this.ui.boardEl.classList.add('versteckt3d');
+    this._groesse(); this.aktualisieren(null, true);
+    return true;
+  }
+  ausschalten() { this._markenWeg(); this.aktiv = false; this.huelle.hidden = true; this.ui.boardEl.classList.remove('versteckt3d'); }
+
+  _aufbauen() {
+    const T = THREE, H = TavlaAnsicht3D.HALB, Z = TavlaAnsicht3D.ZEILE;
+    this.renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    this.huelle.appendChild(this.renderer.domElement);
+    this.szene = new T.Scene();
+    this.kamera = new T.PerspectiveCamera(34, 1, 0.1, 100);
+    this.szene.add(new T.HemisphereLight(0xffffff, 0x606878, 0.6));
+    const sonne = new T.DirectionalLight(0xffffff, 0.9); sonne.position.set(-5, 12, 6); this.szene.add(sonne);
+    this.ray = new T.Raycaster();
+    this.ziele = []; this.stuecke = new T.Group(); this.markGruppe = new T.Group(); this.szene.add(this.stuecke, this.markGruppe);
+    const holz = (seed, farbe) => {
+      const { werte, groesse: n } = Ansicht3D.holzFaktor(seed), c = document.createElement('canvas'); c.width = c.height = n;
+      const g = c.getContext('2d'), bild = g.createImageData(n, n);
+      for (let i = 0; i < werte.length; i++) { const v = Math.round(255 * werte[i]); bild.data.set([v, v, v, 255], i * 4); }
+      g.putImageData(bild, 0, 0);
+      return new T.MeshStandardMaterial({ color: farbe, map: new T.CanvasTexture(c), roughness: 0.75 });
+    };
+    // Brett: Rahmen, Spielfläche, Mittelband (Bar), Ablage unten
+    const tiefe = 13 * Z + 0.6, mitteZ = 0;
+    const rahmen = new T.Mesh(new T.BoxGeometry(2 * H + 0.9, 0.3, tiefe + 0.9), holz(31, 0x7a4a26)); rahmen.position.set(0, -0.2, 0); this.szene.add(rahmen);
+    const flaeche = new T.Mesh(new T.BoxGeometry(2 * H, 0.1, tiefe), holz(21, 0xd9b98f)); flaeche.position.set(0, -0.02, 0); this.szene.add(flaeche);
+    const band = new T.Mesh(new T.BoxGeometry(2 * H, 0.14, Z * 1.02), holz(31, 0x6b3f20)); band.position.set(0, 0.0, mitteZ); this.szene.add(band);
+    const ablageZ = (6.5 * Z) + 0.95;
+    const ablage = new T.Mesh(new T.BoxGeometry(2 * H + 0.9, 0.22, 1.5), holz(31, 0x7a4a26)); ablage.position.set(0, -0.15, ablageZ); this.szene.add(ablage);
+    this.ablageZ = ablageZ;
+    // Punkte: Dreiecke (Spitze zur Mitte) und unsichtbare Tippflächen
+    const dunkel = new T.MeshStandardMaterial({ color: 0x6b3d1f, roughness: 0.8 }), hell = new T.MeshStandardMaterial({ color: 0xf0e2c8, roughness: 0.8 });
+    this.pos = [];
+    for (let i = 0; i < 24; i++) {
+      const g = TavlaAnsicht3D.reihe(i), l = TavlaAnsicht3D.links(i), z = TavlaAnsicht3D.zeileZ(g), s = l ? -1 : 1;
+      const form = new T.Shape(); form.moveTo(0, -0.46); form.lineTo(0, 0.46); form.lineTo(-s * (H - 0.5), 0);
+      const dreieck = new T.Mesh(new T.ShapeGeometry(form), i % 2 ? dunkel : hell);
+      dreieck.rotation.x = -Math.PI / 2; dreieck.position.set(s * H, 0.035, z); dreieck.scale.set(1, 1, 1);
+      // Form liegt in der XY-Ebene (y -> -z nach der Drehung): Spitze bei x = s*H - s*(H-0.5)
+      this.szene.add(dreieck);
+      this.pos[i] = { x: s * H, z, s };
+      this._tippFlaeche(i, s * (H / 2), z, H, Z * 0.96);
+    }
+    this._tippFlaeche(24, 0, mitteZ, 2 * H, Z * 0.96);
+    this._tippFlaeche(25, 0, ablageZ, 2 * H, 1.4);
+    this._tippFlaeche(26, 0, mitteZ, 0.01, 0.01);
+    // Steine und Würfel
+    const stein = new T.CylinderGeometry(0.44, 0.44, 0.2, 28);
+    this.steinGeo = stein;
+    this.steinMat = { A: new T.MeshStandardMaterial({ color: 0xfffdf6, roughness: 0.4 }), B: new T.MeshStandardMaterial({ color: 0x1d1d22, roughness: 0.35 }) };
+    this.randGeo = new T.TorusGeometry(0.44, 0.04, 8, 28);
+    this.randMat = { A: new T.MeshBasicMaterial({ color: 0x9a9aa0 }), B: new T.MeshBasicMaterial({ color: 0xe6e6e6 }) };
+    this.markMat = {
+      quelle: new T.MeshBasicMaterial({ color: 0x0a84ff }), auswahl: new T.MeshBasicMaterial({ color: 0xffd60a }),
+      ziel: new T.MeshBasicMaterial({ color: 0x34c759, transparent: true, opacity: 0.6 }), schlag: new T.MeshBasicMaterial({ color: 0xff9f0a, transparent: true, opacity: 0.7 }),
+      tipp: new T.MeshBasicMaterial({ color: 0x0a84ff, transparent: true, opacity: 0.85 })
+    };
+    this.wuerfelMesh = [0, 1].map(k => this._wuerfel(k));
+    this.wuerfelMesh.forEach(w => this.szene.add(w));
+    this._eingabe();
+    if (window.ResizeObserver) new ResizeObserver(() => { if (this.aktiv) { this._groesse(); this._bild(); } }).observe(this.huelle);
+  }
+
+  _tippFlaeche(feld, x, z, b, t) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(b, t), new THREE.MeshBasicMaterial({ visible: false }));
+    m.rotation.x = -Math.PI / 2; m.position.set(x, 0.3, z); m.userData.feld = feld;
+    this.szene.add(m); this.ziele.push(m);
+  }
+
+  // Würfel: sechs Seiten mit Augen (gegenüber 7: +y 1, -y 6, +x 2, -x 5, +z 3, -z 4)
+  _wuerfel(k) {
+    const T = THREE, seiten = [2, 5, 1, 6, 3, 4];
+    const mat = seiten.map(n => {
+      const c = document.createElement('canvas'); c.width = c.height = 64;
+      const g = c.getContext('2d'); g.fillStyle = '#fbf6ea'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#b3261e';
+      for (const [x, y] of TavlaUI.PUNKTE[n]) { g.beginPath(); g.arc(x * 0.64, y * 0.64, 6, 0, 7); g.fill(); }
+      return new T.MeshStandardMaterial({ map: new T.CanvasTexture(c), roughness: 0.5 });
+    });
+    const m = new T.Mesh(new T.BoxGeometry(0.9, 0.9, 0.9), mat);
+    m.position.set(k ? 0.9 : -0.9, 0.55, 0); m.userData.feld = 26; m.userData.wert = 1;
+    this.ziele.push(m);
+    return m;
+  }
+  static drehung(n) {
+    return { 1: [0, 0, 0], 6: [Math.PI, 0, 0], 2: [0, 0, Math.PI / 2], 5: [0, 0, -Math.PI / 2], 3: [-Math.PI / 2, 0, 0], 4: [Math.PI / 2, 0, 0] }[n];
+  }
+
+  _eingabe() {
+    const el = this.renderer.domElement;
+    let start = null;
+    el.addEventListener('pointerdown', e => { start = { x: e.clientX, y: e.clientY }; try { el.setPointerCapture(e.pointerId); } catch (x) { } });
+    el.addEventListener('pointerup', e => {
+      if (!start) return;
+      const s = start; start = null;
+      if (Math.hypot(e.clientX - s.x, e.clientY - s.y) <= Ansicht3D.ZIEH_SCHWELLE) this.tippen(e.clientX, e.clientY);
+    });
+    el.addEventListener('pointercancel', () => { start = null; });
+  }
+  _groesse() {
+    const b = this.huelle.clientWidth, h = this.huelle.clientHeight;
+    if (!b || !h) return;
+    this.renderer.setSize(b, h, false);
+    this.kamera.aspect = b / h;
+    const k = this.kamera; k.position.set(0, 25, 12.5); k.lookAt(0, 0, 1.0);
+    k.updateProjectionMatrix(); k.updateMatrixWorld();
+  }
+  feldBei(cx, cy) {
+    if (!this.renderer) return null;
+    const r = this.renderer.domElement.getBoundingClientRect();
+    this.ray.setFromCamera(new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1), this.kamera);
+    const treffer = this.ray.intersectObjects([...this.stuecke.children, ...this.ziele], false);
+    for (const t of treffer) { let o = t.object; while (o && o.userData.feld === undefined) o = o.parent; if (o) return o.userData.feld; }
+    return null;
+  }
+  tippen(cx, cy) {
+    const f = this.feldBei(cx, cy);
+    if (f === null || f === undefined) return;
+    if (f === 26) this.ui.handleWuerfeln(); else this.ui.handlePunktClick(f === 24 ? 'bar' : f === 25 ? 'ab' : f);
+  }
+  // Mittelpunkt eines Felds auf dem Bildschirm (für Tests und Tipp)
+  bildschirmPunkt(feld) {
+    const p = this._feldPos(feld).setY(0.3);
+    p.project(this.kamera);
+    const r = this.renderer.domElement.getBoundingClientRect();
+    return { x: r.left + (p.x + 1) / 2 * r.width, y: r.top + (1 - p.y) / 2 * r.height };
+  }
+  _feldPos(f) {
+    const H = TavlaAnsicht3D.HALB;
+    if (f === 24) return new THREE.Vector3(0, 0, 0);
+    if (f === 25) return new THREE.Vector3(0, 0, this.ablageZ);
+    if (f === 26) return new THREE.Vector3(0, 0, 0);
+    const p = this.pos[f]; return new THREE.Vector3(p.x - p.s * (H / 2), 0, p.z);
+  }
+  // Platz des k-ten Steins auf Punkt f (waagerecht von außen zur Mitte, ab dem sechsten eine Lage höher)
+  _steinPos(f, k) {
+    const col = k % 5, lage = Math.floor(k / 5), y = 0.15 + lage * 0.22;
+    if (f === 24 || f === 25) return null;
+    const p = this.pos[f];
+    return new THREE.Vector3(p.x - p.s * (0.55 + col * 0.78 + (lage % 2) * 0.2), y, p.z);
+  }
+
+  // Stand zeichnen: Steine neu aufstellen, neue Steine fallen kurz ein
+  aktualisieren(linie, sofort) {
+    if (!this.aktiv) return;
+    const v = this.ui._v;
+    if (!v) return;
+    this._markenWeg();
+    const alt = this._alt, animieren = !sofort && !!alt && !!this.ui._animieren;
+    this._alt = v.pkt.slice();
+    while (this.stuecke.children.length) { const o = this.stuecke.children[0]; this.stuecke.remove(o); }
+    const jetzt = performance.now();
+    const lege = (farbe, pos, neu, feld) => {
+      const m = new THREE.Mesh(this.steinGeo, this.steinMat[farbe]);
+      const r = new THREE.Mesh(this.randGeo, this.randMat[farbe]); r.rotation.x = Math.PI / 2; r.position.y = 0.1; r.raycast = () => { };
+      m.add(r); m.position.copy(pos); m.userData.feld = feld; m.userData.farbe = farbe;
+      this.stuecke.add(m);
+      if (neu && animieren) { const y = pos.y; m.position.y = y + 2.2; this.anim.push({ t0: jetzt, dauer: 260, f: t => { const u = Math.min(1, t / 260); m.position.y = y + (1 - u * u) * 2.2; }, ende: () => { m.position.y = y; } }); }
+    };
+    for (let i = 0; i < 24; i++) {
+      const n = Math.abs(v.pkt[i]), farbe = v.pkt[i] > 0 ? 'A' : 'B', geaendert = !alt || alt[i] !== v.pkt[i];
+      for (let k = 0; k < n; k++) lege(farbe, this._steinPos(i, k), geaendert && k === n - 1, i);
+    }
+    // Bar und Ablage: links Weiß, rechts Schwarz
+    for (const [farbe, anzahl, x0, s] of [['A', v.bar.A, -3.5, 1], ['B', v.bar.B, 3.5, -1]]) {
+      for (let k = 0; k < anzahl; k++) lege(farbe, new THREE.Vector3(x0 + s * (k % 4) * 0.62, 0.15 + Math.floor(k / 4) * 0.22, 0), false, 24);
+    }
+    for (const [farbe, anzahl, x0, s] of [['A', v.ab.A, -3.6, 1], ['B', v.ab.B, 3.6, -1]]) {
+      for (let k = 0; k < anzahl; k++) {
+        const m = new THREE.Mesh(this.steinGeo, this.steinMat[farbe]); m.scale.set(0.8, 0.45, 0.8);
+        m.position.set(x0 + s * (k % 8) * 0.28, 0.12 + Math.floor(k / 8) * 0.14, this.ablageZ + (Math.floor(k / 8) % 2) * 0.05);
+        m.userData.feld = 25; this.stuecke.add(m);
+      }
+    }
+    // Würfel: Augen nach oben; benutzte kleiner und grau
+    const [a, b] = v.wurf, zeigen = a === undefined ? [1, 1] : [a, b], frei = v.rest.slice();
+    this.wuerfelMesh.forEach((w, k) => {
+      const n = zeigen[k], rest = a === undefined ? false : frei.indexOf(n) >= 0;
+      if (rest) frei.splice(frei.indexOf(n), 1);
+      const d = TavlaAnsicht3D.drehung(n); w.rotation.set(d[0], d[1], d[2]); w.userData.wert = n;
+      w.scale.setScalar(a === undefined || !rest ? 0.8 : 1);
+      w.material.forEach(m => m.color.setScalar(a === undefined || !rest ? 0.55 : 1));
+      if (this.ui._wirft && !sofort) this.anim.push({ t0: jetzt, dauer: 420, f: t => { const u = t / 420; w.rotation.set(d[0] + (1 - u) * 9, d[1] + (1 - u) * 7, d[2]); w.position.y = 0.55 + Math.sin(u * Math.PI) * 1.2; }, ende: () => { w.rotation.set(d[0], d[1], d[2]); w.position.y = 0.55; } });
+    });
+    this._zeichneMarken(v);
+    this._bild();
+  }
+
+  _flach(geo, mat, f, y, s = 1) {
+    const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.position.copy(this._feldPos(f)).setY(y); m.scale.setScalar(s); m.raycast = () => { };
+    this.markGruppe.add(m); return m;
+  }
+  _zeichneMarken(v) {
+    const T = THREE, H = TavlaAnsicht3D.HALB;
+    const feldGeo = new T.PlaneGeometry(H - 0.4, 0.8), ring = new T.RingGeometry(0.5, 0.64, 28);
+    const marke = (i, mat) => {
+      if (i === 'bar') { const m = this._flach(ring, mat, 24, 0.3); m.position.x = -3.5; return; }
+      if (i === 'ab') { this._flach(new T.PlaneGeometry(2 * H - 0.4, 1.2), mat, 25, 0.2); return; }
+      this._flach(feldGeo, mat, i, 0.06);
+    };
+    for (const q of v.quellen) {
+      if (q === 'bar') { const m = this._flach(ring, this.markMat.quelle, 24, 0.3); m.position.x = v.bar.A ? -3.5 : 3.5; continue; }
+      const n = Math.abs(v.pkt[q]), p = this._steinPos(q, Math.max(0, n - 1));
+      const m = new T.Mesh(ring, this.markMat.quelle); m.rotation.x = -Math.PI / 2; m.position.copy(p).setY(p.y + 0.12); m.raycast = () => { }; this.markGruppe.add(m);
+    }
+    if (v.selected !== null && v.selected !== 'bar') {
+      const n = Math.abs(v.pkt[v.selected]), p = this._steinPos(v.selected, Math.max(0, n - 1));
+      const m = new T.Mesh(new T.RingGeometry(0.46, 0.74, 28), this.markMat.auswahl); m.rotation.x = -Math.PI / 2; m.position.copy(p).setY(p.y + 0.14); m.raycast = () => { }; this.markGruppe.add(m);
+    }
+    for (const z of v.ziele) {
+      if (z === 'wuerfeln') { const m = this._flach(new T.RingGeometry(1.5, 1.75, 32), this.markMat.ziel, 24, 0.9); m.position.x = 0; continue; }
+      marke(z, v.schlag.includes(z) ? this.markMat.schlag : this.markMat.ziel);
+    }
+    for (const g of v.gefahr) { const n = Math.abs(v.pkt[g]), p = this._steinPos(g, Math.max(0, n - 1)); const m = new T.Mesh(new T.RingGeometry(0.64, 0.8, 28), this.markMat.schlag); m.rotation.x = -Math.PI / 2; m.position.copy(p).setY(p.y + 0.13); m.raycast = () => { }; this.markGruppe.add(m); }
+  }
+  _markenWeg() {
+    if (!this.markGruppe) return;
+    while (this.markGruppe.children.length) this.markGruppe.remove(this.markGruppe.children[0]);
+    this.marken.forEach(m => { if (m.mesh.parent) m.mesh.parent.remove(m.mesh); });
+    this.marken = [];
+  }
+  markiere(felder, ms) {
+    if (!this.aktiv) return;
+    const bis = performance.now() + ms;
+    for (const f of felder) {
+      const m = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 28), this.markMat.tipp); m.rotation.x = -Math.PI / 2;
+      m.position.copy(this._feldPos(f === 26 ? 24 : f)).setY(0.4); m.raycast = () => { };
+      if (f === 26) m.position.x = 0;
+      this.szene.add(m); this.marken.push({ mesh: m, bis });
+    }
+    this._bild();
+  }
+  // Zahl der Steine und Würfel in der Szene (für Tests)
+  zaehle() {
+    const steine = { A: 0, B: 0 };
+    this.stuecke.children.forEach(m => { const f = m.userData.farbe; if (f) steine[f]++; else steine[m.material === this.steinMat.A ? 'A' : 'B']++; });
+    return { steine, wuerfel: this.wuerfelMesh.length };
+  }
+
+  _bild() {
+    if (!this.aktiv || !this.renderer) return;
+    if (this._raf) return;
+    this._raf = requestAnimationFrame(() => { this._raf = 0; this._schritt(); });
+  }
+  _schritt() {
+    const jetzt = performance.now();
+    this.anim = this.anim.filter(a => { const t = jetzt - a.t0; if (t >= a.dauer) { a.ende(); return false; } a.f(t); return true; });
+    this.marken = this.marken.filter(m => { if (jetzt >= m.bis) { if (m.mesh.parent) m.mesh.parent.remove(m.mesh); return false; } m.mesh.visible = Math.floor(jetzt / 200) % 2 === 0; return true; });
+    this.renderer.render(this.szene, this.kamera); this.bilder++;
+    if (this.anim.length || this.marken.length) this._bild();
   }
 }
 
@@ -6717,6 +8010,19 @@ wireGame({
   dbName: 'dameDB',
   EntityCls: DameEntity, BoundaryCls: DameBoundary,
   ControlCls: DameControl, UICls: DameUI,
+  controlExtraArgs: [aiStrategy]
+});
+
+// S-W24: Tavla. Übung auf eigener Entity, "Übung gesehen" in eigenem Schlüssel, eigene 3D-Klasse.
+GameUI.NAMEN.tavla = 'Tavla';
+GameUI.ANSICHT_3D.push('tavla');
+GameUI.ANSICHT_KLASSEN = Object.assign(GameUI.ANSICHT_KLASSEN || {}, { tavla: TavlaAnsicht3D });
+TavlaUI.neueUebung = () => new TavlaUebungControl(new TavlaBoundary(new TavlaEntity(), new StatsEntity(), null));
+TavlaUI.einfuehrung = new TavlaEinfuehrung(speicher);
+wireGame({
+  dbName: 'tavlaDB',
+  EntityCls: TavlaEntity, BoundaryCls: TavlaBoundary,
+  ControlCls: TavlaControl, UICls: TavlaUI,
   controlExtraArgs: [aiStrategy]
 });
 
