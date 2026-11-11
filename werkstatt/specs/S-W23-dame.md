@@ -1,6 +1,6 @@
 # S-W23: Dame in den Brettspielen
 
-**Status:** freigegeben am 10.11.2026, 21:40 (Wahl "Dame" und "Türkische Dame (Dama)" auf den Auswahlkarten; Baubeginn 11.11.2026 im neuen Aufbau S-W25)
+**Status:** gebaut am 11.11.2026, 09:50 (freigegeben am 10.11.2026, 21:40)
 <!-- Anlass: Betreiber im Projekt-Thread, 10.11.2026: "Brettspiele weitere"; Wahl auf der Auswahlkarte: "Dame" (Vorschläge waren Dame, Vier gewinnt, Tavla, Okey; Vier gewinnt steht schon seit S-W05 in der App). -->
 
 ## Anforderungen (Schritt 0)
@@ -12,7 +12,7 @@
 
 ## Regelvariante (gewählt: türkische Dame)
 - *Türkische Dame (Dama): 8 × 8, 16 Steine je Seite auf Reihe 2 und 3, ziehen und schlagen nur vorwärts und seitwärts, Dame zieht beliebig weit gerade (auch zurück) und schlägt aus der Ferne, Schlagzwang mit Mehrfachsprung, Mehrheitsregel (wer mehr Steine schlagen kann, muss das tun), geschlagene Steine verschwinden sofort, keine Kehrtwende um 180 Grad innerhalb eines Zugs, Umwandlung am Zugende.*
-- Festlegungen für die Fälle, die die Kurzregel offen lässt: Felder 0 bis 63, Feld 0 oben links, Weiß steht unten (Felder 40 bis 55, also zweite und dritte Reihe von unten), Schwarz oben (Felder 8 bis 23); Weiß zieht nach oben, Schwarz nach unten; das Brett wird zu zweit nicht gedreht; Weiß beginnt, der Computer spielt Schwarz. Eine Schlagfolge muss zu Ende gespielt werden. In der Mehrheitsregel zählt jede geschlagene Figur 1, auch eine Dame; es gibt keinen Vorrang für das Schlagen mit der Dame. Die Dame darf nur auf den Feldern hinter dem geschlagenen Stein landen, von denen aus die längste Folge weitergeht. Zwei Steine direkt hintereinander oder ein eigener Stein im Weg sperren den Schlag. Weil geschlagene Steine sofort verschwinden, darf die Folge über das frei gewordene Feld führen; kein Stein wird zweimal geschlagen. Ein Stein, der im Schlag die letzte Reihe erreicht und seitwärts weiterschlagen kann, schlägt als Stein weiter und wird erst am Zugende Dame. Unentschieden (Festlegung für das Spiel am Handy, nicht Teil der überlieferten Regel): dreimal dieselbe Stellung oder 60 Halbzüge ohne Schlag und ohne Zug eines einfachen Steins.
+- Festlegungen für die Fälle, die die Kurzregel offen lässt: Felder 0 bis 63, Feld 0 oben links, Weiß steht unten (Felder 40 bis 55, also zweite und dritte Reihe von unten), Schwarz oben (Felder 8 bis 23); Weiß zieht nach oben, Schwarz nach unten; das Brett wird zu zweit nicht gedreht; Weiß beginnt, der Computer spielt Schwarz. Eine Schlagfolge muss zu Ende gespielt werden. In der Mehrheitsregel zählt jede geschlagene Figur 1, auch eine Dame; es gibt keinen Vorrang für das Schlagen mit der Dame. Die Dame darf nur auf den Feldern hinter dem geschlagenen Stein landen, von denen aus die längste Folge weitergeht. Zwei Steine direkt hintereinander oder ein eigener Stein im Weg sperren den Schlag. Weil geschlagene Steine sofort verschwinden, darf die Folge über das frei gewordene Feld führen; kein Stein wird zweimal geschlagen. Ein Stein, der im Schlag die letzte Reihe erreicht und seitwärts weiterschlagen kann, schlägt als Stein weiter und wird erst am Zugende Dame. Unentschieden (Festlegung für das Spiel am Handy, nicht Teil der überlieferten Regel): dreimal dieselbe Stellung oder 60 Halbzüge ohne Schlag und ohne Schritt eines Steins nach vorn.
 - Internationale Dame (10 × 10, Dame fliegt diagonal), englische Dame (8 × 8, diagonal, Dame zieht einen Schritt).
 - Begründung der Empfehlung: Türkische Dame ist das Spiel, das der Betreiber vermutlich kennt; die Regeln sind kurz und gut als Übung zu erklären. Nicht gewählt: internationale und englische Dame.
 
@@ -29,7 +29,7 @@
 - U-5: Weiß (Spieler) beginnt; ziehbare Steine tragen Ring, Zielfelder leuchten nach Antippen, Statuszeile in Klartext
 - U-6: bei Schlagzwang tragen nur schlagfähige Steine den Ring; Hinweis in der Statuszeile
 - U-7: Computer zieht in gewählter Stufe, Rechenzeit stark unter 1,5 s je Zug (im Worker)
-- U-8: Ende: Sieg, Niederlage oder Unentschieden (dreifache Stellung oder 60 Halbzüge in Folge ohne Schlag und ohne Zug eines einfachen Steins); Konfetti und Ton nur beim Sieg
+- U-8: Ende: Sieg, Niederlage oder Unentschieden (dreifache Stellung oder 60 Halbzüge in Folge ohne Schlag und ohne Schritt eines Steins nach vorn); Konfetti und Ton nur beim Sieg
 - U-9: Zug zurück, Tipp (Lernhilfe) und zu zweit am Handy
 - Alternativen: Neuladen mitten in der Partie (Stand bleibt), Doppeltippen, Neustart während der Computer rechnet
 
@@ -51,8 +51,8 @@
 | AK-3 | Schlagzwang: gibt es einen Schlag, sind alle anderen Züge unzulässig, auch für den Computer (U-2, U-6) | `da_schlag` |
 | AK-4 | Mehrfachsprung wird als ein Zug ausgeführt, jeder übersprungene Stein verschwindet sofort; Mehrheitsregel: nur Folgen mit der höchsten Zahl geschlagener Steine sind zulässig, eine Dame zählt dabei 1; die Folge muss zu Ende gespielt werden; keine Kehrtwende; die Folge darf über frei gewordene Felder führen, kein Stein wird zweimal geschlagen; zwei Steine hintereinander sperren (U-3, U-6) | `da_schlag` |
 | AK-5 | Umwandlung auf der letzten Reihe am Zugende; Dame zieht und schlägt beliebig weit gerade, landet auf jedem freien Feld hinter dem geschlagenen Stein, von dem aus die längste Folge weitergeht; ein Stein, der im Schlag die letzte Reihe erreicht und weiterschlagen kann, bleibt bis zum Zugende Stein (U-4) | `da_dame` |
-| AK-6 | Ende: kein Stein oder kein legaler Zug verliert; dreifache Stellung (mit gleichem Spieler am Zug) und 60 Halbzüge ohne Schlag und ohne Steinzug sind Unentschieden und werden in der Statistik gezählt; wer Steine hat, aber nicht ziehen kann, verliert; Endspiele wie Dame gegen Stein werden nicht gesondert geregelt (U-8) | `da_ende` |
-| AK-7 | Übung (U-1 bis U-4): genau 5 Schritte, je Zeitpunkt 1 Tippziel, falsches Feld ändert nichts; nach der Übung gespeichert (`dameEinfuehrung`), kaputte Einstellungen oder blockierter Speicher stoppen nichts; "Überspringen" speichert ebenfalls; der Merker überlebt das Speichern anderer Einstellungen (Stufe, Ton, zuletzt gespieltes Spiel) | `da_uebung` |
+| AK-6 | Ende: kein Stein oder kein legaler Zug verliert; dreifache Stellung (mit gleichem Spieler am Zug) und 60 Halbzüge ohne Schlag und ohne Schritt eines Steins nach vorn sind Unentschieden und werden in der Statistik gezählt; wer Steine hat, aber nicht ziehen kann, verliert; Endspiele wie Dame gegen Stein werden nicht gesondert geregelt (U-8) | `da_ende` |
+| AK-7 | Übung (U-1 bis U-4): genau 5 Schritte, je Zeitpunkt 1 Tippziel (außer in der kurzen Lobpause nach einem gelösten Schritt, dann 0), falsches Feld ändert nichts; nach der Übung gespeichert (`dameEinfuehrung`), kaputte Einstellungen oder blockierter Speicher stoppen nichts; "Überspringen" speichert ebenfalls; der Merker überlebt das Speichern anderer Einstellungen (Stufe, Ton, zuletzt gespieltes Spiel) | `da_uebung` |
 | AK-8 | Markierung: Ringe, Zielfelder, Tippfläche je Feld mindestens 44 × 44 px bei 412 px Breite; Dame erfüllt die gemeinsamen Regeln aus S-W25 (Kachel mit Bild, Abschnitte in fester Reihenfolge, Brett und Aktionen ohne Scrollen, Querformat mit Brett links) und läuft in `aufbau_test.js` mit; Zeile Optionen enthält genau 2D oder 3D, "?" und Lernhilfe; im räumlichen Brett trifft ein Tipp das Feld (U-5, U-6) | `da_markierung` |
 | AK-9 | Stärke (U-7): Stark gewinnt gegen Leicht mindestens 18 von 20 Partien, Mittel gegen Leicht mindestens 14 von 20 (Farben wechseln je Partie, Unentschieden zählt als nicht gewonnen, Abbruch nach 200 Halbzügen als Unentschieden, Zufall je Partie aus fester Saat); Rechenzeit der Stufe Stark im Worker im Mittel unter 400 ms, höchstens 1500 ms (Playwright am Prüfrechner); gleiche Saat gleiche Züge; der Worker rechnet selbst (kein Rückfall auf die Seite) und liefert für 10 feste Stellungen dieselben Züge wie die Seite | `da_staerke` |
 | AK-10 | (U-10) "?" öffnet 3 Karten, Stellung bleibt unverändert, Computer zieht nicht während die Karten offen sind | `da_hilfe` |
@@ -94,6 +94,8 @@
 | PS-30 | Missbrauch | Computer liefert einen unzulässigen Zug: wird verworfen, zulässiger Zug folgt | AK-3 |
 | PS-31 | Missbrauch | "Überspringen" zehnmal schnell; Merker überlebt Wechsel von Stufe und Ton | AK-7 |
 | PS-32 | Wiederholbarkeit | Zug zurück und derselbe Zug erneut ergibt dieselbe Stellung und denselben Spielstand | AK-11 |
+| PS-34 | Grenzwert | Zwei Steine pendeln seitwärts: beim dritten Mal derselben Stellung Unentschieden; 60 Halbzüge nur mit Seitwärtszügen und Damenzügen: Unentschieden | AK-6 |
+| PS-35 | Grenzwert | Rechengrenze des Computers erreicht: gewählt wird ein vollständig bewerteter Zug; Stark gewinnt gegen Mittel öfter, als es verliert | AK-9 |
 | PS-33 | Normal | Dame in den gemeinsamen Prüfungen des Aufbaus (Kachel, Abschnitte, Sichtbarkeit, Tippflächen, Querformat, auch mit laufender Übung) | AK-8 |
 
 ## Gegenproben
@@ -103,7 +105,7 @@
 ## Technisches Design (Phase 3)
 - Schnittstellen: `DameEntity` mit der reinen, in sich geschlossenen Funktion `DameEntity.dameZuege(cells, spieler)` (alle Konstanten im Rumpf, kein Verweis auf Klassen oder `this`; liefert alle zulässigen Züge als `{ von, pfad, schlaege }`, Schlagzwang und Mehrheitsregel schon angewandt) sowie `zieh(zug)`, `toJSON()`, `loadFromJSON()`, `clone()`, `pruefe(daten)`; `DameBoundary` (`getZuege()`, `ziehe(zug)`, `getSuchStand()` nur mit `cells` und Spieler); `DameControl` (`handleFeldClick(i)` wählt Stein und tippt den Pfad Feld für Feld; Auswahl und Teilpfad liegen nur im Arbeitsspeicher und verfallen bei Neuladen, Zug zurück, Neustart und Moduswechsel; `ansicht(lernen)` liefert das Zwischenbrett ohne die schon geschlagenen Steine; `performAiAction()` mit Zähler `_partie` wie bei Mühle; `setPause(an)`; `restoreGame()` prüft den Stand vor dem Laden); `DameUebungControl` (5 Schritte wie Mühle); `DameUI` (`handleSquareClick(i)` für das räumliche Brett); `AIEngines.dameZuege = DameEntity.dameZuege` nach der Klasse (dieselbe Funktion, kein zweiter Regelcode), `AIEngines.dame(stand, spieler, tiefe, knotenMax)`; beide in die Liste des Workers; `Ansicht3D` bekommt die Art `dame` mit eigenem Aufbau (Brett wie Schach, Steine als Scheiben, Dame mit Krone), eigener Aktualisierung, Markierung und Treffererkennung, dazu CSS `.brett3d.dame` hoch und quer; `EinstellungenBoundary` und `EinstellungenControl` um `dameEinfuehrung` ergänzt (Laden, Speichern, `dameEinfuehrung()`, `setzeDameEinfuehrung()`); Kachel an letzter Stelle, `GameUI.NAMEN`, `GameUI.ANSICHT_3D`, `wireGame({ dbName: 'dameDB' })`.
 - Anpassung bestehender Tests: `aufbau_test.js` (`BRETTER`, `ALLE`, Reihenfolge und Namen der Kacheln, erwartete Optionen, `GESEHEN` mit `dameEinfuehrung`, `warte3d`, Übung hoch und quer), `seite_handy.js` (Zahl der Kacheln 8, Liste der Spiele), `brett_test.js` (Listen für Stufen, Zug zurück, Klang), Gegenproben mit Textankern.
-- Datenformat: Spielstand in `dameDB` mit `formatversion: 1`: `cells` (64 Einträge: `null`, `'W'`, `'B'`, `'WD'`, `'BD'`), `currentPlayer`, `finished`, `winner` (`null`, `'W'`, `'B'`, `'Draw'`), `ruhe` (Halbzüge ohne Schlag und ohne Steinzug, 0 bis 60), `stellungen` (Zähler je Stellung mit Spieler am Zug; wird bei Schlag und Steinzug geleert). Zug zurück wird nicht gespeichert. Einstellungen: optionales Feld `dameEinfuehrung: true`. Ungültiger Stand (siehe AK-11): Neustart und gespeicherter Stand wird gelöscht.
+- Datenformat: Spielstand in `dameDB` mit `formatversion: 1`: `cells` (64 Einträge: `null`, `'W'`, `'B'`, `'WD'`, `'BD'`), `currentPlayer`, `finished`, `winner` (`null`, `'W'`, `'B'`, `'Draw'`), `ruhe` (Halbzüge ohne Schlag und ohne Schritt eines Steins nach vorn, 0 bis 60), `stellungen` (Zähler je Stellung mit Spieler am Zug; wird nur bei Schlag und bei einem Schritt eines Steins nach vorn geleert, weil Seitwärtszüge umkehrbar sind). Zug zurück wird nicht gespeichert. Einstellungen: optionales Feld `dameEinfuehrung: true`. Ungültiger Stand (siehe AK-11): Neustart und gespeicherter Stand wird gelöscht.
 - Alternativen: (a) Regeln im Worker ein zweites Mal schreiben: schneller getippt, aber zwei Stellen für dieselbe Regel (Fehlerquelle wie bei Mühle vor S-W15); (b) Sprungfolge automatisch ausführen, sobald der Stein gewählt ist: weniger Tipps, aber bei mehreren gleich langen Folgen nicht eindeutig; (c) Pfad Feld für Feld tippen, bei eindeutiger Fortsetzung leuchtet nur das nächste Feld: eindeutig und lehrreich.
 - Entscheidung: gemeinsame reine Funktion für Entity und Worker, Pfad Feld für Feld (c); 3D über die vorhandene Ansicht, 2D als Raster mit Feldern ab 44 px.
 - Design-Review: 11.11.2026, zweiter Agent (Sonnet) vor dem Code nur gegen Spec, Regeln und vorhandenen Code: 20 Befunde (10 hoch, 6 mittel, 4 niedrig), alle eingearbeitet: geteilte Funktion muss in sich geschlossen sein und der Worker wird eigens geprüft (PS-23); Zug zurück nicht im Spielstand; Prüfung des Stands vor dem Laden; Regelfälle Umwandlung im Schlag, Landefeld der Dame, frei gewordene Felder, Folge zu Ende spielen (PS-24 bis PS-27); Blockade (PS-29); Unentschieden erst nach 60 statt 40 Halbzügen, damit Endspiele mit Damen gewinnbar bleiben; Felder und Richtung festgelegt; Liste der anzupassenden Tests; eigener Aufbau im räumlichen Brett; Merker in den Einstellungen; Messung der Stärke genau beschrieben; sichtbare Texte ohne Fachwörter.
@@ -126,3 +128,47 @@
 
 ## Betroffene Schichten
 Neue Entity, Boundary, Control und UI für Dame in `brettspiele/index.html`; neues gespeichertes Feld `dameEinfuehrung` und Gerätespeicher `dameDB` (mit der Wahl von Dame und Regelvariante am 10.11.2026 freigegeben).
+
+## Ergebnis (11.11.2026, vor dem Gerätetest)
+- Messwerte (`da_staerke`, Desktop-Chromium, Software-GL): Stark gegen Leicht 20 von 20 Siegen (0 Niederlagen), Mittel gegen Leicht 17 von 20, Stark gegen Mittel 18 von 20 Siegen (0 Niederlagen); Rechenzeit Stark im Worker im Mittel 7 ms, höchstens 63 ms bei 193 Stellungen, Endspiele mit Damen und die Stellung mit je 4 Damen und vielen Schlagwegen 1 bis 54 ms (Grenze 1500 ms); Seite wächst von 276 907 auf 311 200 Byte (+34 293 Byte, Grenze 45 KB).
+- Abweichung: Im räumlichen Brett gibt es keine Sprechblase "Hier tippen" (dort leuchtet das grüne Zielfeld, die Statuszeile nennt das Ziel); die Blase steht im flachen Brett. Die Übung läuft in beiden Ansichten über dieselbe Control.
+- Gegenproben: `gegenproben_dame.py` mit 42 Verstößen (darunter 5 "zu streng"-Proben: Abbiegen, Seitwärtszug, Dame nur vorwärts, nur ein Schlagweg, gültiger Stand verworfen) und 3 Fehlalarm-Proben, alle wie erwartet; drei Mühle-Gegenproben mussten eindeutige Textanker bekommen, weil Dame dieselben Textstellen nutzt (siehe Fehlerliste).
+- Bestehende Regeln: kein Fehler in den vorgebauten Regeln gefunden.
+- Code-Review (unabhängiger zweiter Agent, nur gegen Spec und Regeln): 20 Befunde (1 hoch, 4 mittel, 15 niedrig), alle eingearbeitet:
+  - hoch: Lücke beim Unentschieden, seitwärts pendelnde Steine setzten die Zähler zurück und die Partie konnte nie enden; jetzt setzt nur Schlag oder ein Schritt nach vorn zurück (PS-34).
+  - mittel 1: Rechengrenze nahm einen unvollständig bewerteten Zug; jetzt zählt an der Wurzel nur ein vollständig bewerteter Zug (Abbruchmarke, PS-35).
+  - mittel 2: Tipp mitten in der Sprungfolge zeigte den Anfang statt des nächsten Felds; jetzt setzt er am bisherigen Pfad an.
+  - mittel 3: Reihenfolge der Ansicht im Zwischenbrett (Stein auf halbem Weg); jetzt Pfad vor Brett.
+  - mittel 4: Gegenproben zeigten auf geänderte Textstellen oder waren zu lasch; Anker erneuert, fünf "zu streng"-Proben ergänzt.
+  - niedrig: Hinweis "Schlagen ist Pflicht." bei gesperrtem Stein ohne Lernhilfe; Übung ohne Speicher wirft keinen Fehler mehr; Lobpause in AK-7 benannt; PS-17 vergleicht Bilder zweier getrennter Läufe; PS-33 misst statt Text zu suchen; `warte3d` verschluckt bei Dame keinen 3D-Fehler; Teilen als vierter Knopf nach dem Ende, bricht um statt überzulaufen; Hilfe mit `aria-modal`, Fokus und Esc; Text "60 Züge ohne Schlag und ohne Schritt nach vorn" in Karte und Endtext; Rechenzeit auch mit schwerer Stellung geprüft; 3D-Test zählt Objekte, vergleicht Markierungen mit der Ansicht, Wechsel 2D/3D mitten im Pfad, kein Wachstum nach 40 Zügen, kein WebGL spielbar in 2D; Tipp-Ring orange statt blau wie Ziehbar-Ring; doppelt gebaute Ringgeometrie entfernt; Gegenprobe "Computer: unzulässige Antwort ungeprüft" umbenannt; echte Fehlalarm-Proben.
+
+## Clean Code (Phase 9)
+- Clean Code: Prüfergebnis: Dame teilt die Regelfunktion mit dem Worker (keine zweite Regelstelle), `DameEntity.clone()` entfernt, doppelte Ringgeometrie entfernt, Übung als eigene Control; die Seite bleibt bewusst eine Datei und wuchs auf 311 200 Byte (+34 293 Byte, unter der Grenze von 45 KB)
+
+## E2E
+| Schritt | Test |
+| --- | --- |
+| U-1 | da_uebung |
+| U-2 | da_schlag |
+| U-3 | da_schlag |
+| U-4 | da_dame |
+| U-5 | da_regeln |
+| U-6 | da_markierung |
+| U-7 | da_staerke |
+| U-8 | da_ende |
+| U-9 | da_speicher |
+| U-10 | da_hilfe |
+
+## Dokumentation
+- Aktualisiert: werkstatt/specs/S-W23-dame.md
+- Aktualisiert: werkstatt/tests/dame_test.js
+- Aktualisiert: werkstatt/tests/gegenproben_dame.py
+- Aktualisiert: werkstatt/tests/gegenproben_muehle.py
+- Aktualisiert: werkstatt/tests/aufbau_test.js
+- Aktualisiert: werkstatt/tests/brett_test.js
+- Aktualisiert: werkstatt/tests/schule_test.js
+- Aktualisiert: werkstatt/seite_handy.js
+- Aktualisiert: werkstatt/abnahme/S-W23-dame.md
+- Aktualisiert: werkstatt/alle_tests.sh
+- Aktualisiert: werkstatt/README.md
+- Aktualisiert: werkstatt/fehlerliste.md

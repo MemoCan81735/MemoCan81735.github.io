@@ -10,7 +10,7 @@ const PORT = 8000 + Math.floor(Math.random() * 900);
 const URL_ = `http://127.0.0.1:${PORT}/brettspiele/`;
 const SCHLUESSEL = 'brettspiele.einstellungen';
 const HOCH = { width: 412, height: 915 }, QUER = { width: 915, height: 412 };
-const BRETTER = ['chess', 'muehle', 'connect4', 'othello', 'mangala', 'tictactoe'];   // Spiele mit Brett und Abschnitten
+const BRETTER = ['chess', 'muehle', 'connect4', 'othello', 'mangala', 'tictactoe', 'dame'];   // Spiele mit Brett und Abschnitten
 const ALLE = [...BRETTER, 'schule'];
 
 let browser;
@@ -34,9 +34,9 @@ const zu = async p => p.context().close();
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
 const pruefe = (bed, text) => { if (!bed) throw new Error(text); };
-const GESEHEN = { formatversion: 1, ton: false, stufen: {}, ansicht: {}, lernen: {}, muehleEinfuehrung: true };
+const GESEHEN = { formatversion: 1, ton: false, stufen: {}, ansicht: {}, lernen: {}, muehleEinfuehrung: true, dameEinfuehrung: true };
 const oeffne = async (p, spiel, ms = 350) => { await p.evaluate(s => document.querySelector(`.tabBtn[data-tab=${s}]`).click(), spiel); await p.waitForTimeout(ms); };
-const warte3d = async (p, spiel) => { if (spiel === 'chess' || spiel === 'connect4') await p.waitForFunction(s => { const u = window.__brett[s].ui; return u.ansicht3d && u.ansicht3d.aktiv; }, spiel, { timeout: 15000 }).catch(() => { }); await p.waitForTimeout(150); };
+const warte3d = async (p, spiel) => { if (spiel === 'chess' || spiel === 'connect4' || spiel === 'dame') await p.waitForFunction(s => { const u = window.__brett[s].ui; return u.ansicht3d && u.ansicht3d.aktiv; }, spiel, { timeout: 15000 }).catch(e => { if (spiel === 'dame') throw e; }); await p.waitForTimeout(150); };
 
 // Hilfsfunktionen im Browser
 const HILFE = () => {
@@ -85,9 +85,9 @@ test('au_auswahl', async () => {
   }
   if (a.hoehe > 915) out.push(`Auswahl braucht Scrollen (${a.hoehe} px)`);
   const folge = a.kacheln.slice().sort((x, y) => x.m.t - y.m.t || x.m.l - y.m.l).map(k => k.spiel).join();   // so, wie der Spieler sie sieht
-  if (folge !== 'chess,schule,muehle,connect4,othello,mangala,tictactoe') out.push(`Reihenfolge der Kacheln: ${folge}`);
+  if (folge !== 'chess,schule,muehle,connect4,othello,mangala,tictactoe,dame') out.push(`Reihenfolge der Kacheln: ${folge}`);
   // PS-1: jede Kachel öffnet ihr Spiel, Kopfzeile nennt es
-  const NAMEN = { chess: 'Schach', muehle: 'Mühle', connect4: 'Vier gewinnt', othello: 'Reversi', mangala: 'Mangala', tictactoe: 'Tic Tac Toe', schule: 'Schachschule' };
+  const NAMEN = { chess: 'Schach', muehle: 'Mühle', connect4: 'Vier gewinnt', othello: 'Reversi', mangala: 'Mangala', tictactoe: 'Tic Tac Toe', schule: 'Schachschule', dame: 'Dame' };
   for (const s of ALLE) {
     const x = await p.evaluate(async (s) => {
       window.__brett.tabs.zeigeAuswahl();
@@ -305,7 +305,7 @@ test('au_anordnung', async () => {
     await oeffne(p, s); await warte3d(p, s);
     const x = await pruefeSpiel(s);
     // PS-10: Spiele ohne Optionen zeigen keinen Abschnitt, Spiele mit 3D oder Lernhilfe schon
-    const erwartet = { chess: ['2D', 'Lernhilfe an'], connect4: ['2D'], muehle: ['?', 'Lernhilfe an'], othello: [], mangala: [], tictactoe: [] }[s];
+    const erwartet = { chess: ['2D', 'Lernhilfe an'], connect4: ['2D'], muehle: ['?', 'Lernhilfe an'], othello: [], mangala: [], tictactoe: [], dame: ['2D', '?', 'Lernhilfe an'] }[s];
     if (x.optionen.map(k => k.text).sort().join('|') !== erwartet.slice().sort().join('|')) out.push(`${s}: Optionen sind ${x.optionen.map(k => k.text).join('|')}`);
     // gegen den Computer: Stufen erscheinen, Reihenfolge bleibt
     await p.evaluate(() => { const v = document.querySelector('.tab-content.active'); v.querySelector('[data-abschnitt="modus"] input[value=ai]').click(); });
@@ -332,11 +332,12 @@ test('au_sichtbar', async () => {
   const p = await seite();   // ohne "gesehen": die Mühle-Übung läuft (PS-13)
   for (const s of BRETTER) {
     await oeffne(p, s); await warte3d(p, s);
-    const x = await p.evaluate(() => { window.scrollTo(0, 0); return { st: window.__abschnitt('status'), br: window.__abschnitt('brett'), ak: window.__abschnitt('aktionen'), ueb: window.__sichtbar(document.getElementById('muuebung')) }; });
+    const x = await p.evaluate(() => { window.scrollTo(0, 0); return { st: window.__abschnitt('status'), br: window.__abschnitt('brett'), ak: window.__abschnitt('aktionen'), ueb: window.__sichtbar(document.getElementById('muuebung')), uebD: window.__sichtbar(document.getElementById('dauebung')) }; });
     if (!x.st || !x.br || !x.ak) { out.push(`${s}: Abschnitt fehlt`); continue; }
     if (x.st.t < 0 || x.br.t < x.st.t) out.push(`${s}: Statuszeile nicht über dem Brett`);
     if (x.ak.b > 915) out.push(`${s}: Aktionen enden bei ${x.ak.b} px`);
     if (s === 'muehle' && !x.ueb) out.push('Mühle: Übung läuft nicht (Prüfung PS-13 greift nicht)');
+    if (s === 'dame' && !x.uebD) out.push('Dame: Übung läuft nicht (Prüfung greift nicht)');
     await p.evaluate(() => window.__brett.tabs.zeigeAuswahl());
   }
   // Schach mit Lernsatz (PS-13)
@@ -361,7 +362,7 @@ test('au_tippflaechen', async () => {
       if (BRETTER.includes(s)) {   // gegen den Computer kommen die Stufen dazu
         m[s + ' Computer'] = await p.evaluate(() => { const v = document.querySelector('.tab-content.active'); v.querySelector('[data-abschnitt="modus"] input[value=ai]').click(); const r = { klein: window.__zuKlein(), breit: window.__ueberbreite() }; v.querySelector('[data-abschnitt="modus"] input[value=pvp]').click(); return r; });
       }
-      if (s === 'chess' || s === 'connect4') {   // auch das flache Brett
+      if (s === 'chess' || s === 'connect4' || s === 'dame') {   // auch das flache Brett
         await p.evaluate(() => document.querySelector('.tab-content.active .ansicht-knopf').click()); await p.waitForTimeout(200);
         m[s + ' 2D'] = await p.evaluate(() => ({ klein: window.__zuKlein(), breit: window.__ueberbreite(), felder: document.querySelectorAll('.tab-content.active [data-abschnitt="brett"] button').length }));
         await p.evaluate(() => document.querySelector('.tab-content.active .ansicht-knopf').click()); await warte3d(p, s);
@@ -370,6 +371,11 @@ test('au_tippflaechen', async () => {
         await p.evaluate(() => { const u = window.__brett.muehle.ui; if (u.uebung.aktiv()) u._uebungUeberspringen(); u._hilfeOeffnen(); });
         m['muehle Karten'] = await p.evaluate(() => ({ klein: window.__zuKlein(), breit: window.__ueberbreite() }));
         await p.evaluate(() => window.__brett.muehle.ui._hilfeSchliessen());
+      }
+      if (s === 'dame') {   // Regelkarten
+        await p.evaluate(() => { const u = window.__brett.dame.ui; if (u.uebung.aktiv()) u._uebungUeberspringen(); u._hilfeOeffnen(); });
+        m['dame Karten'] = await p.evaluate(() => ({ klein: window.__zuKlein(), breit: window.__ueberbreite() }));
+        await p.evaluate(() => window.__brett.dame.ui._hilfeSchliessen());
       }
       if (s === 'schule') {
         await p.evaluate(() => document.querySelector('#sclektionen .sc-eintrag').click()); await p.waitForTimeout(200);
@@ -456,11 +462,11 @@ test('au_quer', async () => {
       const x = await lies();
       if (!x.st || !x.br || !x.ak) { out.push(`${n} ${s}: Abschnitt fehlt`); continue; }
       if (x.feld !== null && x.feld < 32) out.push(`${n} ${s}: Feld nur ${x.feld} px`);
-      if (s === 'chess' || s === 'connect4') {   // auch das flache Brett passt ins Bild
+      if (s === 'chess' || s === 'connect4' || s === 'dame') {   // auch das flache Brett passt ins Bild
         await p.evaluate(() => document.querySelector('.tab-content.active .ansicht-knopf').click()); await p.waitForTimeout(250);
         const y = await lies();
         if (!y.br || y.br.t < 0 || y.br.b > vp.height) out.push(`${n} ${s} flach: Brett nicht vollständig sichtbar (${y.br && y.br.t} bis ${y.br && y.br.b})`);
-        if (s === 'chess' && (y.feld === null || y.feld < 32)) out.push(`${n} ${s} flach: Feld ${y.feld} px`);
+        if ((s === 'chess' || s === 'dame') && (y.feld === null || y.feld < 32)) out.push(`${n} ${s} flach: Feld ${y.feld} px`);
         if (y.breit > 0) out.push(`${n} ${s} flach: ragt ${y.breit} px seitlich hinaus`);
         await p.evaluate(() => document.querySelector('.tab-content.active .ansicht-knopf').click()); await warte3d(p, s);
       }
@@ -483,6 +489,11 @@ test('au_quer', async () => {
     const mu = await e.evaluate(() => ({ ak: window.__abschnitt('aktionen'), br: window.__abschnitt('brett'), ueb: window.__sichtbar(document.getElementById('muuebung')) }));
     if (!mu.ueb) out.push(`${n}: Mühle-Übung läuft nicht (Prüfung greift nicht)`);
     if (mu.ak.b > vp.height || mu.br.b > vp.height) out.push(`${n} Mühle mit Übung: Brett bis ${mu.br.b}, Aktionen bis ${mu.ak.b}`);
+    await e.evaluate(() => window.__brett.tabs.zeigeAuswahl());
+    await oeffne(e, 'dame'); await warte3d(e, 'dame');
+    const da = await e.evaluate(() => ({ ak: window.__abschnitt('aktionen'), br: window.__abschnitt('brett'), ueb: window.__sichtbar(document.getElementById('dauebung')) }));
+    if (!da.ueb) out.push(`${n}: Dame-Übung läuft nicht (Prüfung greift nicht)`);
+    if (da.ak.b > vp.height || da.br.b > vp.height) out.push(`${n} Dame mit Übung: Brett bis ${da.br.b}, Aktionen bis ${da.ak.b}`);
     await e.evaluate(() => window.__brett.tabs.zeigeAuswahl());
     await oeffne(e, 'chess'); await warte3d(e, 'chess');
     await e.evaluate(() => { const l = document.getElementById('chlernsatz'); l.hidden = false; l.textContent = 'Dein Springer greift den Bauern an. Der Bauer ist gedeckt, ein Schlag würde den Springer kosten.'; });
