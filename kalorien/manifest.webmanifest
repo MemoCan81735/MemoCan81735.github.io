@@ -1,0 +1,14 @@
+{
+ "name": "Kalorien-Tracker",
+ "short_name": "Kalorien",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#F3F5F0",
+ "theme_color": "#2C6636",
+ "icons": [
+  {"src": "../bilder/symbole/kalorien-192.png", "sizes": "192x192", "type": "image/png"},
+  {"src": "../bilder/symbole/kalorien-512.png", "sizes": "512x512", "type": "image/png"}
+ ]
+}
