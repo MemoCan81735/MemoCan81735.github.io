@@ -340,7 +340,7 @@ test('s_handy', async () => {
   });
   const f = p.fehler; await zu(p);
   console.log(`       Feld ${r.feld.toFixed(0)} px, ${r.reiter} Reiter`);
-  pruefe(r.quer <= 0 && r.feld >= 44 && r.reiter >= 7 && r.raus === 0, JSON.stringify(r));
+  pruefe(r.quer <= 0 && r.feld >= 44 && r.reiter === 9 && r.raus === 0, JSON.stringify(r));
   pruefe(f.length === 0, f.join(' | '));
 });
 
