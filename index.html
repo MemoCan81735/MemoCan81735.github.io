@@ -12,7 +12,7 @@
 <style>
   :root {
     --bg: #0f1420; --karte: #1a2233; --rand: #2a3550; --text: #eef2f8; --leise: #9aa7bd;
-    --renn: #ffb020; --brett: #4fc3a1; --malen: #e8869f; --basteln: #6fb7e8;
+    --renn: #ffb020; --brett: #4fc3a1; --malen: #e8869f; --basteln: #6fb7e8; --alltag: #8fd3ab;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
@@ -23,10 +23,10 @@
   nav { display: flex; gap: 8px; margin: 22px 0 8px; flex-wrap: wrap; }
   nav a { text-decoration: none; color: var(--text); border: 1px solid var(--rand);
     padding: 7px 14px; border-radius: 999px; font-size: 14px; }
-  nav a.renn { border-color: var(--renn); } nav a.brett { border-color: var(--brett); } nav a.malen { border-color: var(--malen); } nav a.basteln { border-color: var(--basteln); }
+  nav a.renn { border-color: var(--renn); } nav a.brett { border-color: var(--brett); } nav a.malen { border-color: var(--malen); } nav a.basteln { border-color: var(--basteln); } nav a.alltag { border-color: var(--alltag); }
   h2 { margin: 30px 0 12px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
   h2::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--farbe); }
-  section { --farbe: var(--renn); } section.brett { --farbe: var(--brett); } section.malen { --farbe: var(--malen); } section.basteln { --farbe: var(--basteln); }
+  section { --farbe: var(--renn); } section.brett { --farbe: var(--brett); } section.malen { --farbe: var(--malen); } section.basteln { --farbe: var(--basteln); } section.alltag { --farbe: var(--alltag); }
   .raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
   a.karte { display: block; text-decoration: none; color: inherit; background: var(--karte);
     border: 1px solid var(--rand); border-radius: 14px; overflow: hidden; transition: transform .15s, border-color .15s; }
@@ -51,6 +51,7 @@
     <a class="brett" href="#brettspiele">Brettspiele</a>
     <a class="malen" href="#malen">Malen</a>
     <a class="basteln" href="#basteln">Basteln</a>
+    <a class="alltag" href="#alltag">Alltag</a>
   </nav>
 
   <section id="rennspiele">
@@ -128,6 +129,20 @@
           <h3>Perlenwerkstatt</h3>
           <p>Perlenarmbänder planen: Ideen, Vorschau als Ring, Einkaufsliste mit Reserve und Anleitung. Gummiband, Schmuckfaden, Peyote und Webrahmen.</p>
           <span class="knopf">Planen</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section id="alltag" class="alltag">
+    <h2>Alltag</h2>
+    <div class="raster">
+      <a class="karte" href="kalorien/">
+        <img src="bilder/kalorien.jpg" alt="Tagesring des Kalorien-Trackers mit Richtwert und Knöpfen zum Eintragen" loading="lazy">
+        <div class="inhalt">
+          <h3>Kalorien-Tracker</h3>
+          <p>Mahlzeiten und Sport eintragen, Tagesrichtwert und Woche sehen. Alles bleibt auf deinem Gerät. Foto-Erkennung gibt es nur in der Claude-App.</p>
+          <span class="knopf">Öffnen</span>
         </div>
       </a>
     </div>
