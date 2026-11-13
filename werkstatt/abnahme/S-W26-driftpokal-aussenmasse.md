@@ -1,4 +1,4 @@
-# Abnahme S-W23: Driftpokal Zusammenstoß nach Außenmaßen
+# Abnahme S-W26: Driftpokal Zusammenstoß nach Außenmaßen
 
 Am Handy, https://memocan81735.github.io/driftpokal/ (Seite einmal neu laden).
 

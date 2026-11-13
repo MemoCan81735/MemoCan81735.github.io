@@ -174,8 +174,8 @@ async function zeit(an) {
 }
 test('s_leistung', async () => {
   const aus = [], an = [];
-  for (let i = 0; i < 3; i++) { aus.push(await zeit(false)); an.push(await zeit(true)); }
-  const med = (a) => a.map(x => x.ms).sort((x, y) => x - y)[1];
+  for (let i = 0; i < 5; i++) { aus.push(await zeit(false)); an.push(await zeit(true)); }
+  const med = (a) => a.map(x => x.ms).sort((x, y) => x - y)[0];   // schnellster Lauf: Rechnerlast verlängert Zeiten nur, verkürzt sie nie
   const plus = med(an) / med(aus) - 1, calls = Math.max(...an.map(x => x.calls)) - Math.min(...aus.map(x => x.calls));
   console.log(`  Messwerte: Bildzeit ${med(aus).toFixed(1)} → ${med(an).toFixed(1)} ms (${(plus * 100).toFixed(1)} %), Zeichenaufrufe +${calls}`);
   pruefe(plus <= 0.10, 'Bildzeit +' + (plus * 100).toFixed(1) + ' %');

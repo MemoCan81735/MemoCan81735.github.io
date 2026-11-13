@@ -8,7 +8,7 @@ const path = require('path');
 const ordner = path.resolve(process.argv[2] || path.join(__dirname, '..', '..'));
 const PORT = 8000 + Math.floor(Math.random() * 900);
 const URL_ = `http://127.0.0.1:${PORT}/brettspiele/`;
-const SPIELE = ['tictactoe', 'connect4', 'othello', 'muehle', 'mangala', 'chess'];
+const SPIELE = ['tictactoe', 'connect4', 'othello', 'muehle', 'mangala', 'chess', 'dame'];
 const OHNE_SCHACH = SPIELE.filter(s => s !== 'chess');
 
 let browser;
@@ -24,6 +24,7 @@ async function seite(opts = {}) {
   });
   await p.goto(URL_);
   await p.waitForFunction(() => window.__brett && window.__brett.tictactoe, null, { timeout: 15000 });
+  await p.evaluate(() => document.querySelector('.tabBtn[data-tab=tictactoe]').click());   // S-W25: die Seite beginnt mit der Auswahl
   await p.waitForTimeout(300);
   return p;
 }
@@ -52,6 +53,8 @@ test('zurueck_zweispieler', async () => {
     c = g.mangala.control; s0 = vorher(c); c.playerMove(c.getValidMoves()[0]); out.ma = c.undoMove().invalid === false && vorher(c) === s0;
     // Mühle: Setzphase, dann Ziehphase per gespeichertem Zustand
     c = g.muehle.control; s0 = vorher(c); c.handlePointClick(0); out.mu = c.undoMove().invalid === false && vorher(c) === s0;
+    // Dame: ein Zug (Feld für Feld getippt), dann zurück
+    c = g.dame.control; s0 = vorher(c); c.handleFeldClick(43); c.handleFeldClick(35); out.da = c.getBoardState()[35] === 'W' && c.undoMove().invalid === false && vorher(c) === s0;
     // Missbrauch: 10x zurück nach 3 Zügen
     c = g.tictactoe.control; c.restartGame(); s0 = vorher(c); c.playerMove(4); c.playerMove(0); c.playerMove(8);
     for (let i = 0; i < 10; i++) c.undoMove();
@@ -131,7 +134,7 @@ test('zurueck_knopf_ui', async () => {
   const p = await seite();
   const r = await p.evaluate(() => {
     const out = {};
-    for (const s of ['tictactoe', 'connect4', 'othello', 'muehle', 'mangala', 'chess']) {
+    for (const s of ['tictactoe', 'connect4', 'othello', 'muehle', 'mangala', 'chess', 'dame']) {
       const v = document.getElementById(s + '-view');
       out[s] = !!v.querySelector('button.zurueck, #chundoBtn') && !!v.querySelector('button.tipp-knopf');
     }
@@ -145,8 +148,8 @@ test('zurueck_knopf_ui', async () => {
 test('stufen_tabelle', async () => {
   const p = await seite();
   const r = await p.evaluate(() => {
-    const T = { connect4: [2, 4, 6], othello: [1, 3, 4], mangala: [2, 5, 8], muehle: [1, 2, 4] };
-    const F = { tictactoe: [0.45, 0.15, 0], connect4: [0.25, 0.05, 0], othello: [0.3, 0.05, 0], muehle: [0.4, 0.15, 0], mangala: [0.25, 0.05, 0] };
+    const T = { connect4: [2, 4, 6], othello: [1, 3, 4], mangala: [2, 5, 8], muehle: [1, 2, 4], dame: [1, 2, 4] };
+    const F = { tictactoe: [0.45, 0.15, 0], connect4: [0.25, 0.05, 0], othello: [0.3, 0.05, 0], muehle: [0.4, 0.15, 0], mangala: [0.25, 0.05, 0], dame: [0.4, 0.15, 0] };
     const out = [];
     for (const [s, f] of Object.entries(F)) {
       const c = window.__brett[s].control;
@@ -159,8 +162,8 @@ test('stufen_tabelle', async () => {
       c.setDifficulty('unsinn'); if (c.getDifficulty() !== 'mittel') out.push(`${s} unsinn -> ${c.getDifficulty()}`);
     }
     const ch = window.__brett.chess.control; ch.setDifficulty('unsinn'); if (ch.getDifficulty() !== 'mittel') out.push('chess unsinn');
-    // Stufenwahl in der UI für alle 6 Spiele
-    for (const s of ['tictactoe', 'connect4', 'othello', 'muehle', 'mangala', 'chess']) {
+    // Stufenwahl in der UI für alle 7 Spiele
+    for (const s of ['tictactoe', 'connect4', 'othello', 'muehle', 'mangala', 'chess', 'dame']) {
       const v = document.getElementById(s + '-view');
       if (v.querySelectorAll('.stufen input[type=radio], #chdiff input[type=radio]').length !== 3) out.push(`${s}: keine 3 Stufen in der UI`);
     }
@@ -281,6 +284,7 @@ test('tipp_zug', async () => {
     c = g.othello.control; t = await c.computeHint(); if (!c.getValidMoves().some(m => JSON.stringify(m) === JSON.stringify(t))) out.push('Reversi Tipp ungültig');
     c = g.mangala.control; t = await c.computeHint(); if (!c.getValidMoves().includes(t)) out.push('Mangala Tipp ungültig');
     c = g.muehle.control; t = await c.computeHint(); if (!(t && t.setzen !== undefined && c.getBoardState()[t.setzen] === null)) out.push(`Mühle Tipp ${JSON.stringify(t)}`);
+    c = g.dame.control; t = await c.computeHint(); if (!(t && g.dame.boundary.getZuege().some(z => z.von === t.von && z.pfad[0] === t.nach))) out.push(`Dame Tipp ${JSON.stringify(t)}`);
     c = g.chess.control; t = await c.computeHint(); if (!(t && t.from && t.to && g.chess.boundary.canMove(t.from, t.to))) out.push(`Schach Tipp ${JSON.stringify(t)}`);
     // Kein Tipp nach Ende und bei KI am Zug
     c = g.tictactoe.control; c.playerMove(2); if (!c.isGameOver()) out.push('TTT nicht beendet');
@@ -395,7 +399,7 @@ test('konfetti', async () => {
 test('keine_skriptfehler', async () => {
   const p = await seite();
   await p.evaluate(async () => {
-    for (const t of ['tictactoe', 'connect4', 'othello', 'muehle', 'chess', 'mangala']) {
+    for (const t of ['tictactoe', 'connect4', 'othello', 'muehle', 'chess', 'mangala', 'dame']) {
       document.querySelector(`.tabBtn[data-tab=${t}]`).click();
       document.querySelector(`#${t}-view button.tipp-knopf`)?.click();
       await new Promise(r => setTimeout(r, 150));

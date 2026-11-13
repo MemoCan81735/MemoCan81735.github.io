@@ -18,7 +18,7 @@ async function seite(ansicht) {
   await p.addInitScript((a) => localStorage.setItem('brettspiele.einstellungen', JSON.stringify({ formatversion: 1, ton: false, stufen: {}, ansicht: { chess: a } })), ansicht);
   await p.goto(URL_);
   await p.waitForFunction(() => window.__brett && window.__brett.chess, null, { timeout: 20000 });
-  await p.click('.tabBtn[data-tab=chess]');
+  await p.evaluate(t => document.querySelector(`.tabBtn[data-tab=${t}]`).click(), 'chess');   // S-W25: Kachel der Auswahl, auch wenn das Spiel schon offen ist
   if (ansicht === '3d') await p.waitForFunction(() => window.__brett.chess.ui.ansicht3d && window.__brett.chess.ui.ansicht3d.aktiv, null, { timeout: 20000 });
   await p.waitForTimeout(300);
   return p;

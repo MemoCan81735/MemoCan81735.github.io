@@ -1,4 +1,4 @@
-// Tests für S-W23 (Driftpokal: Zusammenstoß nach Außenmaßen, gleiche Regel wie Driftpokal Version 37 und die Godot-App).
+// Tests für S-W26 (Driftpokal: Zusammenstoß nach Außenmaßen, gleiche Regel wie Driftpokal Version 37 und die Godot-App).
 // Aufruf: node werkstatt/tests/aussenmasse_test.js [ORDNER]   (NUR=name wählt Tests aus)
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');

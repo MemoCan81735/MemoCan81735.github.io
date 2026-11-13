@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gegenproben zu S-W23 (Driftpokal Außenmaße): baut je einen absichtlichen Fehler in eine Kopie der Seite ein
+"""Gegenproben zu S-W26 (Driftpokal Außenmaße): baut je einen absichtlichen Fehler in eine Kopie der Seite ein
 und erwartet, dass der zuständige Test rot wird. Aufruf: python3 werkstatt/tests/gegenproben_aussenmasse.py   (NUR=Teil des Namens wählt Gegenproben aus)"""
 import os, shutil, subprocess, sys, tempfile
 

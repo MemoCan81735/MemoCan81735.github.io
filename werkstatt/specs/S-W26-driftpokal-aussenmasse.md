@@ -1,4 +1,4 @@
-# S-W23: Driftpokal Zusammenstoß nach Außenmaßen
+# S-W26: Driftpokal Zusammenstoß nach Außenmaßen
 
 **Status:** gebaut, freigegeben am 11.11.2026, 05:29
 <!-- Freigabe im Projekt-Thread am 11.11.2026, 05:29: Entscheidungskarte "Wie sollen die Fahrzeuge künftig zusammenstoßen?", Wahl "Echte Außenmaße, beide Fassungen" (HTML und App gleich). -->
@@ -69,10 +69,10 @@ In `tests/gegenproben_aussenmasse.py`: alte Maße, zu große Schwelle, alte Krei
 | U-4 | s_quer |
 
 ## Dokumentation
-- Aktualisiert: werkstatt/specs/S-W23-driftpokal-aussenmasse.md
+- Aktualisiert: werkstatt/specs/S-W26-driftpokal-aussenmasse.md
 - Aktualisiert: werkstatt/tests/aussenmasse_test.js
 - Aktualisiert: werkstatt/tests/gegenproben_aussenmasse.py
-- Aktualisiert: werkstatt/abnahme/S-W23-driftpokal-aussenmasse.md
+- Aktualisiert: werkstatt/abnahme/S-W26-driftpokal-aussenmasse.md
 - Aktualisiert: werkstatt/alle_tests.sh
 
 ## Nicht Teil dieser Änderung
