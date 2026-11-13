@@ -1,6 +1,6 @@
 # S-W23: Dame in den Brettspielen
 
-**Status:** gebaut am 11.11.2026, 09:50 (freigegeben am 10.11.2026, 21:40)
+**Status:** abgenommen am 13.11.2026, 08:40 (freigegeben am 10.11.2026, 21:40; gebaut am 11.11.2026, 09:50; Gerätetest am Handy vom Betreiber am 13.11.2026 abgeschlossen)
 <!-- Anlass: Betreiber im Projekt-Thread, 10.11.2026: "Brettspiele weitere"; Wahl auf der Auswahlkarte: "Dame" (Vorschläge waren Dame, Vier gewinnt, Tavla, Okey; Vier gewinnt steht schon seit S-W05 in der App). -->
 
 ## Anforderungen (Schritt 0)
@@ -172,3 +172,19 @@ Neue Entity, Boundary, Control und UI für Dame in `brettspiele/index.html`; neu
 - Aktualisiert: werkstatt/alle_tests.sh
 - Aktualisiert: werkstatt/README.md
 - Aktualisiert: werkstatt/fehlerliste.md
+
+## Veröffentlichung (Phase 11)
+- Version: Brettspiele mit Dame S-W23 (Commit 80c656c, auf main mit Pull Request 36 als fd86706, 11.11.2026)
+- Änderungen: neues Spiel Dame nach türkischen Regeln mit Computer in drei Stufen, Übung in 5 Schritten, Regelkarten, flachem und räumlichem Brett, eigener Kachel
+- Rückweg: `git revert -m 1 fd86706` auf main (Tavla als neunte Kachel baut darauf auf, die Listen der Kacheln wären nachzuziehen); GitHub Pages veröffentlicht den Rückweg in etwa einer Minute
+- Linkprüfung: 11.11.2026, https://memocan81735.github.io/brettspiele/ geladen, Kachel Dame vorhanden, 64 Felder, Übung startet, keine Skriptfehler; Gerätetest am Handy am 13.11.2026
+- Lizenzen: keine neuen (eigener Code, keine neuen Bibliotheken)
+
+## Rückblick (Phase 14)
+Anforderungen aus dem Anlass (Betreiber, 10.11.2026: "Brettspiele weitere", Wahl "Dame" und "Türkische Dame (Dama)"):
+- A-1: erfüllt (eigene Kachel, Aufbau nach S-W25, gegen den Computer und zu zweit spielbar)
+- A-2: erfüllt (Übung in 5 Schritten beim ersten Start und drei Regelkarten hinter "?", AK-7, AK-10)
+- A-3: erfüllt (flaches und räumliches Brett, Animation, Ton, Konfetti, Zug zurück, Tipp, drei Stufen)
+- A-4: erfüllt (kurze Partien, Rechenzeit des Computers im Mittel unter 10 ms, keine Fremdserver, keine personenbezogenen Daten)
+- A-5: erfüllt (türkische Regeln mit Schlagzwang, Mehrheitsregel, Fernschlag der Dame; Unentschieden als eigene Festlegung, dem Betreiber bei der Abgabe genannt)
+- Messwerte: siehe Ergebnis; Fehler mit frühester Stufe in `werkstatt/fehlerliste.md` (11.11.2026), darunter die Lücke beim Unentschieden aus der Code-Prüfung.

@@ -1,6 +1,6 @@
 # S-W25: Brettspiele einheitlich aufbauen (Navigation, Anordnung, Tippflächen, Querformat)
 
-**Status:** gebaut am 11.11.2026, 06:10 (freigegeben am 11.11.2026, 05:53)
+**Status:** abgenommen am 13.11.2026, 08:40 (freigegeben am 11.11.2026, 05:53; gebaut am 11.11.2026, 06:10; Gerätetest am Handy vom Betreiber am 13.11.2026 abgeschlossen)
 <!-- Freigabe durch den Betreiber im Projekt-Thread: Auftrag "Prüfe generell Design und Navigation und Anordnungen auf den teilseiten von den Brettspielen" (10.11.2026),
      danach Wahl "Aufbau zuerst, dann Dame" auf der Auswahlkarte (Punkt 1 bis 8 der gemeldeten Befunde beheben, Dame kommt danach in den neuen Aufbau).
      Navigation: drei Varianten als Bild gezeigt (navigation-varianten.png); der Betreiber wählte am 11.11.2026, 06:09 "A: Kacheln und schmale Kopfzeile".
@@ -155,7 +155,7 @@ Viele bestehende Tests klicken auf `.tabBtn[data-tab=…]`: die Knöpfe bleiben 
 - Messwerte (11.11.2026, Playwright, 412 × 915 und 915 × 412): `aufbau_test.js` 10 von 10 Tests grün, 38 von 38 Gegenproben erkannt; alle älteren Tests der Brettspiele grün (brett, muehle, brett3d, schach_figuren, lernen, schule, optik, teilen); Wechsel von der Auswahl ins Spiel unter 300 ms; `brettspiele/index.html` 260 828 Byte (vorher 246 463, plus 14 365).
 - Bilder aus Spielersicht (Auswahl und alle Spiele, hoch und quer) angesehen: Kopfzeile überall an derselben Stelle, Brett und Aktionen ohne Scrollen sichtbar, im Querformat Brett links und Knöpfe rechts; Mangala bleibt quer einspaltig (flaches Brett).
 - Nebenbei gefunden: drei ältere Gegenproben (Schachfiguren 1, Lernhilfe 2) griffen schon vor dieser Änderung nicht mehr; berichtigt und in `werkstatt/fehlerliste.md` eingetragen.
-- Offen: Gerätetest nach `werkstatt/abnahme/S-W25-brettspiele-aufbau.md`, besonders Querformat mit eingeblendeter Adressleiste.
+- Gerätetest nach `werkstatt/abnahme/S-W25-brettspiele-aufbau.md` am 13.11.2026 vom Betreiber abgeschlossen, ohne Befund gemeldet.
 
 ## Clean Code (Phase 9)
 - Clean Code: Prüfergebnis: `TabController` neu geschrieben (rund 110 Zeilen, eine Aufgabe: Ansicht und Verlauf), zwei Methoden in den Einstellungen, Abschnitte über `data-abschnitt` statt Sonderregeln je Spiel; wirkungslose Regel und doppelte Überschriften entfernt; die Seite bleibt bewusst eine einzelne HTML-Datei (260 828 Byte).
@@ -182,3 +182,17 @@ Viele bestehende Tests klicken auf `.tabBtn[data-tab=…]`: die Knöpfe bleiben 
 - Aktualisiert: werkstatt/alle_tests.sh
 - Aktualisiert: werkstatt/README.md
 - Aktualisiert: werkstatt/fehlerliste.md
+
+## Veröffentlichung (Phase 11)
+- Version: Brettspiele mit neuem Aufbau S-W25 (Commit 1437c44, auf main mit Pull Request 34 als cc9a606, 11.11.2026)
+- Änderungen: Auswahl mit Kacheln statt Reiterleiste, schmale Kopfzeile mit "‹ Spiele", gleiche Abschnitte in allen Spielen, Tippflächen ab 44 px, Querformat mit Brett links, Lizenzhinweis nur bei Schach
+- Rückweg: `git revert -m 1 cc9a606` auf main (Dame und Tavla bauen darauf auf und müssten mit zurück); GitHub Pages veröffentlicht den Rückweg in etwa einer Minute
+- Linkprüfung: 11.11.2026, https://memocan81735.github.io/brettspiele/ geladen, Kacheln vorhanden; Gerätetest am Handy am 13.11.2026
+- Lizenzen: keine neuen (eigener Code, keine neuen Bibliotheken)
+
+## Rückblick (Phase 14)
+Anforderungen aus dem Anlass (Betreiber, 10.11.2026: Design, Navigation und Anordnung der Brettspiele prüfen; Wahl "Aufbau zuerst, dann Dame" und Variante A):
+- A-1: erfüllt (Befunde 1 bis 8 der Design-Prüfung behoben, AK-1 bis AK-13, gemessen in `aufbau_test.js`)
+- A-2: erfüllt (Aufbau war live, bevor Dame eingebaut wurde; Dame und Tavla folgen ihm und laufen in denselben Prüfungen)
+- A-3: erfüllt (Variante A mit Kacheln und schmaler Kopfzeile)
+- Messwerte: siehe Ergebnis; Fehler mit frühester Stufe in `werkstatt/fehlerliste.md` (11.11.2026). Befunde 9 und 10 (3D und Regelhilfe für weitere Spiele) bleiben bewusst eigene Specs.
