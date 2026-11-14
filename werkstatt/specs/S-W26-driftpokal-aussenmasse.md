@@ -1,6 +1,6 @@
 # S-W26: Driftpokal Zusammenstoß nach Außenmaßen
 
-**Status:** gebaut, freigegeben am 11.11.2026, 05:29
+**Status:** abgenommen am 14.11.2026, 06:02 (am Handy, "Passt"); veröffentlicht 13.11.2026 (PR #35); freigegeben am 11.11.2026, 05:29
 <!-- Freigabe im Projekt-Thread am 11.11.2026, 05:29: Entscheidungskarte "Wie sollen die Fahrzeuge künftig zusammenstoßen?", Wahl "Echte Außenmaße, beide Fassungen" (HTML und App gleich). -->
 
 ## Anlass
@@ -84,3 +84,16 @@ Wände, Itemboxen (rechnen weiter mit Radius 5), Darstellung, Fahrgefühl außer
 
 ## Messwerte
 Quell-Repository, 36 KI-Rennen: größte Überlappung vorher 8,54 WE (1,71 m), nachher 0,40 WE (0,08 m); mittlere Zielzeit +0,15 %; Stöße +25 %.
+
+## Veröffentlichung (Phase 11)
+- Version: Driftpokal mit Außenmaßen S-W26 (Squash 8f1405f auf main, 13.11.2026, PR #35)
+- Änderungen: Fahrzeuge stoßen nach Länge und Breite zusammen statt als kleiner Kreis, gleiche Regel wie Driftpokal Version 37 und die App
+- Rückweg: `git revert 8f1405f` auf main; GitHub Pages veröffentlicht den Rückweg in etwa einer Minute
+- Linkprüfung: aus der Werkstatt nicht abrufbar (Proxy); Stand über origin/main geprüft (capsuleNearest in driftpokal/index.html); am Handy geöffnet und gefahren bei der Abnahme am 14.11.2026
+- Lizenzen: keine neuen (eigener Code, keine neuen Bibliotheken)
+
+## Rückblick (Phase 14)
+Anforderungen aus dem Anlass (Befund am Handy, 11.11.2026: Fahrzeuge stecken ineinander):
+- A-1: erfüllt (Außenmaße wie im Bild, AK-1 bis AK-4; größte Überlappung im Rennen 0,27 WE statt bis zu 8,54 WE)
+- A-2: erfüllt (beide Fassungen gleich: Seite, Driftpokal Version 37 und App 0.926)
+- Fehler mit frühester Stufe: Der Kreis stammte aus der 2D-Fassung und wurde beim Wechsel auf 3D-Modelle nie an deren Maße angepasst; früheste Stufe Spec (Maße des Modells gegen Maß im Zusammenstoß). Ergänzung in der App: Test vergleicht Modell und Kapsel.
