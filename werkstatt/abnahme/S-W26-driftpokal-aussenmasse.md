@@ -8,4 +8,4 @@ Am Handy, https://memocan81735.github.io/driftpokal/ (Seite einmal neu laden).
 - [ ] U-4: Nach einem Dreher seitlich getroffen werden: beide werden getrennt, kein Springen.
 - [ ] Fahrgefühl im Pulk nicht schlechter als vorher, 60 Bilder je Sekunde wie vorher.
 
-Ergebnis:
+Ergebnis: abgenommen am 14.11.2026, 06:02 ("Passt"), ohne Einzelbefunde.

@@ -159,25 +159,33 @@ test('s_bild', async () => {
 });
 
 // ---- Leistung (AK-5, PS-12) ----
-async function zeit(an) {
+// Bildzeit mit und ohne Effekte in DERSELBEN Seite, abwechselnd (aus, an, aus, an, ...): Unterschiede zwischen zwei Seitenaufrufen
+// (Zwischenspeicher, Wärme, Rechnerlast) fallen so heraus; bewertet wird der Median der Verhältnisse benachbarter Paare (an geteilt durch aus), weil beide Blöcke eines Paares denselben Rechnerzustand sehen.
+async function zeitenAbwechselnd(runden) {
   const p = await seite();
   await rennen(p);
-  const r = await p.evaluate(({ an }) => {
-    const R = window.__fxRenderer; FX_LOOK.glare = an; FX_LOOK.sog = an;
-    window.__sonneVor(R);
-    const F = { boosting: true }; for (let i = 0; i < 20; i++) R._updateFx(F, 1 / 60);
-    for (let i = 0; i < 5; i++) R._draw();
-    const t = []; for (let k = 0; k < 5; k++) { const a = performance.now(); for (let i = 0; i < 15; i++) { R._updateFx(F, 1 / 60); R._draw(); } R.renderer.getContext().finish(); t.push((performance.now() - a) / 15); }
-    t.sort((a, b) => a - b); return { ms: t[2], calls: R.stats.calls };
-  }, { an });
+  const r = await p.evaluate(({ runden }) => {
+    const R = window.__fxRenderer;
+    const F = { boosting: true };
+    const block = (an) => {
+      FX_LOOK.glare = an; FX_LOOK.sog = an; window.__sonneVor(R);
+      for (let i = 0; i < 20; i++) R._updateFx(F, 1 / 60);
+      for (let i = 0; i < 3; i++) R._draw();
+      const a = performance.now(); for (let i = 0; i < 15; i++) { R._updateFx(F, 1 / 60); R._draw(); } R.renderer.getContext().finish();
+      return { ms: (performance.now() - a) / 15, calls: R.stats.calls };
+    };
+    const aus = [], an = [];
+    for (let k = 0; k < runden; k++) { aus.push(block(false)); an.push(block(true)); }
+    return { aus, an };
+  }, { runden });
   await p.context().close(); return r;
 }
 test('s_leistung', async () => {
-  const aus = [], an = [];
-  for (let i = 0; i < 5; i++) { aus.push(await zeit(false)); an.push(await zeit(true)); }
-  const med = (a) => a.map(x => x.ms).sort((x, y) => x - y)[0];   // schnellster Lauf: Rechnerlast verlängert Zeiten nur, verkürzt sie nie
-  const plus = med(an) / med(aus) - 1, calls = Math.max(...an.map(x => x.calls)) - Math.min(...aus.map(x => x.calls));
-  console.log(`  Messwerte: Bildzeit ${med(aus).toFixed(1)} → ${med(an).toFixed(1)} ms (${(plus * 100).toFixed(1)} %), Zeichenaufrufe +${calls}`);
+  const { aus, an } = await zeitenAbwechselnd(20);
+  const med = (a) => a.slice().sort((x, y) => x - y)[Math.floor(a.length / 2)];
+  const best = (a) => Math.min(...a.map(x => x.ms));
+  const plus = med(an.map((x, i) => x.ms / aus[i].ms)) - 1, calls = Math.max(...an.map(x => x.calls)) - Math.min(...aus.map(x => x.calls));
+  console.log(`  Messwerte: Bildzeit ${best(aus).toFixed(1)} → ${best(an).toFixed(1)} ms (${(plus * 100).toFixed(1)} %), Zeichenaufrufe +${calls}`);
   pruefe(plus <= 0.10, 'Bildzeit +' + (plus * 100).toFixed(1) + ' %');
   pruefe(calls <= 12, 'Zeichenaufrufe +' + calls);
 });
