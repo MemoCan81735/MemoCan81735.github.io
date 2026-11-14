@@ -11,6 +11,7 @@ FEHLER = [
     ('Blendung über 0,6', 'glareMax: 0.6', 'glareMax: 0.9', 's_blendung'),
     ('Sog klingt nicht ab', 'sogDown: 2.2', 'sogDown: 0.2', 's_sog'),
     ('Sog baut zu langsam auf', 'sogUp: 5,', 'sogUp: 1,', 's_sog'),
+    ('Effekte kosten Bildzeit', 'if (FX_LOOK.glare && this.sunDir && this.look){', 'if (FX_LOOK.glare && this.sunDir && this.look){ for (let w = performance.now(); performance.now() - w < 1.2;); ', 's_leistung'),
     ('Schalter aus wird ignoriert', 'if (FX_LOOK.glare && this.sunDir && this.look){', 'if (this.sunDir && this.look){', 's_verdrahtung'),
     ('Blendung ohne Wirkung im Bild', 'c += vec3(1.0, 0.93, 0.78) * uGlare.z *', 'c += vec3(1.0, 0.93, 0.78) * 0.0 * uGlare.z *', 's_bild'),
     ('Blendung füllt das ganze Bild', 'if (r < 0.5){\n            float a = atan(g.y, g.x);\n            float halo = exp(-r * r * 18.0) * 0.9 + exp(-r * 3.5) * 0.25;\n            float rays = pow(abs(cos(a * 3.0 + 0.4)), 24.0) * exp(-r * 5.0) * 0.5;\n            c += vec3(1.0, 0.93, 0.78) * uGlare.z * (halo + rays) * (1.0 - smoothstep(0.25, 0.5, r));', 'if (true){\n            float a = atan(g.y, g.x);\n            float halo = 1.0;\n            float rays = 0.0;\n            c += vec3(1.0, 0.93, 0.78) * uGlare.z * (halo + rays);', 's_bild'),
