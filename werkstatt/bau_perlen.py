@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Baut perlen/index.html aus dem Bau der Perlenwerkstatt (S-W19): vollständiges Gerüst, ohne Google-Schriften,
-Symbol, Manifest, Zurück-Link statt Untertitel. Aufruf: python3 werkstatt/bau_perlen.py <build/perlenwerkstatt.html>"""
+"""Baut perlen/index.html aus der kleinen Fassung der Perlenwerkstatt (S-W19; seit S-027 nur build/perlenwerkstatt-klein.html, die volle bleibt privat): vollständiges Gerüst, ohne Google-Schriften,
+Symbol, Manifest, Zurück-Link statt Untertitel. Aufruf: python3 werkstatt/bau_perlen.py <build/perlenwerkstatt-klein.html>"""
 import re, sys
 t = open(sys.argv[1], encoding="utf-8").read()
-assert t.startswith("<title>Perlen &amp; Tesbih</title>"), "unerwarteter Anfang"
+assert t.startswith("<title>Perlenwerkstatt</title>"), "unerwarteter Anfang (kleine Fassung erwartet)"
+assert "Perlen.ui.tesbih =" not in t, "volle Fassung statt der kleinen"
 # keine fremden Server: Google-Schriften und Artifact-Hinweis entfernen (Schrift fällt auf Systemschrift zurück)
 t, n = re.subn(r'<link rel="(preconnect|stylesheet)" href="https://fonts\.[^"]*"[^>]*>\n', "", t)
 assert n == 2, n
@@ -21,7 +22,7 @@ kopf = kopf.replace("</style>", css, 1)
 seite = ('<!doctype html>\n<html lang="de">\n<head>\n<meta charset="utf-8">\n'
          '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
          '<meta name="theme-color" content="#2b3446">\n'
-         '<meta name="description" content="Perlen &amp; Tesbih: Armband, Kette, Fußkettchen, Ohrringe und Tesbih planen, mit Ideen, Vorschau, Einkaufsliste und Anleitung, direkt im Browser.">\n'
+         '<meta name="description" content="Perlenarmbänder planen: Ideen, Vorschau, Einkaufsliste und Anleitung, direkt im Browser.">\n'
          '<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/perlen-192.png">\n'
          '<link rel="apple-touch-icon" href="../bilder/symbole/perlen-192.png">\n'
          '<link rel="manifest" href="manifest.webmanifest">\n'

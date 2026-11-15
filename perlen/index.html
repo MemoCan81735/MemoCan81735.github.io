@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2b3446">
-<meta name="description" content="Perlen &amp; Tesbih: Armband, Kette, Fußkettchen, Ohrringe und Tesbih planen, mit Ideen, Vorschau, Einkaufsliste und Anleitung, direkt im Browser.">
+<meta name="description" content="Perlenarmbänder planen: Ideen, Vorschau, Einkaufsliste und Anleitung, direkt im Browser.">
 <link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/perlen-192.png">
 <link rel="apple-touch-icon" href="../bilder/symbole/perlen-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Perlen &amp; Tesbih</title>
+<title>Perlenwerkstatt</title>
 <style>
 /* Layout: eine Spalte wie ein Werktisch; oben die Perlenmatte mit dem Armband, darunter die Werkzeuge; Reiter unten am Daumen. */
 :root {
@@ -292,7 +292,7 @@ return h.toString(16);
 }
 
 return {
-GLAS, glasFarbe, TESBIH, FAMILIEN, FERTIGUNG, STUECKE, OESE_MM, MAKRAMEE_ANTEIL, KNOTEN_MM, GARNE, stueck,
+NAME: ['Perlen', ' & Tesbih'], ERSATZ: {}, GLAS, glasFarbe, TESBIH, FAMILIEN, FERTIGUNG, STUECKE, OESE_MM, MAKRAMEE_ANTEIL, KNOTEN_MM, GARNE, stueck,
 FARBEN, FORMEN, ANHAENGER, GROESSEN, TECHNIKEN, DELICA, STRANG, PREISE, PREIS_NAMEN, LOCH_MM, FADEN_MM, LOCH_SPIEL_MM, FADEN_STUECK_CM, ABC_BEUTEL, KLEMMEN, WUERFEL_MM, BUCHSTABEN, PASSFORMEN, GROESSENHILFE, DICKE_OHNE_ZUGABE,
 FORMAT: 1, UMFANG_MIN, UMFANG_MAX, UMFANG_STANDARD,
 MUSTER_MAX: 40, NAME_MAX: 12, PERLEN_MAX: 400, SPALTEN_MIN: 4, SPALTEN_MAX: 16,
@@ -300,6 +300,20 @@ REIHEN_MIN: 1, REIHEN_MAX: 60, RUNDEN_MAX: 3, ENTWUERFE_MAX: 20, UNDO_TIEFE: 50,
 klemme, perlenLaenge, istRaster, passform, pruefsumme, pruefsummeZahlen
 };
 })();
+
+})();
+
+(function(){
+var Perlen = globalThis.Perlen = globalThis.Perlen || {};
+(function (E) {
+const nur = (tabelle, ids) => { for (const id of Object.keys(tabelle)) if (!ids.includes(id)) delete tabelle[id]; };
+nur(E.TECHNIKEN, ['gummi', 'faden']);
+nur(E.STUECKE, ['armband']);
+E.FARBEN.forEach((f, i) => { if (i >= E.GLAS) E.ERSATZ[i] = f.ersatz; });   // Steine fremder Entwürfe werden ihre Ersatz-Glasfarbe
+E.FARBEN.length = E.GLAS;
+E.NAME = ['Perlen', 'werkstatt'];
+E.FERTIGUNG.aus = true;   // kein Block "Fertig bestellen"
+})(Perlen.entity);
 
 })();
 
@@ -552,12 +566,13 @@ Perlen.control.entwurf = (function () {
 const E = Perlen.entity;
 const kopie = x => JSON.parse(JSON.stringify(x));
 const ganz = (v, n, standard) => (Number.isInteger(v) && v >= 0 && v < n ? v : standard);
-const glas = v => E.glasFarbe(ganz(v, E.FARBEN.length, 0));
+const fremd = v => (Number.isInteger(v) && E.ERSATZ[v] !== undefined ? E.ERSATZ[v] : v);
+const glas = v => E.glasFarbe(ganz(fremd(v), E.FARBEN.length, 0));
 
 function perle(p) {
 p = p && typeof p === 'object' ? p : {};
 return {
-farbe: ganz(p.farbe, E.FARBEN.length, 0),
+farbe: ganz(fremd(p.farbe), E.FARBEN.length, 0),
 groesse: E.GROESSEN.includes(p.groesse) ? p.groesse : 6,
 form: ['rondelle', 'herz', 'tropfen'].includes(p.form) ? p.form : 'rund'
 };
@@ -995,9 +1010,11 @@ entwurf: { technik: 'faden', stueck: 'ohrringe', umfang: 45, muster: [p(GOLD, 6,
 entwurf: { technik: 'faden', stueck: art === 't33' ? 'tesbih33' : 'tesbih99', muster: farben.map(f => p(f, 8)), durak, imame, pueskuel } }))
 ];
 
-const IDEEN = roh.map(i => ({ titel: i.titel, gruppe: i.gruppe || '', beschreibung: i.beschreibung, entwurf: W.bereinige(Object.assign({ titel: i.titel }, i.entwurf)) }));
+const E = Perlen.entity, farbeOk = f => f < E.FARBEN.length;
+const geht = x => (!x.technik || !!E.TECHNIKEN[x.technik]) && (!x.stueck || !!E.STUECKE[x.stueck]) && (x.muster || []).every(q => farbeOk(q.farbe)) && (!x.raster || x.raster.zellen.every(farbeOk));
+const IDEEN = roh.filter(i => geht(i.entwurf)).map(i => ({ titel: i.titel, gruppe: i.gruppe || '', beschreibung: i.beschreibung, entwurf: W.bereinige(Object.assign({ titel: i.titel }, i.entwurf)) }));
 const GRUPPEN = [{ id: '', name: 'Alle' }, { id: 'flagge', name: 'Flaggen' }, { id: 'verein', name: 'Vereinsfarben' }, { id: 'zeichen', name: 'Zeichen' }];
-return { liste: () => JSON.parse(JSON.stringify(IDEEN)), gruppen: () => GRUPPEN.map(g => Object.assign({}, g)) };
+return { liste: () => JSON.parse(JSON.stringify(IDEEN)), gruppen: () => GRUPPEN.filter(g => !g.id || IDEEN.some(i => i.gruppe === g.id)).map(g => Object.assign({}, g)) };
 })();
 
 })();
@@ -1504,6 +1521,7 @@ stueck: st => Object.assign({ id: E.stueck(st) }, kopie(E.STUECKE[E.stueck(st)])
 garne: () => E.GARNE.map(n => ({ id: E.FARBEN.findIndex(f => f.name === n), name: n })),
 istRaster: E.istRaster,
 glas: () => E.GLAS, glasFarbe: E.glasFarbe,
+name: () => E.NAME.join(''), nameTeile: () => E.NAME.slice(),
 perlenLaenge: E.perlenLaenge,
 grenzen: () => ({ umfangMin: E.UMFANG_MIN, umfangMax: E.UMFANG_MAX, musterMax: E.MUSTER_MAX, nameMax: E.NAME_MAX,
 spaltenMin: E.SPALTEN_MIN, spaltenMax: E.SPALTEN_MAX, reihenMin: E.REIHEN_MIN, reihenMax: E.REIHEN_MAX, entwuerfeMax: E.ENTWUERFE_MAX })
@@ -2161,10 +2179,10 @@ return JSON.stringify({ app: APP, format: E.FORMAT, entwuerfe: (entwuerfe || [])
 function lies(text) {
 const nein = fehler => ({ ok: false, entwuerfe: [], fehler });
 if (typeof text !== 'string' || !text.trim()) return nein('Kein Text: bitte den gesicherten Text einfügen.');
-if (text.length > MAX_ZEICHEN) return nein('Der Text ist zu lang für eine Sicherung aus Perlen & Tesbih.');
+if (text.length > MAX_ZEICHEN) return nein('Der Text ist zu lang für eine Sicherung aus ' + E.NAME.join('') + '.');
 let d = null;
 try { d = JSON.parse(text); } catch (x) { return nein('Der Text ist unvollständig oder kaputt (vielleicht beim Kopieren gekürzt).'); }
-if (!d || typeof d !== 'object' || Array.isArray(d) || d.app !== APP || !Array.isArray(d.entwuerfe)) return nein('Das ist kein gesicherter Text aus Perlen & Tesbih.');
+if (!d || typeof d !== 'object' || Array.isArray(d) || d.app !== APP || !Array.isArray(d.entwuerfe)) return nein('Das ist kein gesicherter Text aus ' + E.NAME.join('') + '.');
 const m = F.migriere(d);
 if (!m.ok) return nein(m.neuer ? 'Dieser Text stammt aus einer neueren Version der App. Bitte die App neu laden.' : 'Das Format dieses Textes kennt die App nicht.');
 const roh = m.daten.entwuerfe, gut = roh.filter(e => e && typeof e === 'object' && !Array.isArray(e));
@@ -2315,13 +2333,14 @@ const PFAD = [
 { id: 's5', titel: 'Erster Webrahmen', idee: 'Sternenhimmel', lernst: 'Kettfäden spannen und eine ganze Reihe auf einmal einlegen.' },
 { id: 's6', titel: 'Ein Motiv weben', idee: 'Tulpe (Lale)', lernst: 'Ein Bild Reihe für Reihe nach dem Muster weben; danach eigene Motive oder Text.' }
 ];
+const ideen = Perlen.control.ideen.liste().map(i => i.titel), STUFEN = PFAD.filter(s => ideen.includes(s.idee));
 const haken = id => 'lernen:' + id;
 function stand(h) {
 const ok = id => !!(h && typeof h === 'object' && h[haken(id)] === true);
-const offen = PFAD.find(s => !ok(s.id));
-return { geschafft: PFAD.filter(s => ok(s.id)).length, naechste: offen ? offen.id : null };
+const offen = STUFEN.find(s => !ok(s.id));
+return { geschafft: STUFEN.filter(s => ok(s.id)).length, naechste: offen ? offen.id : null };
 }
-return { pfad: () => PFAD.map(s => Object.assign({}, s)), stand, haken };
+return { pfad: () => STUFEN.map(s => Object.assign({}, s)), stand, haken };
 })();
 
 })();
@@ -2438,10 +2457,10 @@ const istLink = text => typeof text === 'string' && /perle-[a-z2-7]{8,}/i.test(t
 
 function lies(text) {
 const nein = (fehler, neuer) => ({ ok: false, entwurf: null, neuer: !!neuer, fehler });
-if (typeof text !== 'string' || !text.trim()) return nein('Kein Link: bitte einen Link aus Perlen & Tesbih einfügen.');
+if (typeof text !== 'string' || !text.trim()) return nein('Kein Link: bitte einen Link aus ' + E.NAME.join('') + ' einfügen.');
 const m = /perle-([a-z2-7]*)/i.exec(text);
-if (!m) return nein('Das ist kein Link aus Perlen & Tesbih.');
-if (m[1].length > MAX_ZEICHEN) return nein('Der Link ist zu lang für einen Entwurf aus Perlen & Tesbih.');
+if (!m) return nein('Das ist kein Link aus ' + E.NAME.join('') + '.');
+if (m[1].length > MAX_ZEICHEN) return nein('Der Link ist zu lang für einen Entwurf aus ' + E.NAME.join('') + '.');
 const b = ausBase32(m[1].toLowerCase());
 if (!b || b.length < 3) return nein(KAPUTT);
 const daten = b.slice(0, -2), s = summe(daten);
@@ -2543,7 +2562,7 @@ function fuer(datum) {
 const tag = tagNummer(datum);
 if (tag === null) return null;
 const ideen = Perlen.control.ideen.liste().filter(i => i.gruppe !== 'tesbih'), idee = ideen[rest(tag * schritt(ideen.length, 29), ideen.length)];
-const a = AUFGABEN[rest(tag * schritt(AUFGABEN.length, 5), AUFGABEN.length)];
+const L = AUFGABEN.filter(x => x.id !== 'gewebt' || Object.keys(E.TECHNIKEN).some(E.istRaster)), a = L[rest(tag * schritt(L.length, 5), L.length)];   // S-027
 return { datum, idee: { titel: idee.titel, beschreibung: idee.beschreibung, entwurf: idee.entwurf }, aufgabe: { id: a.id, titel: a.titel, text: a.text } };
 }
 function erfuellt(id, e) {
@@ -2561,7 +2580,7 @@ while (jetzt !== null && tage.has(t)) { serie++; t--; }
 return { tage: tage.size, serie, heute: heuteDa };
 }
 
-return { aufgaben: () => AUFGABEN.map(a => ({ id: a.id, titel: a.titel, text: a.text })), fuer, erfuellt, haken, stand };
+return { aufgaben: () => AUFGABEN.filter(x => x.id !== 'gewebt' || Object.keys(E.TECHNIKEN).some(E.istRaster)).map(a => ({ id: a.id, titel: a.titel, text: a.text })), fuer, erfuellt, haken, stand };
 })();
 
 })();
@@ -2677,7 +2696,7 @@ z.push('', 'Entwurf: ' + Perlen.control.link.link(e), '',
 return z.join('\n').slice(0, 2500).replace(/\s+$/, '');
 }
 
-function sichtbar(host, kontakt) { return !!kontakt || !/(^|\.)github\.io$/i.test(String(host || '')); }
+function sichtbar(host, kontakt) { return !F.aus && (!!kontakt || !/(^|\.)github\.io$/i.test(String(host || ''))); }
 
 function starte(fenster) {
 const a = Perlen.boundary.adresse.erzeuge(fenster);
@@ -3382,7 +3401,7 @@ oninput: ev => aendere(e => W.setzeTitel(e, ev.target.value), 'titel'), onblur: 
 return el('div', { class: 'block' },
 el('div', { class: 'zeile', style: 'justify-content:space-between' }, el('h3', {}, 'Muster (wiederholt sich)'), el('span', { class: 'unter', id: 'musterzahl' })),
 teile.muster,
-el('h3', {}, 'Farbe: ' + FARBEN[a.farbe].name), palette(), steine(),
+el('h3', {}, 'Farbe: ' + FARBEN[a.farbe].name), palette(), FARBEN.length > GLAS ? steine() : null,
 ...(K.stueck(aktuell().stueck).tesbih ? [] : [B.wahl(K.formen(), a.form, f => { a.form = f; baue(); }, 'Form'),   // S-024: Tesbih rund in fester Größe
 B.wahl(K.groessen().map(g => ({ id: g, name: g + ' mm' })), a.groesse, g => { a.groesse = g; baue(); }, 'Größe')]),
 el('button', { type: 'button', class: 'knopf haupt', id: 'anfuegen', onclick: () => aendere(e => W.perleAnfuegen(e, { farbe: a.farbe, form: a.form, groesse: a.groesse })) }, 'Perle anfügen'),
@@ -3412,8 +3431,8 @@ const techniken = K.techniken().filter(t => !st.paar || (t.id !== 'gummi' && t.i
 const d = el('details', { class: 'block einstellungen', id: 'einstellungen' },
 el('summary', {}, el('span', { class: 'kurz-text' }, el('span', { class: 'kurz-titel' }, 'Schmuckstück, Technik und Größe'), teile.kurz)),
 el('div', { class: 'stapel' },
-el('h3', {}, 'Schmuckstück'),
-B.wahl(K.stuecke().filter(s => !s.tesbih === !st.tesbih).map(s => ({ id: s.id, name: s.name })), e.stueck, s => aendere(x => W.setzeStueck(x, s)), 'Schmuckstück', true),
+K.stuecke().length < 2 ? null : el('h3', {}, 'Schmuckstück'),
+K.stuecke().length < 2 ? null : B.wahl(K.stuecke().filter(s => !s.tesbih === !st.tesbih).map(s => ({ id: s.id, name: s.name })), e.stueck, s => aendere(x => W.setzeStueck(x, s)), 'Schmuckstück', true),
 el('div', { class: 'stapel', hidden: !!st.tesbih }, el('h3', {}, 'Technik'),   // S-024: Tesbih ohne Technik, Maß und Passform
 B.wahl(techniken.map(t => ({ id: t.id, name: TECHNIK[t.id] })), e.technik, t => aendere(x => W.setzeTechnik(x, t)), 'Technik', true),
 ...(e.technik === 'makramee' ? [el('h3', {}, 'Garnfarbe'),
@@ -3439,7 +3458,7 @@ const g = c.getContext('2d'); if (!g) { B.melde('Bild nicht möglich in diesem B
 g.fillStyle = '#2b3446'; g.fillRect(0, 0, 1080, 1080);
 const hb = Math.min(864, 1080 * ring.height / ring.width), bb = hb * ring.width / ring.height; g.drawImage(ring, (1080 - bb) / 2, 120, bb, hb);
 g.fillStyle = '#f1eef6'; g.textAlign = 'center'; g.font = '700 64px system-ui, sans-serif'; g.fillText(titel.slice(0, 28), 540, 110, 1000);
-g.fillStyle = '#c5c9d8'; g.font = '500 34px system-ui, sans-serif'; g.fillText('Perlen & Tesbih', 540, 1040);
+g.fillStyle = '#c5c9d8'; g.font = '500 34px system-ui, sans-serif'; g.fillText(K.name(), 540, 1040);
 app.teileBild(c, titel).then(r => {
 if (r === 'geteilt') B.melde('Bild geteilt'); else if (r === 'abgebrochen') B.melde('Teilen abgebrochen'); else zeigeBild(c.toDataURL('image/png'));
 });
@@ -3865,41 +3884,6 @@ return { block };
 (function(){
 var Perlen = globalThis.Perlen = globalThis.Perlen || {};
 Perlen.ui = Perlen.ui || {};
-Perlen.ui.tesbih = (function () {
-const B = Perlen.ui.bauteile, K = Perlen.control.katalog, W = Perlen.control.entwurf;
-const el = (...a) => B.el(...a);
-const FARBEN = K.farben(), GLAS = K.glas();
-const bild = f => (f.art ? B.steinBild(f) : 'radial-gradient(circle at 35% 30%, #fff 0 8%, ' + f.hex + ' 45%, ' + f.hex + ')');
-const TEILE = [{ feld: 'durak', name: 'Durak', anzahl: 0 }, { feld: 'imame', name: 'Imame', anzahl: 0 }, { feld: 'pueskuel', name: 'Püskül', anzahl: GLAS }];
-
-function block(e, aendere) {
-const wert = Object.assign({}, { durak: e.durak, imame: e.imame, pueskuel: e.pueskuel });
-const tafel = el('div', { id: 'tesbih-tafel', role: 'group', hidden: true, style: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px' });
-let offen = '';
-const inhalt = t => [el('span', { class: 'punkt', style: 'margin-right:0;flex:none;width:22px;height:22px;background:' + bild(FARBEN[wert[t.feld]]) }), t.name + ': ' + FARBEN[wert[t.feld]].name];
-const tasten = TEILE.map(t => el('button', { type: 'button', class: 'feld', id: 'tesbih-' + t.feld, 'aria-expanded': 'false',
-style: 'display:flex;align-items:center;gap:8px;min-height:44px;text-align:left;text-transform:none;letter-spacing:0', onclick: () => oeffne(t) }, ...inhalt(t)));
-function oeffne(t) {
-const zu = offen === t.feld;
-offen = zu ? '' : t.feld; tafel.hidden = zu;
-TEILE.forEach((x, i) => tasten[i].setAttribute('aria-expanded', String(!zu && x === t)));
-if (zu) return;
-tafel.setAttribute('aria-label', t.name);
-tafel.replaceChildren(...FARBEN.slice(0, t.anzahl || FARBEN.length).map((f, i) => el('button', { type: 'button', class: 'farbe', 'data-farbe': String(i), title: f.name, 'aria-label': f.name,
-'aria-pressed': String(i === wert[t.feld]), style: 'background:' + bild(f),
-onclick: () => { aendere(x => W.setzeTesbih(x, t.feld, i)); wert[t.feld] = i; tasten[TEILE.indexOf(t)].replaceChildren(...inhalt(t)); oeffne(t); } })));
-}
-return el('div', { class: 'block', id: 'tesbih-block' }, el('h3', {}, 'Tesbih'),
-el('p', { class: 'unter', style: 'margin:0' }, 'Die Durak trennen die Gruppen, die Imame hält beide Enden, der Püskül hängt darunter.'), ...tasten, tafel);
-}
-return { block };
-})();
-
-})();
-
-(function(){
-var Perlen = globalThis.Perlen = globalThis.Perlen || {};
-Perlen.ui = Perlen.ui || {};
 Perlen.ui.app = (function () {
 const B = Perlen.ui.bauteile, K = Perlen.control.katalog, W = Perlen.control.entwurf, R = Perlen.control.rechner;
 const el = (...a) => B.el(...a);
@@ -3924,7 +3908,7 @@ const kachel = (id, name, e) => { const c = el('canvas', { 'aria-hidden': 'true'
 return el('button', { type: 'button', class: 'karte', 'data-art': id, 'aria-pressed': String(art === id), style: 'display:flex;flex-direction:row;align-items:center;gap:8px;min-height:64px;padding:8px',
 onclick: () => { z.ideenArt = id; zeichne('ideen'); } }, c, el('b', {}, name)); };
 const erste = g => l.find(i => (i.gruppe === 'tesbih') === g).entwurf;
-const arten = el('div', { role: 'group', 'aria-label': 'Was möchtest du machen?', style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px' }, kachel('schmuck', 'Schmuck', erste(false)), kachel('tesbih', 'Tesbih', erste(true)));
+const arten = !K.stuecke().some(s => s.tesbih) ? null : el('div', { role: 'group', 'aria-label': 'Was möchtest du machen?', style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px' }, kachel('schmuck', 'Schmuck', erste(false)), kachel('tesbih', 'Tesbih', erste(true)));
 const filter = art === 'tesbih' ? null : B.wahl(Perlen.control.ideen.gruppen(), gruppe, g => { z.ideenGruppe = g; zeichne('ideen'); }, 'Ideen filtern', true);
 const passt = i => (art === 'tesbih' ? i.gruppe === 'tesbih' : i.gruppe !== 'tesbih' && (!gruppe || i.gruppe === gruppe));
 const karten = l.map((i, n) => [i, n]).filter(x => passt(x[0])).map(([i, n]) => {
@@ -3940,7 +3924,7 @@ el('button', { type: 'button', class: 'knopf', onclick: () => oeffne(e) }, 'Öff
 el('button', { type: 'button', class: 'knopf', 'aria-label': 'Entwurf ' + titelVon(e) + ' löschen', onclick: () => { sitzung.loesche(index); auffrischen(); zeichne('ideen'); } }, 'Löschen'));
 });
 bereiche.ideen.replaceChildren(...[
-el('div', { class: 'stapel' }, el('h2', {}, 'Was möchtest du machen?'), arten, el('p', { class: 'unter', style: 'margin:0' }, 'Idee antippen, dann im Designer anpassen.')),
+el('div', { class: 'stapel' }, el('h2', {}, arten ? 'Was möchtest du machen?' : 'Ideen zum Nachmachen'), arten, el('p', { class: 'unter', style: 'margin:0' }, 'Idee antippen, dann im Designer anpassen.')),
 ...(art === 'tesbih' ? [el('div', { class: 'ideen' }, karten)] : [pfadBlock(), heuteBlock(), filter]),   // S-024: Tesbih-Ideen direkt unter den Kacheln
 eigene.length ? el('div', { class: 'block', id: 'meine' }, el('h3', {}, 'Meine Entwürfe (' + eigene.length + ')'), el('div', { class: 'entwuerfe' }, eigene)) : null,
 galerieBlock(),
@@ -4128,11 +4112,11 @@ B.melde(d.geladen + ' geladen, ' + d.schonDa + ' schon da' + (nicht ? ', ' + nic
 }
 function sicherungTeilen(text, nurKopieren) {
 app.letzterText = text;
-(nurKopieren ? sitzung.kopiere(text) : sitzung.teile('Sicherung Perlen & Tesbih', text)).then(r =>
+(nurKopieren ? sitzung.kopiere(text) : sitzung.teile('Sicherung ' + K.name(), text)).then(r =>
 B.melde({ geteilt: 'Geteilt', kopiert: 'Sicherung kopiert', abgebrochen: 'Teilen abgebrochen' }[r] || 'Kopieren nicht möglich'));
 }
 
-function bestellungWeiter(text, nurKopieren) { app.letzterText = text; return nurKopieren ? sitzung.kopiere(text) : sitzung.teile('Bestellung Perlen & Tesbih', text); }
+function bestellungWeiter(text, nurKopieren) { app.letzterText = text; return nurKopieren ? sitzung.kopiere(text) : sitzung.teile('Bestellung ' + K.name(), text); }
 app.titel = titelVon;
 
 function sitzungTeilen(text, nurKopieren) {
@@ -4146,7 +4130,7 @@ const z = app.zustand, AL = Perlen.control.anleitung, a = AL.fuer(z.anleitung), 
 const kontext = Perlen.control.szenen.kontext(z.verlauf.zustand());
 bereiche.anleitung.replaceChildren(
 el('h2', {}, 'Anleitung'),
-B.wahl(K.techniken().map(t => ({ id: t.id, name: TECHNIK_KURZ[t.id] })).concat({ id: 'tesbih', name: 'Tesbih' }), z.anleitung, t => { z.anleitung = t; zeichne('anleitung'); }, 'Technik der Anleitung', true),
+B.wahl(K.techniken().map(t => ({ id: t.id, name: TECHNIK_KURZ[t.id] })).concat(K.stuecke().some(s => s.tesbih) ? [{ id: 'tesbih', name: 'Tesbih' }] : []), z.anleitung, t => { z.anleitung = t; zeichne('anleitung'); }, 'Technik der Anleitung', true),
 el('div', { class: 'block' }, el('h3', {}, 'Handgelenk messen'), BILD.erzeuge(AL.messbild(), kontext),
 el('ol', { class: 'schritte', id: 'messen' }, AL.messen().map(s => el('li', {}, s)))),
 el('div', { class: 'block' }, el('h2', {}, a.titel), el('p', { class: 'hinweis' }, 'Die Bilder zeigen dein Armband aus dem Designer. Tippe auf ein Bild, um es anzuhalten oder abzuspielen.'),
@@ -4208,7 +4192,7 @@ app.arbeite = e => arbeit.oeffne(e);
 app.teileBild = (c, titel) => sitzung.teileBild(c, titel);
 app.teileLink = e => {
 const l = Perlen.control.link.link(e), titel = e.titel || 'Mein Armband';
-const text = titel + ', mein Entwurf aus Perlen & Tesbih: ' + l;
+const text = titel + ', mein Entwurf aus ' + K.name() + ': ' + l;
 app.letzterText = text;
 return sitzung.teile('Perlenarmband: ' + titel, text).then(r => ({ ergebnis: r, link: l }));
 };
@@ -4229,7 +4213,7 @@ for (const r of REITER) bereiche[r.id] = el('section', { id: 'bereich-' + r.id, 
 const nav = el('nav', { class: 'reiter', 'aria-label': 'Bereiche' }, el('div', {}, REITER.map(r => (reiterKnoepfe[r.id] =
 el('button', { type: 'button', 'data-reiter': r.id, onclick: () => zeige(r.id) }, B.icon(r.id), r.name)))));
 f.document.getElementById('app').replaceChildren(
-el('div', { class: 'seite' }, el('header', { class: 'kopf' }, el('h1', {}, 'Perlen', el('span', {}, ' & Tesbih')), document.querySelector('a.ng-zurueck')),
+el('div', { class: 'seite' }, el('header', { class: 'kopf' }, el('h1', {}, K.nameTeile()[0], el('span', {}, K.nameTeile()[1])), document.querySelector('a.ng-zurueck')),
 REITER.map(r => bereiche[r.id])), nav);
 designer = Perlen.ui.designer.erzeuge(app);
 designer.haenge(bereiche.designer);
