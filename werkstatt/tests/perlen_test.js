@@ -19,7 +19,7 @@ let fehler = 0; const ok = (n, b, m = '') => { console.log((b ? 'OK     ' : 'FEH
     const t0 = Date.now(); await p.goto(`http://localhost:${port}/perlen/`); await p.waitForSelector('.ideen [data-idee]:nth-child(12)');
     ok(`${fall}: lädt in unter 3 s`, Date.now() - t0 < 3000, (Date.now() - t0) + ' ms');
     const sym = await p.evaluate(async () => { const m = await (await fetch(document.querySelector('link[rel=manifest]').href)).json(); const i = m.icons.find(x => x.sizes === '512x512'); const r = await fetch(new URL(i.src, document.querySelector('link[rel=manifest]').href)); return [m.name, r.status]; });
-    ok(`${fall}: Symbol im Manifest`, sym[0] === 'Perlenwerkstatt' && sym[1] === 200, JSON.stringify(sym));
+    ok(`${fall}: Symbol im Manifest`, sym[0] === 'Perlen & Tesbih' && sym[1] === 200, JSON.stringify(sym));
     ok(`${fall}: kein Artifact-Betrachter`, await p.evaluate(() => typeof window.claude === 'undefined'));
     const z = await p.evaluate(() => { const a = document.querySelector('a.ng-zurueck'), r = a.getBoundingClientRect(); return { href: a.getAttribute('href'), h: r.height, sichtbar: r.width > 0 && getComputedStyle(a).display !== 'none' }; });
     ok(`${fall}: Zurück-Link sichtbar`, z.href === '../' && z.h >= 44 && z.sichtbar, JSON.stringify(z));
