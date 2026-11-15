@@ -24,7 +24,7 @@ async function seite({ ansicht = '2d', einst, breite = 412 } = {}) {
 }
 async function oeffne(p, ansicht) {
   await p.waitForFunction(() => window.__brett && window.__brett.chess, null, { timeout: 20000 });
-  await p.click('.tabBtn[data-tab=chess]');
+  await p.evaluate(t => document.querySelector(`.tabBtn[data-tab=${t}]`).click(), 'chess');   // S-W25: Kachel der Auswahl, auch wenn das Spiel schon offen ist
   if (ansicht === '3d') await p.waitForFunction(() => window.__brett.chess.ui.ansicht3d && window.__brett.chess.ui.ansicht3d.aktiv, null, { timeout: 20000 });
   await p.waitForTimeout(200);
 }

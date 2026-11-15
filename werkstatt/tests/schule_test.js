@@ -29,7 +29,7 @@ async function seite({ schule = null, breite = 412, tab = 'schule' } = {}) {
 }
 async function oeffne(p, tab) {
   await p.waitForFunction(() => window.__brett && window.__brett.schule && window.__brett.chess, null, { timeout: 20000 });
-  await p.click(`.tabBtn[data-tab=${tab}]`);
+  await p.evaluate(t => document.querySelector(`.tabBtn[data-tab=${t}]`).click(), tab);   // S-W25: Kachel der Auswahl, auch wenn das Spiel schon offen ist
   await p.waitForTimeout(200);
 }
 const zu = async p => p.context().close();
@@ -340,7 +340,7 @@ test('s_handy', async () => {
   });
   const f = p.fehler; await zu(p);
   console.log(`       Feld ${r.feld.toFixed(0)} px, ${r.reiter} Reiter`);
-  pruefe(r.quer <= 0 && r.feld >= 44 && r.reiter === 7 && r.raus === 0, JSON.stringify(r));
+  pruefe(r.quer <= 0 && r.feld >= 44 && r.reiter === 9 && r.raus === 0, JSON.stringify(r));
   pruefe(f.length === 0, f.join(' | '));
 });
 

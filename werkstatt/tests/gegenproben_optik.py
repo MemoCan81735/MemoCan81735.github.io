@@ -7,9 +7,9 @@ WURZEL = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 DATEI = 'brettspiele/index.html'
 TEST = os.path.join(WURZEL, 'werkstatt', 'tests', 'optik_test.js')
 FEHLER = [
-    ('Überschriften vertauscht', '<div class="gruppe">Aktionen</div>', '<div class="gruppe">Spielmodus</div>', 'o_gruppen'),
+    ('Überschriften vertauscht', '<div class="gruppe">Aktionen</div>\n  <div id="chcontrols"', '<div class="gruppe">Spielmodus</div>\n  <div id="chcontrols"', 'o_gruppen'),
     ('Symbol an einem Knopf fehlt', '.ansicht-knopf, .lernen-knopf)::before {\n      content', '.ansicht-knopf)::before {\n      content', 'o_symbole'),
-    ('Knöpfe zu niedrig', '#chess-view button.action { min-height: 44px; }', '#chess-view button.action { min-height: 30px; }', 'o_handy'),
+    ('Knöpfe zu niedrig', 'button.action { min-height: 44px; min-width: 44px; }', 'button.action { min-height: 30px; min-width: 44px; }', 'o_handy'),
     ('Maserung zu schwach', 'w[y * n + x] = 1 - 0.1 * (', 'w[y * n + x] = 1 - 0.01 * (', 'o_holz'),
     ('Maserung zu stark', 'w[y * n + x] = 1 - 0.1 * (', 'w[y * n + x] = 1 - 0.2 * (', 'o_holz'),
     ('Alle Felder gleich gedreht', 'm.userData.dreh = (r * 5 + c * 3 + (r >> 1)) % 4;', 'm.userData.dreh = 0;', 'o_holz'),

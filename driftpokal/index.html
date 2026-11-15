@@ -4736,6 +4736,18 @@ const Geo = {
 
   clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); },
   lerp(a, b, t){ return a + (b - a) * t; },
+  // Außenmaße als Kapsel (Strecke der halben Länge half um die Mitte, Richtung h, plus Rundung r): nächste Punkte zweier Kapseln.
+  // Ergebnis: Punkt auf der Mittellinie von a (px, py) und von b (qx, qy) mit dem kleinsten Abstand (Spec "Außenmaße", AM-02).
+  capsuleNearest(ax, ay, ah, aHalf, bx, by, bh, bHalf){
+    const ux = Math.cos(ah), uy = Math.sin(ah), vx = Math.cos(bh), vy = Math.sin(bh);
+    const wx = ax - bx, wy = ay - by;
+    const c = ux * vx + uy * vy, e = ux * wx + uy * wy, f = vx * wx + vy * wy;
+    const den = 1 - c * c;
+    let s = den > 1e-9 ? Geo.clamp((f * c - e) / den, -aHalf, aHalf) : 0;
+    const t = Geo.clamp(f + s * c, -bHalf, bHalf);
+    s = Geo.clamp(t * c - e, -aHalf, aHalf);
+    return { px: ax + s * ux, py: ay + s * uy, qx: bx + t * vx, qy: by + t * vy };
+  },
   dist(ax, ay, bx, by){ return Math.hypot(bx - ax, by - ay); },
   normAngle(a){
     a = (a + Math.PI) % (Math.PI * 2);
@@ -5562,8 +5574,8 @@ const GRID_SIZE = 6;     // Karts je Rennen
 // einen Wheelie ziehen (schneller, kaum lenkbar), driftet enger mit nur einer Turbo-Stufe, ist leichter und schmaler,
 // lädt Windschatten schneller und kann in der Luft bis zu drei Tricks machen
 const VEHICLES = {
-  kart: { speed: 1, turn: 1, weight: 1, radius: 5, offroad: 1 },
-  bike: { speed: 1.0, turn: 1.1, weight: 0.72, radius: 4, offroad: 0.93,
+  kart: { speed: 1, turn: 1, weight: 1, radius: 6.1, half: 3.1, offroad: 1 },   // Außenmaße 18,4 × 12,2 (3,68 × 2,44 m)
+  bike: { speed: 1.0, turn: 1.1, weight: 0.72, radius: 1.85, half: 6.5, offroad: 0.93,   // 16,7 × 3,7 (3,34 × 0,74 m)
     leanRate: 5.5,                                  // 1/s: so schnell folgt die Schräglage dem Lenkeinschlag
     wheelie: { speed: 1.08, accel: 1.35, steer: 0.35, max: 3.2, cool: 2.5, minSpeed: 0.5, endSteer: 0.75, bump: 0.7 },
     drift: { from: 0.75, to: 1.45, charge: 1.35, full: 1.5, boost: 0.75 },
@@ -6207,7 +6219,8 @@ class KartEntity {
     this.turnRate = (1.62 + stats.handling * 0.1) * this.veh.turn;
     this.weight = (0.8 + stats.speed * 0.12) * this.veh.weight;
     this.offroadKeep = (0.46 + stats.accel * 0.025) * this.veh.offroad;
-    this.radius = this.veh.radius;
+    this.radius = this.veh.radius;    // Kapsel: Rundung (halbe Breite) ...
+    this.half = this.veh.half;        // ... und halbe Länge der Mittellinie
     this.speedFactor = 1;
     this.x = 0; this.y = 0; this.heading = 0; this.moveAngle = 0; this.speed = 0;
     this.z = 0; this.vz = 0;
@@ -7002,14 +7015,20 @@ class RaceEntity {
     for (let i = 0; i < ks.length; i++){
       for (let j = i + 1; j < ks.length; j++){
         const a = ks[i], b = ks[j];
-        const r = a.radius + b.radius;
+        // Außenmaße als Kapseln (AM-01 bis AM-03): nächste Punkte der Mittellinien, Abstand gegen die Summe der Rundungen
+        const r = a.radius + b.radius, reach = r + a.half + b.half;
         const dx = b.x - a.x, dy = b.y - a.y;
         const d2 = dx * dx + dy * dy;
-        if (d2 >= r * r || d2 < 1e-6) continue;
+        if (d2 >= reach * reach || d2 < 1e-6) continue;
         if (Math.abs(a.z - b.z) > 8) continue;          // einer fliegt über den anderen hinweg
         // Karts anderer Geräte schiebt deren Gerät selbst weg; hier bewegt sich nur das eigene
         if (a.remote && b.remote) continue;
-        const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, overlap = r - d;
+        const cp = Geo.capsuleNearest(a.x, a.y, a.heading, a.half, b.x, b.y, b.heading, b.half);
+        const ex = cp.qx - cp.px, ey = cp.qy - cp.py, e2 = ex * ex + ey * ey;
+        if (e2 >= r * r) continue;
+        // Mittellinien kreuzen sich (tief ineinander): Richtung von Mitte zu Mitte, um die volle Rundung auseinander
+        const deep = e2 < 1e-6, e = deep ? 0 : Math.sqrt(e2), d = Math.sqrt(d2);
+        const nx = deep ? dx / d : ex / e, ny = deep ? dy / d : ey / e, overlap = r - e;
         const wa = a.weight, wb = b.weight, sum = wa + wb;
         if (!a.remote){ a.x -= nx * overlap * (wb / sum); a.y -= ny * overlap * (wb / sum); }
         if (!b.remote){ b.x += nx * overlap * (wa / sum); b.y += ny * overlap * (wa / sum); }
@@ -7020,7 +7039,7 @@ class RaceEntity {
           if (!a.remote) a.applyImpulse(-nx * j / wa, -ny * j / wa);
           if (!b.remote) b.applyImpulse(nx * j / wb, ny * j / wb);
           // für die Darstellung (Wackeln der Karosserie, Funken); nur spürbare Stöße
-          if (j > 12) events.push({ type: "collide", kart: a.id, other: b.id, strength: j, nx, ny, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+          if (j > 12) events.push({ type: "collide", kart: a.id, other: b.id, strength: j, nx, ny, x: (cp.px + cp.qx) / 2, y: (cp.py + cp.qy) / 2 });
           // Stoß im Wheelie: Vorderrad knallt runter, das kostet Tempo
           for (const q of [a, b]){
             if (j > 12 && q.wheelieT > 0 && !q.remote){ q.wheelieT = 0; q.wheelieCool = q.veh.wheelie.cool; q.speed *= q.veh.wheelie.bump; events.push({ type: "wheelieEnd", kart: q.id, bump: true }); }

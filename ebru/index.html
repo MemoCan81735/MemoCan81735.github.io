@@ -49,6 +49,8 @@ button.schild{position:absolute;left:8px;top:8px;flex:none;min-height:44px;backg
 #licht{position:absolute;inset:-35%;pointer-events:none;mix-blend-mode:normal;z-index:1;background:radial-gradient(28% 18% at 35% 38%,rgba(255,255,255,.4),rgba(255,255,255,0) 70%),radial-gradient(24% 15% at 62% 55%,rgba(255,255,255,.35),rgba(255,255,255,0) 70%),radial-gradient(30% 12% at 48% 72%,rgba(255,255,255,.3),rgba(255,255,255,0) 70%),radial-gradient(30% 20% at 58% 30%,rgba(70,45,25,.07),rgba(70,45,25,0) 70%),radial-gradient(26% 16% at 38% 64%,rgba(70,45,25,.06),rgba(70,45,25,0) 70%);animation:licht 11s ease-in-out infinite alternate}
 @keyframes licht{0%{transform:translate(-6%,-4%) rotate(0deg)}50%{transform:translate(5%,3%) rotate(4deg)}100%{transform:translate(-2%,6%) rotate(-3deg)}}
 body.ergebnis #licht{display:none}
+/* S-016: breites Fenster (Laptop, Tablet quer): Knopfleiste rechts, Becken füllt den Rest */
+@media (min-width: 700px) and (min-aspect-ratio: 1/1){#app{max-width:none;flex-direction:row}#leiste{width:clamp(300px,24vw,380px);flex:none;align-content:center;overflow-y:auto;padding:8px max(8px,env(safe-area-inset-right)) 8px 8px}#leiste .zeile{flex-wrap:wrap}#leiste button{font-size:13px;padding:0 3px}#leiste button.farbe{flex-basis:44px}}
 @media (prefers-reduced-motion: reduce){#hinweis{transition:none}#licht{display:none;animation:none}}
 a.ng-zurueck{position:absolute;right:8px;top:8px;z-index:2;display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border-radius:12px;background:rgba(29,24,34,.82);color:#f6efe6;font:600 13px system-ui,sans-serif;text-decoration:none}
 body.ergebnis a.ng-zurueck{display:none}
@@ -2330,7 +2332,7 @@ globalThis.Ebru = {};
     C: { name: 'Pastell', wasser: '#fff6e6', papier: '#fffaf0', farben: ['#e8869f', '#c4ecd8', '#8a74d0', '#8cc4f4'] },
   };
 
-  function neuesBecken(hoehe) { return { breite: BREITE, hoehe, polys: [], welt: STANDARD_WELT, verlauf: [], ops: [] }; } // S-015: Journal für das Farbfeld
+  function neuesBecken(hoehe, breite) { return { breite: breite || BREITE, hoehe, polys: [], welt: STANDARD_WELT, verlauf: [], ops: [] }; } // S-015: Journal für das Farbfeld; S-016: Breite fürs breite Becken (ohne Angabe 400 wie Ebru 1)
 
   function kreis(cx, cy, r, farbe) {
     const n = Math.max(48, Math.ceil(2 * Math.PI * r / 4)), p = new Float64Array(n * 2);
@@ -2703,7 +2705,7 @@ globalThis.Ebru = {};
     }
   }
   function vorbild(m, breite, hoehe) {
-    const b = E.neuesBecken(hoehe);
+    const b = E.neuesBecken(hoehe, breite); // S-016: Vorlage so breit wie das Becken
     for (const s of schritteFuer(m, breite, hoehe)) if (s.art === 'tropfen') C.tropfen(b, s.x, s.y, s.r, s.farbe); else zugAusfuehren(b, s);
     return b;
   }
@@ -2854,7 +2856,7 @@ globalThis.Ebru = {};
   const KAMM = { zinken: 9, abstand: 14 }, ABDRUCK_MS = 2500, AUFGEHEN_S = 0.8, TOENE = ['tropfen', 'papier', 'wasser', 'stab', 'glocke'];
 
   function neueSitzung(breite, hoehe) {
-    return { breite, hoehe, becken: E.neuesBecken(hoehe), phase: 'malen', plan: null, planStart: 0, basis: null, jetzt: 0, abdruckStart: 0, werkzeug: 'tropfen', farbe: 0, beruehrt: false, tonStufe: 2, tonAn: true }; // tonStufe: 2 Ton + Musik, 0 Stumm, 1 Nur Ton (S-007)
+    return { breite, hoehe, becken: E.neuesBecken(hoehe, breite), phase: 'malen', plan: null, planStart: 0, basis: null, jetzt: 0, abdruckStart: 0, werkzeug: 'tropfen', farbe: 0, beruehrt: false, tonStufe: 2, tonAn: true }; // tonStufe: 2 Ton + Musik, 0 Stumm, 1 Nur Ton (S-007); S-016: Becken mit der Breite der Sitzung
   }
   // Vorführung: Geisterstäbchen, stückweise je Bild (kein Neurechnen ab Basis); jede Eingabe beendet sie über abschliessen
   function planeVorfuehrung(s, v) { s.vorfuehrung = { ...v, zug: C.neuerZug(), y: v.y0 }; }
@@ -3539,8 +3541,8 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
 
   // Verlauf zum Rand wie Ebru 1 (zeichnen.js becken): innen durchsichtig, außen dunkler; in Gerätepixeln. H = Höhe des Beckens in Einheiten
   // (kann von der Leinwand abweichen, wenn sich die sichtbare Höhe nach dem Anlegen ändert; Ebru 1 rechnet mit der Beckenhöhe)
-  function randBild(w, h, scale, H) {
-    const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'), W = E.BREITE;
+  function randBild(w, h, scale, H, W) { // W = Breite des Beckens in Einheiten (S-016)
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
     x.scale(scale, scale); const gr = x.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, H * 0.75);
     gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(60,70,90,0.18)'); x.fillStyle = gr; x.fillRect(0, 0, W, H); return c;
   }
@@ -3583,7 +3585,7 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
       if (feld) { feld.zerstoeren(); feld = null; sync.vergessen(); }
       try { feld = FF.erzeuge(gl, F, b.breite, b.hoehe); } catch (e) { feld = null; }
       if (!feld) { feldAus = true; zuruecksetzen(gl); return null; }
-      if (feldKopie && feldKopie.hoehe === b.hoehe && sync.passt(feldStand) && feld.laden(feldKopie.daten)) sync.vergessen(feldStand); else { feldKopie = null; sync.vergessen(); } /* nach Grafikverlust: Kopie vom App-Wechsel, wenn sie zum Stand passt */
+      if (feldKopie && feldKopie.hoehe === b.hoehe && feldKopie.breite === b.breite && sync.passt(feldStand) && feld.laden(feldKopie.daten)) sync.vergessen(feldStand); else { feldKopie = null; sync.vergessen(); } /* nach Grafikverlust: Kopie vom App-Wechsel, wenn sie zum Stand passt */
       return feld;
     }
     function flaechen(rr) {
@@ -3615,25 +3617,25 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
     }
     const api = {
       leinwand, app, beiVerlust: null, beiRueckgabe: null,
-      groesse(cssW, cssH, aufloesung) { // Leinwand, Rand und Körnung gemeinsam
-        breite = E.BREITE; hoehe = E.BREITE * cssH / cssW; gw = Math.round(cssW * aufloesung); gh = Math.round(cssH * aufloesung); aufl = aufloesung; scale = cssW * aufloesung / E.BREITE;
-        r.resize(cssW, cssH, aufloesung); app.stage.scale.set(cssW / E.BREITE);
+      groesse(cssW, cssH, aufloesung, beckenBreite) { // Leinwand, Rand und Körnung gemeinsam; beckenBreite in Einheiten (S-016, sonst 400)
+        breite = beckenBreite || E.BREITE; hoehe = breite * cssH / cssW; gw = Math.round(cssW * aufloesung); gh = Math.round(cssH * aufloesung); aufl = aufloesung; scale = cssW * aufloesung / breite;
+        r.resize(cssW, cssH, aufloesung); app.stage.scale.set(cssW / breite);
         randH = -1; /* Rand beim nächsten Zeichnen neu */
-        koerner.width = breite; koerner.height = hoehe; koerner.tileScale.set(E.BREITE / (cssW * aufloesung)); /* Kachel in Gerätepixeln wie Ebru 1 */
+        koerner.width = breite; koerner.height = hoehe; koerner.tileScale.set(breite / (cssW * aufloesung)); /* Kachel in Gerätepixeln wie Ebru 1 */
         aufbauen();
       },
       zeichne(becken, s, nurLesen) { // nurLesen: frisch zeichnen, um das Bild zu lesen (zählt nicht als Neuzeichnen)
         if (verloren || r.gl.isContextLost()) return false;
         b = becken; sicht = s || { wasser: true, versatzY: 0, polys: true }; aufbauen();
         if (randH !== b.hoehe) { randH = b.hoehe; const alt = rand.texture;
-          rand.texture = PIXI.Texture.from(randBild(gw, gh, scale, b.hoehe)); rand.width = breite; rand.height = hoehe; if (alt && alt !== PIXI.Texture.EMPTY) alt.destroy(true); } rand.visible = sicht.wasser !== false; koerner.visible = sicht.wasser !== false;
+          rand.texture = PIXI.Texture.from(randBild(gw, gh, scale, b.hoehe, breite)); rand.width = breite; rand.height = hoehe; if (alt && alt !== PIXI.Texture.EMPTY) alt.destroy(true); } rand.visible = sicht.wasser !== false; koerner.visible = sicht.wasser !== false;
         if (sicht.polys && feldBereit(r.gl)) { /* S-015: Feld auf den Stand des Beckens; scheitert es (Speicher), zeichnet es wie S-014 */
           try { if (sync.abgleich(b)) feldKopie = null; feld.fertig(); } catch (e) { feldFehler = String(e && e.message || e); console.error('Farbfeld aus:', feldFehler); feld.zerstoeren(); feld = null; feldAus = true; sync.vergessen(); }
           zuruecksetzen(r.gl); }
         app.render(); if (!nurLesen) zaehler++; return true;
       },
       sichereFeld() { // S-015: beim App-Wechsel das Feld als Kopie im Arbeitsspeicher halten (Android nimmt die Grafik oft im Hintergrund weg)
-        if (!feld || verloren || r.gl.isContextLost()) return false; feld.fertig(); feldKopie = { daten: feld.kopie(), hoehe: feld.hoehe }; feldStand = sync.stand(); zuruecksetzen(r.gl); return true;
+        if (!feld || verloren || r.gl.isContextLost()) return false; feld.fertig(); feldKopie = { daten: feld.kopie(), hoehe: feld.hoehe, breite: feld.breite }; feldStand = sync.stand(); zuruecksetzen(r.gl); return true;
       },
       feldInfo: () => ({ neubauten: sync.zahl.neubau, basen: sync.zahl.basis, feld: !!feld, aus: feldAus, schnappschuesse: sync.schnappschuesse(), feldSchnapp: feld ? feld.schnappschuesse() : 0, fehler: feldFehler, schritte: feld ? feld.schritte() : 0, W: feld ? feld.W : 0, H: feld ? feld.H : 0, kopie: !!feldKopie }),
       anteile() { if (!feld || verloren) return null; const a = feld.anteile(); zuruecksetzen(r.gl); return a; },
@@ -3661,7 +3663,7 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
       return false;
     }
     function vorschau(karte) {
-      const W = 480, H = 960, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'), s = Math.max(W / karte.width, H / karte.height);
+      const quer = karte.width > karte.height, W = quer ? 960 : 480, H = quer ? 480 : 960, c = document.createElement('canvas'); /* S-016: quere Karte vom breiten Becken quer speichern */ c.width = W; c.height = H; const x = c.getContext('2d'), s = Math.max(W / karte.width, H / karte.height);
       x.drawImage(karte, (W - karte.width * s) / 2, (H - karte.height * s) / 2, karte.width * s, karte.height * s);
       const url = c.toDataURL('image/jpeg', 0.82); return url.length <= G.MAX_BILD_ZEICHEN ? url : c.toDataURL('image/jpeg', 0.6); // S-009: 480 × 960
     }
@@ -3703,6 +3705,31 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
 })();
 
 (function(){
+// UI (S-016, A-40): Beckenmaß aus der Fläche und Maß im Tab, reine Funktionen ohne Plattform (R-04).
+// Bis 560 Punkte Breite wie bisher 400 Einheiten breit; darüber füllt das Becken die Fläche mit mindestens 1 Punkt je Einheit und höchstens MAX_FLAECHE Quadrat-Einheiten (Feld höchstens etwa doppelt so groß wie am Handy).
+// Format im Tab (R-07): { version: 1, breite: 400..8000, hoehe: 50..8000 }, ganze Zahlen.
+(function (g) {
+  const BREITE = 400, SCHMAL = 560, MAX_FLAECHE = 640000, VERSION = 1, BEREICH = { breite: [400, 8000], hoehe: [50, 8000] }; // alles, was beckenMass liefern kann (Fläche mindestens 200 x 300 Punkte)
+  function beckenMass(cssW, cssH) {
+    if (!(cssW > 0 && cssH > 0 && Number.isFinite(cssW) && Number.isFinite(cssH))) return { breite: BREITE, hoehe: 600 };
+    if (cssW <= SCHMAL) return { breite: BREITE, hoehe: Math.round(BREITE * cssH / cssW) };
+    const p = Math.max(1, Math.sqrt(cssW * cssH / MAX_FLAECHE)); let breite = Math.max(BREITE, Math.round(cssW / p)), hoehe = Math.round(breite * cssH / cssW);
+    while (breite * hoehe > MAX_FLAECHE && breite > BREITE) { breite--; hoehe = Math.round(breite * cssH / cssW); } /* Runden darf die Obergrenze nicht überschreiten */
+    return { breite, hoehe };
+  }
+  const gueltig = (b, h) => [[b, BEREICH.breite], [h, BEREICH.hoehe]].every(([v, [a, z]]) => Number.isInteger(v) && v >= a && v <= z);
+  function massSchreiben(breite, hoehe) { return gueltig(breite, hoehe) ? JSON.stringify({ version: VERSION, breite, hoehe }) : null; }
+  function massLesen(text) {
+    let r; try { r = JSON.parse(text); } catch (e) { return null; }
+    return r && typeof r === 'object' && r.version === VERSION && gueltig(r.breite, r.hoehe) ? { breite: r.breite, hoehe: r.hoehe } : null;
+  }
+  function passt(polys, breite) { for (const q of polys) for (let i = 0; i < q.p.length; i += 2) if (q.p[i] > breite * 1.25) return false; return true; } // Vielecke passen in die Breite (ein Viertel Spiel: Tropfen am Rand schieben Farbe auch im Becken 400 etwas hinaus)
+  g.Ebru.ui = g.Ebru.ui || {}; g.Ebru.ui.mass = { MAX_FLAECHE, beckenMass, massLesen, massSchreiben, passt };
+})(globalThis);
+
+})();
+
+(function(){
 // UI: Eingaben, Bildschleife und Leiste. Quelle der Wahrheit ist die Sitzung (Control); die UI liest nichts aus dem DOM zurück (R-03).
 // Zusammenbau (Composition Root): hier werden Ton und Export (Boundary) an die Sitzung gereicht.
 // Ebru 2.0 (S-014): das Becken zeichnet PixiJS auf der Grafikkarte (becken_gl.js); die Leinwand #c ist eine durchsichtige 2D-Ebene darüber für kleine Zeichen und die Ergebniskarte.
@@ -3724,19 +3751,21 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
   function groesse() {
     hoeheSetzen();
     const r = flaeche.getBoundingClientRect(); cssW = Math.max(200, Math.round(r.width)); cssH = Math.max(300, Math.round(r.height));
-    const dpr = C.aufloesung(stufe, window.devicePixelRatio || 1); cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr); scale = cv.width / E.BREITE; dirty = true;
-    if (glB) { glB.groesse(cssW, cssH, dpr); glNeu = true; }
+    const dpr = C.aufloesung(stufe, window.devicePixelRatio || 1); cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr); scale = cv.width / beckenBreite(); dirty = true;
+    if (glB) { glB.groesse(cssW, cssH, dpr, beckenBreite()); glNeu = true; }
     if (s && s.phase !== 'malen') ergebnisKarte = null; /* Karte in der neuen Größe neu bauen (gespeichert ist sie schon) */
   }
-  function neu() {
-    groesse(); s = S.neueSitzung(E.BREITE, Math.round(E.BREITE * cssH / cssW));
-    const alt = g.Ebru.sicherung.lesen(tab.lesen(TAB_SCHLUESSEL)); planTon = 0; wellen = []; ergebnisKarte = null; angezeigt = false; bilderNeu();
+  const beckenBreite = () => (s ? s.breite : E.BREITE);
+  function neu() { /* S-016: Maß aus der Fläche; ein gesichertes Becken behält sein Maß (ohne gültiges Maß 400 breit wie bisher) */
+    s = null; groesse(); let alt = g.Ebru.sicherung.lesen(tab.lesen(TAB_SCHLUESSEL)), gm = alt ? MS.massLesen(tab.lesen(MASS_SCHLUESSEL)) : null;
+    const m = gm || (alt ? { breite: E.BREITE, hoehe: Math.round(E.BREITE * cssH / cssW) } : MS.beckenMass(cssW, cssH)); s = S.neueSitzung(m.breite, m.hoehe); groesse();
+    if (alt && !MS.passt(alt.polys, m.breite)) alt = null; /* Vielecke aus einem breiteren Becken (Maß fehlt oder manipuliert): nicht still abschneiden */ planTon = 0; wellen = []; ergebnisKarte = null; angezeigt = false; bilderNeu();
     if (alt) { s.becken.polys = alt.polys; s.becken.welt = alt.welt; zeigeHinweis('Dein Bild ist wieder da', 3000); } /* S-011: Android hatte den Tab geschlossen */
     else { const plan = C.planAutoTropfen(rnd, s.breite, s.hoehe); S.startePlan(s, plan, 0); S.planeVorfuehrung(s, C.vorfuehrungFuer(plan)); zeigeHinweis('Tippe aufs Wasser oder zieh mit dem Finger', 6000); }
     dirty = true; leiste();
   }
-  const tab = B.speicher.erzeuge(window, 'session'), TAB_SCHLUESSEL = 'ebru2.becken'; // S-011: Becken nur im Tab sichern
-  function sichern() { if (s) tab.schreiben(TAB_SCHLUESSEL, g.Ebru.sicherung.schreiben(s.becken) || ''); }
+  const tab = B.speicher.erzeuge(window, 'session'), TAB_SCHLUESSEL = 'ebru2.becken', MASS_SCHLUESSEL = 'ebru2.mass', MS = g.Ebru.ui.mass; // S-011: Becken nur im Tab sichern; S-016: Maß daneben
+  function sichern() { if (s) { tab.schreiben(TAB_SCHLUESSEL, g.Ebru.sicherung.schreiben(s.becken) || ''); tab.schreiben(MASS_SCHLUESSEL, MS.massSchreiben(s.breite, s.hoehe) || ''); } }
   document.addEventListener('visibilitychange', () => { if (document.hidden) { sichern(); if (glB) glB.sichereFeld(); } }); /* S-015: Feld als Kopie, falls Android die Grafik wegnimmt */
   window.addEventListener('pagehide', sichern);
   function welle(x, y, kl) { if (ruhig) return; wellen.push({ x, y, t0: performance.now(), kl: !!kl }); if (kl) spurGesamt++; }
@@ -3782,7 +3811,7 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
     hinweis.replaceChildren(document.createTextNode(t)); hinweis.style.opacity = 1; hinweisAus = 0;
   }
   function zeigeHinweis(t, ms) { hinweis.replaceChildren(document.createTextNode(t)); hinweis.style.opacity = 1; hinweisAus = performance.now() + ms; }
-  function pos(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * E.BREITE, (e.clientY - r.top) / r.width * E.BREITE]; }
+  function pos(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * s.breite, (e.clientY - r.top) / r.width * s.breite]; }
 
   function leiste() {
     const pal = E.PALETTEN[s.becken.welt], fz = $('farben');
@@ -3844,7 +3873,8 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
   });
 
   function exportBild() {
-    const w = 800, h = Math.max(1400, Math.round(w * s.hoehe / s.breite + w * 0.12)), c = document.createElement('canvas'); c.width = w; c.height = h;
+    const quer = s.breite > s.hoehe, k = 800, l = Math.max(1400, Math.round(k * (quer ? s.breite / s.hoehe : s.hoehe / s.breite) + k * 0.12)); /* S-016: breites Becken gibt eine quere Karte */
+    const w = quer ? l : k, h = quer ? k : l, c = document.createElement('canvas'); c.width = w; c.height = h;
     const bild = abdruckBild(); if (!bild) return null; Z.karte(c.getContext('2d'), s.becken, w, h, korn, bild); return c;
   }
   // S-014: Becken über die Grafikkarte, nur neu, wenn sich Becken, Farbwelt, Größe, Sicht oder Kontext geändert haben (kleine Zeichen allein zeichnen nur die 2D-Ebene)
@@ -3857,7 +3887,7 @@ void main() { vec2 p = einheit(); vec4 acc = vec4(0.0); float rest = 1.0;
   const SICHT_WASSER = { wasser: true, versatzY: 0, polys: true };
   // Abdruck für Ergebniskarte und PNG: Becken auf Papiergrund einmal über die Grafikkarte, direkt danach gelesen (statt 40000 Knoten mit Canvas 2D)
   function abdruckBild() { /* null, solange die Grafik weg ist: die Karte wird dann erst nach der Rückgabe gebaut */
-    const ok = glB.zeichne(s.becken, { wasser: false, versatzY: 0, polys: true }, true); glNeu = true; glGezeichnet = false; return ok ? { leinwand: glB.leinwand, scale: cv.width / E.BREITE } : null; }
+    const ok = glB.zeichne(s.becken, { wasser: false, versatzY: 0, polys: true }, true); glNeu = true; glGezeichnet = false; return ok ? { leinwand: glB.leinwand, scale: cv.width / s.breite } : null; }
   function karteBauen() { const bild = abdruckBild(); if (!bild) return null; const c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height; Z.karte(c.getContext('2d'), s.becken, cv.width, cv.height, korn, bild); return c; }
   function malen(jetzt) {
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
