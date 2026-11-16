@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BSS Plattform Management Summary</title>
+<style>
+:root{--bg:#f4f6f7;--fg:#2e2e2e;--mut:#5f6b73;--card:#fff;--line:#d6dde1;--acc:#1f6f8b;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#14191c;--fg:#e6ebee;--mut:#9aa8b0;--card:#1d2428;--line:#2f3a40;--acc:#6bb8d4}}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+main{max-width:760px;margin:0 auto;display:grid;gap:18px}
+h1{font-size:24px;line-height:1.2;margin:0}h2{font-size:16px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.sub{color:var(--mut);margin:4px 0 0}
+section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+ul,ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:15px}th,td{text-align:left;padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}th{border-top:0;color:var(--mut);font-weight:600}
+td:first-child{font-weight:600;white-space:nowrap}
+a{color:var(--acc)}a.knopf{display:inline-block;margin-top:8px;padding:10px 16px;background:var(--acc);color:var(--bg);border-radius:6px;text-decoration:none;font-weight:600;min-height:24px}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+</style></head><body><main>
+<div><h1>BSS Plattform: Management Summary</h1><p class="sub">Stand 16.11.2026 · Alle Daten und Namen sind erfunden, die Marke ist neutral.</p></div>
+<section><h2>Worum es geht</h2><p>Die BSS Plattform ersetzt den klickbaren Prototyp durch eine echte Anwendung für Gebäudeservice und Hausverwaltung: Anmeldung, sieben Rollen mit eigenen Rechten, Kunden, Objekte und Anlagen in einer Datenbank, jede Änderung im Protokoll. Gezeigt wird Inkrement 1, die technische Grundlage, auf der weitere Module Schritt für Schritt entstehen.</p></section>
+<section><h2>Demo</h2><p>Live-Oberfläche gegen die Datenbank (Supabase, Frankfurt). Stand vom 14.11.; neuere Teile (Kernfelder, Fehlerform, Sicherheit) sind noch nicht eingespielt.</p><a class="knopf" href="../">Demo öffnen</a><p class="sub">Das Kennwort erhalten Sie separat.</p></section>
+<section><h2>Testkonten</h2><div class="tw"><table><thead><tr><th>Benutzer</th><th>Rolle</th><th>Was man sieht</th></tr></thead><tbody>
+<tr><td>admin</td><td>Administrator</td><td>alles, Benutzer, Protokoll</td></tr>
+<tr><td>gf</td><td>Geschäftsführer</td><td>alles, Konto geschützt</td></tr>
+<tr><td>dispo</td><td>Disposition</td><td>anlegen und ändern, nicht löschen</td></tr>
+<tr><td>ol</td><td>Objektleitung</td><td>nur die 3 eigenen Objekte</td></tr>
+<tr><td>ol2</td><td>Objektleitung</td><td>11 andere Objekte</td></tr>
+<tr><td>buha</td><td>Buchhaltung</td><td>nur lesen</td></tr>
+<tr><td>ad</td><td>Außendienst</td><td>Anlagen ändern, keine Kunden</td></tr>
+<tr><td>lese</td><td>Lesender Zugriff</td><td>nur lesen, Hinweis beim Ändern</td></tr>
+<tr><td>inaktiv</td><td>gesperrt</td><td>Anmeldung wird abgewiesen</td></tr>
+</tbody></table></div></section>
+<section><h2>Ablauf in 10 Minuten</h2><ol>
+<li>Als <b>admin</b> anmelden: Menü Kunden, 3 Kunden, Suche nach „nordstern".</li>
+<li>Kunde „Probe GmbH" anlegen und die vergebene Kundennummer zeigen.</li>
+<li>Ansprechpartner anlegen und entfernen (Rückfrage statt Browser-Meldung), Bemerkung mit Datum und Autor.</li>
+<li>Als <b>ad</b>: Kunden sind gesperrt. Als <b>ol</b>: nur eigene Objekte. Die Rechte greifen in der Datenbank, nicht nur in der Oberfläche.</li>
+<li>Als <b>inaktiv</b> anmelden: wird abgewiesen. Danach das Protokoll als admin zeigen.</li></ol></section>
+<section><h2>Was heute steht</h2><ul>
+<li>Fertig und geprüft: Anmeldung, 7 Rollen per Zeilenrechte in der Datenbank, Modul Kunden, Protokoll, geschützte Geschäftsführer-Konten.</li>
+<li>Die komplette Prüfkette ist grün, zuletzt aus frischem Stand am 16.11.2026.</li>
+<li>Nur das Modul Kunden ist fertig. Die übrigen Module sind noch Prototyp und kommen einzeln, jeweils erst nach einer Prüfung.</li>
+<li>Keine echten Daten, kein Echtbetrieb. Offen sind Hosting-Vertrag, Auftragsverarbeitung, Sicherung und Sicherheitsprüfung.</li></ul></section>
+<section><h2>Nächste Schritte</h2><ol>
+<li>Technik fertigstellen: Oberfläche in Module teilen, Geldlogik absichern, einheitliches Design fürs Handy.</li>
+<li>Stabilität vor Echtdaten: Rechte, gleichzeitiges Bearbeiten, doppeltes Anlegen verhindern.</li>
+<li>Weitere Module nacheinander, dann Betrieb vorbereiten, zuletzt Pilot mit echten Daten.</li></ol></section>
+</main></body></html>

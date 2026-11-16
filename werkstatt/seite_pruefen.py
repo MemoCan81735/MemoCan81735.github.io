@@ -156,7 +156,7 @@ def S6_anonym(w):
         t = lies(w, d)
         if not d.startswith(FREMD):
             for m in EMAIL.finditer(t):
-                if m.group(0).lower() in ERLAUBTE_EMAILS:
+                if m.group(0).lower() in ERLAUBTE_EMAILS or m.group(0).lower().endswith(".example"):   # .example ist reserviert (RFC 2606), nie echt
                     continue
                 f.append(f"{d}: E-Mail-Adresse {m.group(0)[:3]}…")
         for wort in set(re.findall(r"[a-zäöüß]+", t.lower())):
