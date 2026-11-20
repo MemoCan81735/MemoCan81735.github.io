@@ -35,6 +35,9 @@ const linkInfo = (p, sel = 'a.ng-zurueck') => p.evaluate((sel) => { const a = do
     ok(`${n}: Karte 1-1 spielbar im Menü`, (await p.locator('#kartenliste button:not([disabled])').count()) >= 1);
     if (!gesperrt) { await p.setViewportSize({ width: 915, height: 412 }); await p.waitForTimeout(400);
       const q = await linkInfo(p, '#kartenmenue a.ng-zurueck'); ok('PS-2 Querformat: Zurück-Link ganz im Bild', q && q.sicht && q.h >= 44 && q.l >= 0 && q.r <= q.vw && q.t >= 0 && q.u <= q.vh, JSON.stringify(q));
+      await p.setViewportSize({ width: 360, height: 640 }); await p.waitForTimeout(400);
+      { const f = await linkInfo(p, '#ngfest'); const kb = await p.locator('#kartentaste').boundingBox();
+        ok('PS-5 schmales Handy 360 px: fester Zurück-Link im Bild und überdeckt die Karten-Taste nicht', f && f.sicht && f.l >= 0 && f.r <= f.vw && f.h >= 44 && (f.r <= kb.x || f.u <= kb.y || f.l >= kb.x + kb.width), JSON.stringify(f) + JSON.stringify(kb)); }
       await p.setViewportSize({ width: 412, height: 915 }); await p.waitForTimeout(300);
       await p.goto(`http://localhost:${port}/neon-ada/#karte=3-1`); await p.waitForTimeout(800); await p.reload(); await p.waitForTimeout(800);
       await p.click('#kartentaste'); await p.waitForTimeout(300);
