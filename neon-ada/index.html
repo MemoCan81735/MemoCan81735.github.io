@@ -297,7 +297,7 @@ function lade(text) {
 // Entity: Gegnerregeln der Kampagne (S-008): Angriffsabstand, Wasserstand, Boss und Endgegner. Rein, ohne Zeit und Zufall (R-02).
 const WASSER_ZYKLUS = 60, WASSER_HOCH_AB = 40;       // Takte: 40 Takte niedrig, 20 Takte Hochwasser (10 Sekunden)
 const BOSS_PLUS = 4;                                 // Boss-Karten: Gegner startet mit 4 Pixelingen mehr
-const PHASE2_AB = 3, PHASE2_NEU = 8, BEBEN_ALLE = 30; // Endgegner: ab 3 Pixelingen Phase 2 mit 8 neuen, danach alle 30 Takte ein Beben
+const PHASE2_AB = 3, PHASE2_NEU = 8, BEBEN_ALLE = 30, PHASE2_SCHUB = 2, PHASE2_ALLE = 4;   // Phase 2: 8 neue in Schüben zu 2, alle 4 Takte (2 s), der erste Schub sofort; // Endgegner: ab 3 Pixelingen Phase 2 mit 8 neuen, danach alle 30 Takte ein Beben
 
 // Angriffsabstand: alle so viele Takte rückt ein Gegner auf den nächsten eigenen Pixeling vor; bis Stärke 3 greifen Gegner nicht an (0)
 const angriffsAbstand = (staerke) => (staerke <= 3 ? 0 : 11 - Math.max(1, Math.min(10, staerke)));
@@ -698,14 +698,14 @@ class Spiel {
 
 
 
-const ZIEL = 40, LIMIT = 720, HAUS_TAKTE = 6, VERMEHRUNG = 10, MAX_BEWOHNER = 4, ERTRINKEN = 3, KI_STAERKE = 1, RETTUNG_BASIS = 4;
+const ZIEL = 40, LIMIT = 720, HAUS_TAKTE = 6, VERMEHRUNG = 10, MAX_BEWOHNER = 4, ERTRINKEN = 3, KI_STAERKE = 1, RETTUNG_BASIS = 8, RETTUNG_MIN = 2;
 const NACH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const FLAECHE = [[0, 0], [1, 0], [0, 1], [1, 1]];
 const idx = (x, y) => y * GROESSE + x;
 const innen = (x, y) => x >= 0 && y >= 0 && x < GROESSE && y < GROESSE;
 
 function zustandAus(karte, anhaenger = [], haeuser = []) {
-  return { takt: 0, lern: false, lernFertig: false, ziel: ZIEL, limit: LIMIT, kraefte: ['flut'], freiBis: {}, leicht: false, haendler: false, phase: 1, endgegner: false, wechsel: false, ertrunken: [0, 0, 0], mana: 0, flutFrei: 0, ereignisse: [], staerke: KI_STAERKE, karte: Uint8Array.from(karte), anhaenger: anhaenger.map((a) => ({ ...a })), haeuser: haeuser.map((h) => ({ ...h })), bau: {}, naechsteId: 1000 };
+  return { takt: 0, lern: false, lernFertig: false, ziel: ZIEL, limit: LIMIT, kraefte: ['flut'], freiBis: {}, leicht: false, haendler: false, phase: 1, nachschub: 0, endgegner: false, wechsel: false, ertrunken: [0, 0, 0], mana: 0, flutFrei: 0, ereignisse: [], staerke: KI_STAERKE, karte: Uint8Array.from(karte), anhaenger: anhaenger.map((a) => ({ ...a })), haeuser: haeuser.map((h) => ({ ...h })), bau: {}, naechsteId: 1000 };
 }
 
 // Bautempo-Faktor: eigenes Volk Faktor 1, Gegner Faktor 1 + (10 - Stärke) mal 0,3 (Stärke 1 = Lernkarte, langsamer Gegner)
@@ -825,9 +825,12 @@ function takt(z, rng) {
   // 5b Endgegner: sinkt er auf 3 Pixelinge, beginnt Phase 2 mit 8 neuen und mehr Stärke (einmal)
   if (z.endgegner && z.phase === 1 && gegnerZahl(z) <= PHASE2_AB) {
     z.phase = 2; z.staerke = Math.min(10, z.staerke + 2); ev(z, 'phase', 0, 0);
-    for (let i = 0; i < PHASE2_NEU; i++) z.anhaenger.push({ id: z.naechsteId++, volk: 1, x: GROESSE - 1 - (4 + (i % 2)), y: 8 + Math.floor(i / 2), ertrinkt: 0, haus: -1 });
+    z.nachschub = PHASE2_NEU; z.nachschubAb = z.takt;   // die neuen Gegner kommen in Schüben (sofort der erste), nicht alle auf einmal
   }
-  // 6 Gegner-KI: (a) Rettung: alle RETTUNG_BASIS minus Stärke Takte hebt die KI das Feld unter einem gefährdeten Anhänger (Höhe höchstens 1) um 2; (b) alle 12 minus Stärke Takte ein Feld um 1 ändern
+  if (z.nachschub > 0 && (z.takt - z.nachschubAb) % PHASE2_ALLE === 0) {
+    for (let j = 0; j < PHASE2_SCHUB && z.nachschub > 0; j++) { const i = PHASE2_NEU - z.nachschub; z.anhaenger.push({ id: z.naechsteId++, volk: 1, x: GROESSE - 1 - (4 + (i % 2)), y: 8 + Math.floor(i / 2), ertrinkt: 0, haus: -1 }); z.nachschub--; }
+  }
+  // 6 Gegner-KI: (a) Rettung: alle RETTUNG_BASIS minus Stärke Takte (mindestens RETTUNG_MIN; Entscheidung 20.11.2026, vorher 4 und 1) hebt die KI das Feld unter einem gefährdeten Anhänger (Höhe höchstens 1) um 2; (b) alle 12 minus Stärke Takte ein Feld um 1 ändern
   z.takt++;
   if (z.takt % MANA_TAKTE === 0) z.mana = Math.min(MANA_MAX, z.mana + z.haeuser.filter((h) => h.volk === 0).length);
   if (z.phase === 2 && z.takt % BEBEN_ALLE === 0) {   // Endgegner Phase 2: Beben um einen zufälligen Pixeling des Spielers
@@ -835,7 +838,7 @@ function takt(z, rng) {
     if (mine.length) { const a = mine[Math.floor(rng() * mine.length)]; beben(z, a.x, a.y, rng); }
   }
   if (z.lern) return;
-  if (z.takt % Math.max(1, RETTUNG_BASIS - Math.max(1, Math.min(10, z.staerke))) === 0) {
+  if (z.takt % Math.max(RETTUNG_MIN, RETTUNG_BASIS - Math.max(1, Math.min(10, z.staerke))) === 0) {
     const gef = z.anhaenger.find((a) => a.volk >= 1 && z.karte[idx(a.x, a.y)] <= 1);
     if (gef) z.karte = heben(heben(z.karte, gef.x, gef.y), gef.x, gef.y);
   }
@@ -854,7 +857,7 @@ function ende(z) {
   const [a, b] = [anzahl(z, 0), gegnerZahl(z)];
   if (a === 0) return 'niederlage';
   if (z.lern && !z.lernFertig) return 'laeuft';
-  if (a >= z.ziel && b === 0 && (!z.endgegner || z.phase === 2)) return 'sieg';
+  if (a >= z.ziel && b === 0 && (!z.endgegner || z.phase === 2) && !z.nachschub) return 'sieg';
   if (b >= z.ziel && !z.lern) return 'niederlage';
   if (z.takt >= z.limit && !z.lern) return a > b && a * 2 >= z.ziel && (!z.endgegner || z.phase === 2) ? 'sieg' : 'niederlage';   // Limit-Sieg: mehr als der Gegner und mindestens das halbe Ziel (Entscheidung 20.11.2026, Spec S-006); Endgegner nur nach Phase 2
   return 'laeuft';
