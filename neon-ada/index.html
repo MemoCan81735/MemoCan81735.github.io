@@ -55,18 +55,18 @@ body.look-a{background:#0d3b66}
 #meldung{position:fixed;inset:0;display:grid;place-items:center;background:var(--grund);color:var(--text)}
 #meldung[hidden]{display:none}
 </style></head><body>
-<canvas id="welt"></canvas>
+<canvas id="welt" role="img" aria-label="Spielfeld: Insel aus Würfeln mit Pixelingen und Häusern"></canvas>
 <div id="leiste"><button id="heben" aria-pressed="true">Heben</button><button id="senken" aria-pressed="false">Senken</button><button id="pinsel" aria-pressed="false">Pinsel 1</button><button id="grafik" aria-pressed="false">Pixel</button><button id="flut" disabled>Flut</button><button id="stumm" aria-pressed="false">Ton an</button></div>
 <div id="kraefte" hidden></div>
 <div id="rand" hidden></div>
 <div id="ring" hidden></div>
 <div id="marke" hidden></div>
 <div id="aufgabe" role="status" aria-live="polite" hidden></div>
-<a class="ng-zurueck" id="ngfest" href="../" style="position:fixed;left:8px;top:calc(56px + env(safe-area-inset-top));display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 8px;color:var(--text,#ffe97a);background:var(--taste,#1b2260);font:bold 16px monospace;text-decoration:none;border:3px solid currentColor">← Spiele</a><div id="oben" hidden><button id="kartentaste">Karten</button><button id="hilfetaste" aria-label="Hilfe">?</button><button id="skip">Überspringen</button></div>
+<a class="ng-zurueck" id="ngfest" href="../" style="position:fixed;left:8px;top:calc(56px + env(safe-area-inset-top));display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:48px;max-width:50px;padding:0;color:var(--text,#ffe97a);background:var(--taste,#1b2260);font:bold 16px monospace;text-decoration:none;border:3px solid currentColor" aria-label="Alle Spiele" title="Alle Spiele">←</a><div id="oben" hidden><button id="kartentaste">Karten</button><button id="hilfetaste" aria-label="Hilfe">?</button><button id="skip">Überspringen</button></div>
 <div id="hilfe" role="dialog" aria-modal="true" aria-label="Hilfe" hidden><div class="karten"><div id="hilfekarten" class="karten"></div><button id="hilfezu">Weiter spielen</button></div></div>
 <div id="kartenmenue" role="dialog" aria-modal="true" aria-label="Karten" hidden><a class="ng-zurueck" href="../" style="display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 14px;margin-top:44px;color:inherit;font:bold 16px monospace;text-decoration:none;border:3px solid currentColor">← Alle Spiele</a><h2>Karten</h2><div id="kartenliste"></div><div id="kartenaktion"><button id="tagtaste">Tägliche Aufgabe</button><button id="leichttaste" aria-pressed="false">Leicht: aus</button><button id="kartenzu">Zurück zum Spiel</button><button id="wegtaste">Fortschritt löschen</button></div><p id="speicherhinweis"></p></div>
 <div id="anzeige">Volk 8 · Gegner 8</div>
-<div id="ende" hidden><div><p id="endetext"></p><p id="teiltext" hidden></p><button id="neustart">Neustart</button> <button id="leichtversuch" hidden>Leichter versuchen</button> <button id="teilen" hidden>Teilen</button> <button id="weiterkarte" hidden>Nächste Karte</button> <button id="zukarten">Karten</button></div></div>
+<div id="ende" role="alertdialog" aria-live="assertive" aria-label="Ergebnis" hidden><div><p id="endetext"></p><p id="teiltext" hidden></p><button id="neustart">Neustart</button> <button id="leichtversuch" hidden>Leichter versuchen</button> <button id="teilen" hidden>Teilen</button> <button id="weiterkarte" hidden>Nächste Karte</button> <button id="zukarten">Karten</button></div></div>
 <div id="meldung" hidden><p></p></div>
 <script src="three.min.js"></script>
 <script>
@@ -203,12 +203,12 @@ const KRAEFTE = { flut: { kosten: FLUT_KOSTEN, abkling: FLUT_ABKLING }, vulkan: 
 const HANDEL_KOSTEN = 3;
 const HAUS_ANIM = 6, HAUS_HOEHE = 1.2;
 const LAUT = 0.3, PARTIKEL_MAX = 200, TON_LATENZ_MAX = 0.1, TON_JE_BILD = 4;
-const STUFE_AB = [0, 20, 30];       // Gegneranzahl, ab der Stufe 0, 1, 2 gilt
+const STUFE_AB = [0, 0.5, 0.75];    // Anteil der Gegner am Ziel, ab dem Stufe 0, 1, 2 gilt (bei Ziel 40: 20 und 30)
 const TEMPO = [120, 120, 140];      // Schläge je Minute je Stufe
 
 // Tonhöhe je Landhöhe: Höhe 0 = 220 Hz, je Stufe ein Halbton
 const tonHz = (hoehe) => BASIS_HZ * Math.pow(2, Math.max(0, Math.min(MAX, hoehe)) / 12);
-const musikStufe = (gegner) => (gegner >= STUFE_AB[2] ? 2 : gegner >= STUFE_AB[1] ? 1 : 0);
+const musikStufe = (gegner, ziel = 40) => (gegner >= STUFE_AB[2] * ziel ? 2 : gegner >= STUFE_AB[1] * ziel ? 1 : 0);
 const tempo = (stufe) => TEMPO[stufe] ?? TEMPO[0];
 // Hausanimation: von 0 auf 1,2 in genau 6 Takten, danach nicht höher
 const hausHoehe = (takte) => HAUS_HOEHE * Math.max(0, Math.min(HAUS_ANIM, takte)) / HAUS_ANIM;
@@ -274,6 +274,12 @@ function nachSieg(f, id, erg, deckel = 3) {   // deckel: höchste Sternzahl (lei
   if (!k || n === 0 || !istOffen(f, id)) return f;
   return { version: FORMAT, sterne: { ...f.sterne, [id]: Math.max(st(f, id), n) } };
 }
+// Mischt zwei Stände: je Karte die bessere Sternzahl (zum Beispiel zwei offene Seiten, letzter Schreiber verliert nichts)
+function mische(a, b) {
+  const sterne = { ...a.sterne };
+  for (const id of Object.keys(b.sterne)) sterne[id] = Math.max(sterne[id] | 0, b.sterne[id]);
+  return { version: FORMAT, sterne };
+}
 const serialisiere = (f) => JSON.stringify({ version: FORMAT, sterne: f.sterne });
 // Lädt gespeicherten Text; alles Ungültige führt zum leeren Fortschritt, einzelne ungültige Werte werden verworfen
 function lade(text) {
@@ -327,7 +333,10 @@ function teilText(j, m, t, k, sterne, leicht) {
 // ohne Quelle oder bei Fehlern (privates Fenster, voller Speicher) bleibt der Fortschritt im Arbeitsspeicher.
 const SCHLUESSEL = 'neon-ada-fortschritt';
 class Speicher {
-  constructor(quelle = null) { this.quelle = quelle; this.speicher = null; this.dauerhaft = !!quelle; }
+  constructor(quelle = null) {
+    this.quelle = quelle; this.speicher = null; this.dauerhaft = false;
+    if (quelle) { try { quelle.setItem(SCHLUESSEL + '-probe', '1'); quelle.removeItem(SCHLUESSEL + '-probe'); this.dauerhaft = true; } catch (e) { this.dauerhaft = false; } }   // voller oder gesperrter Speicher wird gleich erkannt
+  }
   lies() {
     if (this.quelle) { try { const t = this.quelle.getItem(SCHLUESSEL); if (t !== null && t !== undefined) return t; } catch (e) { this.dauerhaft = false; } }
     return this.speicher;
@@ -465,7 +474,7 @@ class Ton {
       default: return null;
     }
   }
-  setzeStufe(gegner) { this.stufe = musikStufe(gegner); }
+  setzeStufe(gegner, ziel) { this.stufe = musikStufe(gegner, ziel); }
   // Musik planen: je Aufruf alle Achtel der nächsten 0,25 Sekunden (Zeit kommt von der Audiouhr)
   tick() {
     if (!this.ctx || !this.laeuft || this.stumm) return;
@@ -847,7 +856,7 @@ function ende(z) {
   if (z.lern && !z.lernFertig) return 'laeuft';
   if (a >= z.ziel && b === 0 && (!z.endgegner || z.phase === 2)) return 'sieg';
   if (b >= z.ziel && !z.lern) return 'niederlage';
-  if (z.takt >= z.limit && !z.lern) return a > b ? 'sieg' : 'niederlage';
+  if (z.takt >= z.limit && !z.lern) return a > b && a * 2 >= z.ziel && (!z.endgegner || z.phase === 2) ? 'sieg' : 'niederlage';   // Limit-Sieg: mehr als der Gegner und mindestens das halbe Ziel (Entscheidung 20.11.2026, Spec S-006); Endgegner nur nach Phase 2
   return 'laeuft';
 }
 
@@ -967,7 +976,17 @@ class Lernpfad {
   }
 }
 
+// Control: Ergebnis einer Kampagnenkarte buchen (S-006, S-011). Liest den gespeicherten Stand frisch, mischt (beste Sterne je Karte),
+// rechnet den Sieg ein und schreibt zurück. Die Ablage wird hineingereicht (R-04).
+
+function buche(fort, ablage, id, erg, deckel = 3) {
+  const neu = nachSieg(mische(fort, lade(ablage.lies())), id, erg, deckel);
+  ablage.schreibe(serialisiere(neu));
+  return neu;
+}
+
 // Control: Einstieg für die UI. Reicht Plattformteile (THREE, Zeit) hinein und bindet Boundary an.
+
 
 
 
@@ -991,7 +1010,7 @@ function erzeuge(canvas, THREE, opt = {}, plattform = {}) {
   const { seed = 1, taktMs = TAKT_MS, look = 'a0', glatt = false, lernen = false } = opt;
   const { AudioKlasse = null, dpr = 1, speicherQuelle = null } = plattform;
   const ablage = new Speicher(speicherQuelle);
-  let fort = lade(ablage.lies()), kartenId = null, gebucht = false, sterneLetzte = 0, leicht = false, tag = null;   // tag: { j, m, t, seed, karte } der täglichen Aufgabe
+  let testFrei = false, fort = lade(ablage.lies()), kartenId = null, gebucht = false, sterneLetzte = 0, leicht = false, tag = null;   // tag: { j, m, t, seed, karte } der täglichen Aufgabe
   let z = lernen ? neuerLernZustand() : neuerZustand(), rng = mulberry32(seed), letzter = null;
   let lp = lernen ? new Lernpfad(z) : null, pausiert = false, hilfePause = false;
   const spiel = new Spiel(z); spiel.zufall = () => rng();
@@ -1018,7 +1037,7 @@ function erzeuge(canvas, THREE, opt = {}, plattform = {}) {
         gebucht = true; const erg = { sieg: e === 'sieg', takte: z.takt, ertrunken: z.ertrunken[0] };
         const k = kartenId ? karteZu(kartenId) : tag.karte, deckel = z.leicht ? leichtSterne(3) : 3;
         sterneLetzte = Math.min(sterneFuer(k, erg), deckel);
-        if (kartenId) { fort = nachSieg(fort, kartenId, erg, deckel); ablage.schreibe(serialisiere(fort)); }
+        if (kartenId) fort = buche(fort, ablage, kartenId, erg, deckel);
       }
       return e;
     },
@@ -1031,6 +1050,7 @@ function erzeuge(canvas, THREE, opt = {}, plattform = {}) {
     // Kampagne (S-006): Kartenliste mit Stand, Karte starten, Ergebnis, Fortschritt löschen
     karten: () => KARTEN.map((k) => ({ id: k.id, welt: k.welt, name: k.name, offen: istOffen(fort, k.id), sterne: fort.sterne[k.id] | 0, boss: k.boss })),
     kartenId: () => kartenId,
+    testFrei: () => testFrei, setzeTestFrei(an) { testFrei = !!an; },   // Prüfhilfe, wird nie gespeichert
     // frei = true startet auch gesperrte Karten (nur für Prüfläufe über die Adresse, kein Schutz vor Schummeln)
     starteKarte(id, frei = false) {
       const k = karteZu(id);
@@ -1069,7 +1089,7 @@ function erzeuge(canvas, THREE, opt = {}, plattform = {}) {
         partikel.erzeuge(ANZ[e.art] || 4, e.x + 0.5 - GROESSE / 2, hh, e.y + 0.5 - GROESSE / 2, FARBE[e.art] || 0xffffff, prng);
       }
       partikel.schritt(dt);
-      ton.setzeStufe(gegnerZahl(z)); ton.tick();
+      ton.setzeStufe(gegnerZahl(z), z.ziel); ton.tick();
       const st = ende(z);
       if (st !== 'laeuft' && !jingleSchon) { jingleSchon = true; ton.jingle(st === 'sieg' ? 'sieg' : 'niederlage'); }
       szene.setzePartikel(partikel.p);
@@ -1080,7 +1100,7 @@ function erzeuge(canvas, THREE, opt = {}, plattform = {}) {
     // Tab im Hintergrund: Spiel und Ton anhalten, beim Zurückkommen fortsetzen
     sichtbar(an) { ton.setzeSichtbar(an); pausiert = !an || hilfePause; },
     takte: () => z.takt,
-    stufe: () => musikStufe(gegnerZahl(z)),
+    stufe: () => musikStufe(gegnerZahl(z), z.ziel),
     mana: () => [z.mana, MANA_MAX],
     flutBereit: () => flutBereit(z),
     // Götterkräfte der Karte (S-007): Name, Kosten, bereit, gewählt; dazu der Händler, wenn die Karte einen hat
@@ -1133,6 +1153,7 @@ function starte() {
   const karteHash = null;   // Prüfläufe: #karte=3-1 startet diese Karte auch gesperrt
   if (karteHash) spiel.starteKarte(karteHash[1], true);
   const stand = { schmutzig: true, tippZeit: 0, bilder: 0, start: 0, pause: /pause/.test(location.hash) };
+  canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); meldung('Das Gerät hat die Grafik angehalten. Bitte die Seite neu laden.'); });
   const hud = document.getElementById('anzeige'), schluss = document.getElementById('ende'), text = document.getElementById('endetext');
   const passeAn = () => { spiel.groesse(innerWidth, innerHeight); stand.schmutzig = true; };
   addEventListener('resize', passeAn); passeAn();
@@ -1226,14 +1247,16 @@ function starte() {
     liste.replaceChildren(); let welt = 0;
     for (const k of spiel.karten()) {
       if (k.welt !== welt) { welt = k.welt; const h = document.createElement('p'); h.className = 'welt'; h.append(welt === 5 ? 'Finale' : 'Welt ' + welt); liste.append(h); }
-      const b = document.createElement('button'); b.disabled = !k.offen; b.dataset.karte = k.id;
-      b.append(k.id + ' ' + k.name, document.createElement('br'), k.offen ? sterneText(k.sterne) : 'gesperrt');
-      b.addEventListener('click', () => { if (spiel.starteKarte(k.id)) { menueAuf(false); startNeu(); } });
+      const b = document.createElement('button'); b.disabled = !(k.offen || spiel.testFrei()); b.dataset.karte = k.id;
+      b.append(k.id + ' ' + k.name, document.createElement('br'), k.offen ? sterneText(k.sterne) : spiel.testFrei() ? 'Test' : 'gesperrt');
+      b.addEventListener('click', () => { if (spiel.starteKarte(k.id, spiel.testFrei())) { menueAuf(false); startNeu(); } });
       liste.append(b);
     }
     document.getElementById('speicherhinweis').replaceChildren(spiel.ergebnis().dauerhaft ? 'Fortschritt wird auf diesem Gerät gespeichert.' : 'Fortschritt gilt nur bis zum Neuladen der Seite.');
   };
   const menueAuf = (an) => { menue.hidden = !an; spiel.pause(an); if (an) { baueMenue(); beschrifteLeicht(); wegFrage = false; wegTaste.replaceChildren('Fortschritt löschen'); document.getElementById('kartenzu').focus(); } };
+  const testTaste = document.getElementById('testfrei');   // Prüfhilfe: gesperrte Karten zum Ausprobieren öffnen (zählt nicht für Sterne; auf der Seite entfernt)
+  if (testTaste) testTaste.addEventListener('click', () => { const an = !spiel.testFrei(); spiel.setzeTestFrei(an); testTaste.setAttribute('aria-pressed', String(an)); baueMenue(); });
   document.getElementById('kartentaste').addEventListener('click', () => menueAuf(true));
   document.getElementById('kartenzu').addEventListener('click', () => menueAuf(false));
   zuKartenTaste.addEventListener('click', () => { schluss.hidden = true; menueAuf(true); });
@@ -1325,7 +1348,7 @@ function starte() {
       leichtVersuch.hidden = lern || e === 'sieg' || erg.leicht;
       teilTaste.hidden = !erg.teil; teilText.hidden = !erg.teil; if (erg.teil) teilText.replaceChildren(erg.teil);
       neustartTaste.replaceChildren(lern ? (e === 'sieg' ? 'Zur ersten Insel' : 'Nochmal') : 'Neustart');
-      schluss.hidden = false;
+      schluss.hidden = false; (weiterTaste.hidden ? neustartTaste : weiterTaste).focus();   // Fokus auf die erste sichtbare Taste (Tastatur und Bildschirmleser)
     }
   };
   const schleife = (jetzt) => {
@@ -1350,7 +1373,7 @@ function starte() {
   haken.__lern = () => { const lp = spiel.lernpfad(); return lp ? { nr: lp.nr, fertig: lp.fertig, kopf: lp.kopf, hinweis: lp.hinweis } : null; };
   haken.__takt = () => spiel.takte(); haken.__halt = (an) => spiel.pause(an);
   haken.__ansicht = () => ({ px: spiel.pxJeEinheit(), zoom: spiel.spiel.zoom, mx: spiel.spiel.mitte.x, my: spiel.spiel.mitte.y, pixel: spiel.pixelgroesse(), pinsel: spiel.spiel.pinsel });
-  haken.__karte = () => Array.from(spiel.spiel.karte);
+  haken.__karte = () => Array.from(spiel.spiel.karte); haken.__zustand = () => spiel.spiel.z;   // Prüfhaken: lebender Zustand (Prüfläufe setzen damit Ziele); auf der Seite entfernt
   haken.__karten = () => spiel.karten(); haken.__kartenId = () => spiel.kartenId();
 }
 

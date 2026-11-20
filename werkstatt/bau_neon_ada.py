@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Baut neon-ada/index.html aus dem Bau des Spiels (S-W27): Symbol und Manifest, lokales three.js, Zurück-Link im Kartenmenü,
-keine Prüfhaken (window.__...) und keine Test-Adressparameter. Zwei Zurück-Links: fest oben links und im Kartenmenü. Aufruf: bau_neon_ada.py <dist/index.html> [three.min.js]"""
+keine Prüfhaken (window.__...), keine Test-Schaltfläche und keine Adressparameter zum Öffnen gesperrter Karten (#schnell, #datum, #look bleiben wirksam). Zwei Zurück-Links: fest oben links und im Kartenmenü. Aufruf: bau_neon_ada.py <dist/index.html> [three.min.js]"""
 import os, re, shutil, sys
 quelle = sys.argv[1]
 t = open(quelle, encoding="utf-8").read()
@@ -21,11 +21,12 @@ ersetze('<title>Neon Ada</title>',
 stil = ("display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 14px;margin-top:44px;color:inherit;"
         "font:bold 16px monospace;text-decoration:none;border:3px solid currentColor")
 link = f'<a class="ng-zurueck" href="../" style="{stil}">← Alle Spiele</a>'
-fest = ("position:fixed;left:8px;top:calc(56px + env(safe-area-inset-top));display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 8px;"
+fest = ("position:fixed;left:8px;top:calc(56px + env(safe-area-inset-top));display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:48px;max-width:50px;padding:0;"
         "color:var(--text,#ffe97a);background:var(--taste,#1b2260);font:bold 16px monospace;text-decoration:none;border:3px solid currentColor")
 # Fester Zurück-Link oben links vor allen Schichten (Menü, Hilfe, Endbild liegen später im Dokument und decken ihn zu)
-ersetze('<div id="oben" hidden>', f'<a class="ng-zurueck" id="ngfest" href="../" style="{fest}">← Spiele</a><div id="oben" hidden>')
+ersetze('<div id="oben" hidden>', f'<a class="ng-zurueck" id="ngfest" href="../" style="{fest}" aria-label="Alle Spiele" title="Alle Spiele">←</a><div id="oben" hidden>')
 ersetze('aria-label="Karten" hidden><h2>Karten</h2>', f'aria-label="Karten" hidden>{link}<h2>Karten</h2>')   # ganz oben, damit er auch im Querformat ohne Scrollen erreichbar ist
+ersetze('<button id="testfrei" aria-pressed="false">Test: alle Karten öffnen</button>', '')   # Prüfhilfe gehört nicht auf die Seite
 # Prüfhaken: alle Zuweisungen an window.__x werden zu einem lokalen Objekt; die Adressparameter für Prüfläufe bleiben wirkungslos
 t = re.sub(r"window\.(__[A-Za-z]+)", r"haken.\1", t)
 ersetze("const meldung =", "const haken = {};\nconst meldung =")
