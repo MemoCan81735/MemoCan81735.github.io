@@ -858,7 +858,7 @@ function ende(z) {
   if (a === 0) return 'niederlage';
   if (z.lern && !z.lernFertig) return 'laeuft';
   if (a >= z.ziel && b === 0 && (!z.endgegner || z.phase === 2) && !z.nachschub) return 'sieg';
-  if (b >= z.ziel && !z.lern) return 'niederlage';
+  if (b >= z.ziel && b > a && !z.lern) return 'niederlage';
   if (z.takt >= z.limit && !z.lern) return a > b && a * 2 >= z.ziel && (!z.endgegner || z.phase === 2) ? 'sieg' : 'niederlage';   // Limit-Sieg: mehr als der Gegner und mindestens das halbe Ziel (Entscheidung 20.11.2026, Spec S-006); Endgegner nur nach Phase 2
   return 'laeuft';
 }
