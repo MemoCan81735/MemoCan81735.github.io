@@ -234,8 +234,8 @@ const K1 = [], K2 = ['flut'], K3 = ['flut', 'vulkan'], K4 = ['flut', 'vulkan', '
 const T = [
   ['1-1', 1, 'Palmenstrand', 8, 20, 1, 0, K1, false], ['1-2', 1, 'Sonnenbrillen-Bucht', 6, 30, 2, 0, K1, false], ['1-3', 1, 'Neon-Bande', 6, 34, 3, 6, K1, true],
   ['2-1', 2, 'Kassettenhafen', 6, 34, 3, 0, K2, false], ['2-2', 2, 'Videothek-Riff', 5, 35, 4, 6, K2, false], ['2-3', 2, 'Der Videothekar', 5, 36, 5, 7, K2, true],
-  ['3-1', 3, 'Joystick-Strand', 5, 34, 5, 0, K3, false], ['3-2', 3, 'Pixelgeister-Platte', 4, 28, 6, 7, K3, false], ['3-3', 3, 'Joystick-Orden', 4, 30, 7, 8, K3, true],
-  ['4-1', 4, 'Tanzflächen-Atoll', 4, 30, 7, 0, K4, false], ['4-2', 4, 'Plattenspieler-Insel', 4, 30, 8, 8, K4, false], ['4-3', 4, 'Synth-Kult', 3, 32, 9, 9, K4, true],
+  ['3-1', 3, 'Joystick-Strand', 5, 34, 5, 0, K3, false], ['3-2', 3, 'Pixelgeister-Platte', 4, 26, 5, 7, K3, false], ['3-3', 3, 'Joystick-Orden', 4, 27, 5, 8, K3, true],
+  ['4-1', 4, 'Tanzflächen-Atoll', 4, 30, 5, 0, K4, false], ['4-2', 4, 'Plattenspieler-Insel', 4, 30, 8, 8, K4, false], ['4-3', 4, 'Synth-Kult', 3, 32, 9, 9, K4, true],
   ['5-1', 5, 'Der Große Mix', 3, 32, 10, 0, K5, true],
 ];
 const GEGNER2 = ['3-2', '3-3'], WASSER = ['4-2', '4-3'], ENDGEGNER = ['5-1'];   // zwei Gegner, wechselnder Wasserstand, Endgegner mit zwei Phasen (S-008)
@@ -698,7 +698,7 @@ class Spiel {
 
 
 
-const ZIEL = 40, LIMIT = 720, HAUS_TAKTE = 6, VERMEHRUNG = 10, MAX_BEWOHNER = 4, ERTRINKEN = 3, KI_STAERKE = 1, RETTUNG_BASIS = 8, RETTUNG_MIN = 2, LEICHT_BAU = 1.8;
+const ZIEL = 40, LIMIT = 720, HAUS_TAKTE = 6, VERMEHRUNG = 10, MAX_BEWOHNER = 4, ERTRINKEN = 3, KI_STAERKE = 1, LIMIT_GEGNER_MAX = 2, RETTUNG_BASIS = 8, RETTUNG_MIN = 2, LEICHT_BAU = 1.8;
 const NACH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const FLAECHE = [[0, 0], [1, 0], [0, 1], [1, 1]];
 const idx = (x, y) => y * GROESSE + x;
@@ -859,7 +859,7 @@ function ende(z) {
   if (z.lern && !z.lernFertig) return 'laeuft';
   if (a >= z.ziel && b === 0 && (!z.endgegner || z.phase === 2) && !z.nachschub) return 'sieg';
   if (b >= z.ziel && b > a && !z.lern) return 'niederlage';
-  if (z.takt >= z.limit && !z.lern) return a > b && a * 4 >= z.ziel * 3 && (!z.endgegner || z.phase === 2) ? 'sieg' : 'niederlage';   // Limit-Sieg: mehr als der Gegner und mindestens drei Viertel des Ziels (Entscheidung 21.11.2026, Spec S-006; vorher das halbe Ziel); Endgegner nur nach Phase 2
+  if (z.takt >= z.limit && !z.lern) return a > b && b <= LIMIT_GEGNER_MAX && a * 4 >= z.ziel * 3 && (!z.endgegner || z.phase === 2) ? 'sieg' : 'niederlage';   // Limit-Sieg: mehr als der Gegner und mindestens drei Viertel des Ziels (Entscheidung 21.11.2026, Spec S-006; vorher das halbe Ziel); Endgegner nur nach Phase 2
   return 'laeuft';
 }
 
