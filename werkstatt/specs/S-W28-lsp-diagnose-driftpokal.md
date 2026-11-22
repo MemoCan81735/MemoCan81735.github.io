@@ -1,6 +1,6 @@
 # S-W28: LSP-Diagnose für den HTML-Driftpokal in der schnellen Prüfkette
 
-**Status:** Entwurf (wartet auf Freigabe per Entscheidungskarte: Spec und Prüfumfang)
+**Status:** gebaut, freigegeben am 22.11.2026 (Entscheidungskarten Ziel, Umfang, Spec)
 
 ## Anlass
 Der Betreiber will, dass beim Driftpokal ein Diagnoseschritt wie in Neon Sprint (Baustein `vorlagen/app-vorlage/tools/bausteine/rust/ra_check.sh`) in die schnelle Prüfkette kommt. Die Ziel-Fassung ist der HTML-Driftpokal (Entscheidung am 22.11.2026: "HTML-Driftpokal"). Die Godot-Fassung (CayYanlama) ist nicht Teil dieser Spec. Das Quellrepo `MemoCan81735/Driftpokal` liegt außerhalb des Repo-Zugriffs dieser Sitzung; geprüft wird die ausgelieferte Datei `driftpokal/index.html` auf der Spieleseite (die Datei, die Besucher bekommt).
@@ -52,7 +52,9 @@ Der Betreiber will, dass beim Driftpokal ein Diagnoseschritt wie in Neon Sprint 
 ## Messwerte und Rückblick
 - Gemessen 22.11.2026: volle `checkJs`-Prüfung über beide Skriptblöcke 8.525 Befunde (überwiegend TS7006, TS18047 Null-Warnungen); eingeschränkt auf den Spielcode 0 Gatter-Befunde; globals.d.ts beseitigt die THREE-Fehlalarme.
 - Die Laufzeit von `tsc` über den Spielblock: ca. 3 s.
-- Rückblick nach dem Bau: offen.
+- Bau: 10 Tests in `werkstatt/tests/lsp_test.py`, davon 8 rot vor dem Skript (AK-2, AK-3, AK-4, AK-7, AK-8, AK-9 bzw. Laufzeit und Gegenproben); AK-5 und AK-6 waren vor dem Skript grün, weil fehlende Datei und fehlendes Skript beide Exit 2 liefern. Zwei Fehler beim ersten Lauf: Zeilenzuordnung (Befund zeigte spiel.js) und Erkennung des three.js-Blocks, wenn davor eine Zeile eingefügt wird. Beides behoben, Test AK-8 deckt den zweiten ab.
+- Schnelle Kette: LSP-Schritt grün ("keine Befunde"). Zwei Läufe der Kette mit wechselnden Browserfehlern ("Target page ... closed") in d3- bzw. s-Tests, die einzeln grün laufen; nicht durch diesen Schritt verursacht, offen zu beheben.
+- Rückblick Fehler: Ein Zeilenfehler und die Blockerkennung gehören in die Fehlerliste (früheste Stufe: Spec-Test, hier im Test erkannt).
 
 ## Technisches Design
 - Schnittstelle: `python3 werkstatt/lsp_pruefen.py [DATEI]` (Standard: `driftpokal/index.html`), Exit 0 grün, 1 Befund, 2 Umgebung fehlt.

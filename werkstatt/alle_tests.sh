@@ -9,6 +9,8 @@ python3 werkstatt/seite_pruefen.py --gegenproben
 python3 werkstatt/phasen_pruefen.py
 python3 werkstatt/tests/gegenproben_phasen.py
 node werkstatt/seite_handy.js
+python3 werkstatt/lsp_pruefen.py
+python3 werkstatt/tests/lsp_test.py
 python3 werkstatt/tests/strecken_test.py
 python3 werkstatt/tests/wahrzeichen_test.py
 node werkstatt/tests/saeulen_test.js
