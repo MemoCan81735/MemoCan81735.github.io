@@ -1,0 +1,1384 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Neon Ada</title>
+<meta name="theme-color" content="#0d1026">
+<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/neon-ada-192.png">
+<link rel="apple-touch-icon" href="../bilder/symbole/neon-ada-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--taste:#1b2a6b;--text:#ffe27a;--grund:#10163a}
+html,body{margin:0;height:100%;background:var(--grund);overflow:hidden;touch-action:none;font-family:monospace}
+#welt{position:fixed;inset:0;width:100%;height:100%;image-rendering:pixelated;touch-action:none}
+#leiste{position:fixed;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+#leiste button{flex:1 1 28%;min-width:64px;max-width:140px;min-height:52px;padding:0;font:bold 14px monospace;background:var(--taste);color:var(--text);border:3px solid var(--text);border-radius:0}
+#leiste button[aria-pressed=true]{outline:4px solid #fff}
+#leiste button:disabled{opacity:.55}
+#rand{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 0 4px #e0243a}
+#rand[hidden]{display:none}
+#aufgabe{pointer-events:none;position:fixed;left:12px;right:12px;bottom:calc(150px + env(safe-area-inset-bottom));padding:8px 12px;font:bold 16px monospace;line-height:1.3;color:var(--text);background:rgba(16,22,58,.88);border:2px solid var(--text)}
+#aufgabe[hidden],#oben[hidden],#hilfe[hidden],#marke[hidden],#kartenmenue[hidden]{display:none}
+#aufgabe small{display:block;font-weight:normal;font-size:16px;color:#fff}
+#oben{position:fixed;right:8px;top:calc(56px + env(safe-area-inset-top));display:flex;gap:8px}
+#oben button,#hilfe button,#kartenmenue button,#ende button{min-width:48px;min-height:48px;padding:0 10px;font:bold 16px monospace;background:var(--taste);color:var(--text);border:3px solid var(--text);border-radius:0}
+#hilfe{position:fixed;inset:0;display:grid;place-items:center;background:rgba(16,22,58,.92);color:var(--text);padding:16px;overflow:auto}
+#kartenmenue{position:fixed;inset:0;display:block;background:rgba(16,22,58,.96);color:var(--text);padding:16px;overflow:auto;font:16px monospace}
+#kartenmenue h2{margin:0 0 8px;font:bold 20px monospace}
+#kartenliste{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:520px;margin:0 auto}
+#kartenliste button{min-height:64px;font-size:14px;line-height:1.2}
+#kartenliste button[disabled]{opacity:.5}
+#kartenliste .welt{grid-column:1/-1;margin:6px 0 0;font-weight:bold}
+#kartenaktion{display:flex;gap:8px;flex-wrap:wrap;max-width:520px;margin:12px auto 0}
+#kraefte{position:fixed;left:0;right:0;bottom:calc(136px + env(safe-area-inset-bottom));display:flex;gap:8px;justify-content:center;padding:0 8px;pointer-events:none}
+#kraefte button{pointer-events:auto;min-width:64px;min-height:48px;padding:0 10px;font:bold 14px monospace;background:var(--taste);color:var(--text);border:3px solid var(--text);border-radius:0}
+#kraefte button[disabled]{opacity:.5}
+#kraefte button[aria-pressed="true"]{background:var(--text);color:var(--taste)}
+#kraefte[hidden]{display:none}
+#hilfe div.karten{display:grid;gap:10px;max-width:420px}
+#hilfe p{margin:0;padding:10px 12px;font:16px/1.3 monospace;border:2px solid var(--text);background:var(--taste)}
+#marke{position:fixed;box-sizing:border-box;border:4px solid #fff;border-radius:50%;pointer-events:none;box-shadow:0 0 0 2px #10163a;animation:puls 1s ease-in-out infinite}
+/* Querformat: Tastenleiste einzeilig, damit sie die Insel weniger verdeckt */
+@media (min-aspect-ratio:1/1){#leiste{flex-wrap:nowrap;padding:6px 16px calc(6px + env(safe-area-inset-bottom))}#leiste button{flex:1 1 0;min-height:48px;max-width:160px}#aufgabe{bottom:calc(72px + env(safe-area-inset-bottom));left:auto;right:12px;max-width:44%}}
+@media (prefers-reduced-motion:reduce){#marke{animation:none}}
+@keyframes puls{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.6}}
+#ring{position:fixed;box-sizing:border-box;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #10163a,inset 0 0 0 2px #10163a;pointer-events:none}
+#ring[hidden]{display:none}
+#anzeige{pointer-events:none;position:fixed;top:0;left:0;right:0;text-align:center;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;font:bold 16px monospace;color:var(--text);background:rgba(16,22,58,.8)}
+#ende{position:fixed;inset:0;display:grid;place-items:center;background:rgba(16,22,58,.7);color:var(--text);text-align:center;font:bold 32px monospace}
+#ende[hidden],#ende button[hidden],#teiltext[hidden]{display:none}
+#teiltext{font:16px monospace;margin:8px 16px;word-break:break-word}
+#ende button{min-width:140px;min-height:56px;font:bold 20px monospace;background:var(--taste);color:var(--text);border:3px solid var(--text);border-radius:0;margin-top:16px}
+body.look-b{background:linear-gradient(#2b1055 0%,#7a2a8a 40%,#f0605d 68%,#ffb36b 88%,#ffd28a 100%)}
+body.look-c{background:radial-gradient(circle at 20% 15%,#fff 0 1px,transparent 2px),radial-gradient(circle at 70% 25%,#fff 0 1px,transparent 2px),radial-gradient(circle at 45% 8%,#9ff 0 1px,transparent 2px),linear-gradient(#05021a,#1a0a4a 60%,#3a0a5a)}
+body.look-c::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(transparent 0 2px,rgba(0,0,0,.18) 2px 3px)}
+body.look-a{background:#0d3b66}
+#meldung{position:fixed;inset:0;display:grid;place-items:center;background:var(--grund);color:var(--text)}
+#meldung[hidden]{display:none}
+</style></head><body>
+<canvas id="welt" role="img" aria-label="Spielfeld: Insel aus Würfeln mit Pixelingen und Häusern"></canvas>
+<div id="leiste"><button id="heben" aria-pressed="true">Heben</button><button id="senken" aria-pressed="false">Senken</button><button id="pinsel" aria-pressed="false">Pinsel 1</button><button id="grafik" aria-pressed="false">Pixel</button><button id="flut" disabled>Flut</button><button id="stumm" aria-pressed="false">Ton an</button></div>
+<div id="kraefte" hidden></div>
+<div id="rand" hidden></div>
+<div id="ring" hidden></div>
+<div id="marke" hidden></div>
+<div id="aufgabe" role="status" aria-live="polite" hidden></div>
+<a class="ng-zurueck" id="ngfest" href="../" style="position:fixed;left:8px;top:calc(56px + env(safe-area-inset-top));display:inline-flex;align-items:center;justify-content:center;min-height:48px;min-width:48px;max-width:50px;padding:0;color:var(--text,#ffe97a);background:var(--taste,#1b2260);font:bold 16px monospace;text-decoration:none;border:3px solid currentColor" aria-label="Alle Spiele" title="Alle Spiele">←</a><div id="oben" hidden><button id="kartentaste">Karten</button><button id="hilfetaste" aria-label="Hilfe">?</button><button id="skip">Überspringen</button></div>
+<div id="hilfe" role="dialog" aria-modal="true" aria-label="Hilfe" hidden><div class="karten"><div id="hilfekarten" class="karten"></div><button id="hilfezu">Weiter spielen</button></div></div>
+<div id="kartenmenue" role="dialog" aria-modal="true" aria-label="Karten" hidden><a class="ng-zurueck" href="../" style="display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 14px;margin-top:44px;color:inherit;font:bold 16px monospace;text-decoration:none;border:3px solid currentColor">← Alle Spiele</a><h2>Karten</h2><div id="kartenliste"></div><div id="kartenaktion"><button id="tagtaste">Tägliche Aufgabe</button><button id="leichttaste" aria-pressed="false">Leicht: aus</button><button id="kartenzu">Zurück zum Spiel</button><button id="wegtaste">Fortschritt löschen</button></div><p id="speicherhinweis"></p></div>
+<div id="anzeige">Volk 8 · Gegner 8</div>
+<div id="ende" role="alertdialog" aria-live="assertive" aria-label="Ergebnis" hidden><div><p id="endetext"></p><p id="teiltext" hidden></p><button id="neustart">Neustart</button> <button id="leichtversuch" hidden>Leichter versuchen</button> <button id="teilen" hidden>Teilen</button> <button id="weiterkarte" hidden>Nächste Karte</button> <button id="zukarten">Karten</button></div></div>
+<div id="meldung" hidden><p></p></div>
+<script src="three.min.js"></script>
+<script>
+// Entity: Höhenkarte der Insel, rein, ohne Zeit und Zufall (R-02).
+const GROESSE = 24;
+const MAX = 8;
+
+// Feste Startkarte: Kegelform aus dem Abstand zur Mitte mit festem Höckermuster (wenig ebenes Land), immer dieselbe.
+function startkarte() {
+  const k = new Uint8Array(GROESSE * GROESSE);
+  const m = (GROESSE - 1) / 2;
+  for (let y = 0; y < GROESSE; y++) {
+    for (let x = 0; x < GROESSE; x++) {
+      const d = Math.hypot(x - m, y - m);
+      k[y * GROESSE + x] = Math.max(0, Math.min(MAX, Math.round(5 - d * 0.5 + ((x * 5 + y * 3) % 3) * 0.4)));
+    }
+  }
+  return k;
+}
+
+const gueltig = (x, y) => Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < GROESSE && y < GROESSE;
+
+function aendere(karte, x, y, schritt) {
+  const n = Uint8Array.from(karte);
+  if (!gueltig(x, y)) return n;
+  const i = y * GROESSE + x;
+  n[i] = Math.max(0, Math.min(MAX, n[i] + schritt));
+  return n;
+}
+const heben = (karte, x, y) => aendere(karte, x, y, 1);
+const senken = (karte, x, y) => aendere(karte, x, y, -1);
+
+// Entity: Amiga-ähnliche Palette und Kontrastberechnung, rein.
+const HOEHENFARBEN = ['#2a5fd6', '#e8d58a', '#4aa83a', '#3c8f30', '#2f7a2a', '#8a8a8a', '#6e6e6e', '#d8d8e8', '#ffffff'];
+const TASTE = '#1b2a6b';
+const TASTE_TEXT = '#ffe27a';
+
+function luminanz(hex) {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+function kontrast(a, b) {
+  const [l1, l2] = [luminanz(a), luminanz(b)].sort((p, q) => q - p);
+  return (l1 + 0.05) / (l2 + 0.05);
+}
+
+// Entity: seedbarer Zufallsgenerator (mulberry32), rein. Gleicher Seed, gleiche Folge (R-02: kein Math.random).
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Entity: reine Regeln der Touch-Bedienung (S-005). Keine Plattform, keine Zeit, kein Zufall.
+
+const RING_VERSATZ = 40;     // Pixel über dem Finger
+const RING_MIN = 28;         // Mindestdurchmesser des Rings in Pixeln
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 3;
+const ZIEHSCHWELLE = 10;     // Pixel: ab hier gilt der Zug als Ziehen
+// Halbe Ausdehnung der Insel-Raute in Bildebene (x rechts, y oben); sin(Elevation) = 1/sqrt(3)
+const MITTE_RADIUS = { x: GROESSE / Math.SQRT2, y: GROESSE / Math.SQRT2 / Math.sqrt(3) };
+
+const imFeld = (x, y) => Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < GROESSE && y < GROESSE;
+
+// Felder des Pinsels um (x, y), nur innerhalb der Insel; radius 0 = 1 Feld, 1 = 3 mal 3
+function bereichFelder(x, y, radius) {
+  const r = [];
+  for (let dy = -radius; dy <= radius; dy++) for (let dx = -radius; dx <= radius; dx++) if (imFeld(x + dx, y + dy)) r.push({ x: x + dx, y: y + dy });
+  return r;
+}
+// Neue Karte; Felder in `ausser` (Menge von Indizes) bleiben unverändert. Höhen bleiben 0 bis MAX.
+function aendereBereich(karte, x, y, radius, schritt, ausser = null) {
+  const n = karte.slice();
+  for (const f of bereichFelder(x, y, radius)) {
+    const i = f.y * GROESSE + f.x;
+    if (ausser && ausser.has(i)) continue;
+    n[i] = Math.min(MAX, Math.max(0, n[i] + schritt));
+  }
+  return n;
+}
+function begrenzeZoom(z) { return Number.isFinite(z) ? Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)) : ZOOM_MIN; }
+// Bildmitte bleibt in der Insel-Raute |x|/Rx + |y|/Ry <= 1
+function begrenzeMitte(mx, my) {
+  if (!Number.isFinite(mx) || !Number.isFinite(my)) return { x: 0, y: 0 };
+  const s = Math.abs(mx) / MITTE_RADIUS.x + Math.abs(my) / MITTE_RADIUS.y;
+  return s > 1 ? { x: mx / s, y: my / s } : { x: mx, y: my };
+}
+// Zielfeld des Rings; feldAn (Bildschirm -> Feld) wird hineingereicht
+function ringFeld(px, py, feldAn) { return feldAn(px, py - RING_VERSATZ); }
+function ringDurchmesser(feldPx, pinsel) { return Math.max(RING_MIN, Math.round(feldPx * pinsel)); }
+
+// Entity: Aufgaben und Hilfekarten des Lernpfads (S-003). Nur Daten und reine Prüfungen.
+const ANZAHL = 5;
+const HINWEIS_TAKTE = 40;
+const TEXT_MAX = 60, HILFE_MAX = 80;
+const FENSTER_MIN = 240, FENSTER_MAX = 480;   // Takte, in denen der Testspieler den Lernpfad löst
+const imFenster = (takte) => takte >= FENSTER_MIN && takte <= FENSTER_MAX;
+const AUFGABEN = [
+  'Tippe aufs Land und hebe es: 3 Felder',
+  'Mache 4 Felder gleich hoch (2 mal 2)',
+  'Warte, bis dein Volk auf 12 wächst',
+  'Senke Land unter einem rosa Gegner bis ins Wasser',
+  'Besiege das Gegnervolk (Volk 20, Gegner 0)',
+];
+const HINWEISE = [
+  'Tipp: Taste Heben, dann aufs Land tippen.',
+  'Tipp: Hebe oder senke, bis 4 Felder gleich hoch sind.',
+  'Tipp: Auf ebenem Land bauen Pixelinge Häuser.',
+  'Tipp: Taste Senken, dann aufs Land unter dem Gegner tippen.',
+  'Tipp: Senke das Land unter allen rosa Figuren.',
+];
+const HILFE = [
+  'Heben: Tippe aufs Land. Der Ring zeigt das Feld.',
+  'Haus: Auf ebenem Land bauen Pixelinge Häuser und werden mehr.',
+  'Wasser: Land auf Höhe 0 ist Wasser, wer dort steht, ertrinkt.',
+  'Sieg: Senke das Land unter dem Gegner, bis keiner mehr da ist.',
+];
+const textOk = (t) => t.length <= TEXT_MAX;
+const hilfeOk = (t) => t.length <= HILFE_MAX;
+
+// Entity: reine Regeln für Ton, Musik, Mana, Flut, Hausanimation (S-004). Keine Plattform, keine Zeit.
+
+const BASIS_HZ = 220;
+const MANA_MAX = 10, FLUT_KOSTEN = 8, FLUT_ABKLING = 20, MANA_TAKTE = 10, FLUT_SENKUNG = 2;
+// Götterkräfte (S-007): Mana-Kosten höchstens MANA_MAX, damit jede Kraft mit vollem Mana bezahlbar ist; Abklingzeit in Takten
+const KRAEFTE = { flut: { kosten: FLUT_KOSTEN, abkling: FLUT_ABKLING }, vulkan: { kosten: 9, abkling: 40 }, sturm: { kosten: 7, abkling: 30 }, erdbeben: { kosten: 10, abkling: 50 } };
+const HANDEL_KOSTEN = 3;
+const HAUS_ANIM = 6, HAUS_HOEHE = 1.2;
+const LAUT = 0.3, PARTIKEL_MAX = 200, TON_LATENZ_MAX = 0.1, TON_JE_BILD = 4;
+const STUFE_AB = [0, 0.5, 0.75];    // Anteil der Gegner am Ziel, ab dem Stufe 0, 1, 2 gilt (bei Ziel 40: 20 und 30)
+const TEMPO = [120, 120, 140];      // Schläge je Minute je Stufe
+
+// Tonhöhe je Landhöhe: Höhe 0 = 220 Hz, je Stufe ein Halbton
+const tonHz = (hoehe) => BASIS_HZ * Math.pow(2, Math.max(0, Math.min(MAX, hoehe)) / 12);
+const musikStufe = (gegner, ziel = 40) => (gegner >= STUFE_AB[2] * ziel ? 2 : gegner >= STUFE_AB[1] * ziel ? 1 : 0);
+const tempo = (stufe) => TEMPO[stufe] ?? TEMPO[0];
+// Hausanimation: von 0 auf 1,2 in genau 6 Takten, danach nicht höher
+const hausHoehe = (takte) => HAUS_HOEHE * Math.max(0, Math.min(HAUS_ANIM, takte)) / HAUS_ANIM;
+const lautstaerke = (stumm) => (stumm ? 0 : LAUT);
+
+// Jingles: Folge [Frequenz in Hz, Dauer in Sekunden]; beide dauern genau 3 Sekunden
+const JINGLE = {
+  sieg: [[523.25, 0.4], [659.25, 0.4], [783.99, 0.4], [1046.5, 0.8], [783.99, 0.3], [1046.5, 0.7]],
+  niederlage: [[392, 0.5], [349.23, 0.5], [311.13, 0.5], [261.63, 0.5], [233.08, 0.5], [196, 0.5]],
+};
+const jingleDauer = (art) => JINGLE[art].reduce((s, [, d]) => s + d, 0);
+
+// Musikmuster je Stufe: Basslinie, Melodie (Halbtöne über 220 Hz, null = Pause), Schritte je Takt = 1 Achtel
+const BASS = [0, 0, 7, 7, 5, 5, 7, 7];
+const MELODIE = [12, null, 15, null, 19, null, 15, 12];
+const MELODIE_DICHT = [12, 15, 19, 15, 24, 19, 15, 12];
+
+// Entity: Kampagne (S-006). Kartentabelle, Sterne, Freischaltung, Fortschritt als reine Daten; keine Zeit, kein Zufall, kein Speicherzugriff (R-02).
+// Die Zahlen sind Vorschläge zum Abstimmen am Handy (docs/kampagne-entwurf.md). Die Inselgröße bleibt 24 für alle Karten.
+const TAKTE_JE_MIN = 120, STERNE_WELT = 6, STERNE_FINALE = 24, FORMAT = 1, ERTRUNKEN_MAX = 5, SCHNELL_ANTEIL = 0.8, BEZUG_MIN = 6, KEIN_LIMIT_MIN = 12;
+const K1 = [], K2 = ['flut'], K3 = ['flut', 'vulkan'], K4 = ['flut', 'vulkan', 'sturm'], K5 = ['flut', 'vulkan', 'sturm', 'erdbeben'];
+// id, Welt, Name, Start-Pixelinge, Ziel-Bevölkerung, Gegner-Stärke 1 bis 10, Limit in Minuten (0 = keins), Götterkräfte, Boss
+const T = [
+  ['1-1', 1, 'Palmenstrand', 8, 20, 1, 0, K1, false], ['1-2', 1, 'Sonnenbrillen-Bucht', 6, 30, 2, 0, K1, false], ['1-3', 1, 'Neon-Bande', 6, 34, 3, 6, K1, true],
+  ['2-1', 2, 'Kassettenhafen', 6, 34, 3, 0, K2, false], ['2-2', 2, 'Videothek-Riff', 5, 35, 4, 6, K2, false], ['2-3', 2, 'Der Videothekar', 5, 36, 5, 7, K2, true],
+  ['3-1', 3, 'Joystick-Strand', 5, 34, 6, 0, K3, false], ['3-2', 3, 'Pixelgeister-Platte', 4, 22, 5, 7, K3, false], ['3-3', 3, 'Joystick-Orden', 4, 22, 5, 8, K3, true],
+  ['4-1', 4, 'Tanzflächen-Atoll', 4, 28, 7, 0, K4, false], ['4-2', 4, 'Plattenspieler-Insel', 4, 32, 9, 8, K4, false], ['4-3', 4, 'Synth-Kult', 3, 32, 9, 9, K4, true],
+  ['5-1', 5, 'Der Große Mix', 5, 24, 6, 0, K5, true],
+];
+const GEGNER2 = ['3-2', '3-3'], WASSER = ['4-2', '4-3'], ENDGEGNER = ['5-1'];   // zwei Gegner, wechselnder Wasserstand, Endgegner mit zwei Phasen (S-008)
+const HAENDLER = ['2-2', '3-2', '4-2'];   // Kassettenmann: tauscht Mana gegen frische Götterkräfte
+const KARTEN = T.map(([id, welt, name, start, ziel, staerke, limitMin, kraefte, boss]) => Object.freeze({ id, welt, name, start, ziel, staerke, limitMin, kraefte, boss, haendler: HAENDLER.includes(id), gegner2: GEGNER2.includes(id), wasser: WASSER.includes(id), endgegner: ENDGEGNER.includes(id) }));
+const karte = (id) => KARTEN.find((k) => k.id === id) || null;
+const karteZu = karte;   // zweiter Name ohne Umbenennung beim Import (der Bau entfernt Import-Zeilen und kennt keine Aliase)
+const limitTakte = (k) => (k.limitMin || KEIN_LIMIT_MIN) * TAKTE_JE_MIN;
+// Bezugszeit für den zweiten Stern: Limit der Karte, bei "keins" 6 Minuten
+const bezugTakte = (k) => (k.limitMin || BEZUG_MIN) * TAKTE_JE_MIN;
+
+// Sterne: 1 für den Sieg, 2 bei weniger als 80 Prozent der Bezugszeit, 3 zusätzlich mit höchstens 5 ertrunkenen eigenen Pixelingen
+function sterneFuer(k, erg) {
+  if (!k || !erg || !erg.sieg) return 0;
+  if (!(erg.takte < SCHNELL_ANTEIL * bezugTakte(k))) return 1;
+  return erg.ertrunken <= ERTRUNKEN_MAX ? 3 : 2;
+}
+
+const neuerFortschritt = () => ({ version: FORMAT, sterne: {} });
+const st = (f, id) => (f.sterne[id] | 0);
+const weltSterne = (f, welt) => KARTEN.reduce((n, k) => n + (k.welt === welt ? st(f, k.id) : 0), 0);
+const gesamtSterne = (f) => KARTEN.reduce((n, k) => n + st(f, k.id), 0);
+// Freigeschaltet wird gerechnet, nie gespeichert: 1-1 immer; Karte danach nach einem Sieg auf der Vorkarte; neue Welt nach dem Boss und 6 Sternen; Finale mit 24 Sternen und Sieg auf 4-3
+function istOffen(f, id) {
+  const i = KARTEN.findIndex((k) => k.id === id);
+  if (i < 0) return false;
+  if (i === 0) return true;
+  const k = KARTEN[i], v = KARTEN[i - 1];
+  if (k.welt === 5) return gesamtSterne(f) >= STERNE_FINALE && st(f, '4-3') > 0;
+  if (k.welt === v.welt) return st(f, v.id) > 0;
+  return st(f, v.id) > 0 && weltSterne(f, v.welt) >= STERNE_WELT;
+}
+// Neuer Fortschritt nach einem Ergebnis; die beste Sternzahl je Karte bleibt, gesperrte Karten zählen nicht
+function nachSieg(f, id, erg, deckel = 3) {   // deckel: höchste Sternzahl (leichter Modus 2)
+  const k = karte(id), n = Math.min(sterneFuer(k, erg), deckel);
+  if (!k || n === 0 || !istOffen(f, id)) return f;
+  return { version: FORMAT, sterne: { ...f.sterne, [id]: Math.max(st(f, id), n) } };
+}
+// Mischt zwei Stände: je Karte die bessere Sternzahl (zum Beispiel zwei offene Seiten, letzter Schreiber verliert nichts)
+function mische(a, b) {
+  const sterne = { ...a.sterne };
+  for (const id of Object.keys(b.sterne)) sterne[id] = Math.max(sterne[id] | 0, b.sterne[id]);
+  return { version: FORMAT, sterne };
+}
+const serialisiere = (f) => JSON.stringify({ version: FORMAT, sterne: f.sterne });
+// Lädt gespeicherten Text; alles Ungültige führt zum leeren Fortschritt, einzelne ungültige Werte werden verworfen
+function lade(text) {
+  let o;
+  try { o = JSON.parse(text); } catch (e) { return neuerFortschritt(); }
+  if (!o || typeof o !== 'object' || o.version !== FORMAT || !o.sterne || typeof o.sterne !== 'object' || Array.isArray(o.sterne)) return neuerFortschritt();
+  let f = neuerFortschritt();
+  for (const k of KARTEN) {
+    const s = o.sterne[k.id];
+    if ((s === 1 || s === 2 || s === 3) && istOffen(f, k.id)) f = { version: FORMAT, sterne: { ...f.sterne, [k.id]: s } };
+  }
+  return f;
+}
+
+// Entity: Gegnerregeln der Kampagne (S-008): Angriffsabstand, Wasserstand, Boss und Endgegner. Rein, ohne Zeit und Zufall (R-02).
+const WASSER_ZYKLUS = 60, WASSER_HOCH_AB = 40;       // Takte: 40 Takte niedrig, 20 Takte Hochwasser (10 Sekunden)
+const BOSS_PLUS = 4;                                 // Boss-Karten: Gegner startet mit 4 Pixelingen mehr
+const PHASE2_AB = 3, PHASE2_NEU = 8, BEBEN_ALLE = 30, PHASE2_SCHUB = 2, PHASE2_ALLE = 4;   // Phase 2: 8 neue in Schüben zu 2, alle 4 Takte (2 s), der erste Schub sofort; // Endgegner: ab 3 Pixelingen Phase 2 mit 8 neuen, danach alle 30 Takte ein Beben
+
+// Angriffsabstand: alle so viele Takte rückt ein Gegner auf den nächsten eigenen Pixeling vor; bis Stärke 3 greifen Gegner nicht an (0)
+const angriffsAbstand = (staerke) => (staerke <= 3 ? 0 : 11 - Math.max(1, Math.min(10, staerke)));
+// Wasserstand: 1 während des Hochwassers (Land der Höhe 1 steht unter Wasser), sonst 0; nur auf Karten mit wechselndem Wasserstand
+const wasserStand = (z) => (z.wechsel && z.takt % WASSER_ZYKLUS >= WASSER_HOCH_AB ? 1 : 0);
+// Takte bis zum nächsten Hochwasser (0 = jetzt Hochwasser, null = Karte ohne Wechsel)
+const hochwasserIn = (z) => (!z.wechsel ? null : z.takt % WASSER_ZYKLUS >= WASSER_HOCH_AB ? 0 : WASSER_HOCH_AB - (z.takt % WASSER_ZYKLUS));
+
+// Entity: Tägliche Aufgabe, leichter Modus und Teilen (S-009). Rein: das Datum wird hineingereicht (R-02), der Zufall kommt aus dem Datum.
+
+
+const LEICHT_ABZUG = 2, LEICHT_STERNE_MAX = 2, JAHR_MIN = 2020, JAHR_MAX = 2099;
+const TAGES_KARTEN = KARTEN.filter((k) => k.welt <= 4);   // 12 Karten, nie das Finale
+const TAGE = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+function datumOk(j, m, t) {
+  if (![j, m, t].every(Number.isInteger) || j < JAHR_MIN || j > JAHR_MAX || m < 1 || m > 12 || t < 1) return false;
+  const schalt = (j % 4 === 0 && j % 100 !== 0) || j % 400 === 0;
+  return t <= TAGE[m - 1] + (m === 2 && schalt ? 1 : 0);
+}
+const tagesSeed = (j, m, t) => (datumOk(j, m, t) ? j * 10000 + m * 100 + t : null);
+// Dieselbe Zahl ergibt dieselbe Karte; ungültige Zahlen ergeben nichts
+const tageskarte = (seed) => (Number.isInteger(seed) && seed >= 0 ? TAGES_KARTEN[Math.floor(mulberry32(seed)() * TAGES_KARTEN.length)] : null);
+const leichtStaerke = (staerke) => Math.max(1, staerke - LEICHT_ABZUG);
+const leichtSterne = (sterne) => Math.min(sterne, LEICHT_STERNE_MAX);
+const zwei = (n) => String(n).padStart(2, '0');
+// Kurzer Text zum Teilen, zum Beispiel "Neon Ada · 20.11.2026 · 1-3 Neon-Bande · ★★☆"
+function teilText(j, m, t, k, sterne, leicht) {
+  if (!datumOk(j, m, t) || !k || !Number.isInteger(sterne) || sterne < 0 || sterne > 3) return null;
+  return `Neon Ada · ${zwei(t)}.${zwei(m)}.${j} · ${k.id} ${k.name} · ${'★'.repeat(sterne)}${'☆'.repeat(3 - sterne)}${leicht === true ? ' · leicht' : ''}`;
+}
+
+// Boundary: Fortschritt speichern (S-006). Die Speicherquelle (Browser-Speicher) wird hineingereicht (R-04); jeder Zugriff ist abgesichert,
+// ohne Quelle oder bei Fehlern (privates Fenster, voller Speicher) bleibt der Fortschritt im Arbeitsspeicher.
+const SCHLUESSEL = 'neon-ada-fortschritt';
+class Speicher {
+  constructor(quelle = null) {
+    this.quelle = quelle; this.speicher = null; this.dauerhaft = false;
+    if (quelle) { try { quelle.setItem(SCHLUESSEL + '-probe', '1'); quelle.removeItem(SCHLUESSEL + '-probe'); this.dauerhaft = true; } catch (e) { this.dauerhaft = false; } }   // voller oder gesperrter Speicher wird gleich erkannt
+  }
+  lies() {
+    if (this.quelle) { try { const t = this.quelle.getItem(SCHLUESSEL); if (t !== null && t !== undefined) return t; } catch (e) { this.dauerhaft = false; } }
+    return this.speicher;
+  }
+  schreibe(text) {
+    this.speicher = text;
+    if (!this.quelle) return false;
+    try { this.quelle.setItem(SCHLUESSEL, text); return true; } catch (e) { this.dauerhaft = false; return false; }
+  }
+  loesche() {
+    this.speicher = null;
+    if (this.quelle) { try { this.quelle.removeItem(SCHLUESSEL); } catch (e) { this.dauerhaft = false; } }
+  }
+}
+
+// Boundary: isometrische Kamera, reine Rechnung (R-04). Pixelgröße der Optik: 3 Bildschirmpixel.
+
+const PIXEL = 3;
+const AUSSCHNITT_NAH = 0.68;   // Looks a, b, c: näher heran als der Grundausschnitt
+const ausschnitt = (look) => (look === 'a0' ? 1 : AUSSCHNITT_NAH);
+const HOEHE_JE_STUFE = 0.5;
+const ELEVATION = Math.atan(1 / Math.SQRT2); // echte Isometrie, ca. 35,26 Grad
+const SIN = Math.sin(ELEVATION), COS = Math.cos(ELEVATION);
+
+// Bildposition (x rechts, y oben) einer Feldmitte in Welteinheiten
+function projiziere(fx, fy, stufe) {
+  const cx = fx + 0.5 - GROESSE / 2, cy = fy + 0.5 - GROESSE / 2;
+  return { x: (cx + cy) / Math.SQRT2, y: ((cx - cy) / Math.SQRT2) * SIN + stufe * HOEHE_JE_STUFE * COS };
+}
+
+// Halbe Breite und Höhe des Sichtfensters, so dass die ganze Insel mit 6 Prozent Rand hineinpasst
+function fenster(breite, hoehe) {
+  const a = Math.max(1, breite) / Math.max(1, hoehe);
+  const needW = (GROESSE / Math.SQRT2) * 1.06 + 0.3;
+  const needH = (GROESSE / Math.SQRT2 * SIN + MAX * HOEHE_JE_STUFE * COS + 1) * 1.06;
+  const halbB = Math.max(needW, needH * a);
+  return { halbB, halbH: halbB / a };
+}
+
+function sichtbar(breite, hoehe) {
+  const f = fenster(breite, hoehe);
+  let felder = 0, alle = true;
+  for (let y = 0; y < GROESSE; y++) for (let x = 0; x < GROESSE; x++) {
+    let ok = true;
+    for (const s of [0, MAX]) {
+      const p = projiziere(x, y, s);
+      if (Math.abs(p.x) > f.halbB || Math.abs(p.y) > f.halbH) ok = false;
+    }
+    if (ok) felder++; else alle = false;
+  }
+  return { alle, felder, fenster: f };
+}
+
+// Figurhöhe: in Welteinheiten und CSS-Pixeln; mindestens 12 Pixel (S-002 AK-9)
+function figurHoehe(breite, hoehe) {
+  const f = fenster(breite, hoehe);
+  const pxJeEinheit = Math.max(1, hoehe) / (2 * f.halbH);
+  const welt = Math.max(1.6, 12 / pxJeEinheit);
+  return { welt, px: welt * pxJeEinheit };
+}
+
+// Breite eines Feldes (Raute) in CSS-Pixeln bei Zoom; basis = Ausschnittsfaktor der Optik (1 oder 0,68)
+function feldBreitePx(breite, hoehe, zoom, basis = 1) {
+  const f = fenster(breite, hoehe);
+  return Math.SQRT2 * zoom * breite / (2 * f.halbB * basis);
+}
+
+// Boundary: Partikelrechnung (Staub, Spritzer, Funken). Rein, ohne three.js; die Szene zeichnet die Positionen.
+
+class Partikel {
+  constructor(max = PARTIKEL_MAX) { this.max = max; this.p = []; }
+  get anzahl() { return this.p.length; }
+  // Erzeugt bis zu n Partikel an Weltposition (x, y, z); über dem Limit wird nichts mehr erzeugt. rng wird hineingereicht.
+  erzeuge(n, x, y, z, farbe, rng, leben = 0.6) {
+    let neu = 0;
+    for (let i = 0; i < n && this.p.length < this.max; i++) {
+      this.p.push({ x, y, z, vx: (rng() - 0.5) * 3, vy: 1.5 + rng() * 2, vz: (rng() - 0.5) * 3, leben, farbe });
+      neu++;
+    }
+    return neu;
+  }
+  schritt(dt) {
+    for (const q of this.p) { q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; q.vy -= 6 * dt; q.leben -= dt; }
+    this.p = this.p.filter((q) => q.leben > 0);
+  }
+}
+
+// Boundary: Chiptune-Ton und Musik mit WebAudio, selbst erzeugt. Die AudioContext-Klasse wird hineingereicht (kein Zugriff auf window).
+
+class Ton {
+  constructor(AudioKlasse) { this.Klasse = AudioKlasse || null; this.ctx = null; this.master = null; this.ist = false; this.stumm = false; this.stufe = 0; this.schritt = 0; this.sichtbar = true; this.imBild = 0; this.naechster = 0; this.laeuft = false; }
+  get verfuegbar() { return !!this.ctx; }
+  // Erst nach der ersten Berührung aufrufen (Browser erlaubt Ton erst dann). Ohne Audiofähigkeit bleibt alles stumm, ohne Fehler.
+  entsperre() {
+    if (this.ctx) { if (this.sichtbar && this.ctx.state && this.ctx.state !== 'running' && this.ctx.resume) this.ctx.resume(); return; }
+    if (!this.Klasse) return;
+    try {
+      this.ctx = new this.Klasse();
+      this.master = this.ctx.createGain(); this.master.gain.value = lautstaerke(this.stumm);
+      this.presser = this.ctx.createDynamicsCompressor();   // harter Begrenzer: hält die Summe unter dem Master-Pegel
+      for (const [k, v] of [['threshold', -6], ['knee', 0], ['ratio', 20], ['attack', 0.003], ['release', 0.1]]) if (this.presser[k]) this.presser[k].value = v;
+      this.master.connect(this.presser); this.presser.connect(this.ctx.destination);
+      if (this.ctx.resume) this.ctx.resume();
+      this.laeuft = true; this.naechster = this.ctx.currentTime;
+    } catch (e) { this.ctx = null; }
+  }
+  setzeStumm(an) { this.stumm = !!an; if (this.master) this.master.gain.value = lautstaerke(this.stumm); }
+  // Ein Ton: Form, Frequenz, Beginn (Sekunden der Audiouhr), Dauer, Spitzenlautstärke je Stimme
+  note(form, hz, beginn, dauer, pegel = 0.5) {
+    if (!this.ctx) return null;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = form; o.frequency.value = hz;
+    g.gain.setValueAtTime(pegel, beginn); g.gain.linearRampToValueAtTime(0.0001, beginn + dauer);
+    o.connect(g); g.connect(this.master); o.start(beginn); o.stop(beginn + dauer + 0.02);
+    return { hz, beginn };
+  }
+  // Rückmeldung zu Ereignissen des Spiels
+  // Pro Bild höchstens TON_JE_BILD Ereignistöne (Aufruf von neuesBild() je Bild)
+  neuesBild() { this.imBild = 0; }
+  ereignis(e) {
+    if (!this.ctx || !this.sichtbar || this.imBild >= TON_JE_BILD) return null;
+    this.imBild++;
+    const t = this.ctx.currentTime;
+    switch (e.art) {
+      case 'heben': return this.note('square', tonHz(e.h ?? 0), t, 0.12);
+      case 'haus': return this.note('triangle', BASIS_HZ * 2, t, 0.25);
+      case 'geburt': return this.note('square', BASIS_HZ * 3, t, 0.1, 0.3);
+      case 'ertrinken': return this.note('sawtooth', 110, t, 0.2, 0.3);
+      case 'kampf': return this.note('sawtooth', 165, t, 0.08, 0.3);
+      case 'flut': return this.note('sawtooth', 82.4, t, 0.5);
+      case 'vulkan': return this.note('sawtooth', 55, t, 0.6);
+      case 'sturm': return this.note('sawtooth', 98, t, 0.4, 0.3);
+      case 'erdbeben': return this.note('square', 61.7, t, 0.6);
+      case 'handel': return this.note('triangle', 660, t, 0.15);
+      default: return null;
+    }
+  }
+  setzeStufe(gegner, ziel) { this.stufe = musikStufe(gegner, ziel); }
+  // Musik planen: je Aufruf alle Achtel der nächsten 0,25 Sekunden (Zeit kommt von der Audiouhr)
+  tick() {
+    if (!this.ctx || !this.laeuft || this.stumm) return;
+    const dauer = 60 / tempo(this.stufe) / 2;
+    if (this.naechster < this.ctx.currentTime - 0.5) this.naechster = this.ctx.currentTime;
+    while (this.naechster < this.ctx.currentTime + 0.25) {
+      const i = this.schritt % 8;
+      this.note('triangle', BASIS_HZ / 2 * Math.pow(2, BASS[i] / 12), this.naechster, dauer * 0.9, 0.35);
+      const m = (this.stufe >= 1 ? MELODIE_DICHT : MELODIE)[i];
+      if (m !== null) this.note('square', BASIS_HZ * Math.pow(2, m / 12), this.naechster, dauer * 0.8, 0.18);
+      if (this.stufe >= 2 && i % 2 === 0) this.note('sawtooth', BASIS_HZ * Math.pow(2, (BASS[i] + 24) / 12), this.naechster, dauer * 0.4, 0.1);
+      this.schritt++; this.naechster += dauer;
+    }
+  }
+  jingle(art) {
+    if (!this.ctx) return 0;
+    this.laeuft = false;
+    let t = this.ctx.currentTime;
+    for (const [hz, d] of JINGLE[art]) { this.note(art === 'sieg' ? 'square' : 'sawtooth', hz, t, d * 0.95, 0.4); t += d; }
+    return t - this.ctx.currentTime;
+  }
+  // Tab im Hintergrund oder Gerät gesperrt: Audio anhalten, beim Zurückkommen fortsetzen
+  setzeSichtbar(an) {
+    this.sichtbar = !!an;
+    if (!this.ctx) return;
+    if (an) { if (this.ctx.resume) this.ctx.resume(); this.naechster = this.ctx.currentTime; } else if (this.ctx.suspend) this.ctx.suspend();
+  }
+  neuStart() { this.laeuft = !!this.ctx; this.schritt = 0; if (this.ctx) this.naechster = this.ctx.currentTime; }
+}
+
+// Boundary: three.js-Darstellung und Berührungs-Umrechnung. THREE wird hineingereicht (kein Import).
+
+
+
+
+class Szene {
+  constructor(canvas, THREE, look = 'a0', glatt = false, dpr = 1) {
+    this.dpr = Math.max(1, Math.min(2, dpr));
+    this.T = THREE;
+    this.look = look;
+    this.pixel = glatt ? 1 : PIXEL;
+    this.zoom = 1; this.mx = 0; this.my = 0; this.b = 1; this.h = 1;
+    canvas.style.imageRendering = glatt ? 'auto' : 'pixelated';
+    this.canvas = canvas;
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: look !== 'a0' });
+    this.szene = new THREE.Scene();
+    if (look === 'a0') this.szene.background = new THREE.Color('#10163a'); else this.renderer.setClearColor(0x000000, 0);
+    this.kamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
+    const d = 60;
+    this.kamera.position.set(0, d * Math.sin(ELEVATION), d * Math.cos(ELEVATION));
+    this.kamera.lookAt(0, 0, 0);
+    this.gruppe = new THREE.Group();
+    this.gruppe.rotation.y = Math.PI / 4;
+    this.szene.add(this.gruppe);
+    this.szene.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const sonne = new THREE.DirectionalLight(0xffffff, 0.6); sonne.position.set(-20, 40, 10); this.szene.add(sonne);
+    const geo = new THREE.BoxGeometry(0.98, 1, 0.98); geo.translate(0, 0.5, 0);
+    this.mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: 0xffffff }), GROESSE * GROESSE);
+    this.gruppe.add(this.mesh);
+    const mat = (c) => new THREE.MeshLambertMaterial({ color: c, emissive: look === 'c' ? c : 0x000000, emissiveIntensity: look === 'c' ? 0.55 : 0 });
+    const mk = (g, c, n) => { const m = new THREE.InstancedMesh(g, mat(c), n); m.frustumCulled = false; this.gruppe.add(m); return m; };
+    const fg = new THREE.BoxGeometry(0.5, 1, 0.5); fg.translate(0, 0.5, 0);
+    const kg = new THREE.ConeGeometry(0.4, 1, 4); kg.translate(0, 0.5, 0);
+    const hg = new THREE.BoxGeometry(1.8, 1, 1.8); hg.translate(0, 0.5, 0);
+    this.figuren = [mk(fg, 0x3cc8ff, 600), mk(kg, 0xff3fa4, 600), mk(kg, 0xb4ff3f, 600)];
+    this.haeuser = [mk(hg, 0x1f6fb5, 200), mk(hg, 0xb5236f, 200), mk(hg, 0x7fa81f, 200)];
+    this.farben = HOEHENFARBEN.map((h) => new THREE.Color(h));
+    this.ray = new THREE.Raycaster();
+    this.pgeo = new THREE.BufferGeometry();
+    this.ppos = new Float32Array(PARTIKEL_MAX * 3); this.pfarbe = new Float32Array(PARTIKEL_MAX * 3);
+    this.pgeo.setAttribute('position', new THREE.BufferAttribute(this.ppos, 3));
+    this.pgeo.setAttribute('color', new THREE.BufferAttribute(this.pfarbe, 3));
+    this.pgeo.setDrawRange(0, 0);
+    this.punkte = new THREE.Points(this.pgeo, new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, vertexColors: true }));
+    this.punkte.frustumCulled = false; this.gruppe.add(this.punkte);
+  }
+  groesse(b, h) {
+    this.b = b; this.h = h;
+    // Pixel-Look: ein Drittel der Auflösung; glatt: volle Auflösung mal Geräte-Pixelverhältnis (höchstens 2)
+    this.renderer.setPixelRatio(this.pixel === 1 ? this.dpr : 1);
+    this.renderer.setSize(Math.max(1, Math.ceil(b / this.pixel)), Math.max(1, Math.ceil(h / this.pixel)), false);
+    this.fig = figurHoehe(b, h);
+    this.ansicht(this.zoom, this.mx, this.my);
+  }
+  // Zoom und Mitte der Ansicht (Mitte in Welteinheiten der Bildebene)
+  ansicht(zoom, mx, my) {
+    this.zoom = zoom; this.mx = mx; this.my = my;
+    const f = fenster(this.b, this.h);
+    const z = ausschnitt(this.look) / zoom; // Varianten A bis C: näher heran
+    Object.assign(this.kamera, { left: mx - f.halbB * z, right: mx + f.halbB * z, top: my + f.halbH * z, bottom: my - f.halbH * z });
+    this.kamera.updateProjectionMatrix();
+  }
+  // Bildschirmposition (Pixel) der Oberseite eines Feldes
+  feldPx(x, y, stufe, breite, hoehe) {
+    const v = new this.T.Vector3(x + 0.5 - GROESSE / 2, Math.max(0.3, stufe * HOEHE_JE_STUFE), y + 0.5 - GROESSE / 2);
+    this.gruppe.updateMatrixWorld(true); v.applyMatrix4(this.gruppe.matrixWorld); v.project(this.kamera);
+    return { x: (v.x + 1) / 2 * breite, y: (1 - v.y) / 2 * hoehe };
+  }
+  pxJeEinheit() { return this.b / (this.kamera.right - this.kamera.left); }
+  setzeGlatt(glatt) {
+    this.pixel = glatt ? 1 : PIXEL;
+    this.canvas.style.imageRendering = glatt ? 'auto' : 'pixelated';
+    this.groesse(this.b, this.h);
+  }
+  // Partikel (Liste mit x, y, z, farbe) in die Szene übernehmen; höchstens 200
+  setzePartikel(liste) {
+    const c = new this.T.Color(); const n = Math.min(PARTIKEL_MAX, liste.length);
+    liste.slice(0, n).forEach((q, i) => { this.ppos.set([q.x, q.y, q.z], i * 3); c.set(q.farbe); this.pfarbe.set([c.r, c.g, c.b], i * 3); });
+    this.pgeo.setDrawRange(0, n); this.pgeo.attributes.position.needsUpdate = true; this.pgeo.attributes.color.needsUpdate = true;
+  }
+  zeichne(karte, anhaenger = [], haeuser = [], t = 0) {
+    const m = new this.T.Matrix4();
+    for (let y = 0; y < GROESSE; y++) for (let x = 0; x < GROESSE; x++) {
+      const i = y * GROESSE + x, h = karte[i];
+      m.makeScale(1, Math.max(0.3, h * HOEHE_JE_STUFE), 1);
+      m.setPosition(x + 0.5 - GROESSE / 2, 0, y + 0.5 - GROESSE / 2);
+      this.mesh.setMatrixAt(i, m);
+      this.mesh.setColorAt(i, h === 0 && this.look !== 'a0' ? this.wasser(x, y, t) : this.farben[h]);
+    }
+    this.mesh.instanceMatrix.needsUpdate = true;
+    if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+    const hoehe = (x, y) => Math.max(0.3, karte[y * GROESSE + x] * HOEHE_JE_STUFE);
+    const hz = (this.fig ? this.fig.welt : 1.6) * (this.look === 'a0' ? 1 : 1.9);
+    const br = this.look === 'a0' ? 1 : 1.8;
+    for (const v of [0, 1, 2]) {
+      const liste = anhaenger.filter((a) => a.volk === v).slice(0, 600);
+      liste.forEach((a, i) => { m.makeScale(br, hz, br); m.setPosition(a.x + 0.5 - GROESSE / 2, hoehe(a.x, a.y), a.y + 0.5 - GROESSE / 2); this.figuren[v].setMatrixAt(i, m); });
+      this.figuren[v].count = liste.length; this.figuren[v].instanceMatrix.needsUpdate = true;
+      const hl = haeuser.filter((q) => q.volk === v).slice(0, 200);
+      hl.forEach((q, i) => { m.makeScale(1, Math.max(0.01, hausHoehe(q.alter === undefined ? HAUS_ANIM : q.alter)), 1); m.setPosition(q.x + 1 - GROESSE / 2, hoehe(q.x, q.y), q.y + 1 - GROESSE / 2); this.haeuser[v].setMatrixAt(i, m); });
+      this.haeuser[v].count = hl.length; this.haeuser[v].instanceMatrix.needsUpdate = true;
+    }
+    this.renderer.render(this.szene, this.kamera);
+  }
+  wasser(x, y, t) { const w = 0.5 + 0.5 * Math.sin(t / 500 + (x + y) * 0.7); return new this.T.Color().setRGB(0.12 + 0.1 * w, 0.35 + 0.2 * w, 0.8 + 0.15 * w); }
+  // Bildschirmposition (px relativ zum Canvas) -> Feld, oder null außerhalb der Insel
+  feldAn(px, py, breite, hoehe) {
+    this.ray.setFromCamera({ x: (px / breite) * 2 - 1, y: -(py / hoehe) * 2 + 1 }, this.kamera);
+    this.gruppe.updateMatrixWorld(true);
+    const t = this.ray.intersectObject(this.mesh)[0];
+    if (!t || t.instanceId === undefined) return null;
+    return { x: t.instanceId % GROESSE, y: Math.floor(t.instanceId / GROESSE) };
+  }
+}
+
+// Control: Spielzustand. Zeit wird hineingereicht (R-02), kein Zugriff auf Plattform.
+
+
+
+// Götterkräfte (S-004, S-007): ein Tipp führt sie aus und das vorige Werkzeug kehrt zurück
+const KRAFT_WERKZEUGE = new Set(['flut', 'vulkan', 'sturm', 'erdbeben']);
+
+class Spiel {
+  constructor(zustand) {
+    this.z = zustand || { karte: startkarte() }; this.werkzeug = 'heben'; this.pinsel = 1;
+    this.zufall = null; this.zug = new Set(); this.ring = null; this.ziehend = false;
+    this.zoom = 1; this.mitte = { x: 0, y: 0 };
+  }
+  // Neustart: gewähltes Werkzeug zurück auf Heben (auch eine gewählte Flut)
+  zuruecksetzen() { this.werkzeug = 'heben'; this.vorFlut = 'heben'; this.loslassen(); }
+  get karte() { return this.z.karte; }
+  set karte(v) { this.z.karte = v; }
+  hoehe(x, y) { return this.karte[y * GROESSE + x]; }
+  melde(e) { if (!this.z.ereignisse) this.z.ereignisse = []; if (this.z.ereignisse.length < 64) this.z.ereignisse.push(e); }
+  get schritt() { return this.werkzeug === 'heben' ? 1 : -1; }
+  get radius() { return this.pinsel === 3 ? 1 : 0; }
+  waehle(werkzeug) {
+    if (werkzeug === 'heben' || werkzeug === 'senken') { this.werkzeug = werkzeug; this.vorFlut = werkzeug; }
+    else if (KRAFT_WERKZEUGE.has(werkzeug) && kraftBereit(this.z, werkzeug)) { if (!KRAFT_WERKZEUGE.has(this.werkzeug)) this.vorFlut = this.werkzeug; this.werkzeug = werkzeug; }
+  }
+  waehlePinsel(n) { if (n === 1 || n === 3) this.pinsel = n; }
+  // Ein Tipp ändert den Pinselbereich um genau eine Stufe. t ist der hineingereichte Zeitstempel.
+  tippe(x, y, t) {
+    if (KRAFT_WERKZEUGE.has(this.werkzeug)) { const ok = this.kraft(this.werkzeug, x, y); this.werkzeug = this.vorFlut || 'heben'; return ok; }
+    const vorher = this.karte;
+    this.karte = aendereBereich(vorher, x, y, this.radius, this.schritt);
+    const geaendert = this.karte.some((h, i) => h !== vorher[i]);
+    if (geaendert) this.melde({ art: 'heben', x, y, h: this.karte[y * GROESSE + x] });
+    return geaendert;
+  }
+  kraft(name, x, y) {
+    const r = this.zufall;
+    if (name === 'flut') return flut(this.z, x, y);
+    if (name === 'vulkan') return vulkan(this.z, x, y);
+    if (!r) return false;   // Zufall muss hineingereicht werden (R-02)
+    return name === 'sturm' ? sturm(this.z, x, y, r) : erdbeben(this.z, x, y, r);
+  }
+  // Ziehen: jedes Feld wird je Zug höchstens einmal geändert.
+  ziehe(x, y, t) {
+    if (KRAFT_WERKZEUGE.has(this.werkzeug)) return false;
+    const vorher = this.karte, schon = new Set(this.zug);
+    for (const f of bereichFelder(x, y, this.radius)) this.zug.add(f.y * GROESSE + f.x);
+    this.karte = aendereBereich(vorher, x, y, this.radius, this.schritt, schon);
+    const geaendert = this.karte.some((h, i) => h !== vorher[i]);
+    if (geaendert) this.melde({ art: 'heben', x, y, h: this.karte[y * GROESSE + x] });
+    return geaendert;
+  }
+  loslassen() { this.zug.clear(); this.ring = null; this.ziehend = false; }
+  // Zug mit Ring: Auflegen zeigt nur den Ring, Tippen ändert beim Loslassen, Ziehen malt ab der Schwelle.
+  beginne(feld) { this.loslassen(); this.ring = feld; }
+  bewege(feld, weit, t = 0) {
+    this.ring = feld;
+    if (weit) this.ziehend = true;
+    return this.ziehend && feld ? this.ziehe(feld.x, feld.y, t) : false;
+  }
+  ende(t = 0) {
+    const geaendert = !this.ziehend && this.ring ? this.tippe(this.ring.x, this.ring.y, t) : false;
+    this.loslassen();
+    return geaendert;
+  }
+  abbrechen() { this.loslassen(); }
+  setzeZoom(z) { this.zoom = begrenzeZoom(z); const m = begrenzeMitte(this.mitte.x, this.mitte.y); this.mitte = m; }
+  setzeMitte(x, y) { this.mitte = begrenzeMitte(x, y); }
+  verschiebe(dx, dy) { this.setzeMitte(this.mitte.x + dx, this.mitte.y + dy); }
+}
+
+// Control: Takt-Simulation (S-002). Rein: Zeit kommt als Taktzahl, Zufall als hineingereichter Generator (R-02).
+
+
+
+
+
+
+const ZIEL = 40, LIMIT = 720, HAUS_TAKTE = 6, VERMEHRUNG = 10, MAX_BEWOHNER = 4, ERTRINKEN = 3, KI_STAERKE = 1, LIMIT_GEGNER_MAX = 2, RETTUNG_BASIS = 8, RETTUNG_MIN = 2, LEICHT_BAU = 1.8;
+const NACH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const FLAECHE = [[0, 0], [1, 0], [0, 1], [1, 1]];
+const idx = (x, y) => y * GROESSE + x;
+const innen = (x, y) => x >= 0 && y >= 0 && x < GROESSE && y < GROESSE;
+
+function zustandAus(karte, anhaenger = [], haeuser = []) {
+  return { takt: 0, lern: false, lernFertig: false, ziel: ZIEL, limit: LIMIT, kraefte: ['flut'], freiBis: {}, leicht: false, haendler: false, phase: 1, nachschub: 0, endgegner: false, wechsel: false, ertrunken: [0, 0, 0], mana: 0, flutFrei: 0, ereignisse: [], staerke: KI_STAERKE, karte: Uint8Array.from(karte), anhaenger: anhaenger.map((a) => ({ ...a })), haeuser: haeuser.map((h) => ({ ...h })), bau: {}, naechsteId: 1000 };
+}
+
+// Bautempo-Faktor: eigenes Volk Faktor 1, Gegner Faktor 1 + (10 - Stärke) mal 0,3 (Stärke 1 = Lernkarte, langsamer Gegner)
+const LERN_TEMPO = 3; // Lernpfad: Bauen und Vermehren dreimal so langsam
+const faktor = (z, volk) => z.lern ? LERN_TEMPO : (volk >= 1 ? (1 + (10 - Math.max(1, Math.min(10, z.staerke))) * 0.3) * (z.leicht ? LEICHT_BAU : 1) : 1);   // Leicht: Gegner baut und vermehrt sich langsamer (Haiku-Simulation 20.11.2026: bei Stärke 3 oder weniger kämpft er nicht und wuchs sonst schneller als im Normalspiel)
+
+// start je Seite; extra = zusätzliche Pixelinge des Gegners (Boss); zwei = zweiter Gegner (Volk 2) mit start Pixelingen
+function grundZustand(start, extra = 0, zwei = false) {
+  const as = [];
+  for (let i = 0; i < start + extra; i++) {
+    const x = 4 + (i % 2), y = 8 + Math.floor(i / 2);
+    if (i < start) as.push({ id: i + 1, volk: 0, x, y, ertrinkt: 0, haus: -1 });
+    as.push({ id: 100 + i, volk: 1, x: GROESSE - 1 - x, y, ertrinkt: 0, haus: -1 });
+  }
+  if (zwei) for (let i = 0; i < start; i++) as.push({ id: 200 + i, volk: 2, x: 11 + (i % 2), y: 4 + Math.floor(i / 2), ertrinkt: 0, haus: -1 });
+  return zustandAus(startkarte(), as);
+}
+const neuerZustand = () => grundZustand(8);
+// Kampagnenkarte (S-006): Start-Pixelinge, Ziel, Gegner-Stärke, Limit und freigeschaltete Götterkräfte aus der Kartentabelle
+function neuerKartenZustand(k, leicht = false) {
+  if (!k) return null;
+  const z = grundZustand(k.start, k.boss ? BOSS_PLUS : 0, k.gegner2);
+  z.leicht = leicht === true; z.ziel = k.ziel; z.staerke = z.leicht ? leichtStaerke(k.staerke) : k.staerke; z.limit = limitTakte(k); z.kraefte = [...k.kraefte]; z.haendler = k.haendler; z.endgegner = k.endgegner; z.wechsel = k.wasser; z.karteId = k.id;
+  return z;
+}
+// Lernpfad: Ziel 20, Gegner ohne Rettung, langsameres Bauen, kein Zeitlimit
+function neuerLernZustand() { const z = neuerZustand(); z.lern = true; z.ziel = 20; return z; }
+
+const ev = (z, art, x, y) => { if (z.ereignisse.length < 64) z.ereignisse.push({ art, x, y }); };
+const anzahl = (z, volk) => z.anhaenger.reduce((n, a) => n + (a.volk === volk), 0);
+const gegnerZahl = (z) => z.anhaenger.reduce((n, a) => n + (a.volk >= 1), 0);
+// Gegner sind untereinander verbündet: nur der Spieler (Volk 0) steht im Kampf gegen sie
+const feind = (a, b) => a.volk !== b.volk && (a.volk === 0 || b.volk === 0);
+function tippe(z, x, y, werkzeug) { z.karte = (werkzeug === 'heben' ? heben : senken)(z.karte, x, y); }
+
+function eben(z, x, y) {
+  if (!innen(x + 1, y + 1)) return false;
+  const h = z.karte[idx(x, y)];
+  return h >= 1 && h <= 6 && FLAECHE.every(([dx, dy]) => z.karte[idx(x + dx, y + dy)] === h);
+}
+const belegt = (z, x, y) => z.haeuser.some((h) => Math.abs(h.x - x) < 2 && Math.abs(h.y - y) < 2);
+const gehbar = (z, x, y, von) => innen(x, y) && z.karte[idx(x, y)] >= 1 && Math.abs(z.karte[idx(x, y)] - von) <= 1
+  && !z.haeuser.some((h) => x >= h.x && x <= h.x + 1 && y >= h.y && y <= h.y + 1);
+
+function bauplaetze(z) {
+  const r = [];
+  for (let y = 0; y < GROESSE - 1; y++) for (let x = 0; x < GROESSE - 1; x++) if (eben(z, x, y) && !belegt(z, x, y)) r.push([x, y]);
+  return r;
+}
+
+function entferne(z, a) {
+  z.anhaenger.splice(z.anhaenger.indexOf(a), 1);
+  const h = z.haeuser.find((q) => q.id === a.haus);
+  if (h && h.bewohner > 0) h.bewohner--;
+}
+
+function takt(z, rng) {
+  // 1 Ertrinken (bei Hochwasser auch Land der Höhe 1)
+  const wasser = wasserStand(z);
+  for (const a of [...z.anhaenger]) {
+    if (z.karte[idx(a.x, a.y)] <= wasser) { a.ertrinkt++; if (a.ertrinkt >= ERTRINKEN) { z.ertrunken[a.volk]++; ev(z, 'ertrinken', a.x, a.y); entferne(z, a); } } else a.ertrinkt = 0;
+  }
+  // 2 Bewegung
+  const plaetze = bauplaetze(z);
+  for (const a of z.anhaenger) {
+    if (z.anhaenger.some((b) => feind(a, b) && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) <= 1)) continue; // wer kämpft, bleibt stehen
+    let ziel = null, best = 1e9;
+    for (const [px, py] of plaetze) { const d = Math.abs(px - a.x) + Math.abs(py - a.y); if (d < best) { best = d; ziel = [px, py]; } }
+    const h0 = z.karte[idx(a.x, a.y)];
+    const opt = NACH.map(([dx, dy]) => [a.x + dx, a.y + dy]).filter(([x, y]) => gehbar(z, x, y, h0));
+    if (!opt.length) continue;
+    if (wasser && h0 <= wasser) { const hoch = opt.filter(([x, y]) => z.karte[idx(x, y)] > wasser); if (hoch.length) { [a.x, a.y] = hoch[0]; continue; } }   // Hochwasser: aufs höhere Land flüchten
+    const ab = a.volk >= 1 && !z.lern ? angriffsAbstand(z.staerke) : 0;
+    if (ab && z.takt % ab === 0) {   // Angriff: ein Schritt auf den nächsten eigenen Pixeling des Spielers
+      let nah = null, nd = 1e9;
+      for (const b of z.anhaenger) if (b.volk === 0) { const d = Math.abs(b.x - a.x) + Math.abs(b.y - a.y); if (d < nd) { nd = d; nah = b; } }
+      const schritt = nah && opt.filter(([x, y]) => Math.abs(nah.x - x) + Math.abs(nah.y - y) < nd);
+      if (schritt && schritt.length) { [a.x, a.y] = schritt[0]; continue; }
+    }
+    if (ziel && best > 0) {
+      const bessere = opt.filter(([x, y]) => Math.abs(ziel[0] - x) + Math.abs(ziel[1] - y) < best);
+      if (bessere.length) { [a.x, a.y] = bessere[0]; }
+    } else if (!ziel) { [a.x, a.y] = opt[Math.floor(rng() * opt.length)]; }
+  }
+  // 3 Hausbau
+  const jetzt = {};
+  const benutzt = new Set();
+  for (const [x, y] of plaetze) {
+    if (FLAECHE.some(([dx, dy]) => benutzt.has(idx(x + dx, y + dy)))) continue;
+    const k = x + ',' + y;
+    for (const volk of [0, 1, 2]) {
+      if (!z.anhaenger.some((a) => a.volk === volk && a.x >= x && a.x <= x + 1 && a.y >= y && a.y <= y + 1)) continue;
+      jetzt[k] = (z.bau[k] || 0) + 1;
+      FLAECHE.forEach(([dx, dy]) => benutzt.add(idx(x + dx, y + dy)));
+      if (jetzt[k] >= Math.round(HAUS_TAKTE * faktor(z, volk))) { z.haeuser.push({ id: z.naechsteId++, volk, x, y, bewohner: 0, zaehler: 0, alter: -1 }); ev(z, 'haus', x, y); delete jetzt[k]; }
+      break;
+    }
+  }
+  z.bau = jetzt;
+  // 4 Vermehrung
+  for (const h of z.haeuser) {
+    if ((h.alter ?? HAUS_ANIM) < HAUS_ANIM) h.alter++;
+    if (!eben(z, h.x, h.y) || h.bewohner >= MAX_BEWOHNER) continue;
+    if (++h.zaehler >= Math.round(VERMEHRUNG * faktor(z, h.volk))) { h.zaehler = 0; h.bewohner++; ev(z, 'geburt', h.x, h.y); z.anhaenger.push({ id: z.naechsteId++, volk: h.volk, x: h.x, y: h.y, ertrinkt: 0, haus: h.id }); }
+  }
+  // 5 Kampf
+  const kontakt = [[], []];
+  for (const a of z.anhaenger) {
+    if (z.anhaenger.some((b) => feind(a, b) && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) <= 1)) kontakt[a.volk === 0 ? 0 : 1].push(a);
+  }
+  const [k0, k1] = kontakt;
+  if (k0.length || k1.length) {
+    ev(z, 'kampf', (k0[0] || k1[0]).x, (k0[0] || k1[0]).y);
+    if (k0.length <= k1.length && k0.length) entferne(z, k0[0]);
+    if (k1.length <= k0.length && k1.length) entferne(z, k1[0]);
+  }
+  // 5b Endgegner: sinkt er auf 3 Pixelinge, beginnt Phase 2 mit 8 neuen und mehr Stärke (einmal)
+  if (z.endgegner && z.phase === 1 && gegnerZahl(z) <= PHASE2_AB) {
+    z.phase = 2; z.staerke = Math.min(10, z.staerke + 2); ev(z, 'phase', 0, 0);
+    z.nachschub = PHASE2_NEU; z.nachschubAb = z.takt;   // die neuen Gegner kommen in Schüben (sofort der erste), nicht alle auf einmal
+  }
+  if (z.nachschub > 0 && (z.takt - z.nachschubAb) % PHASE2_ALLE === 0) {
+    for (let j = 0; j < PHASE2_SCHUB && z.nachschub > 0; j++) { const i = PHASE2_NEU - z.nachschub; z.anhaenger.push({ id: z.naechsteId++, volk: 1, x: GROESSE - 1 - (4 + (i % 2)), y: 8 + Math.floor(i / 2), ertrinkt: 0, haus: -1 }); z.nachschub--; }
+  }
+  // 6 Gegner-KI: (a) Rettung: alle RETTUNG_BASIS minus Stärke Takte (mindestens RETTUNG_MIN; Entscheidung 20.11.2026, vorher 4 und 1) hebt die KI das Feld unter einem gefährdeten Anhänger (Höhe höchstens 1) um 2; (b) alle 12 minus Stärke Takte ein Feld um 1 ändern
+  z.takt++;
+  if (z.takt % MANA_TAKTE === 0) z.mana = Math.min(MANA_MAX, z.mana + z.haeuser.filter((h) => h.volk === 0).length);
+  if (z.phase === 2 && z.takt % BEBEN_ALLE === 0) {   // Endgegner Phase 2: Beben um einen zufälligen Pixeling des Spielers
+    const mine = z.anhaenger.filter((a) => a.volk === 0);
+    if (mine.length) { const a = mine[Math.floor(rng() * mine.length)]; beben(z, a.x, a.y, rng); }
+  }
+  if (z.lern) return;
+  if (z.takt % Math.max(RETTUNG_MIN, RETTUNG_BASIS - Math.max(1, Math.min(10, z.staerke))) === 0) {
+    const gef = z.anhaenger.find((a) => a.volk >= 1 && z.karte[idx(a.x, a.y)] <= 1);
+    if (gef) z.karte = heben(heben(z.karte, gef.x, gef.y), gef.x, gef.y);
+  }
+  const eigene = z.anhaenger.filter((a) => a.volk >= 1);
+  if (eigene.length && z.takt % (12 - Math.max(1, Math.min(10, z.staerke))) === 0) {
+    const a = eigene[Math.floor(rng() * eigene.length)];
+    const x = Math.max(0, Math.min(GROESSE - 1, a.x + Math.floor(rng() * 5) - 2));
+    const y = Math.max(0, Math.min(GROESSE - 1, a.y + Math.floor(rng() * 5) - 2));
+    const h = z.karte[idx(x, y)], m = innen(x + 1, y + 1) ? z.karte[idx(x + 1, y + 1)] : h;
+    if (h < m) z.karte = heben(z.karte, x, y); else if (h > m && h > 1) z.karte = senken(z.karte, x, y);
+  }
+}
+
+// 7 Ende
+function ende(z) {
+  const [a, b] = [anzahl(z, 0), gegnerZahl(z)];
+  if (a === 0) return 'niederlage';
+  if (z.lern && !z.lernFertig) return 'laeuft';
+  if (a >= z.ziel && b === 0 && (!z.endgegner || z.phase === 2) && !z.nachschub) return 'sieg';
+  if (b >= z.ziel && b > a && !z.lern) return 'niederlage';
+  if (z.takt >= z.limit && !z.lern) return a > b && b <= LIMIT_GEGNER_MAX && a * 4 >= z.ziel * 3 && (!z.endgegner || z.phase === 2) ? 'sieg' : 'niederlage';   // Limit-Sieg: mehr als der Gegner und mindestens drei Viertel des Ziels (Entscheidung 21.11.2026, Spec S-006; vorher das halbe Ziel); Endgegner nur nach Phase 2
+  return 'laeuft';
+}
+
+// Götterkraft Flut: Feld 3 mal 3 sinkt um 2; nur mit genug Mana und nach der Abklingzeit
+// Im Lernpfad ist die Flut gesperrt (Kampagnenentwurf: Flut ab Welt 2)
+const flutBereit = (z) => !z.lern && z.kraefte.includes('flut') && z.mana >= FLUT_KOSTEN && z.takt >= z.flutFrei;
+function flut(z, x, y) {
+  if (!flutBereit(z) || !Number.isInteger(x) || !Number.isInteger(y)) return false;
+  z.karte = aendereBereich(z.karte, x, y, 1, -FLUT_SENKUNG);
+  z.mana -= FLUT_KOSTEN; z.flutFrei = z.takt + FLUT_ABKLING;
+  ev(z, 'flut', x, y);
+  return true;
+}
+// Ereignisse für Ton und Effekte abholen und leeren
+function entleere(z) { const l = z.ereignisse; z.ereignisse = []; return l; }
+
+// Götterkräfte Vulkan, Sturm, Erdbeben und Händler (S-007). Zufall kommt hineingereicht (R-02). Gleiche Regeln wie die Flut: freigeschaltet, genug Mana, Abklingzeit, nicht im Lernpfad.
+const feldGueltig = (x, y) => Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < GROESSE && y < GROESSE;
+function kraftBereit(z, name) {
+  if (name === 'flut') return flutBereit(z);
+  const k = KRAEFTE[name];
+  return !!k && !z.lern && z.kraefte.includes(name) && z.mana >= k.kosten && z.takt >= (z.freiBis[name] || 0);
+}
+function zahle(z, name, art, x, y) { z.mana -= KRAEFTE[name].kosten; z.freiBis[name] = z.takt + KRAEFTE[name].abkling; ev(z, art, x, y); return true; }
+const begrenze = (h) => Math.max(0, Math.min(8, h));
+// Vulkan: 3 mal 3 Felder um 3 Stufen hoch, Pixelinge im Feld verbrennen (beide Völker)
+function vulkan(z, x, y) {
+  if (!feldGueltig(x, y) || !kraftBereit(z, 'vulkan')) return false;
+  z.karte = aendereBereich(z.karte, x, y, 1, 3);
+  for (const a of [...z.anhaenger]) if (Math.abs(a.x - x) <= 1 && Math.abs(a.y - y) <= 1) entferne(z, a);
+  return zahle(z, 'vulkan', 'vulkan', x, y);
+}
+// Sturm: 8 zufällige Felder im Umkreis 3 sinken um 1
+function sturm(z, x, y, rng) {
+  if (!feldGueltig(x, y) || !kraftBereit(z, 'sturm')) return false;
+  const felder = [];
+  for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (feldGueltig(x + dx, y + dy)) felder.push(idx(x + dx, y + dy));
+  const k = Uint8Array.from(z.karte);
+  for (let i = 0; i < 8 && felder.length; i++) { const j = Math.floor(rng() * felder.length); const f = felder.splice(j, 1)[0]; k[f] = begrenze(k[f] - 1); }
+  z.karte = k;
+  return zahle(z, 'sturm', 'sturm', x, y);
+}
+// Erdbeben: jedes Feld im 5-mal-5-Bereich ändert sich zufällig um genau 1 hoch oder runter
+function beben(z, x, y, rng) {
+  const k = Uint8Array.from(z.karte);
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (feldGueltig(x + dx, y + dy)) { const f = idx(x + dx, y + dy); k[f] = begrenze(k[f] + (rng() < 0.5 ? -1 : 1)); }
+  z.karte = k; ev(z, 'erdbeben', x, y);
+}
+function erdbeben(z, x, y, rng) {
+  if (!feldGueltig(x, y) || !kraftBereit(z, 'erdbeben')) return false;
+  beben(z, x, y, rng);
+  z.mana -= KRAEFTE.erdbeben.kosten; z.freiBis.erdbeben = z.takt + KRAEFTE.erdbeben.abkling;
+  return true;
+}
+// Händler Kassettenmann: 3 Mana gegen sofort frische Götterkräfte (alle Abklingzeiten zurück)
+function handel(z) {
+  if (!z.haendler || z.lern || z.mana < HANDEL_KOSTEN) return false;
+  z.mana -= HANDEL_KOSTEN; z.flutFrei = 0; z.freiBis = {}; ev(z, 'handel', 0, 0);
+  return true;
+}
+
+// Control: Lernpfad (S-003). Rein: Zeit kommt als Taktzahl, keine Plattform.
+
+
+
+const feldNr = (x, y) => y * GROESSE + x;
+// Ebene 2x2-Fläche (Höhe 1 bis 6), die der Spieler verändert hat (mindestens ein Feld anders als am Start)
+const ebeneFlaeche = (z, start) => {
+  for (let y = 0; y < GROESSE - 1; y++) for (let x = 0; x < GROESSE - 1; x++) {
+    const h = z.karte[feldNr(x, y)];
+    if (h >= 1 && h <= 6 && z.karte[feldNr(x + 1, y)] === h && z.karte[feldNr(x, y + 1)] === h && z.karte[feldNr(x + 1, y + 1)] === h
+      && [[0, 0], [1, 0], [0, 1], [1, 1]].some(([dx, dy]) => z.karte[feldNr(x + dx, y + dy)] !== start[feldNr(x + dx, y + dy)])) return { x, y };
+  }
+  return null;
+};
+
+class Lernpfad {
+  constructor(z) {
+    this.start = Uint8Array.from(z.karte); this.gehoben = new Set();
+    this.nr = 0; this.fertig = false; this.zaehler = 0; this.hinweis = false; this.basis = 0;
+  }
+  get text() { return this.fertig ? '' : AUFGABEN[this.nr]; }
+  get kopf() { return this.fertig ? '' : `Aufgabe ${this.nr + 1} von ${ANZAHL}`; }
+  get hinweisText() { return this.hinweis && !this.fertig ? HINWEISE[this.nr] : ''; }
+  erfuellt(z) {
+    switch (this.nr) {
+      case 0: return this.gehoben.size >= 3;
+      case 1: return ebeneFlaeche(z, this.start) !== null;
+      case 2: return anzahl(z, 0) >= 12;
+      case 3: return z.ertrunken[1] > this.basis || anzahl(z, 1) === 0;
+      default: return anzahl(z, 0) >= 20 && anzahl(z, 1) === 0;
+    }
+  }
+  // Prüft nach Tipps und nach jedem Takt; höchstens eine Aufgabe je Aufruf. Liefert true bei Fortschritt.
+  pruefe(z) {
+    if (this.fertig) return false;
+    z.karte.forEach((h, i) => { if (h > this.start[i]) this.gehoben.add(i); });
+    if (!this.erfuellt(z)) return false;
+    this.nr++; this.zaehler = 0; this.hinweis = false;
+    if (this.nr >= ANZAHL) { this.fertig = true; z.lernFertig = true; }
+    if (this.nr === 3) this.basis = z.ertrunken[1];
+    return true;
+  }
+  // Einmal je Simulationstakt nach dem Takt aufrufen
+  takt(z) {
+    if (this.pruefe(z) || this.fertig) return;
+    if (++this.zaehler >= HINWEIS_TAKTE) this.hinweis = true;
+  }
+  // Zielfeld der Markierung (oder null, wenn die Aufgabe keines hat)
+  ziel(z) {
+    if (this.fertig) return null;
+    if (this.nr === 0) { for (const [x, y] of [[6, 10], [7, 10], [6, 11], [7, 11]]) if (z.karte[feldNr(x, y)] <= this.start[feldNr(x, y)]) return { x, y }; return { x: 6, y: 10 }; }
+    if (this.nr === 1) return ebeneFlaeche(z, this.start) || { x: 6, y: 10 };
+    if (this.nr === 2) return null;
+    const g = z.anhaenger.find((a) => a.volk === 1);
+    return g ? { x: g.x, y: g.y } : null;
+  }
+}
+
+// Control: Ergebnis einer Kampagnenkarte buchen (S-006, S-011). Liest den gespeicherten Stand frisch, mischt (beste Sterne je Karte),
+// rechnet den Sieg ein und schreibt zurück. Die Ablage wird hineingereicht (R-04).
+
+function buche(fort, ablage, id, erg, deckel = 3) {
+  const neu = nachSieg(mische(fort, lade(ablage.lies())), id, erg, deckel);
+  ablage.schreibe(serialisiere(neu));
+  return neu;
+}
+
+// Control: Einstieg für die UI. Reicht Plattformteile (THREE, Zeit) hinein und bindet Boundary an.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const TAKT_MS = 500;
+
+// Plattformteile kommen hinein (R-02): THREE, AudioContext-Klasse, Geräte-Pixelverhältnis; opt: seed, taktMs, look, glatt, lernen
+function erzeuge(canvas, THREE, opt = {}, plattform = {}) {
+  const { seed = 1, taktMs = TAKT_MS, look = 'a0', glatt = false, lernen = false } = opt;
+  const { AudioKlasse = null, dpr = 1, speicherQuelle = null } = plattform;
+  const ablage = new Speicher(speicherQuelle);
+  let testFrei = false, fort = lade(ablage.lies()), kartenId = null, gebucht = false, sterneLetzte = 0, leicht = false, tag = null;   // tag: { j, m, t, seed, karte } der täglichen Aufgabe
+  let z = lernen ? neuerLernZustand() : neuerZustand(), rng = mulberry32(seed), letzter = null;
+  let lp = lernen ? new Lernpfad(z) : null, pausiert = false, hilfePause = false;
+  const spiel = new Spiel(z); spiel.zufall = () => rng();
+  const szene = new Szene(canvas, THREE, look, glatt, dpr);
+  const ton = new Ton(AudioKlasse), partikel = new Partikel(), prng = mulberry32(seed + 7);
+  let letztesT = null, jingleSchon = false;
+  const FARBE = { heben: 0xd9c27a, haus: 0xffffff, geburt: 0x7dff9a, ertrinken: 0x6ac8ff, kampf: 0xff6a6a, flut: 0x4aa8ff, vulkan: 0xff7a2a, sturm: 0xc8d8ff, erdbeben: 0xb08a5a, handel: 0xffe36a };
+  const ANZ = { heben: 6, haus: 10, geburt: 5, ertrinken: 6, kampf: 4, flut: 30, vulkan: 40, sturm: 24, erdbeben: 30, handel: 8 };
+  return {
+    spiel,
+    groesse: (b, h) => szene.groesse(b, h),
+    // jetzt: hineingereichte Zeit in ms; ruft pro 500 ms einen Takt auf, höchstens 4 je Aufruf
+    vorwaerts(jetzt) {
+      if (letzter === null || pausiert) { letzter = jetzt; if (pausiert) return false; }
+      let n = 0, geaendert = false;
+      while (jetzt - letzter >= taktMs && n < 4 && this.stand() === 'laeuft') { takt(z, rng); if (lp) lp.takt(z); letzter += taktMs; n++; geaendert = true; }
+      if (n === 4) letzter = jetzt;
+      return geaendert;
+    },
+    // Bucht das Ergebnis einer Kampagnenkarte genau einmal (Seiteneffekt nur beim ersten Aufruf nach dem Ende)
+    stand() {
+      const e = ende(z);
+      if (e !== 'laeuft' && (kartenId || tag) && !gebucht) {
+        gebucht = true; const erg = { sieg: e === 'sieg', takte: z.takt, ertrunken: z.ertrunken[0] };
+        const k = kartenId ? karteZu(kartenId) : tag.karte, deckel = z.leicht ? leichtSterne(3) : 3;
+        sterneLetzte = Math.min(sterneFuer(k, erg), deckel);
+        if (kartenId) fort = buche(fort, ablage, kartenId, erg, deckel);
+      }
+      return e;
+    },
+    volk: () => [anzahl(z, 0), gegnerZahl(z)],
+    // Hinweis für die Kopfzeile: Hochwasser (nur Karten mit wechselndem Wasserstand) und Phase des Endgegners
+    hinweis() { const h = hochwasserIn(z); return [h === 0 ? 'Hochwasser!' : h !== null && h <= 10 ? `Hochwasser in ${Math.ceil(h / 2)} s` : '', z.endgegner && z.phase === 2 ? 'Phase 2!' : ''].filter(Boolean).join(' · '); },
+    neustart() { z = lp ? neuerLernZustand() : (kartenId ? neuerKartenZustand(karteZu(kartenId), leicht) : tag ? neuerKartenZustand(tag.karte, leicht) : neuerZustand()); gebucht = false; lp = lp ? new Lernpfad(z) : null; rng = mulberry32(tag ? tag.seed : seed); letzter = null; spiel.z = z; spiel.zuruecksetzen(); jingleSchon = false; ton.neuStart(); },
+    // Lernpfad beenden (Überspringen oder geschafft): Karte 1-1 der Kampagne; mehrfaches Aufrufen startet nur einmal
+    zumSpiel() { if (!lp) return false; lp = null; return this.starteKarte('1-1'); },
+    // Kampagne (S-006): Kartenliste mit Stand, Karte starten, Ergebnis, Fortschritt löschen
+    karten: () => KARTEN.map((k) => ({ id: k.id, welt: k.welt, name: k.name, offen: istOffen(fort, k.id), sterne: fort.sterne[k.id] | 0, boss: k.boss })),
+    kartenId: () => kartenId,
+    testFrei: () => testFrei, setzeTestFrei(an) { testFrei = !!an; },   // Prüfhilfe, wird nie gespeichert
+    // frei = true startet auch gesperrte Karten (nur für Prüfläufe über die Adresse, kein Schutz vor Schummeln)
+    starteKarte(id, frei = false) {
+      const k = karteZu(id);
+      if (!k || (!frei && !istOffen(fort, id))) return false;
+      lp = null; kartenId = id; tag = null; z = neuerKartenZustand(k, leicht); rng = mulberry32(seed); letzter = null; spiel.z = z; spiel.zuruecksetzen(); jingleSchon = false; gebucht = false; sterneLetzte = 0; ton.neuStart();
+      return true;
+    },
+    // Tägliche Aufgabe (S-009): Datum kommt hinein, Karte und Zufall folgen aus dem Datum; zählt nicht für die Kampagne
+    starteTag(j, m, t) {
+      const sd = tagesSeed(j, m, t), k = tageskarte(sd);
+      if (!k) return false;
+      lp = null; kartenId = null; tag = { j, m, t, seed: sd, karte: k }; z = neuerKartenZustand(k, leicht); rng = mulberry32(sd); letzter = null; spiel.z = z; spiel.zuruecksetzen(); jingleSchon = false; gebucht = false; sterneLetzte = 0; ton.neuStart();
+      return true;
+    },
+    setzeLeicht(an) { leicht = an === true; },
+    leichtAn: () => leicht,
+    // Nach dem Ende einer Kampagnenkarte: Sterne und nächste offene Karte
+    ergebnis() { const n = kartenId ? KARTEN[KARTEN.findIndex((k) => k.id === kartenId) + 1] : null; return { sterne: sterneLetzte, weiter: n && istOffen(fort, n.id) ? n.id : null, dauerhaft: ablage.dauerhaft, tag: !!tag, leicht, teil: tag ? teilText(tag.j, tag.m, tag.t, tag.karte, sterneLetzte, z.leicht) : null }; },
+    loescheFortschritt() { fort = neuerFortschritt(); ablage.loesche(); },
+    lernpfad: () => lp,
+    hilfekarten: () => HILFE,
+    // nach einem Tipp: Fortschritt im Lernpfad prüfen
+    nachTipp() { return lp ? lp.pruefe(z) : false; },
+    pause(an) { hilfePause = !!an; pausiert = hilfePause || !ton.sichtbar; },
+    marke(b, h) {
+      const f = lp && lp.ziel(z); if (!f) return null;
+      const p = szene.feldPx(f.x, f.y, z.karte[f.y * GROESSE + f.x], b, h);
+      return { x: p.x, y: p.y, durchmesser: Math.max(28, Math.round(feldBreitePx(b, h, spiel.zoom, ausschnitt(look)) * 1.3)) };
+    },
+    zeichne(t) {
+      const dt = letztesT === null ? 0 : Math.min(0.05, (t - letztesT) / 1000); letztesT = t;
+      ton.neuesBild();
+      for (const e of entleere(z)) {
+        ton.ereignis(e);
+        const hh = (z.karte[e.y * GROESSE + e.x] || 0) * 0.5 + 0.3;
+        partikel.erzeuge(ANZ[e.art] || 4, e.x + 0.5 - GROESSE / 2, hh, e.y + 0.5 - GROESSE / 2, FARBE[e.art] || 0xffffff, prng);
+      }
+      partikel.schritt(dt);
+      ton.setzeStufe(gegnerZahl(z), z.ziel); ton.tick();
+      const st = ende(z);
+      if (st !== 'laeuft' && !jingleSchon) { jingleSchon = true; ton.jingle(st === 'sieg' ? 'sieg' : 'niederlage'); }
+      szene.setzePartikel(partikel.p);
+      szene.zeichne(wasserStand(z) ? z.karte.map((h) => (h <= 1 ? 0 : h)) : z.karte, z.anhaenger, z.haeuser, t);   // Hochwasser: Land der Höhe 1 wird als Wasser gezeichnet
+    },
+    entsperre: () => ton.entsperre(),
+    stumm: (an) => ton.setzeStumm(an),
+    // Tab im Hintergrund: Spiel und Ton anhalten, beim Zurückkommen fortsetzen
+    sichtbar(an) { ton.setzeSichtbar(an); pausiert = !an || hilfePause; },
+    takte: () => z.takt,
+    stufe: () => musikStufe(gegnerZahl(z), z.ziel),
+    mana: () => [z.mana, MANA_MAX],
+    flutBereit: () => flutBereit(z),
+    // Götterkräfte der Karte (S-007): Name, Kosten, bereit, gewählt; dazu der Händler, wenn die Karte einen hat
+    kraefte: () => [...z.kraefte.map((n) => ({ name: n, kosten: KRAEFTE[n].kosten, bereit: kraftBereit(z, n), gewaehlt: spiel.werkzeug === n })),
+      ...(z.haendler ? [{ name: 'handel', kosten: HANDEL_KOSTEN, bereit: !z.lern && z.mana >= HANDEL_KOSTEN, gewaehlt: false }] : [])],
+    handeln: () => handel(z),
+    partikelAnzahl: () => partikel.anzahl,
+    tonDa: () => ton.verfuegbar,
+    feldAn: (px, py, b, h) => szene.feldAn(px, py, b, h),
+    // Ring über dem Finger: Zielfeld, Mittelpunkt und Durchmesser in Pixeln
+    ring(px, py, b, h) {
+      const basis = ausschnitt(look);
+      const d = ringDurchmesser(feldBreitePx(b, h, spiel.zoom, basis), spiel.pinsel);
+      return { feld: ringFeld(px, py, (x, y) => szene.feldAn(x, y, b, h)), cx: px, cy: py - RING_VERSATZ, durchmesser: d };
+    },
+    ziehschwelle: ZIEHSCHWELLE,
+    ansicht() { szene.ansicht(spiel.zoom, spiel.mitte.x, spiel.mitte.y); },
+    zoomeAuf(z) { spiel.setzeZoom(z); this.ansicht(); },
+    schiebePx(dx, dy) { const k = szene.pxJeEinheit(); spiel.verschiebe(-dx / k, dy / k); this.ansicht(); },
+    grafik(glatt) { szene.setzeGlatt(glatt); },
+    pixelgroesse: () => szene.pixel,
+    pxJeEinheit: () => szene.pxJeEinheit(),
+  };
+}
+
+// UI: Tasten, Berührung, Bildschleife. Ruft nur Control auf (R-01); liest keinen Zustand aus dem DOM zurück (R-03).
+
+const haken = {};
+const meldung = (text) => { const m = document.getElementById('meldung'); m.hidden = false; m.firstElementChild.append(text); };
+
+// Fortschritt speichern: freigegeben am 20.11.2026 (Karte O-4, Browser-Speicher). Gesperrter Speicher gibt null (dann nur Arbeitsspeicher).
+const speicherQuelle = () => { try { return window.localStorage; } catch (e) { return null; } };
+const KRAFT_NAME = { vulkan: 'Vulkan', sturm: 'Sturm', erdbeben: 'Beben', handel: 'Handel' };
+const sterneText = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
+
+// Datum der täglichen Aufgabe: heute, für Prüfläufe über #datum=2026-11-20 festlegbar
+const heute = () => { const h = /datum=(\d{4})-(\d{1,2})-(\d{1,2})/.exec(location.hash); if (h) return [+h[1], +h[2], +h[3]]; const d = new Date(); return [d.getFullYear(), d.getMonth() + 1, d.getDate()]; };
+
+function starte() {
+  const t0 = performance.now();
+  if (!window.THREE) { meldung('three.js konnte nicht geladen werden. Bitte Seite neu laden.'); return; }
+  const canvas = document.getElementById('welt');
+  let spiel;
+  const look = (/look=(a0|a|b|c)/.exec(location.hash) || [0, 'b'])[1];
+  try {
+    document.body.className = 'look-' + look;
+    spiel = erzeuge(canvas, window.THREE, { taktMs: /schnell/.test(location.hash) ? 20 : 500, look, glatt: /glatt/.test(location.hash), lernen: !/spiel/.test(location.hash) },
+      { AudioKlasse: window.AudioContext || window.webkitAudioContext, dpr: window.devicePixelRatio || 1, speicherQuelle: speicherQuelle() });
+  } catch (e) { meldung('3D wird auf diesem Gerät nicht unterstützt (WebGL fehlt).'); return; }
+  const karteHash = null;   // Prüfläufe: #karte=3-1 startet diese Karte auch gesperrt
+  if (karteHash) spiel.starteKarte(karteHash[1], true);
+  const stand = { schmutzig: true, tippZeit: 0, bilder: 0, start: 0, pause: /pause/.test(location.hash) };
+  canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); meldung('Das Gerät hat die Grafik angehalten. Bitte die Seite neu laden.'); });
+  const hud = document.getElementById('anzeige'), schluss = document.getElementById('ende'), text = document.getElementById('endetext');
+  const passeAn = () => { spiel.groesse(innerWidth, innerHeight); stand.schmutzig = true; };
+  addEventListener('resize', passeAn); passeAn();
+
+  const tasten = { heben: document.getElementById('heben'), senken: document.getElementById('senken') };
+  for (const name of Object.keys(tasten)) tasten[name].addEventListener('click', () => {
+    spiel.spiel.waehle(name);
+    document.getElementById('flut').setAttribute('aria-pressed', 'false');
+    for (const n of Object.keys(tasten)) tasten[n].setAttribute('aria-pressed', String(n === name));
+  });
+
+  const ringEl = document.getElementById('ring');
+  const zeigeRing = (r) => {
+    if (!r) { ringEl.hidden = true; return; }
+    ringEl.hidden = false;
+    ringEl.style.width = ringEl.style.height = r.durchmesser + 'px';
+    ringEl.style.left = (r.cx - r.durchmesser / 2) + 'px'; ringEl.style.top = (r.cy - r.durchmesser / 2) + 'px';
+  };
+  const pinselTaste = document.getElementById('pinsel'), grafikTaste = document.getElementById('grafik');
+  pinselTaste.addEventListener('click', () => {
+    const n = spiel.spiel.pinsel === 1 ? 3 : 1;
+    spiel.spiel.waehlePinsel(n); pinselTaste.replaceChildren('Pinsel ' + n); pinselTaste.setAttribute('aria-pressed', String(n === 3));
+  });
+  let glatt = /glatt/.test(location.hash);
+  const beschrifteGrafik = () => { grafikTaste.replaceChildren(glatt ? 'Glatt' : 'Pixel'); grafikTaste.setAttribute('aria-pressed', String(glatt)); };
+  beschrifteGrafik();
+  grafikTaste.addEventListener('click', () => {
+    stand.grafikStart = performance.now(); glatt = !glatt; spiel.grafik(glatt); beschrifteGrafik(); stand.schmutzig = true;
+  });
+
+  const flutTaste = document.getElementById('flut'), stummTaste = document.getElementById('stumm'), rand = document.getElementById('rand');
+  flutTaste.addEventListener('click', () => { spiel.entsperre(); spiel.spiel.waehle('flut'); flutTaste.setAttribute('aria-pressed', 'true'); });
+  let stumm = false;
+  stummTaste.addEventListener('click', () => { spiel.entsperre(); stumm = !stumm; spiel.stumm(stumm); stummTaste.replaceChildren(stumm ? 'Ton aus' : 'Ton an'); stummTaste.setAttribute('aria-pressed', String(stumm)); });
+  // Zeiger: ein Finger = Ring (Tippen/Ziehen), zwei Finger = Zoom und Verschieben (malen nicht)
+  const zeiger = new Map(); let mehrfach = false, anfang = null, geste = null;
+  const abstand = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const zwei = () => { const [a, b] = [...zeiger.values()]; return { d: abstand(a, b), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
+  const ringAn = (p) => spiel.ring(p.x, p.y, innerWidth, innerHeight);
+  const nachBild = () => { stand.schmutzig = true; };
+  canvas.addEventListener('pointerdown', (e) => {
+    spiel.entsperre(); canvas.setPointerCapture(e.pointerId); zeiger.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (zeiger.size >= 2) { mehrfach = true; spiel.spiel.abbrechen(); zeigeRing(null); geste = { ...zwei(), zoom: spiel.spiel.zoom }; return; }
+    if (mehrfach) return;
+    anfang = { x: e.clientX, y: e.clientY };
+    const r = ringAn(anfang); spiel.spiel.beginne(r.feld); zeigeRing(r);
+  });
+  function geste2() {
+    if (!geste) return;
+    geste.wartet = false;
+    if (zeiger.size < 2) return;
+    const n = zwei(); spiel.zoomeAuf(geste.zoom * n.d / Math.max(1, geste.d)); spiel.schiebePx(n.x - geste.x, n.y - geste.y);
+    geste.x = n.x; geste.y = n.y; nachBild();
+  }
+  canvas.addEventListener('pointermove', (e) => {
+    if (!zeiger.has(e.pointerId)) return;
+    zeiger.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (zeiger.size >= 2) {
+      // Zwei Finger melden nacheinander; erst im nächsten Bild mit beiden Endständen rechnen (kein Zwischenzoom)
+      if (!geste.wartet) { geste.wartet = true; requestAnimationFrame(geste2); }
+      return;
+    }
+    if (mehrfach || !anfang) return;
+    const p = { x: e.clientX, y: e.clientY }, r = ringAn(p);
+    zeigeRing(r);
+    const jetzt = performance.now();
+    if (spiel.spiel.bewege(r.feld, abstand(anfang, p) >= spiel.ziehschwelle, jetzt)) { stand.tippZeit = jetzt; spiel.nachTipp(); aktualisiere(); nachBild(); }
+  });
+  const hoch = (e) => {
+    if (!zeiger.delete(e.pointerId)) return;
+    if (zeiger.size >= 2) { geste = { ...zwei(), zoom: spiel.spiel.zoom }; return; }
+    if (zeiger.size === 0) {
+      if (!mehrfach && anfang) { const jetzt = performance.now(); if (e.type === 'pointerup' && spiel.spiel.ende(jetzt)) { stand.tippZeit = jetzt; spiel.nachTipp(); aktualisiere(); nachBild(); } else spiel.spiel.abbrechen(); }
+      mehrfach = false; anfang = null; geste = null; zeigeRing(null);
+    }
+  };
+  canvas.addEventListener('pointerup', hoch);
+  canvas.addEventListener('pointercancel', hoch);
+
+  const leichtVersuch = document.getElementById('leichtversuch'), teilTaste = document.getElementById('teilen'), teilText = document.getElementById('teiltext');
+  const neustartTaste = document.getElementById('neustart'), weiterTaste = document.getElementById('weiterkarte'), zuKartenTaste = document.getElementById('zukarten');
+  neustartTaste.addEventListener('click', () => {
+    if (spiel.lernpfad() && spiel.stand() === 'sieg') spiel.zumSpiel(); else spiel.neustart();
+    schluss.hidden = true; stand.schmutzig = true; zuletzt = ''; aktualisiere();
+  });
+
+  // Kartenmenü (S-006): Liste aus dem Control, Karte starten, Fortschritt löschen (zweimal tippen)
+  const menue = document.getElementById('kartenmenue'), liste = document.getElementById('kartenliste'), wegTaste = document.getElementById('wegtaste');
+  const startNeu = () => { schluss.hidden = true; stand.schmutzig = true; zuletzt = ''; aktualisiere(); };
+  const baueMenue = () => {
+    liste.replaceChildren(); let welt = 0;
+    for (const k of spiel.karten()) {
+      if (k.welt !== welt) { welt = k.welt; const h = document.createElement('p'); h.className = 'welt'; h.append(welt === 5 ? 'Finale' : 'Welt ' + welt); liste.append(h); }
+      const b = document.createElement('button'); b.disabled = !(k.offen || spiel.testFrei()); b.dataset.karte = k.id;
+      b.append(k.id + ' ' + k.name, document.createElement('br'), k.offen ? sterneText(k.sterne) : spiel.testFrei() ? 'Test' : 'gesperrt');
+      b.addEventListener('click', () => { if (spiel.starteKarte(k.id, spiel.testFrei())) { menueAuf(false); startNeu(); } });
+      liste.append(b);
+    }
+    document.getElementById('speicherhinweis').replaceChildren(spiel.ergebnis().dauerhaft ? 'Fortschritt wird auf diesem Gerät gespeichert.' : 'Fortschritt gilt nur bis zum Neuladen der Seite.');
+  };
+  const menueAuf = (an) => { menue.hidden = !an; spiel.pause(an); if (an) { baueMenue(); beschrifteLeicht(); wegFrage = false; wegTaste.replaceChildren('Fortschritt löschen'); document.getElementById('kartenzu').focus(); } };
+  const testTaste = document.getElementById('testfrei');   // Prüfhilfe: gesperrte Karten zum Ausprobieren öffnen (zählt nicht für Sterne; auf der Seite entfernt)
+  if (testTaste) testTaste.addEventListener('click', () => { const an = !spiel.testFrei(); spiel.setzeTestFrei(an); testTaste.setAttribute('aria-pressed', String(an)); baueMenue(); });
+  document.getElementById('kartentaste').addEventListener('click', () => menueAuf(true));
+  document.getElementById('kartenzu').addEventListener('click', () => menueAuf(false));
+  zuKartenTaste.addEventListener('click', () => { schluss.hidden = true; menueAuf(true); });
+  weiterTaste.addEventListener('click', () => { if (spiel.starteKarte(spiel.ergebnis().weiter)) startNeu(); });
+  let wegFrage = false;   // erstes Tippen fragt nach, zweites löscht
+  wegTaste.addEventListener('click', () => { if (!wegFrage) { wegFrage = true; wegTaste.replaceChildren('Wirklich löschen?'); return; } wegFrage = false; spiel.loescheFortschritt(); baueMenue(); wegTaste.replaceChildren('Fortschritt löschen'); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menue.hidden) menueAuf(false); });
+  // Tägliche Aufgabe, leichter Modus, Teilen (S-009)
+  const leichtTaste = document.getElementById('leichttaste');
+  const beschrifteLeicht = () => { const an = spiel.leichtAn(); leichtTaste.replaceChildren(an ? 'Leicht: an' : 'Leicht: aus'); leichtTaste.setAttribute('aria-pressed', String(an)); };
+  leichtTaste.addEventListener('click', () => { spiel.setzeLeicht(!spiel.leichtAn()); beschrifteLeicht(); });
+  document.getElementById('tagtaste').addEventListener('click', () => { if (spiel.starteTag(...heute())) { menueAuf(false); startNeu(); } });
+  leichtVersuch.addEventListener('click', () => { spiel.setzeLeicht(true); beschrifteLeicht(); spiel.neustart(); startNeu(); });
+  teilTaste.addEventListener('click', async () => {   // Teilen: Systemdialog, sonst Zwischenablage, sonst bleibt der Text zum Abschreiben sichtbar
+    const t = spiel.ergebnis().teil; if (!t) return;
+    try { if (navigator.share) await navigator.share({ text: t }); else await navigator.clipboard.writeText(t); } catch (e) { /* abgebrochen oder gesperrt: Text bleibt sichtbar */ }
+  });
+  // Lernpfad: Aufgabenzeile, Markierung, Hilfe, Überspringen
+  const aufgabe = document.getElementById('aufgabe'), oben = document.getElementById('oben'), marke = document.getElementById('marke');
+  const hilfe = document.getElementById('hilfe');
+  document.getElementById('hilfekarten').replaceChildren(...spiel.hilfekarten().map((t) => { const p = document.createElement('p'); p.append(t); return p; }));
+  const hilfeAuf = (an) => { hilfe.hidden = !an; spiel.pause(an); if (an) document.getElementById('hilfezu').focus(); };
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !hilfe.hidden) hilfeAuf(false); });
+  document.addEventListener('visibilitychange', () => spiel.sichtbar(!document.hidden));
+  document.getElementById('hilfetaste').addEventListener('click', () => hilfeAuf(true));
+  document.getElementById('hilfezu').addEventListener('click', () => hilfeAuf(false));
+  document.getElementById('skip').addEventListener('click', () => { if (spiel.zumSpiel()) { stand.schmutzig = true; schluss.hidden = true; } });
+  let aufgabeZuletzt = '';
+  const skipTaste = document.getElementById('skip');
+  let nrZuletzt = 0;
+  const zeigeLernpfad = (jetzt) => {
+    const lp = spiel.lernpfad();
+    oben.hidden = false; skipTaste.hidden = !lp; aufgabe.hidden = !lp || lp.fertig; marke.hidden = true;
+    if (!lp) { nrZuletzt = 0; return; }
+    if (lp.nr > nrZuletzt) { stand.haekchenBis = jetzt + 1000; stand.haekchen = `✓ Aufgabe ${lp.nr} geschafft!`; }
+    nrZuletzt = lp.nr;
+    if (stand.haekchenBis && jetzt < stand.haekchenBis) { aufgabe.hidden = false; aufgabeZuletzt = ''; aufgabe.replaceChildren(stand.haekchen); stand.schmutzig = true; return; }
+    const t = lp.kopf + '|' + lp.text + '|' + lp.hinweisText;
+    if (t !== aufgabeZuletzt) {
+      aufgabeZuletzt = t; const k = document.createElement('small'); k.append(lp.hinweisText);
+      aufgabe.replaceChildren(lp.kopf + ': ' + lp.text, ...(lp.hinweisText ? [k] : []));
+    }
+    const m = spiel.marke(innerWidth, innerHeight);
+    if (m && hilfe.hidden) { marke.hidden = false; marke.style.width = marke.style.height = m.durchmesser + 'px'; marke.style.left = (m.x - m.durchmesser / 2) + 'px'; marke.style.top = (m.y - m.durchmesser / 2) + 'px'; }
+  };
+  // Götterkräfte der Karte (S-007): Tasten je Karte neu bauen, Zustand je Takt aktualisieren
+  const kraefteLeiste = document.getElementById('kraefte');
+  let kraftTasten = '';
+  const aktualisiereKraefte = () => {
+    const liste = spiel.kraefte(), namen = liste.map((k) => k.name).join();
+    flutTaste.hidden = !liste.some((k) => k.name === 'flut');
+    if (namen !== kraftTasten) {
+      kraftTasten = namen; kraefteLeiste.replaceChildren();
+      for (const k of liste.filter((q) => q.name !== 'flut')) {
+        const b = document.createElement('button'); b.id = 'kraft-' + k.name; b.append(`${KRAFT_NAME[k.name]} ${k.kosten}`); b.setAttribute('aria-pressed', 'false');
+        b.addEventListener('click', () => {
+          spiel.entsperre();
+          if (k.name === 'handel') { spiel.handeln(); stand.schmutzig = true; return; }
+          spiel.spiel.waehle(k.name); aktualisiere();
+        });
+        kraefteLeiste.append(b);
+      }
+      kraefteLeiste.hidden = !kraefteLeiste.childElementCount;
+    }
+    const w = spiel.spiel.werkzeug;
+    for (const n of Object.keys(tasten)) tasten[n].setAttribute('aria-pressed', String(w === n));
+    flutTaste.setAttribute('aria-pressed', String(w === 'flut'));
+    for (const k of liste) {
+      if (k.name === 'flut') continue;
+      const b = document.getElementById('kraft-' + k.name); if (!b) continue;
+      b.disabled = !k.bereit; b.setAttribute('aria-pressed', String(k.gewaehlt));
+    }
+  };
+  let zuletzt = '';
+  const aktualisiere = () => {
+    aktualisiereKraefte();
+    const [a, b] = spiel.volk();
+    const [m, mm] = spiel.mana();
+    const info = spiel.hinweis();
+    const t = `Volk ${a} · Gegner ${b} · Mana ${m}/${mm}${info ? ' · ' + info : ''}`;
+    if (t !== zuletzt) { zuletzt = t; hud.replaceChildren(t); }
+    flutTaste.disabled = !spiel.flutBereit(); if (flutTaste.disabled) flutTaste.setAttribute('aria-pressed', 'false');
+    rand.hidden = spiel.stufe() === 0;
+    const e = spiel.stand();
+    if (e !== 'laeuft' && schluss.hidden) {
+      const lern = !!spiel.lernpfad(), erg = spiel.ergebnis();
+      text.replaceChildren(e === 'sieg' ? (lern ? 'Sieg! Lernpfad geschafft' : 'Sieg! ' + (spiel.kartenId() ? sterneText(erg.sterne) : '')) : 'Niederlage');
+      weiterTaste.hidden = !(e === 'sieg' && erg.weiter); zuKartenTaste.hidden = lern;
+      leichtVersuch.hidden = lern || e === 'sieg' || erg.leicht;
+      teilTaste.hidden = !erg.teil; teilText.hidden = !erg.teil; if (erg.teil) teilText.replaceChildren(erg.teil);
+      neustartTaste.replaceChildren(lern ? (e === 'sieg' ? 'Zur ersten Insel' : 'Nochmal') : 'Neustart');
+      schluss.hidden = false; (weiterTaste.hidden ? neustartTaste : weiterTaste).focus();   // Fokus auf die erste sichtbare Taste (Tastatur und Bildschirmleser)
+    }
+  };
+  const schleife = (jetzt) => {
+    if (stand.haekchenBis && jetzt >= stand.haekchenBis) { stand.haekchenBis = 0; stand.schmutzig = true; }
+    if (!stand.pause && spiel.vorwaerts(jetzt)) { stand.schmutzig = true; aktualisiere(); }
+    if (look !== 'a0') stand.schmutzig = true; // bewegtes Wasser
+    if (stand.schmutzig) {
+      spiel.zeichne(jetzt); zeigeLernpfad(jetzt); stand.schmutzig = false;
+      if (stand.grafikStart) { haken.__grafikdauer = performance.now() - stand.grafikStart; stand.grafikStart = 0; }
+      if (stand.tippZeit) { haken.__reaktion = performance.now() - stand.tippZeit; stand.tippZeit = 0; }
+    }
+    stand.bilder++; if (!stand.start) stand.start = jetzt;
+    haken.__bilder = stand.bilder; haken.__laufzeit = jetzt - stand.start;
+    requestAnimationFrame(schleife);
+  };
+  aktualisiere();
+  requestAnimationFrame(schleife);
+  haken.__startzeit = performance.now() - t0;
+  haken.__volk = () => spiel.volk();
+  haken.__mana = () => spiel.mana(); haken.__ton = () => spiel.tonDa(); haken.__partikel = () => spiel.partikelAnzahl(); haken.__stufe = () => spiel.stufe();
+  haken.__feldAn = (x, y) => spiel.feldAn(x, y, innerWidth, innerHeight);
+  haken.__lern = () => { const lp = spiel.lernpfad(); return lp ? { nr: lp.nr, fertig: lp.fertig, kopf: lp.kopf, hinweis: lp.hinweis } : null; };
+  haken.__takt = () => spiel.takte(); haken.__halt = (an) => spiel.pause(an);
+  haken.__ansicht = () => ({ px: spiel.pxJeEinheit(), zoom: spiel.spiel.zoom, mx: spiel.spiel.mitte.x, my: spiel.spiel.mitte.y, pixel: spiel.pixelgroesse(), pinsel: spiel.spiel.pinsel });
+  haken.__karte = () => Array.from(spiel.spiel.karte); haken.__zustand = () => spiel.spiel.z;   // Prüfhaken: lebender Zustand (Prüfläufe setzen damit Ziele); auf der Seite entfernt
+  haken.__karten = () => spiel.karten(); haken.__kartenId = () => spiel.kartenId();
+}
+
+starte();
+</script></body></html>

@@ -1,4 +1,4 @@
-# S-W23: Kalorien-Tracker auf die Spieleseite
+# S-W29: Kalorien-Tracker auf die Spieleseite
 
 **Status:** gebaut, freigegeben am 11.11.2026, 05:07
 <!-- Freigabe durch den Betreiber im Projekt-Thread: "App auf meiner neogaraj publizieren" (Kalorien-Tracker, Stand App-Version 11 mit S-001 bis S-010). -->
@@ -66,7 +66,7 @@ Der Betreiber will den Kalorien-Tracker öffentlich auf seiner Seite Neon Garaj 
 | U-4 | Symbol im Manifest |
 
 ## Dokumentation
-- Aktualisiert: werkstatt/specs/S-W23-kalorien-tracker.md
+- Aktualisiert: werkstatt/specs/S-W29-kalorien-tracker.md
 - Aktualisiert: werkstatt/tests/kalorien_test.js
 - Aktualisiert: werkstatt/bau_kalorien.py
 - Aktualisiert: werkstatt/alle_tests.sh

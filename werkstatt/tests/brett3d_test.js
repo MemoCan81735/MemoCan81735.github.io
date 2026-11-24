@@ -22,7 +22,7 @@ async function seite(opts = {}) {
   return p;
 }
 async function oeffne(p, tab, ohne3d) {
-  await p.click(`.tabBtn[data-tab=${tab}]`);
+  await p.evaluate(t => document.querySelector(`.tabBtn[data-tab=${t}]`).click(), tab);   // S-W25: Kachel der Auswahl, auch wenn das Spiel schon offen ist
   if (!ohne3d) await p.waitForFunction((t) => window.__brett[t].ui.ansicht3d && window.__brett[t].ui.ansicht3d.aktiv, tab, { timeout: 20000 });
   await p.waitForTimeout(300);
 }

@@ -15,10 +15,10 @@ import shutil
 import sys
 import tempfile
 
-SEITEN = ["index.html", "driftpokal/index.html", "luftdrift/index.html", "etappenrennen/index.html", "ula/index.html", "ebru/index.html", "ebru-klassisch/index.html", "perlen/index.html", "kalorien/index.html", "brettspiele/index.html"]
+SEITEN = ["index.html", "driftpokal/index.html", "driftpokal-v2/index.html", "luftdrift/index.html", "etappenrennen/index.html", "ula/index.html", "neon-ada/index.html", "ebru/index.html", "ebru-klassisch/index.html", "perlen/index.html", "kalorien/index.html", "brettspiele/index.html"]
 SPIELE = SEITEN[1:]
 # Fremde Bibliotheken: E-Mail-Adressen der Autoren in deren Lizenztexten sind erlaubt.
-FREMD = ("brettspiele/lib/", "luftdrift/three.min.js", "etappenrennen/three.min.js", "ula/three.min.js")
+FREMD = ("brettspiele/lib/", "luftdrift/three.min.js", "etappenrennen/three.min.js", "ula/three.min.js", "neon-ada/three.min.js")
 # Autoren-Adressen aus eingebetteten fremden Bibliotheken (FXAA-Shader in three.js im Driftpokal).
 ERLAUBTE_EMAILS = {"biro@archilogic.com", "gameworks@nvidia.com"}
 # Gesperrte Wörter nur als SHA-256 (klein geschrieben), damit sie nicht selbst auf der Seite stehen.
@@ -156,7 +156,7 @@ def S6_anonym(w):
         t = lies(w, d)
         if not d.startswith(FREMD):
             for m in EMAIL.finditer(t):
-                if m.group(0).lower() in ERLAUBTE_EMAILS:
+                if m.group(0).lower() in ERLAUBTE_EMAILS or m.group(0).lower().endswith(".example"):   # .example ist reserviert (RFC 2606), nie echt
                     continue
                 f.append(f"{d}: E-Mail-Adresse {m.group(0)[:3]}…")
         for wort in set(re.findall(r"[a-zäöüß]+", t.lower())):

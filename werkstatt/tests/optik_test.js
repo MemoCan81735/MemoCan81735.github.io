@@ -18,7 +18,7 @@ async function seite({ ansicht = '2d', breite = 412, tab = 'chess' } = {}) {
   await p.addInitScript((a) => localStorage.setItem('brettspiele.einstellungen', JSON.stringify({ formatversion: 1, ton: false, stufen: {}, ansicht: { chess: a, connect4: '2d' } })), ansicht);
   await p.goto(URL_);
   await p.waitForFunction(() => window.__brett && window.__brett.chess, null, { timeout: 20000 });
-  await p.click(`.tabBtn[data-tab=${tab}]`);
+  await p.evaluate(t => document.querySelector(`.tabBtn[data-tab=${t}]`).click(), tab);   // S-W25: Kachel der Auswahl, auch wenn das Spiel schon offen ist
   if (tab === 'chess' && ansicht === '3d') await p.waitForFunction(() => window.__brett.chess.ui.ansicht3d && window.__brett.chess.ui.ansicht3d.aktiv, null, { timeout: 20000 });
   await p.waitForTimeout(250);
   return p;
@@ -77,10 +77,10 @@ test('o_symbole', async () => {
   await p.waitForFunction(() => document.querySelector('#chess-view .ansicht-knopf').textContent.trim() === '2D', null, { timeout: 20000 });
   const r2 = await messen(); pruefeSymbole(r2, 'nach Textwechsel');
   pruefe(/aus/.test(r2.lernen.text) && r2.ansicht.text === '2D', `Texte nicht gewechselt: ${r2.lernen.text} / ${r2.ansicht.text}`);
-  // PS-5: Vier gewinnt unverändert
+  // PS-5 (seit S-W25 umgekehrt): die Symbole gelten in allen Spielen, auch bei Vier gewinnt
   const c4 = await p.evaluate(() => { const c = getComputedStyle(document.querySelector('#connect4-view .tipp-knopf'), '::before'); return { inhalt: c.content, breite: parseFloat(c.width) || 0 }; });
   const f = p.fehler; await zu(p);
-  pruefe(c4.inhalt === 'none' || c4.breite === 0, `Vier gewinnt hat ein Symbol: ${JSON.stringify(c4)}`);
+  pruefe(c4.inhalt !== 'none' && c4.breite >= 14, `Vier gewinnt ohne Symbol: ${JSON.stringify(c4)}`);
   pruefe(f.length === 0, f.join(' | '));
 });
 

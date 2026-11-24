@@ -12,7 +12,7 @@
 <style>
   :root {
     --bg: #0f1420; --karte: #1a2233; --rand: #2a3550; --text: #eef2f8; --leise: #9aa7bd;
-    --renn: #ffb020; --brett: #4fc3a1; --malen: #e8869f; --basteln: #6fb7e8; --alltag: #8fd3ab;
+    --renn: #ffb020; --brett: #4fc3a1; --strategie: #b78cff; --malen: #e8869f; --basteln: #6fb7e8; --alltag: #8fd3ab;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
@@ -23,10 +23,10 @@
   nav { display: flex; gap: 8px; margin: 22px 0 8px; flex-wrap: wrap; }
   nav a { text-decoration: none; color: var(--text); border: 1px solid var(--rand);
     padding: 7px 14px; border-radius: 999px; font-size: 14px; }
-  nav a.renn { border-color: var(--renn); } nav a.brett { border-color: var(--brett); } nav a.malen { border-color: var(--malen); } nav a.basteln { border-color: var(--basteln); } nav a.alltag { border-color: var(--alltag); }
+  nav a.renn { border-color: var(--renn); } nav a.brett { border-color: var(--brett); } nav a.strategie { border-color: var(--strategie); } nav a.malen { border-color: var(--malen); } nav a.basteln { border-color: var(--basteln); } nav a.alltag { border-color: var(--alltag); }
   h2 { margin: 30px 0 12px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
   h2::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--farbe); }
-  section { --farbe: var(--renn); } section.brett { --farbe: var(--brett); } section.malen { --farbe: var(--malen); } section.basteln { --farbe: var(--basteln); } section.alltag { --farbe: var(--alltag); }
+  section { --farbe: var(--renn); } section.brett { --farbe: var(--brett); } section.strategie { --farbe: var(--strategie); } section.malen { --farbe: var(--malen); } section.basteln { --farbe: var(--basteln); } section.alltag { --farbe: var(--alltag); }
   .raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
   a.karte { display: block; text-decoration: none; color: inherit; background: var(--karte);
     border: 1px solid var(--rand); border-radius: 14px; overflow: hidden; transition: transform .15s, border-color .15s; }
@@ -49,6 +49,7 @@
   <nav>
     <a class="renn" href="#rennspiele">Rennspiele</a>
     <a class="brett" href="#brettspiele">Brettspiele</a>
+    <a class="strategie" href="#strategie">Strategie</a>
     <a class="malen" href="#malen">Malen</a>
     <a class="basteln" href="#basteln">Basteln</a>
     <a class="alltag" href="#alltag">Alltag</a>
@@ -62,6 +63,14 @@
         <div class="inhalt">
           <h3>Driftpokal</h3>
           <p>Kart-Cup mit 14 Strecken, Zeitfahren gegen den Geist und Garage.</p>
+          <span class="knopf">Spielen</span>
+        </div>
+      </a>
+      <a class="karte" href="driftpokal-v2/">
+        <img src="bilder/driftpokal-v2.jpg" alt="Spielbild von Driftpokal v2: blaues Kart vor zwei Gegnern in der Kurve" loading="lazy">
+        <div class="inhalt">
+          <h3>Driftpokal v2</h3>
+          <p>Neues Rennen mit sechs Karts: Physik und Gegner laufen in einem schnellen Rechenkern.</p>
           <span class="knopf">Spielen</span>
         </div>
       </a>
@@ -106,6 +115,20 @@
     </div>
   </section>
 
+  <section id="strategie" class="strategie">
+    <h2>Strategie</h2>
+    <div class="raster">
+      <a class="karte" href="neon-ada/">
+        <img src="bilder/neon-ada.jpg" alt="Neon Ada: Insel aus Pixel-Würfeln mit Pixelingen und Häusern im Neonlicht" loading="lazy">
+        <div class="inhalt">
+          <h3>Neon Ada</h3>
+          <p>Götterspiel im Retro-Look: Land heben und senken, Pixelinge lenken, Fluten und Vulkane rufen. Kampagne mit 13 Inseln, Sternen, Endgegner und täglicher Aufgabe.</p>
+          <span class="knopf">Spielen</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
   <section id="malen" class="malen">
     <h2>Malen</h2>
     <div class="raster">
@@ -127,7 +150,7 @@
         <img src="bilder/perlen.jpg" alt="Perlenarmband in Nazarblau, Gold und Weiß auf dunkler Perlenmatte" loading="lazy">
         <div class="inhalt">
           <h3>Perlenwerkstatt</h3>
-          <p>Perlenarmbänder planen: Ideen, Vorschau als Ring, Einkaufsliste mit Reserve und Anleitung. Gummiband, Schmuckfaden, Peyote und Webrahmen.</p>
+          <p>Perlenarmbänder planen: Ideen, Vorschau als Ring, Einkaufsliste mit Reserve und Anleitung. Mit Gummiband oder Schmuckfaden.</p>
           <span class="knopf">Planen</span>
         </div>
       </a>
