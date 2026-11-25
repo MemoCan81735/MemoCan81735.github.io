@@ -50,5 +50,20 @@ let fehler = 0; const ok = (n, b, m = '') => { console.log((b ? 'OK     ' : 'FEH
     }
     await ctx.close();
   }
+  { // AK-6 (S-W28): Speichern bleibt im eigenen Schlüssel, der Schlüssel des bisherigen Driftpokals bleibt unberührt
+    const ctx = await b.newContext({ viewport: { width: 915, height: 412 }, hasTouch: true }); const p = await ctx.newPage(); const fe = [];
+    p.on('pageerror', e => fe.push(String(e)));
+    await p.addInitScript(() => { try { if (!localStorage.getItem('driftpokal_records')) localStorage.setItem('driftpokal_records', '{"version":2,"revision":99,"marke":"altes-spiel"}'); } catch (e) { /* gesperrt */ } });
+    const laden = async () => { await p.goto(`http://localhost:${port}/driftpokal-v2/`); await p.waitForFunction(() => window.DP && DP.app.getState() === 'title', null, { timeout: WARTE }); };
+    await laden();
+    const vorher = await p.evaluate(() => DP.app.getSettings().difficulty);
+    await p.evaluate(() => DP.app.setSetting('difficulty', 'hard')); await p.evaluate(() => DP.app._records.whenSaved());
+    await laden();
+    const e = await p.evaluate(() => ({ d: DP.app.getSettings().difficulty, alt: localStorage.getItem('driftpokal_records'), schl: Object.keys(localStorage).sort().join() }));
+    ok('AK-6 Einstellung bleibt nach Neuladen (Schwierigkeit hard, vorher ' + vorher + ')', vorher !== 'hard' && e.d === 'hard', JSON.stringify(e));
+    ok('AK-6 Schlüssel des bisherigen Driftpokals unverändert, v2 schreibt nur driftpokal_v2_records', e.alt === '{"version":2,"revision":99,"marke":"altes-spiel"}' && e.schl === 'driftpokal_records,driftpokal_v2_records', JSON.stringify(e));
+    ok('AK-6 keine Seitenfehler beim Speichern', fe.length === 0, fe.join(' | '));
+    await ctx.close();
+  }
   await b.close(); srv.close(); process.exit(fehler ? 1 : 0);
 })();
