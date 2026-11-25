@@ -15,7 +15,7 @@ Der Betreiber hat Driftpokal v2 am Handy angespielt ("Ich konnte es schnell star
 ## Umfang
 - Neuer Ordner `driftpokal-v2/` mit `index.html` (eine Datei, Rechenkern als WebAssembly eingebettet, Grafikbibliothek eingebettet) und `manifest.webmanifest`; Symbole `bilder/symbole/driftpokal-v2-192.png` und `-512.png`, Kartenbild `bilder/driftpokal-v2.jpg` (400×300), Karte in der Rubrik Rennspiele.
 - Erzeugt mit `python3 werkstatt/bau_driftpokal_v2.py <dist/driftpokal-v2.html>` aus dem Bau im Projekt Driftpokal v2 (Spec S-002 dort).
-- Enthalten: ein Rennen mit sechs Karts. Nicht enthalten (steht im Spiel-Projekt): Items, Windschatten, Zeitfahren, LAN.
+- Enthalten: ein Rennen mit sechs Karts, Windschatten (S-004) und Gegenstände (S-005, 25.11.2026). Nicht enthalten (steht im Spiel-Projekt): Zeitfahren, LAN.
 - Gespeichert wird im Gerät (localStorage, Schlüssel `driftpokal_v2_records`, Formatversion 2 mit Revision): Einstellungen, Bestzeiten und Pokale. Der Schlüssel des bisherigen Driftpokals (`driftpokal_records`) wird weder gelesen noch geschrieben, obwohl beide Spiele denselben Ursprung teilen. Nichts wird gesendet.
 
 ## Akzeptanzkriterien
