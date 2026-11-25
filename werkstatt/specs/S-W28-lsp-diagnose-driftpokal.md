@@ -57,8 +57,9 @@ Der Betreiber will, dass beim Driftpokal ein Diagnoseschritt wie in Neon Sprint 
 - Rückblick Fehler: Ein Zeilenfehler und die Blockerkennung gehören in die Fehlerliste (früheste Stufe: Spec-Test, hier im Test erkannt).
 
 ## Technisches Design
-- Schnittstelle: `python3 werkstatt/lsp_pruefen.py [DATEI]` (Standard: `driftpokal/index.html`), Exit 0 grün, 1 Befund, 2 Umgebung fehlt.
+- Schnittstellen: `python3 werkstatt/lsp_pruefen.py [DATEI]` (Standard: `driftpokal/index.html`), Exit 0 grün, 1 Befund, 2 Umgebung fehlt.
 - Blockauswahl über Anfang des Blocks (`three.js`); damit bleibt die Auswahl stabil, auch wenn Blocknummern sich ändern.
+- Datenformat: keine gespeicherten Daten; Eingabe ist die HTML-Datei, Ausgabe sind Textzeilen und der Exit-Code.
 - Alternativen: (a) volles checkJs (verworfen, zu viele Befunde), (b) `eslint` (verworfen: Konfiguration für eingebettetes Skript nötig, Nutzen geringer als tsc-Namensprüfung), (c) gewählt: tsc mit kurierter Codeliste.
 - Entscheidung: (c).
 - Design-Review: Eigenprüfung gegen Spec. Keine unabhängige Prüfung, Änderung unter 150 Zeilen.
@@ -66,4 +67,26 @@ Der Betreiber will, dass beim Driftpokal ein Diagnoseschritt wie in Neon Sprint 
 ## Querschnitt
 - Datenschutz: nur lokale Prüfung, keine Daten verlassen den Rechner.
 - Sicherheit: kein Netzverkehr; Skript schreibt nur in ein temporäres Verzeichnis.
+- Barrierefreiheit: nicht anwendbar (reines Kommandozeilenwerkzeug ohne Oberfläche); Meldungen stehen als klarer deutscher Text mit Datei und Zeile.
 - Leistung: ca. 3 s, Grenze 30 s (AK-10).
+
+## Kritische Testfälle
+- PS-2: unbekannter Name im Spielcode wird erkannt (Kernzweck)
+- PS-5: fehlendes tsc ist ein Fehler, nie still grün
+- PS-8: Fehler nur im three.js-Block löst keinen Fehlalarm aus
+
+## Clean Code
+- Clean Code: Prüfergebnis: neue Dateien sind `lsp_pruefen.py` (unter 90 Zeilen, drei Funktionen), `lsp/globals.d.ts` (6 Zeilen) und `tests/lsp_test.py` (unter 130 Zeilen); keine Änderung an `driftpokal/index.html`.
+
+## E2E
+| Schritt | Test |
+| --- | --- |
+| U-1 | test_ak2_unbekannter_name_wird_erkannt |
+| U-2 | test_ak1_sauberer_stand_ist_gruen |
+| U-3 | test_ak3_syntaxfehler_wird_erkannt |
+
+## Dokumentation
+- Aktualisiert: werkstatt/specs/S-W28-lsp-diagnose-driftpokal.md
+- Aktualisiert: werkstatt/lsp_pruefen.py
+- Aktualisiert: werkstatt/tests/lsp_test.py
+- Aktualisiert: werkstatt/alle_tests.sh
