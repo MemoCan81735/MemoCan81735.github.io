@@ -4890,14 +4890,31 @@ class RaceEntity {
   humans(){ return this.karts.filter(k => k.isHuman); }
 }
 
-// Speicher: Version 2 speichert nichts (S-002); gleiche Außenseite wie `RecordsRepository`, aber nur im Arbeitsspeicher
+// Speicher (S-003): gleiche Außenseite wie `RecordsRepository` der alten Fassung, aber nur `localStorage` und ein eigener Schlüssel.
+// Beide Spiele laufen unter derselben Adresse; der Schlüssel der alten Fassung (`driftpokal_records`) bleibt unberührt.
+// Ohne nutzbaren Speicher läuft alles im Arbeitsspeicher weiter. Eine ältere oder gleiche Revision überschreibt nie eine neuere.
+const SPEICHER_SCHLUESSEL = "driftpokal_v2_records", SPEICHER_VERSION = 2;   // 2 = Formatversion von `RecordsEntity.toJSON`
 class RecordsRepository {
   constructor(){ this._data = null; }
-  async load(){ return this._data; }
-  saveNow(data){ this._data = data; return true; }
+  _lokal(){
+    try {
+      const raw = window.localStorage.getItem(SPEICHER_SCHLUESSEL), d = raw ? JSON.parse(raw) : null;
+      return d && typeof d === "object" && d.version === SPEICHER_VERSION && (d.revision === undefined || Number.isSafeInteger(d.revision)) ? d : null;   // fremde Formatversion: wie leer
+    } catch (e){ return null; }
+  }
+  async load(){ return this._lokal() || this._data; }
+  saveNow(data){
+    this._data = data;
+    try {
+      const cur = this._lokal();
+      if (cur && Number.isSafeInteger(cur.revision) && Number.isSafeInteger(data.revision) && cur.revision >= data.revision) return true;
+      window.localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify(data));
+      return true;
+    } catch (e){ return false; }
+  }
   async loadGhosts(){ return []; }
   async saveGhost(){ return true; }
-  async save(data){ this._data = data; return true; }
+  async save(data){ return this.saveNow(data); }
 }
 </script>
 <script>
@@ -18464,7 +18481,7 @@ class SoundUI {
   const start = async () => {
     try { await kernLaden(window.DP_WASM_B64); }
     catch (e){ document.getElementById("loading").replaceChildren(document.createTextNode("Der Rechenkern konnte nicht geladen werden.")); return; }
-    const records = new RecordsBoundary(new RecordsRepository("v2"));
+    const records = new RecordsBoundary(new RecordsRepository());
     const race = new RaceBoundary();
     const match = new MatchBoundary(race);
     const link = new LanLink(null, (window.Date.now() ^ window.Math.floor(window.Math.random() * 1e9)) >>> 0);
