@@ -397,7 +397,7 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
     id: 'konsole', name: 'Konsole', text: 'Rennspiele am Fernseher',
     anker: welt(1.45, 1.0, 0.3), stand: welt(0.1, AUGE_START, 0.3),
     // Bildfläche des Fernsehers (Scheibe vorne bei x 1.4375, blickt in den Wohnbereich)
-    fernseher: { mitte: welt(1.4375, 1.2, 0.3), breite: 1.04, hoehe: 0.58 },
+    flaeche: { ecken: [[1.4375, 0.91, -0.22], [1.4375, 0.91, 0.82], [1.4375, 1.49, 0.82], [1.4375, 1.49, -0.22]] },
     spiele: [
       { name: 'Driftpokal', url: '../driftpokal/', text: 'Kart-Cup mit 14 Strecken, Geist und Garage.' },
       { name: 'Driftpokal v2', url: '../driftpokal-v2/', text: 'Neues Rennen mit sechs Karts.' },
@@ -418,6 +418,8 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
   station({
     id: 'spieltisch', name: 'Spieltisch', text: 'Brettspiele am Couchtisch',
     anker: welt(bX, bY + 0.05, bZ), stand: welt(-1.3, AUGE_START - 0.1, -0.9),
+    // ganze Platte des Couchtischs, schräg von vorn
+    flaeche: { ecken: [[-2.97, 0.448, -0.22], [-2.43, 0.448, -0.22], [-2.43, 0.448, 0.82], [-2.97, 0.448, 0.82]], schraeg: 58, von: [1, 0] },
     spiele: [{ name: 'Brettspiele', url: '../brettspiele/', text: 'Tic Tac Toe, Vier gewinnt, Reversi, Mühle, Schach und Mangala.' }]
   }, () => {
     const brett = leinwand(256, 256, (g, b) => {
@@ -439,6 +441,8 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
   station({
     id: 'insel', name: 'Inselmodell', text: 'Strategie in der Raummitte',
     anker: welt(iX, iY + 0.1, iZ), stand: welt(iX + 0.5, AUGE_START - 0.05, iZ + 1.75),
+    // Feld auf dem Sockel über dem Inselmodell
+    flaeche: { ecken: [[iX - 0.3, iY + 0.02, iZ - 0.3], [iX + 0.3, iY + 0.02, iZ - 0.3], [iX + 0.3, iY + 0.02, iZ + 0.3], [iX - 0.3, iY + 0.02, iZ + 0.3]], schraeg: 62, von: [0, -1] },
     spiele: [{ name: 'Neon Ada', url: '../neon-ada/', text: 'Götterspiel: Land formen, Pixelinge lenken, 13 Inseln.' }]
   }, () => {
     const stein = mat('#e9e2d6', 0.55);
@@ -456,6 +460,7 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
   [0, 1, 2].forEach(i => box([rx, 0.57 + i * 0.035, rz + 0.5], [0.24, 0.03, 0.32 - i * 0.03], M.buecher[i % M.buecher.length]));
 
   // 4. Staffelei am zweiten Fenster: Ebru
+  let leinwandBild = null;
   station({
     id: 'staffelei', name: 'Staffelei', text: 'Malen am Fenster',
     anker: welt(1.95, 1.2, 2.35), stand: welt(1.45, AUGE_START, 1.2),
@@ -485,14 +490,19 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
       for (let i = 0; i < 7; i++) { g.beginPath(); g.moveTo(30 + i * 52, 0); g.bezierCurveTo(60 + i * 52, h * 0.4, i * 52, h * 0.6, 30 + i * 52, h); g.stroke(); }
     });
     const bild = new THREE.MeshStandardMaterial({ map: ebru, roughness: 0.7 });
-    dreh(box([1.95, 1.2, 2.31], [0.66, 0.5, 0.025], bild), -6, 0, 0);
+    leinwandBild = box([1.95, 1.2, 2.31], [0.66, 0.5, 0.025], bild);
+    dreh(leinwandBild, -6, 0, 0);
   });
+  // Ebru läuft auf der Leinwand (Vorderseite; lokal ist die Leinwand ein Einheitswürfel)
+  stationen[stationen.length - 1].flaeche = { obj: () => leinwandBild, ecken: [[-0.5, -0.5, -0.52], [0.5, -0.5, -0.52], [0.5, 0.5, -0.52], [-0.5, 0.5, -0.52]] }; // Würfel mit Kantenlänge 1, skaliert
 
   // 5. Perlenkästchen auf dem Esstisch: Perlenwerkstatt (Platte oben auf 0.775 m)
   const pX = eX, pY = 0.775, pZ = eZ - 0.3;
   station({
     id: 'perlen', name: 'Perlenkästchen', text: 'Basteln am Esstisch',
     anker: welt(pX, pY + 0.03, pZ), stand: welt(eX, AUGE_START, eZ - 1.75),
+    // Platte des Esstischs, schräg vom Tischende
+    flaeche: { ecken: [[eX - 0.45, 0.777, eZ - 0.87], [eX + 0.45, 0.777, eZ - 0.87], [eX + 0.45, 0.777, eZ + 0.87], [eX - 0.45, 0.777, eZ + 0.87]], schraeg: 60, von: [0, 1] },
     spiele: [{ name: 'Perlenwerkstatt', url: '../perlen/', text: 'Perlenarmbänder planen, mit Vorschau und Einkaufsliste.' }]
   }, () => {
     weich([pX, pY + 0.02, pZ], [0.24, 0.035, 0.18], mat('#f1e6d4', 0.4), 0.01);
@@ -570,7 +580,7 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
     kamera.fov = w < h ? 75 : 60;
     kamera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', () => { groesse(); if (tv && fenster.classList.contains('tv')) vorDenFernseher(true); });
+  window.addEventListener('resize', () => { groesse(); if (tv && fenster.classList.contains('tv')) vorDieFlaeche(true); });
   groesse();
 
   const knopfAbend = document.getElementById('abend');
@@ -695,57 +705,107 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
     rahmen.title = sp.name;
     rahmen.src = sp.url;
     fenster.hidden = false; tasten.clear();
-    if (aktiv && aktiv.fernseher) {
+    if (aktiv && aktiv.flaeche) {
       tv = { s: aktiv, wartet: true };
       fenster.classList.add('tv', 'unterwegs');
       document.body.classList.add('tvmodus');
       tafel.hidden = true;
       knopfGross.hidden = false; knopfGross.textContent = 'Groß spielen';
-      vorDenFernseher(false);
+      vorDieFlaeche(false);
     } else pausiert = true;
     document.getElementById('spielzu').focus();
   }
-  // Kamera gerade vor die Bildfläche stellen, so dass sie unter der Leiste ganz ins Bild passt
-  function vorDenFernseher(sofort) {
-    const f = tv.s.fernseher;
+  // Ecken der Bildfläche in Weltkoordinaten
+  function eckenWelt(f) {
+    const obj = f.obj ? f.obj() : raum;
+    obj.updateMatrixWorld(true);
+    return f.ecken.map(e => obj.localToWorld(new THREE.Vector3(e[0], e[1], e[2])));
+  }
+  function aufBild(p, W, H) { const v = p.clone().project(kamera); return { x: (v.x + 1) / 2 * W, y: (1 - v.y) / 2 * H, z: v.z }; }
+  // Kamera so vor die Bildfläche stellen, dass sie unter der Leiste ganz ins Bild passt
+  function vorDieFlaeche(sofort) {
+    const f = tv.s.flaeche, ecken = eckenWelt(f);
+    const mitte = ecken.reduce((a, e) => a.add(e), new THREE.Vector3()).multiplyScalar(0.25);
+    const normale = new THREE.Vector3().crossVectors(ecken[1].clone().sub(ecken[0]), ecken[3].clone().sub(ecken[0])).normalize();
+    const zumStand = tv.s.stand.clone().sub(mitte);
+    if (normale.dot(zumStand) < 0) normale.negate();
+    let richtung = normale;
+    // Auf liegenden Flächen verschwinden die Teile des Platzes, die über die Fläche ragen (Figuren, Modell)
+    if (f.schraeg && !tv.versteckt) {
+      const hoehe = Math.min(...ecken.map(e => e.y)) - 0.005, kiste = new THREE.Box3();
+      tv.versteckt = tv.s.meshes.filter(m => m.visible && kiste.setFromObject(m).min.y >= hoehe);
+      tv.versteckt.forEach(m => { m.visible = false; });
+    }
+    if (f.schraeg) { // liegende Fläche: von der Seite des Standplatzes schräg von oben
+      const waag = (f.von ? new THREE.Vector3(f.von[0], 0, f.von[1]) : new THREE.Vector3(zumStand.x, 0, zumStand.z)).normalize(); // von: Blickseite in Weltkoordinaten
+      richtung = waag.multiplyScalar(Math.cos(f.schraeg * DEG)).add(new THREE.Vector3(0, Math.sin(f.schraeg * DEG), 0)).normalize();
+    }
     const W = canvas.clientWidth, H = canvas.clientHeight;
     const L = fenster.querySelector('.leiste').offsetHeight || 56;
-    const t = Math.tan(kamera.fov * DEG / 2);
-    const freiH = Math.max(80, (H - 2 * (L + 10)) * 0.84);
-    const d = Math.max(f.hoehe / 2 / t * H / freiH, f.breite / 2 / (t * kamera.aspect * (W < H ? 0.94 : 0.8)));
-    const stand = f.mitte.clone().add(new THREE.Vector3(-d, 0, 0));
-    stand.x = Math.max(-grenzeX, stand.x);
+    const rand = W < H ? 0.03 * W : 0.1 * W, oben = L + 10 + 0.06 * H, unten = H - 0.06 * H;
+    const blickYaw = winkel(-richtung.x, -richtung.z), blickPitch = Math.asin(-richtung.y);
+    const alt = { p: kamera.position.clone(), yaw, pitch };
+    const passt = d => {
+      kamera.position.copy(mitte).addScaledVector(richtung, d);
+      yaw = blickYaw; pitch = blickPitch; blick(); kamera.updateMatrixWorld();
+      return ecken.every(e => { const q = aufBild(e, W, H); return q.z < 1 && q.x >= rand && q.x <= W - rand && q.y >= oben && q.y <= unten; });
+    };
+    let lo = 0.2, hi = 6;
+    for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (passt(m)) hi = m; else lo = m; }
+    const stand = mitte.clone().addScaledVector(richtung, hi);
+    kamera.position.copy(alt.p); yaw = alt.yaw; pitch = alt.pitch;
+    rundgangStarten();
     if (sofort) {
-      rundgangStarten(); fahrt = null;
-      kamera.position.copy(stand); yaw = winkel(1, 0); pitch = 0; blick();
-    } else {
       fahrt = null;
-      schaueZu(f.mitte, stand);
+      kamera.position.copy(stand); yaw = blickYaw; pitch = blickPitch; blick();
+    } else {
+      let dy = blickYaw - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+      const dauer = Math.min(1.4, 0.45 + kamera.position.distanceTo(stand) * 0.18);
+      fahrt = { von: kamera.position.clone(), nach: stand, yaw0: yaw, yaw1: yaw + dy, pitch0: pitch, pitch1: blickPitch, t: 0, dauer };
     }
     tv.wartet = true; pausiert = false;
     fenster.classList.add('unterwegs');
   }
-  // Rahmen genau auf die Bildfläche legen (Kamera blickt gerade drauf, also ein Rechteck)
+  // Homographie: bildet das Rechteck des Spiels auf das Viereck der Fläche im Bild ab (CSS matrix3d)
+  function homographie(von, nach) {
+    const A = [], b = [];
+    for (let i = 0; i < 4; i++) {
+      const [x, y] = von[i], [u, v] = nach[i];
+      A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+      A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+    }
+    for (let c = 0; c < 8; c++) { // Gauß mit Pivotsuche
+      let p = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+      [A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]];
+      for (let r = 0; r < 8; r++) if (r !== c) { const k = A[r][c] / A[c][c]; for (let j = c; j < 8; j++) A[r][j] -= k * A[c][j]; b[r] -= k * b[c]; }
+    }
+    const h = b.map((w, i) => w / A[i][i]);
+    return [h[0], h[3], 0, h[6], h[1], h[4], 0, h[7], 0, 0, 1, 0, h[2], h[5], 0, 1];
+  }
+  // Rahmen genau auf die Bildfläche legen
   function rahmenAufBild() {
-    const f = tv.s.fernseher;
     kamera.updateMatrixWorld();
     const W = canvas.clientWidth, H = canvas.clientHeight;
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const dz of [-1, 1]) for (const dy of [-1, 1]) {
-      const v = f.mitte.clone().add(new THREE.Vector3(0, dy * f.hoehe / 2, dz * f.breite / 2)).project(kamera);
-      const px = (v.x + 1) / 2 * W, py = (1 - v.y) / 2 * H;
-      x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
-    }
-    Object.assign(rahmen.style, { left: x0.toFixed(1) + 'px', top: y0.toFixed(1) + 'px', width: (x1 - x0).toFixed(1) + 'px', height: (y1 - y0).toFixed(1) + 'px' });
+    const ecken = eckenWelt(tv.s.flaeche);
+    const q = ecken.map((e, i) => Object.assign(aufBild(e, W, H), { i }));
+    q.sort((a, c) => a.y - c.y);
+    const [ol, or] = q[0].x < q[1].x ? [q[0], q[1]] : [q[1], q[0]];
+    const [ul, ur] = q[2].x < q[3].x ? [q[2], q[3]] : [q[3], q[2]];
+    const seite = (a, c) => ecken[a.i].distanceTo(ecken[c.i]);
+    const verh = (seite(ol, or) + seite(ul, ur)) / (seite(ol, ul) + seite(or, ur));
+    const b0 = Math.round(Math.max(Math.hypot(or.x - ol.x, or.y - ol.y), Math.hypot(ur.x - ul.x, ur.y - ul.y)));
+    const h0 = Math.round(b0 / verh);
+    const m = homographie([[0, 0], [b0, 0], [b0, h0], [0, h0]], [[ol.x, ol.y], [or.x, or.y], [ur.x, ur.y], [ul.x, ul.y]]);
+    Object.assign(rahmen.style, { left: '0px', top: '0px', width: b0 + 'px', height: h0 + 'px', transformOrigin: '0 0', transform: 'matrix3d(' + m.map(z => +z.toFixed(10)).join(',') + ')' });
   }
   function tvStil(aus) {
-    ['left', 'top', 'width', 'height'].forEach(k => { rahmen.style[k] = ''; });
+    ['left', 'top', 'width', 'height', 'transform', 'transformOrigin'].forEach(k => { rahmen.style[k] = ''; });
     fenster.classList.toggle('tv', !aus);
   }
   knopfGross.addEventListener('click', () => {
     if (!tv) return;
-    if (fenster.classList.contains('tv')) { tvStil(true); knopfGross.textContent = 'Auf dem Fernseher'; }
-    else { fenster.classList.add('tv'); knopfGross.textContent = 'Groß spielen'; vorDenFernseher(true); }
+    if (fenster.classList.contains('tv')) { tvStil(true); knopfGross.textContent = 'Im Raum spielen'; }
+    else { fenster.classList.add('tv'); knopfGross.textContent = 'Groß spielen'; vorDieFlaeche(true); }
     try { rahmen.contentWindow.focus(); } catch (e) { /* egal */ }
   });
   function schliesseSpiel() {
@@ -753,7 +813,7 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
     fenster.hidden = true; pausiert = false;
     rahmen.src = 'about:blank';
     if (tv) {
-      const s = tv.s; tv = null;
+      const s = tv.s; (tv.versteckt || []).forEach(m => { m.visible = true; }); tv = null;
       tvStil(true); fenster.classList.remove('unterwegs');
       document.body.classList.remove('tvmodus');
       knopfGross.hidden = true;
