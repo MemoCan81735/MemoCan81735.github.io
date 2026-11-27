@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spieleraum</title>
+<meta name="theme-color" content="#15110e">
+<link rel="icon" type="image/png" sizes="192x192" href="../bilder/symbole/raum-192.png">
+<link rel="apple-touch-icon" href="../bilder/symbole/raum-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="description" content="Ein Wohnzimmer zum Herumlaufen. Jedes Spiel hat seinen Platz.">
+<style>
+/* Eine Bühne über die ganze Fläche, unten links eine ruhige Karte, Schilder über den Spiel-Plätzen */
+:root {
+  --bg: #15110e;
+  --karte: rgba(28, 22, 18, 0.84);
+  --text: #f3e9dc;
+  --leise: #c9b9a4;
+  --akzent: #ffb567;
+  --linie: rgba(255, 220, 180, 0.22);
+  --titel: Georgia, "Times New Roman", serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--body); overflow: hidden; }
+#buehne { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; }
+.karte, #tafel {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left, 0px));
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  max-width: min(380px, calc(100% - 24px));
+  background: var(--karte);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--linie);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+  z-index: 3;
+}
+h1, h2 { margin: 0; font-family: var(--titel); font-weight: 500; font-size: 1.3rem; text-wrap: balance; }
+strong { color: var(--text); font-weight: 600; }
+p { margin: 0; color: var(--leise); line-height: 1.45; font-size: 0.86rem; }
+.knoepfe { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: inherit; font-size: 0.86rem; color: var(--text);
+  background: transparent; border: 1px solid var(--linie); border-radius: 999px;
+  padding: 0 14px; min-height: 44px; cursor: pointer;
+}
+button[aria-pressed="true"] { border-color: var(--akzent); color: var(--akzent); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.vignette { position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%); }
+#fehler { color: var(--akzent); }
+#marken { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+.marke { position: absolute; left: 0; top: 0; pointer-events: auto; white-space: nowrap;
+  background: rgba(21, 17, 14, 0.82); border-color: var(--akzent); color: var(--text);
+  font-size: 0.82rem; min-height: 44px; padding: 0 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.35); }
+.marke::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 10px; height: 10px; margin-left: -5px;
+  background: inherit; border-right: 1px solid var(--akzent); border-bottom: 1px solid var(--akzent); transform: rotate(45deg); }
+.marke.verdeckt { opacity: 0.45; }
+#tafel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 46vh; overflow-y: auto; }
+#tafel li { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  border-top: 1px solid var(--linie); padding-top: 8px; }
+#tafel li div { display: grid; gap: 2px; min-width: 0; }
+#tafel li span { color: var(--leise); font-size: 0.8rem; line-height: 1.35; }
+.spielen { background: var(--akzent); color: #1d140c; border-color: var(--akzent); font-weight: 700; flex: none; }
+.tafelkopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+#tafelzu { min-width: 44px; padding: 0; font-size: 1.1rem; }
+#spielfenster { position: fixed; inset: 0; z-index: 10; background: #000; display: flex; flex-direction: column; }
+#spielfenster[hidden], #tafel[hidden], .karte[hidden] { display: none; }
+.leiste { display: flex; align-items: center; gap: 12px; flex: none;
+  padding: calc(6px + env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 6px max(10px, env(safe-area-inset-left, 0px));
+  background: var(--bg); border-bottom: 1px solid var(--linie); }
+#spielzu { border-color: var(--akzent); color: var(--akzent); font-weight: 600; }
+#spielname { color: var(--leise); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#spielrahmen { flex: 1; width: 100%; border: 0; background: #000; }
+.ng-zurueck { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); top: calc(8px + env(safe-area-inset-top, 0px)); z-index: 4;
+  display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px; padding: 0 12px;
+  color: var(--text); background: var(--karte); border: 1px solid var(--linie); border-radius: 999px; text-decoration: none; font-size: 0.9rem; gap: 6px; }
+@media (max-height: 480px) { .karte p:first-of-type { display: none; } #tafel ul { max-height: 52vh; } }
+@media (prefers-reduced-motion: reduce) { .marke { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="buehne" aria-label="Spieleraum: Wohnzimmer mit Spielen"></canvas>
+<div class="vignette"></div>
+<a class="ng-zurueck" href="../" aria-label="Alle Spiele">← Alle Spiele</a>
+<div id="marken"></div>
+<div class="karte" id="karte">
+  <h1>Spieleraum</h1>
+  <p>Jedes Spiel hat hier seinen Platz. <strong>Tippe auf ein Schild</strong> oder einen leuchtenden Gegenstand, um es zu starten. Doppelklick oder Doppeltippen: hingehen. Ziehen: umsehen. Tasten W A S D oder Pfeile: laufen.</p>
+  <div class="knoepfe">
+    <button id="abend" aria-pressed="true">Abendsonne</button>
+    <button id="nacht" aria-pressed="false">Nur Lampen</button>
+    <button id="zurueck">Überblick</button>
+  </div>
+  <p id="fehler" hidden></p>
+</div>
+<section id="tafel" hidden aria-live="polite">
+  <div class="tafelkopf"><h2 id="tafelname"></h2><button id="tafelzu" aria-label="Schließen">✕</button></div>
+  <p id="tafeltext"></p>
+  <ul id="tafelliste"></ul>
+</section>
+<div id="spielfenster" hidden role="dialog" aria-modal="true" aria-labelledby="spielname">
+  <div class="leiste"><button id="spielzu">← Zurück in den Raum</button><span id="spielname"></span></div>
+  <iframe id="spielrahmen" title="Spiel" allow="fullscreen; autoplay; gamepad"></iframe>
+</div>
+
+<script src="three.min.js"></script>
+<script src="three-zusatz.js"></script>
+<script>
+(function () {
+  if (!window.THREE) {
+    const f = document.getElementById('fehler');
+    f.textContent = 'Die 3D-Bibliothek konnte nicht geladen werden. Bitte Seite neu laden.';
+    f.hidden = false;
+    return;
+  }
+  const canvas = document.getElementById('buehne');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.85;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#1a1512');
+
+  // Gleiche Koordinaten wie im Unity-Skript. Unity ist linkshändig, daher z spiegeln.
+  const raum = new THREE.Group();
+  raum.scale.z = -1;
+  scene.add(raum);
+
+  // Zufall mit festem Startwert, damit die Bücher immer gleich aussehen
+  let saat = 7;
+  const zufall = () => { saat = (saat * 16807) % 2147483647; return (saat - 1) / 2147483646; };
+
+  const mat = (farbe, glanz, metall = 0, leucht = null, staerke = 0) => new THREE.MeshStandardMaterial({
+    color: farbe, roughness: 1 - glanz, metalness: metall,
+    emissive: leucht ? new THREE.Color(leucht) : new THREE.Color(0), emissiveIntensity: staerke
+  });
+
+  const M = {
+    wand: mat('#E9DCC9', 0.15), decke: mat('#F3ECE2', 0.1), leiste: mat('#F7F3EC', 0.3),
+    dielen: [mat('#9A6B43', 0.35), mat('#8C5F3A', 0.35), mat('#A5764C', 0.35)],
+    teppich: mat('#B5563A', 0.05), sofa: mat('#4F6B5A', 0.1), kissen: mat('#E2B35C', 0.1), kissen2: mat('#D9CBB4', 0.1),
+    holz: mat('#5A3B25', 0.45), metall: mat('#2B2B2B', 0.7, 1),
+    schirm: mat('#F5E3C0', 0.1, 0, '#FFB766', 1.6), glas: mat('#FFD2A0', 0.9, 0, '#FF9E5E', 1.4),
+    rahmen: mat('#FAF7F2', 0.4), topf: mat('#C9774E', 0.2), blatt: mat('#3E7A44', 0.25),
+    bild: mat('#2F5D7C', 0.3), bild2: mat('#E8A33D', 0.3),
+    buecher: ['#8E3B2E', '#2E4E6E', '#D8B05A', '#4A6B4F', '#E6DDCC'].map(c => mat(c, 0.2))
+  };
+
+  const geoBox = new THREE.BoxGeometry(1, 1, 1);
+  const geoZyl = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+  const geoKugel = new THREE.SphereGeometry(0.5, 32, 20);
+
+  function form(geo, pos, groesse, m, schatten = true) {
+    const o = new THREE.Mesh(geo, m);
+    o.position.set(pos[0], pos[1], pos[2]);
+    o.scale.set(groesse[0], groesse[1], groesse[2]);
+    o.castShadow = schatten; o.receiveShadow = true;
+    ziel.add(o);
+    return o;
+  }
+  const box = (p, g, m, s) => form(geoBox, p, g, m, s);
+  // Weiche Box mit runden Kanten: eigene Geometrie je Größe, damit die Rundung nicht verzerrt
+  const weich = (p, g, m, r = 0.04) => {
+    const geo = THREE.RoundedBoxGeometry ? new THREE.RoundedBoxGeometry(g[0], g[1], g[2], 4, Math.min(r, Math.min(...g) / 2 - 0.001)) : geoBox;
+    return form(geo, p, THREE.RoundedBoxGeometry ? [1, 1, 1] : g, m);
+  };
+  const zyl = (p, d, h, m, s) => form(geoZyl, p, [d, h, d], m, s);
+  const kugel = (p, d, m, s) => form(geoKugel, p, [d, d, d], m, s);
+  const DEG = Math.PI / 180;
+  // Unity-Euler (x, y, z) in gespiegelter Gruppe: Reihenfolge ZXY wie in Unity
+  const dreh = (o, x, y, z) => o.rotation.set(x * DEG, y * DEG, z * DEG, 'YXZ');
+
+  const B = 9, T = 6, H = 2.8, W = 0.1;
+  const AUGE_START = 1.6;
+  let ziel = raum;
+  // Wohnbereich links: alte Maße bleiben, die Gruppe sitzt an linker und hinterer Wand
+  const wohnen = new THREE.Group();
+  wohnen.position.set(-1.5, 0, 0.5);
+  raum.add(wohnen);
+
+  // Boden
+  const db = 0.2, n = Math.round(B / db);
+  for (let i = 0; i < n; i++) {
+    const x = -B / 2 + db * (i + 0.5);
+    box([x, -0.01, 0], [db - 0.004, 0.02, T], M.dielen[Math.floor(zufall() * 3)]);
+  }
+  // Wände: hinten zwei Fenster (Wohnen links, Essen rechts)
+  const zh = T / 2 + W / 2;
+  const fensterX = [-1.5, 2.5], fb = 2, unten = 0.9, oben = 2.2;
+  let xa = -B / 2 - W;
+  for (const fx of fensterX) {
+    const xl = fx - fb / 2;
+    box([(xa + xl) / 2, H / 2, zh], [xl - xa, H, W], M.wand);
+    box([fx, unten / 2, zh], [fb, unten, W], M.wand);
+    box([fx, (oben + H) / 2, zh], [fb, H - oben, W], M.wand);
+    xa = fx + fb / 2;
+  }
+  box([(xa + B / 2 + W) / 2, H / 2, zh], [B / 2 + W - xa, H, W], M.wand);
+  box([0, H / 2, -zh], [B + W * 2, H, W], M.wand);
+  box([-B / 2 - W / 2, H / 2, 0], [W, H, T], M.wand);
+  box([B / 2 + W / 2, H / 2, 0], [W, H, T], M.wand);
+  box([0, H + W / 2, 0], [B + W * 2, W, T + W * 2], M.decke);
+  box([0, 0.04, T / 2 - 0.01], [B, 0.08, 0.02], M.leiste);
+  box([0, 0.04, -T / 2 + 0.01], [B, 0.08, 0.02], M.leiste);
+  box([-B / 2 + 0.01, 0.04, 0], [0.02, 0.08, T], M.leiste);
+  box([B / 2 - 0.01, 0.04, 0], [0.02, 0.08, T], M.leiste);
+  // Fenster
+  for (const fx of fensterX) {
+    box([fx, 1.55, zh + 0.03], [2, 1.3, 0.01], M.glas, false);
+    box([fx, 2.18, T / 2 + 0.02], [2.08, 0.06, 0.06], M.rahmen);
+    box([fx, 0.92, T / 2 + 0.02], [2.08, 0.06, 0.06], M.rahmen);
+    box([fx, 0.88, T / 2 - 0.06], [2.2, 0.04, 0.2], M.rahmen);
+    box([fx - 1.01, 1.55, T / 2 + 0.02], [0.06, 1.3, 0.06], M.rahmen);
+    box([fx + 1.01, 1.55, T / 2 + 0.02], [0.06, 1.3, 0.06], M.rahmen);
+    box([fx, 1.55, T / 2 + 0.02], [0.04, 1.3, 0.04], M.rahmen);
+  }
+  ziel = wohnen;
+  // Teppich
+  weich([-1.1, 0.006, -0.2], [2.6, 0.012, 2.0], M.teppich, 0.005);
+  // Sofa
+  weich([-2.5, 0.21, -0.2], [0.9, 0.34, 2.2], M.sofa, 0.05);
+  weich([-2.84, 0.62, -0.2], [0.22, 0.56, 2.2], M.sofa, 0.08);
+  weich([-2.5, 0.32, -1.2], [0.9, 0.6, 0.2], M.sofa, 0.08);
+  weich([-2.5, 0.32, 0.8], [0.9, 0.6, 0.2], M.sofa, 0.08);
+  weich([-2.44, 0.45, -0.7], [0.7, 0.14, 0.98], M.sofa, 0.06);
+  weich([-2.44, 0.45, 0.3], [0.7, 0.14, 0.98], M.sofa, 0.06);
+  dreh(weich([-2.66, 0.72, -0.9], [0.14, 0.4, 0.4], M.kissen, 0.065), 0, 0, -12);
+  dreh(weich([-2.66, 0.72, 0.5], [0.14, 0.38, 0.38], M.kissen2, 0.065), 8, 0, -12);
+  for (const z of [-1.2, 0.8]) for (const x of [-2.85, -2.15]) zyl([x, 0.02, z], 0.04, 0.04, M.holz);
+  // Couchtisch
+  weich([-1.2, 0.42, -0.2], [0.6, 0.05, 1.1], M.holz, 0.02);
+  for (const dz of [-0.47, 0.47]) for (const dx of [-0.22, 0.22]) zyl([-1.2 + dx, 0.2, -0.2 + dz], 0.035, 0.4, M.holz);
+  zyl([-1.38, 0.49, -0.5], 0.08, 0.09, M.kissen2);
+  dreh(box([-1.25, 0.46, 0.05], [0.22, 0.03, 0.3], M.buecher[0]), 0, 15, 0);
+  // Stehlampe
+  zyl([-2.55, 0.015, 1.75], 0.3, 0.03, M.metall);
+  zyl([-2.55, 0.75, 1.75], 0.03, 1.5, M.metall);
+  zyl([-2.55, 1.55, 1.75], 0.42, 0.32, M.schirm, false);
+  // Pendelleuchte
+  zyl([-1.2, 2.4, -0.2], 0.01, 0.8, M.metall, false);
+  kugel([-1.2, 1.9, -0.2], 0.32, M.schirm, false);
+  // Regal an der rechten Wand
+  ziel = raum;
+  const rx = B / 2 - 0.18, rz = 1.2, rb = 1.6, rh = 2.0;
+  box([rx, rh / 2, rz - rb / 2], [0.35, rh, 0.03], M.holz);
+  box([rx, rh / 2, rz + rb / 2], [0.35, rh, 0.03], M.holz);
+  for (let f = 0; f < 5; f++) {
+    const y = 0.05 + f * 0.48;
+    box([rx, y, rz], [0.35, 0.03, rb], M.holz);
+    if (f === 4) break;
+    let z = rz - rb / 2 + 0.06;
+    const ende = rz + rb / 2 - 0.06 - (f === 1 ? 0.6 : 0);
+    while (z < ende) {
+      const dicke = 0.03 + zufall() * 0.04, hoehe = 0.24 + zufall() * 0.14;
+      box([rx + 0.02, y + 0.015 + hoehe / 2, z + dicke / 2], [0.24, hoehe, dicke], M.buecher[Math.floor(zufall() * 5)]);
+      z += dicke + 0.004;
+    }
+  }
+  ziel = wohnen;
+  // Pflanze am Fenster
+  zyl([1.75, 0.22, 2.0], 0.42, 0.44, M.topf);
+  zyl([1.75, 0.75, 2.0], 0.03, 0.7, M.holz);
+  for (const p of [[1.75, 1.2, 2.0], [1.55, 1.05, 1.9], [1.95, 1.0, 2.05], [1.7, 1.4, 1.95], [1.9, 1.3, 1.85]])
+    kugel(p, 0.32 + zufall() * 0.12, M.blatt);
+  // Bilder
+  box([-2.97, 1.5, -0.45], [0.03, 0.7, 0.9], M.holz);
+  box([-2.955, 1.5, -0.45], [0.01, 0.6, 0.8], M.bild);
+  form(geoKugel, [-2.95, 1.6, -0.3], [0.01, 0.18, 0.18], M.bild2);
+  box([-2.97, 1.4, 0.45], [0.03, 0.45, 0.35], M.holz);
+  box([-2.955, 1.4, 0.45], [0.01, 0.37, 0.27], M.bild2);
+
+  // Sessel links vom Fenster, schräg zum Couchtisch gedreht
+  const samt = mat('#A9643B', 0.2);
+  const vorSessel = wohnen.children.length;
+  weich([0, 0.3, 0], [0.72, 0.26, 0.78], samt, 0.06);
+  weich([0.35, 0.62, 0], [0.18, 0.62, 0.82], samt, 0.07);
+  weich([0.03, 0.43, -0.38], [0.74, 0.42, 0.14], samt, 0.06);
+  weich([0.03, 0.43, 0.38], [0.74, 0.42, 0.14], samt, 0.06);
+  weich([-0.02, 0.47, 0], [0.62, 0.12, 0.62], samt, 0.05);
+  for (const dz of [-0.32, 0.32]) for (const dx of [-0.28, 0.36]) zyl([dx, 0.06, dz], 0.04, 0.12, M.holz);
+  const sessel = new THREE.Group();
+  for (const teil of wohnen.children.slice(vorSessel)) sessel.add(teil);
+  sessel.position.set(-0.75, 0, 1.4);
+  sessel.rotation.y = -110 * DEG;
+  wohnen.add(sessel);
+  // Decke über der Sofalehne
+  const decke = mat('#8FA3B8', 0.05);
+  weich([-2.5, 0.635, -1.2], [0.7, 0.03, 0.26], decke, 0.012);
+  weich([-2.5, 0.42, -1.315], [0.6, 0.42, 0.03], decke, 0.012);
+  // Kerzen auf dem Tisch
+  const wachs = mat('#F2E8D5', 0.2);
+  const flamme = mat('#FFD08A', 0, 0, '#FFB24D', 3);
+  for (const [dz, h] of [[0.32, 0.14], [0.4, 0.09]]) {
+    zyl([-1.32, 0.445 + h / 2, -0.2 + dz], 0.05, h, wachs);
+    kugel([-1.32, 0.445 + h + 0.025, -0.2 + dz], 0.022, flamme, false);
+  }
+  const kerze = new THREE.PointLight('#FFAA55', 0.5, 1.8, 2);
+  kerze.position.set(-1.32, 0.62, 0.16);
+  wohnen.add(kerze);
+  // Vorhänge links und rechts vom Fenster, mit Falten
+  const stoff = mat('#D8C7AE', 0.05);
+  zyl([0, 2.32, 2.4], 0.025, 3.2, M.metall).rotation.z = Math.PI / 2;
+  for (const seite of [-1, 1]) {
+    for (let i = 0; i < 5; i++) {
+      const x = seite * (1.12 + i * 0.075);
+      const falte = zyl([x, 1.17, 2.4 + (i % 2) * 0.025], 0.1, 2.28, stoff);
+      falte.castShadow = true;
+    }
+  }
+  // Lowboard mit Fernseher als Raumteiler zwischen Wohnen und Essen
+  const tvX = 2.95;
+  weich([tvX, 0.25, -0.2], [0.4, 0.42, 1.5], M.holz, 0.02);
+  for (const dz of [-0.65, 0.65]) zyl([tvX, 0.02, -0.2 + dz], 0.04, 0.04, M.metall);
+  zyl([tvX + 0.05, 0.75, -0.2], 0.04, 0.6, M.metall);
+  box([tvX + 0.02, 1.2, -0.2], [0.05, 0.62, 1.08], mat('#121212', 0.8));
+  box([tvX - 0.01, 1.2, -0.2], [0.005, 0.58, 1.04], mat('#0d1622', 0.95, 0, '#1d3550', 0.4), false);
+  zyl([tvX - 0.05, 0.5, 0.35], 0.12, 0.08, M.topf);
+  kugel([tvX - 0.05, 0.6, 0.35], 0.16, M.blatt);
+
+  // Essbereich rechts
+  ziel = raum;
+  const eX = 2.8, eZ = 0.75;
+  const eiche = mat('#B98552', 0.4);
+  weich([eX, 0.75, eZ], [1.0, 0.05, 1.9], eiche, 0.02);
+  for (const dz of [-0.82, 0.82]) for (const dx of [-0.4, 0.4]) zyl([eX + dx, 0.37, eZ + dz], 0.05, 0.74, eiche);
+  const polster = mat('#4F6B5A', 0.1);
+  function stuhl(x, z, drehY) {
+    const vor = raum.children.length;
+    weich([0, 0.46, 0], [0.44, 0.05, 0.44], eiche, 0.015);
+    weich([0, 0.5, 0], [0.4, 0.05, 0.4], polster, 0.02);
+    weich([-0.2, 0.75, 0], [0.04, 0.5, 0.42], eiche, 0.015);
+    for (const dz of [-0.18, 0.18]) for (const dx of [-0.18, 0.18]) zyl([dx, 0.22, dz], 0.035, 0.44, eiche);
+    const g = new THREE.Group();
+    for (const t of raum.children.slice(vor)) g.add(t);
+    g.position.set(x, 0, z); g.rotation.y = drehY * DEG;
+    raum.add(g);
+  }
+  for (const dz of [-0.45, 0.45]) {
+    stuhl(eX - 0.75, eZ + dz, 0);
+    stuhl(eX + 0.75, eZ + dz, 180);
+  }
+  stuhl(eX, eZ - 1.25, 90);
+  // Obstschale und Vase
+  zyl([eX, 0.81, eZ + 0.2], 0.3, 0.07, mat('#E9E2D6', 0.5));
+  for (const [dx, dz, c] of [[0.05, 0.02, '#E8892F'], [-0.06, 0.05, '#E8892F'], [0.0, -0.07, '#C8D24A']])
+    kugel([eX + dx, 0.87, eZ + 0.2 + dz], 0.08, mat(c, 0.35));
+  // Lange Hängeleuchte über dem Esstisch
+  for (const dz of [-0.5, 0.5]) zyl([eX, 2.3, eZ + dz], 0.008, 1.0, M.metall, false);
+  weich([eX, 1.78, eZ], [0.12, 0.06, 1.3], M.metall, 0.02).castShadow = false;
+  box([eX, 1.745, eZ], [0.08, 0.01, 1.24], M.schirm, false);
+  // Teppich unter dem Esstisch
+  weich([eX, 0.006, eZ], [2.4, 0.012, 3.0], mat('#6E7F6A', 0.05), 0.005);
+
+
+  // ---------- Spiel-Plätze im Raum ----------
+  // Koordinaten wie im Unity-Skript (raum-Gruppe); Welt = (x, y, -z)
+  const welt = (x, y, z) => new THREE.Vector3(x, y, -z);
+  const stationen = [];
+  const stationVon = new Map();
+  function station(def, bauen) {
+    const vor = raum.children.length;
+    ziel = raum;
+    bauen();
+    const teile = raum.children.slice(vor);
+    const meshes = [];
+    teile.forEach(o => o.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.userData.leuchtBasis = m.material.emissive.clone(); meshes.push(m); } }));
+    const s = Object.assign({ meshes, hell: 0 }, def);
+    meshes.forEach(m => stationVon.set(m, s));
+    stationen.push(s);
+    return s;
+  }
+  function leinwand(b, h, malen) {
+    const c = document.createElement('canvas'); c.width = b; c.height = h;
+    malen(c.getContext('2d'), b, h);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+    return t;
+  }
+
+  // 1. Konsole am Fernseher: Rennspiele
+  station({
+    id: 'konsole', name: 'Konsole', text: 'Rennspiele am Fernseher',
+    anker: welt(1.45, 1.0, 0.3), stand: welt(0.1, AUGE_START, 0.3),
+    spiele: [
+      { name: 'Driftpokal', url: '../driftpokal/', text: 'Kart-Cup mit 14 Strecken, Geist und Garage.' },
+      { name: 'Driftpokal v2', url: '../driftpokal-v2/', text: 'Neues Rennen mit sechs Karts.' },
+      { name: 'Luftdrift 3D', url: '../luftdrift/', text: 'Flugrennen durch Ringe.' },
+      { name: 'Kleine Rundfahrt', url: '../etappenrennen/', text: 'Radrennen in drei Etappen mit Windschatten.' },
+      { name: 'Ula Çarpsana!', url: '../ula/', text: 'Autoscooter-Crash im Feuerring.' }
+    ]
+  }, () => {
+    const lx = 1.45 - 0.07;
+    weich([lx + 0.02, 0.485, 0.62], [0.26, 0.05, 0.22], mat('#1c1c22', 0.6), 0.015);
+    box([lx - 0.11, 0.49, 0.62], [0.005, 0.012, 0.16], mat('#2a6cff', 0.5, 0, '#2a6cff', 2.2), false);
+    const farben = ['#e0402e', '#2f7de1', '#f2b33d', '#3fae6a', '#c04fd0'];
+    farben.forEach((f, i) => box([lx, 0.585, -0.35 + i * 0.065], [0.17, 0.24, 0.025], mat(f, 0.45)));
+  });
+
+  // 2. Esstisch: Brettspiele
+  station({
+    id: 'spieltisch', name: 'Spieltisch', text: 'Brettspiele am Esstisch',
+    anker: welt(eX, 0.8, eZ - 0.3), stand: welt(eX, AUGE_START, eZ - 1.75),
+    spiele: [{ name: 'Brettspiele', url: '../brettspiele/', text: 'Tic Tac Toe, Vier gewinnt, Reversi, Mühle, Schach und Mangala.' }]
+  }, () => {
+    const brett = leinwand(256, 256, (g, b) => {
+      g.fillStyle = '#6b4226'; g.fillRect(0, 0, b, b);
+      const f = (b - 32) / 8;
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { g.fillStyle = (x + y) % 2 ? '#3d2a1c' : '#ecd9b6'; g.fillRect(16 + x * f, 16 + y * f, f, f); }
+    });
+    const m = new THREE.MeshStandardMaterial({ map: brett, roughness: 0.5 });
+    weich([eX, 0.79, eZ - 0.3], [0.44, 0.03, 0.44], m, 0.01);
+    const hell = mat('#f3ecdf', 0.5), dunkel = mat('#2b211b', 0.5);
+    [[-0.13, -0.15, hell], [0.03, -0.15, hell], [-0.08, 0.14, dunkel], [0.13, 0.09, dunkel]].forEach(([dx, dz, mm]) => {
+      zyl([eX + dx, 0.835, eZ - 0.3 + dz], 0.035, 0.06, mm);
+      kugel([eX + dx, 0.875, eZ - 0.3 + dz], 0.035, mm);
+    });
+  });
+
+  // 3. Inselmodell im Regal: Neon Ada
+  station({
+    id: 'insel', name: 'Inselmodell', text: 'Strategie im Regal',
+    anker: welt(rx, 0.72, rz + 0.5), stand: welt(rx - 1.25, AUGE_START - 0.1, rz + 0.5),
+    spiele: [{ name: 'Neon Ada', url: '../neon-ada/', text: 'Götterspiel: Land formen, Pixelinge lenken, 13 Inseln.' }]
+  }, () => {
+    zyl([rx, 0.575, rz + 0.5], 0.42, 0.04, mat('#1d5fa8', 0.8, 0, '#123a7a', 0.6));
+    const gruen = mat('#4caf50', 0.2), sand = mat('#e3c27a', 0.2), neon = mat('#ff4fd8', 0.3, 0, '#ff4fd8', 1.8);
+    [[0, 0, 0.12, sand], [0.06, 0.04, 0.16, gruen], [-0.06, 0.03, 0.1, gruen], [0.02, -0.07, 0.08, gruen], [-0.03, -0.02, 0.2, gruen]].forEach(([dx, dz, h, mm]) =>
+      box([rx + dx, 0.595 + h / 2, rz + 0.5 + dz], [0.07, h, 0.07], mm));
+    box([rx - 0.03, 0.82, rz + 0.48], [0.03, 0.03, 0.03], neon, false);
+  });
+
+  // 4. Staffelei am zweiten Fenster: Ebru
+  station({
+    id: 'staffelei', name: 'Staffelei', text: 'Malen am Fenster',
+    anker: welt(1.95, 1.2, 2.35), stand: welt(1.45, AUGE_START, 1.2),
+    spiele: [
+      { name: 'Ebru', url: '../ebru/', text: 'Marmorkunst: Farbe auf Wasser tropfen und Muster ziehen.' },
+      { name: 'Ebru klassisch', url: '../ebru-klassisch/', text: 'Die ruhige Ebru-Werkstatt mit klassischen Mustern.' }
+    ]
+  }, () => {
+    const holz = mat('#8a5a34', 0.35);
+    dreh(box([1.95 - 0.28, 0.85, 2.38], [0.035, 1.75, 0.035], holz), -6, 0, -8);
+    dreh(box([1.95 + 0.28, 0.85, 2.38], [0.035, 1.75, 0.035], holz), -6, 0, 8);
+    dreh(box([1.95, 0.8, 2.62], [0.035, 1.65, 0.035], holz), 18, 0, 0);
+    box([1.95, 0.82, 2.3], [0.7, 0.035, 0.07], holz);
+    const ebru = leinwand(384, 288, (g, b, h) => {
+      g.fillStyle = '#f4efe4'; g.fillRect(0, 0, b, h);
+      const farben = ['#2f6fb0', '#e8869f', '#f2c14e', '#3f9b8f', '#c0392b'];
+      for (let r = 9; r >= 1; r--) {
+        g.beginPath();
+        for (let a = 0; a <= 64; a++) {
+          const w = a / 64 * Math.PI * 2, rr = r * 16 + Math.sin(w * 3 + r) * 6;
+          const x = b / 2 + Math.cos(w) * rr * 1.3 + Math.sin(w * 2 + r) * 10, y = h / 2 + Math.sin(w) * rr;
+          a ? g.lineTo(x, y) : g.moveTo(x, y);
+        }
+        g.closePath(); g.fillStyle = farben[r % farben.length]; g.fill();
+      }
+      g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 3;
+      for (let i = 0; i < 7; i++) { g.beginPath(); g.moveTo(30 + i * 52, 0); g.bezierCurveTo(60 + i * 52, h * 0.4, i * 52, h * 0.6, 30 + i * 52, h); g.stroke(); }
+    });
+    const bild = new THREE.MeshStandardMaterial({ map: ebru, roughness: 0.7 });
+    dreh(box([1.95, 1.2, 2.31], [0.66, 0.5, 0.025], bild), -6, 0, 0);
+  });
+
+  // 5. Perlenkästchen auf dem Couchtisch: Perlenwerkstatt
+  station({
+    id: 'perlen', name: 'Perlenkästchen', text: 'Basteln am Couchtisch',
+    anker: welt(-2.55, 0.5, -0.12), stand: welt(-1.3, AUGE_START - 0.1, -1.0),
+    spiele: [{ name: 'Perlenwerkstatt', url: '../perlen/', text: 'Perlenarmbänder planen, mit Vorschau und Einkaufsliste.' }]
+  }, () => {
+    weich([-2.55, 0.465, -0.12], [0.24, 0.035, 0.18], mat('#f1e6d4', 0.4), 0.01);
+    const farben = ['#1d4fa0', '#d4af37', '#ffffff', '#1d4fa0', '#e8869f', '#3fae6a'];
+    for (let i = 0; i < 18; i++) {
+      const fx = -2.55 - 0.09 + (i % 6) * 0.036, fz = -0.12 - 0.05 + Math.floor(i / 6) * 0.05;
+      kugel([fx, 0.492, fz], 0.022, mat(farben[(i * 5) % farben.length], 0.7));
+    }
+  });
+
+  // Licht
+  const hemi = new THREE.HemisphereLight('#5A5F78', '#3A2C22', 0.3);
+  scene.add(hemi);
+  const umgebung = new THREE.AmbientLight('#6E5A4C', 0.12);
+  scene.add(umgebung);
+
+  // Abendsonne: Unity-Rotation (22, 200, 0) ergibt Richtung (-0.32, -0.37, -0.88)
+  const sonne = new THREE.DirectionalLight('#FF9C55', 3.4);
+  const dir = new THREE.Vector3(-0.32, -0.37, -0.88).normalize();
+  sonne.position.copy(dir.clone().multiplyScalar(-9));
+  sonne.target.position.set(0, 0, 0);
+  sonne.castShadow = true;
+  sonne.shadow.mapSize.set(2048, 2048);
+  sonne.shadow.camera.left = -8; sonne.shadow.camera.right = 8;
+  sonne.shadow.camera.top = 8; sonne.shadow.camera.bottom = -8;
+  sonne.shadow.camera.near = 1; sonne.shadow.camera.far = 20;
+  sonne.shadow.bias = -0.0005;
+  sonne.shadow.normalBias = 0.02;
+  raum.add(sonne); raum.add(sonne.target);
+
+  function punkt(pos, farbe, staerke, weite) {
+    const l = new THREE.PointLight(farbe, staerke, weite, 1.6);
+    l.position.set(pos[0], pos[1], pos[2]);
+    l.castShadow = true;
+    l.shadow.mapSize.set(1024, 1024);
+    l.shadow.bias = -0.002;
+    l.shadow.normalBias = 0.03;
+    raum.add(l);
+    return l;
+  }
+  punkt([-2.55 - 1.5, 1.5, 1.75 + 0.5], '#FFB567', 2.4, 6);
+  punkt([-1.2 - 1.5, 1.82, -0.2 + 0.5], '#FFC27A', 1.8, 5);
+  punkt([2.8, 1.68, 0.75], '#FFC98A', 1.6, 5);
+
+  // Startblick aus der vorderen rechten Ecke über den ganzen Raum; z gespiegelt
+  const kamera = new THREE.PerspectiveCamera(60, 1, 0.05, 50);
+  const start = { pos: new THREE.Vector3(4.1, 1.7, 2.7), ziel: new THREE.Vector3(-0.8, 0.8, -0.6) };
+  kamera.position.copy(start.pos);
+  const steuerung = new THREE.OrbitControls(kamera, canvas);
+  steuerung.target.copy(start.ziel);
+  steuerung.enableDamping = true;
+  steuerung.minDistance = 0.8;
+  steuerung.maxDistance = 7.5;
+  steuerung.maxPolarAngle = 100 * DEG;
+  steuerung.update();
+
+  // Blick im Raum halten
+  const grenze = new THREE.Box3(new THREE.Vector3(-4.35, 0.3, -2.85), new THREE.Vector3(4.35, 2.6, 2.85));
+
+  // Bloom wie in Unity: helle Stellen (Schirme, Fenster) strahlen weich über
+  let composer = null, bloom = null;
+  if (THREE.EffectComposer && THREE.UnrealBloomPass) {
+    composer = new THREE.EffectComposer(renderer);
+    composer.addPass(new THREE.RenderPass(scene, kamera));
+    bloom = new THREE.UnrealBloomPass(new THREE.Vector2(1, 1), 0.32, 0.5, 0.9);
+    composer.addPass(bloom);
+    composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+  }
+
+  function groesse() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
+    kamera.aspect = w / h;
+    kamera.fov = w < h ? 75 : 60;
+    kamera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', groesse);
+  groesse();
+
+  const knopfAbend = document.getElementById('abend');
+  const knopfNacht = document.getElementById('nacht');
+  function stimmung(abend) {
+    sonne.visible = abend;
+    M.glas.emissiveIntensity = abend ? 1.4 : 0.15;
+    M.glas.color.set(abend ? '#FFD2A0' : '#1d2740');
+    hemi.intensity = abend ? 0.3 : 0.06;
+    umgebung.intensity = abend ? 0.12 : 0.04;
+    knopfAbend.setAttribute('aria-pressed', String(abend));
+    knopfNacht.setAttribute('aria-pressed', String(!abend));
+  }
+  knopfAbend.addEventListener('click', () => stimmung(true));
+  knopfNacht.addEventListener('click', () => stimmung(false));
+  // ---------- Rundgang wie bei Street View ----------
+  const AUGE = 1.6;
+  let modus = 'ueberblick', yaw = 0, pitch = 0, fahrt = null;
+  const tasten = new Set();
+  const strahl = new THREE.Raycaster();
+  const zeiger = new THREE.Vector2();
+
+  // Ring am Boden zeigt, wohin ein Doppelklick führt
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.22, 40),
+    new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false }));
+  ring.rotation.x = -Math.PI / 2;
+  ring.visible = false;
+  scene.add(ring);
+
+  const grenzeX = 4.15, grenzeZ = 2.65;
+  const halte = v => { v.x = Math.max(-grenzeX, Math.min(grenzeX, v.x)); v.z = Math.max(-grenzeZ, Math.min(grenzeZ, v.z)); return v; };
+  const winkel = (dx, dz) => Math.atan2(-dx, -dz);
+  function blick() {
+    const d = new THREE.Vector3(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
+    kamera.lookAt(kamera.position.clone().add(d));
+  }
+  function rundgangStarten() {
+    if (modus === 'rundgang') return;
+    modus = 'rundgang';
+    steuerung.enabled = false;
+    const d = kamera.getWorldDirection(new THREE.Vector3());
+    yaw = winkel(d.x, d.z);
+    pitch = Math.asin(Math.max(-1, Math.min(1, d.y)));
+  }
+  function treffer(ev) {
+    const r = canvas.getBoundingClientRect();
+    zeiger.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    strahl.setFromCamera(zeiger, kamera);
+    return strahl.intersectObject(raum, true)[0] || null;
+  }
+  function gehe(ev) {
+    const t = treffer(ev);
+    if (!t) return;
+    rundgangStarten();
+    ring.visible = false;
+    const p = t.point;
+    const vonPos = kamera.position.clone();
+    const amBoden = p.y < 0.05;
+    const nach = new THREE.Vector3(p.x, AUGE, p.z);
+    let zielYaw = yaw, zielPitch = -0.08;
+    if (!amBoden) {
+      const h = new THREE.Vector3(p.x - vonPos.x, 0, p.z - vonPos.z);
+      const abstand = h.length();
+      h.normalize();
+      nach.set(p.x, AUGE, p.z).addScaledVector(h, -Math.min(1.1, abstand));
+      zielYaw = winkel(h.x, h.z);
+      zielPitch = Math.atan2(p.y - AUGE, Math.max(0.3, Math.min(1.1, abstand)));
+    }
+    halte(nach);
+    let dy = zielYaw - yaw;
+    dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    const dauer = Math.min(1.4, 0.45 + vonPos.distanceTo(nach) * 0.18);
+    fahrt = { von: vonPos, nach, yaw0: yaw, yaw1: yaw + dy, pitch0: pitch, pitch1: zielPitch, t: 0, dauer };
+  }
+
+  // ---------- Stationen zeigen und Spiele öffnen ----------
+  function schaueZu(ziel, stand) {
+    rundgangStarten();
+    ring.visible = false;
+    const nach = halte(stand.clone());
+    const d = ziel.clone().sub(nach);
+    let zielYaw = winkel(d.x, d.z);
+    const zielPitch = Math.atan2(d.y, Math.hypot(d.x, d.z));
+    let dy = zielYaw - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    const dauer = Math.min(1.4, 0.45 + kamera.position.distanceTo(nach) * 0.18);
+    fahrt = { von: kamera.position.clone(), nach, yaw0: yaw, yaw1: yaw + dy, pitch0: pitch, pitch1: zielPitch, t: 0, dauer };
+  }
+  const tafel = document.getElementById('tafel');
+  const karte = document.getElementById('karte');
+  let aktiv = null;
+  function zeigeStation(s, hingehen = true) {
+    aktiv = s;
+    if (hingehen) schaueZu(s.anker, s.stand);
+    document.getElementById('tafelname').textContent = s.name;
+    document.getElementById('tafeltext').textContent = s.text;
+    const liste = document.getElementById('tafelliste');
+    liste.textContent = '';
+    s.spiele.forEach(sp => {
+      const li = document.createElement('li');
+      const t = document.createElement('div');
+      const h = document.createElement('strong'); h.textContent = sp.name;
+      const p = document.createElement('span'); p.textContent = sp.text;
+      t.append(h, p);
+      const k = document.createElement('button'); k.className = 'spielen'; k.textContent = 'Spielen';
+      k.setAttribute('aria-label', sp.name + ' spielen');
+      k.addEventListener('click', () => oeffneSpiel(sp));
+      li.append(t, k); liste.append(li);
+    });
+    tafel.hidden = false; karte.hidden = true;
+  }
+  function schliesseTafel() { aktiv = null; tafel.hidden = true; karte.hidden = false; }
+  document.getElementById('tafelzu').addEventListener('click', schliesseTafel);
+
+  const fenster = document.getElementById('spielfenster');
+  const rahmen = document.getElementById('spielrahmen');
+  let pausiert = false, letzterKnopf = null;
+  function oeffneSpiel(sp) {
+    letzterKnopf = document.activeElement;
+    document.getElementById('spielname').textContent = sp.name;
+    rahmen.title = sp.name;
+    rahmen.src = sp.url;
+    fenster.hidden = false; pausiert = true; tasten.clear();
+    document.getElementById('spielzu').focus();
+  }
+  function schliesseSpiel() {
+    if (fenster.hidden) return;
+    fenster.hidden = true; pausiert = false;
+    rahmen.src = 'about:blank';
+    uhr.getDelta();
+    if (letzterKnopf && letzterKnopf.focus) letzterKnopf.focus();
+  }
+  document.getElementById('spielzu').addEventListener('click', schliesseSpiel);
+  rahmen.addEventListener('load', () => {
+    try {
+      const w = rahmen.contentWindow;
+      if (!w || w.location.href === 'about:blank') return;
+      const pfad = w.location.pathname;
+      if (pfad === '/' || pfad.endsWith('/index.html') && pfad.split('/').length <= 2) { schliesseSpiel(); return; }
+      // Der Zurück-Link des Spiels führt hier zurück in den Raum
+      w.document.addEventListener('click', e => {
+        const a = e.target && e.target.closest && e.target.closest('a.ng-zurueck');
+        if (a) { e.preventDefault(); schliesseSpiel(); }
+      }, true);
+      w.focus();
+    } catch (e) { /* fremde Seite: nichts tun */ }
+  });
+  window.addEventListener('keydown', ev => {
+    if (ev.key !== 'Escape') return;
+    if (!fenster.hidden) schliesseSpiel(); else if (!tafel.hidden) schliesseTafel();
+  });
+
+  // Schilder über den Plätzen
+  const marken = document.getElementById('marken');
+  stationen.forEach(s => {
+    const k = document.createElement('button');
+    k.className = 'marke'; k.textContent = s.name;
+    k.setAttribute('aria-label', s.name + ': ' + s.text);
+    k.addEventListener('click', () => zeigeStation(s));
+    marken.append(k); s.marke = k;
+  });
+  let schilderTakt = 0;
+  function schilder() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const pruefen = (schilderTakt++ % 8) === 0;
+    stationen.forEach(s => {
+      const p = s.anker.clone(); p.y += 0.32;
+      const v = p.clone().project(kamera);
+      const sicht = v.z < 1 && v.x > -1.05 && v.x < 1.05 && v.y > -1.05 && v.y < 1.05;
+      s.marke.hidden = !sicht;
+      if (!sicht) return;
+      s.marke.style.transform = `translate(${((v.x + 1) / 2 * w).toFixed(1)}px, ${((1 - v.y) / 2 * h).toFixed(1)}px) translate(-50%, -100%)`;
+      if (pruefen) {
+        const r = s.anker.clone().sub(kamera.position); const dist = r.length();
+        strahl.set(kamera.position, r.normalize());
+        const t = strahl.intersectObject(raum, true)[0];
+        s.verdeckt = !!(t && t.distance < dist - 0.35 && stationVon.get(t.object) !== s);
+        s.marke.classList.toggle('verdeckt', s.verdeckt);
+      }
+    });
+  }
+  function leuchten(zeit) {
+    stationen.forEach(s => {
+      const ziel = (s === aktiv || s === ueber) ? 1 : 0;
+      s.hell += (ziel - s.hell) * 0.15;
+      const k = s.hell * (0.55 + 0.25 * Math.sin(zeit * 0.004));
+      s.meshes.forEach(m => m.material.emissive.copy(m.userData.leuchtBasis).lerp(new THREE.Color('#ffb567'), Math.min(1, k * 0.35)));
+    });
+  }
+  let ueber = null;
+
+  // Maus: Doppelklick geht hin
+  canvas.addEventListener('dblclick', ev => { ev.preventDefault(); const t = treffer(ev); if (t && stationVon.get(t.object)) return; gehe(ev); });
+  // Finger: Doppeltippen geht hin
+  let letzterTipp = null;
+  // Umsehen durch Ziehen im Rundgang
+  let ziehen = null;
+  canvas.addEventListener('pointerdown', ev => {
+    ziehen = { x: ev.clientX, y: ev.clientY, x0: ev.clientX, y0: ev.clientY, zeit: performance.now() };
+  });
+  window.addEventListener('pointermove', ev => {
+    if (ziehen && modus === 'rundgang' && !fahrt) {
+      const k = 0.0045;
+      yaw += (ev.clientX - ziehen.x) * k;
+      pitch = Math.max(-1.2, Math.min(1.2, pitch + (ev.clientY - ziehen.y) * k));
+    }
+    if (ziehen) { ziehen.x = ev.clientX; ziehen.y = ev.clientY; }
+    if (ev.target === canvas && ev.pointerType === 'mouse' && !ziehen) {
+      const t = treffer(ev);
+      ueber = t ? stationVon.get(t.object) || null : null;
+      canvas.style.cursor = ueber ? 'pointer' : '';
+      ring.visible = !ueber && !!(t && t.point.y < 0.05);
+      if (ring.visible) ring.position.set(t.point.x, 0.015, t.point.z);
+    } else if (ziehen) ring.visible = false;
+  });
+  window.addEventListener('pointerup', ev => {
+    if (!ziehen) return;
+    const kurz = performance.now() - ziehen.zeit < 300 && Math.hypot(ev.clientX - ziehen.x0, ev.clientY - ziehen.y0) < 10;
+    ziehen = null;
+    if (kurz && ev.target === canvas) {
+      const t = treffer(ev);
+      const s = t && stationVon.get(t.object);
+      if (s) { zeigeStation(s); letzterTipp = null; return; }
+    }
+    if (ev.pointerType !== 'mouse' && kurz && ev.target === canvas) {
+      const jetzt = performance.now();
+      if (letzterTipp && jetzt - letzterTipp.zeit < 350 && Math.hypot(ev.clientX - letzterTipp.x, ev.clientY - letzterTipp.y) < 40) {
+        gehe(ev); letzterTipp = null;
+      } else letzterTipp = { zeit: jetzt, x: ev.clientX, y: ev.clientY };
+    }
+  });
+  canvas.addEventListener('pointerleave', () => { ring.visible = false; });
+
+  // Tasten: W/S oder Pfeil hoch/runter laufen, A/D seitlich, Pfeil links/rechts drehen
+  const laufTasten = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+  window.addEventListener('keydown', ev => {
+    if (!laufTasten.includes(ev.code) || !fenster.hidden) return;
+    ev.preventDefault();
+    rundgangStarten();
+    fahrt = null;
+    tasten.add(ev.code);
+  });
+  window.addEventListener('keyup', ev => tasten.delete(ev.code));
+  window.addEventListener('blur', () => tasten.clear());
+
+  document.getElementById('zurueck').addEventListener('click', () => {
+    schliesseTafel();
+    modus = 'ueberblick';
+    fahrt = null;
+    kamera.position.copy(start.pos);
+    steuerung.target.copy(start.ziel);
+    steuerung.enabled = true;
+    steuerung.update();
+  });
+
+  const uhr = new THREE.Clock();
+  const glatt = x => x * x * (3 - 2 * x);
+  function bild(zeit) {
+    requestAnimationFrame(bild);
+    if (pausiert) return;
+    const roh = uhr.getDelta(), dt = Math.min(0.05, roh);
+    if (modus === 'rundgang') {
+      if (fahrt) {
+        fahrt.t = Math.min(1, fahrt.t + Math.min(0.25, roh) / fahrt.dauer);
+        const k = glatt(fahrt.t);
+        kamera.position.lerpVectors(fahrt.von, fahrt.nach, k);
+        yaw = fahrt.yaw0 + (fahrt.yaw1 - fahrt.yaw0) * k;
+        pitch = fahrt.pitch0 + (fahrt.pitch1 - fahrt.pitch0) * k;
+        if (fahrt.t >= 1) fahrt = null;
+      } else if (tasten.size) {
+        const v = 1.8 * dt;
+        const vor = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+        const rechts = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+        if (tasten.has('KeyW') || tasten.has('ArrowUp')) kamera.position.addScaledVector(vor, v);
+        if (tasten.has('KeyS') || tasten.has('ArrowDown')) kamera.position.addScaledVector(vor, -v);
+        if (tasten.has('KeyD')) kamera.position.addScaledVector(rechts, v);
+        if (tasten.has('KeyA')) kamera.position.addScaledVector(rechts, -v);
+        if (tasten.has('ArrowLeft')) yaw += 1.6 * dt;
+        if (tasten.has('ArrowRight')) yaw -= 1.6 * dt;
+        kamera.position.y += (AUGE - kamera.position.y) * Math.min(1, dt * 6);
+        halte(kamera.position);
+      }
+      blick();
+    } else {
+      steuerung.update();
+      grenze.clampPoint(kamera.position, kamera.position);
+    }
+    leuchten(zeit || 0);
+    schilder();
+    if (composer) composer.render(); else renderer.render(scene, kamera);
+  }
+  bild();
+})();
+</script>
+</body>
+</html>

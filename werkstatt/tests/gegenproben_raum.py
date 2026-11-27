@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+"""Gegenproben zu S-W29: je ein absichtlicher Fehler in einer Kopie der Seite, der zuständige Test muss rot werden.
+Aufruf: python3 werkstatt/tests/gegenproben_raum.py"""
+import os, shutil, subprocess, sys, tempfile
+
+WURZEL = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+TEST = os.path.join(WURZEL, 'werkstatt', 'tests', 'raum_test.js')
+FEHLER = [
+    ('Zurück-Link im Spiel führt zur Startseite', 'raum/index.html', [("if (a) { e.preventDefault(); schliesseSpiel(); }", ''),
+     ("if (pfad === '/' || pfad.endsWith('/index.html') && pfad.split('/').length <= 2) { schliesseSpiel(); return; }", '')], None, 'raum_spiel_zurueck'),
+    ('Leiste schließt das Spiel nicht', 'raum/index.html', "document.getElementById('spielzu').addEventListener('click', schliesseSpiel);", '', 'raum_spiel'),
+    ('Spiel-Adresse falsch', 'raum/index.html', "url: '../perlen/'", "url: '../perle/'", 'raum_adressen'),
+    ('Ein Spiel fehlt an der Konsole', 'raum/index.html', "      { name: 'Ula Çarpsana!', url: '../ula/', text: 'Autoscooter-Crash im Feuerring.' }\n", '', 'raum_platz'),
+    ('Karte fehlt auf der Startseite', 'index.html', '<a class="karte" href="raum/">', '<a class="karte" href="raum/index.html">', 'raum_karte'),
+]
+env = dict(os.environ)
+env.setdefault('NODE_PATH', subprocess.run(['npm', 'root', '-g'], capture_output=True, text=True).stdout.strip())
+fehler = 0
+for name, datei, alt, neu, test in FEHLER:
+    with tempfile.TemporaryDirectory() as tmp:
+        kopie = os.path.join(tmp, 's')
+        shutil.copytree(WURZEL, kopie, ignore=shutil.ignore_patterns('.git'))
+        p = os.path.join(kopie, datei)
+        t = open(p, encoding='utf-8').read()
+        paare = alt if isinstance(alt, list) else [(alt, neu)]
+        if any(t.count(a) != 1 for a, _ in paare):
+            print(f'FEHLER Gegenprobe "{name}" greift nicht'); fehler += 1; continue
+        for a, n in paare:
+            t = t.replace(a, n)
+        open(p, 'w', encoding='utf-8').write(t)
+        r = subprocess.run(['node', TEST, kopie], env=env, capture_output=True, text=True, timeout=400)
+        rot = r.returncode != 0 and f'FEHLER {test}' in r.stdout
+        fehler += not rot
+        print(('OK     ' if rot else 'FEHLER ') + f'"{name}" -> {test} ' + ('rot' if rot else 'NICHT erkannt'))
+sys.exit(1 if fehler else 0)
