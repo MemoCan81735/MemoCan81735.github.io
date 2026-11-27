@@ -74,6 +74,16 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 1, 'Inselmodell': 1, 'Staffelei': 
       await p.click('#spielzu'); await p.waitForTimeout(300);
       ok('raum_fernseher: Zurück schließt das Spiel, Tafel der Konsole wieder da', await p.evaluate(() => document.getElementById('spielfenster').hidden && !document.getElementById('tafel').hidden && !document.body.classList.contains('tvmodus')));
       await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+      // AK-7: auch die anderen Plätze zeigen ihr Spiel auf ihrer Fläche im Raum (Tisch, Sockel, Leinwand)
+      for (const name of ['Spieltisch', 'Inselmodell', 'Staffelei', 'Perlenkästchen']) {
+        await p.evaluate(n => [...document.querySelectorAll('.marke')].find(m => m.textContent === n).click(), name);
+        await p.waitForTimeout(300);
+        await p.click('#tafelliste .spielen');
+        let r = null; try { await p.waitForFunction(() => { const f = document.getElementById('spielfenster'); return f.classList.contains('tv') && !f.classList.contains('unterwegs'); }, null, { timeout: 15000 }); r = await p.evaluate(() => { const b = document.getElementById('spielrahmen').getBoundingClientRect(), l = document.querySelector('.leiste').getBoundingClientRect(); return { x: Math.round(b.left), y: Math.round(b.top), b: Math.round(b.width), h: Math.round(b.height), unter: l.bottom, vw: innerWidth, vh: innerHeight }; }); } catch (e) { /* nicht angekommen */ }
+        ok(`raum_flaeche: ${name} zeigt das Spiel auf seiner Fläche, ganz im Bild`, !!r && r.x >= 0 && r.x + r.b <= r.vw + 1 && r.y >= r.unter && r.y + r.h <= r.vh && r.b > 200 && r.h > 120, JSON.stringify(r));
+        await p.click('#spielzu'); await p.waitForTimeout(300);
+        await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+      }
       await p.screenshot({ path: process.env.BILD || '/tmp/raum-seite.png' });
       await p.click('a.ng-zurueck'); await p.waitForTimeout(500);
       ok('raum_zurueck: Zurück-Link führt zur Startseite', new URL(p.url()).pathname === '/');

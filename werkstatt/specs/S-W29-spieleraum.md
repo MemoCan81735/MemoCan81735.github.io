@@ -12,14 +12,14 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 - U-3: Der Besucher tippt "Spielen"; das Spiel öffnet groß über dem Raum.
 - U-4: Der Besucher tippt "← Zurück in den Raum" oder den Zurück-Link im Spiel und steht wieder am selben Platz im Raum.
 - U-5: Der Besucher tippt "← Alle Spiele" und kommt zur Startseite.
-- U-6: An der Konsole tippt der Besucher "Spielen"; die Kamera stellt sich vor den Fernseher, das Spiel läuft auf dessen Bildfläche im Raum. "Groß spielen" zeigt es über den ganzen Schirm, derselbe Knopf bringt es zurück auf den Fernseher.
+- U-6: Der Besucher tippt "Spielen"; die Kamera stellt sich vor die Fläche des Platzes (Fernseher, Tisch, Sockel, Leinwand), das Spiel läuft darauf im Raum. "Groß spielen" zeigt es über den ganzen Schirm, derselbe Knopf bringt es zurück auf den Fernseher.
 
 ## Umfang
 - Neuer Ordner `raum/` mit `index.html`, `three.min.js` und `three-zusatz.js` (three.js 0.147, lokal, MIT) und `manifest.webmanifest`; Symbole `bilder/symbole/raum-192.png` und `-512.png`, Kartenbild `bilder/raum.jpg` (400×300), neue Rubrik Spieleraum oben auf der Startseite.
 - Plätze und Spiele: Konsole am Fernseher (Driftpokal, Driftpokal v2, Luftdrift 3D, Kleine Rundfahrt, Ula Çarpsana!), Spieltisch am Couchtisch (Brettspiele), Inselmodell auf einem Sockel in der Raummitte (Neon Ada; bis 27.11.2026 im Regal), Staffelei am Fenster (Ebru, Ebru klassisch), Perlenkästchen auf dem Esstisch (Perlenwerkstatt). Am 27.11.2026 auf Wunsch des Betreibers getauscht (vorher Brettspiele am Esstisch, Perlen am Couchtisch).
 - Nicht drin: Spiele, die nur als Android-Datei oder privat vorliegen (Driftpokal-App, Luftrennen-App, Tanzschule, Kalorien-Tracker); sie liegen nicht auf der Seite.
 - Laufen wie bisher in der Vorschau: Doppelklick oder Doppeltippen geht hin, Ziehen sieht sich um, W A S D und Pfeile laufen, "Überblick" zurück zur Ecke, Abendsonne oder nur Lampen.
-- Fernseher (Versuch an der Konsole, 27.11.2026): Rennspiele laufen auf der Bildfläche des Fernsehers im Raum, die Kamera stellt sich gerade davor; Knopf "Groß spielen" wechselt ohne Neuladen zur Vollansicht und zurück. Die anderen Plätze öffnen weiter das Spielfenster.
+- Fernseher (Versuch an der Konsole, 27.11.2026): Rennspiele laufen auf der Bildfläche des Fernsehers im Raum, die Kamera stellt sich gerade davor; Knopf "Groß spielen" wechselt ohne Neuladen zur Vollansicht und zurück. Seit 27.11.2026 abends gilt das für alle Plätze: Brettspiele auf der Couchtisch-Platte, Neon Ada auf dem Sockel, Ebru auf der Leinwand, Perlenwerkstatt auf dem Esstisch; liegende Flächen schräg von oben, das Spiel per Perspektive (CSS matrix3d) genau auf die Fläche gelegt, Figuren und Modell darauf werden solange ausgeblendet.
 - Escape schließt Spielfenster oder Tafel, solange der Fokus im Raum liegt; im Spiel gehört Escape dem Spiel.
 
 ## Akzeptanzkriterien
@@ -31,6 +31,7 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | AK-4 | Aus U-3, U-4: Spiel öffnet im Spielfenster; Leiste und Zurück-Link im Spiel schließen es, die Adresse bleibt `/raum/` | `raum_test.js` |
 | AK-5 | Aus U-1: Startseite verlinkt `raum/` mit Bild und Text in der Rubrik Spieleraum; alle 10 Spiel-Adressen gibt es | `raum_test.js` |
 | AK-6 | Aus U-6: an der Konsole liegt das Spiel auf dem Fernseher (Seitenverhältnis der Bildfläche, ganz im Bild unter der Leiste); "Groß spielen" zeigt es über die ganze Breite; Zurück bringt die Tafel wieder | `raum_test.js` |
+| AK-7 | Aus U-6: Spieltisch, Inselmodell, Staffelei und Perlenkästchen zeigen ihr Spiel auf ihrer Fläche, ganz im Bild unter der Leiste | `raum_test.js` |
 
 ## Prüfszenarien
 | Nr. | Kategorie | Szenario | Kriterium |
@@ -41,9 +42,10 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | PS-4 | Fehlerfall | Spiel-Adresse falsch geschrieben: Test rot | AK-5 |
 | PS-5 | Missbrauch | Netzadresse für three.js eingebaut oder Zurück-Link entfernt: statische Prüfung rot | AK-1 |
 | PS-6 | Grenzwert | Hochformat 412×915: Fernseher schmal, Spiel trotzdem ganz im Bild, Vollansicht per Knopf | AK-6 |
+| PS-7 | Normal | Hochformat: jedes Spiel auf seiner Fläche öffnen und schließen | AK-7 |
 
 ## Gegenproben
-`python3 werkstatt/tests/gegenproben_raum.py`: Zurück im Spiel führt zur Startseite, Leiste schließt nicht, falsche Spiel-Adresse, fehlendes Spiel an der Konsole, Karte auf der Startseite falsch verlinkt, Spiel liegt nicht auf dem Fernseher; alle sechs machen `raum_test.js` rot (27.11.2026). Einzeln: `NUR=Fernseher python3 werkstatt/tests/gegenproben_raum.py`. Fremde Server und Zurück-Link deckt `seite_pruefen.py --gegenproben` ab.
+`python3 werkstatt/tests/gegenproben_raum.py`: Zurück im Spiel führt zur Startseite, Leiste schließt nicht, falsche Spiel-Adresse, fehlendes Spiel an der Konsole, Karte auf der Startseite falsch verlinkt, Spiel liegt nicht auf dem Fernseher, Esstisch ohne Spielfläche; alle sieben machen `raum_test.js` rot (27.11.2026). Einzeln: `NUR=Fernseher python3 werkstatt/tests/gegenproben_raum.py`. Fremde Server und Zurück-Link deckt `seite_pruefen.py --gegenproben` ab.
 
 ## Technisches Design
 - Schnittstellen: keine neuen; der Raum lädt Spiele per `<iframe>` von derselben Seite und hängt sich an deren Zurück-Link (`a.ng-zurueck`). Lädt das Fenster trotzdem die Startseite, schließt der Raum es.
@@ -76,6 +78,7 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | U-4 | Zurück-Link im Spiel führt in den Raum |
 | U-5 | Zurück-Link führt zur Startseite |
 | U-6 | Spiel liegt auf dem Fernseher, ganz im Bild unter der Leiste |
+| U-6 | zeigt das Spiel auf seiner Fläche, ganz im Bild |
 
 ## Dokumentation
 - Aktualisiert: werkstatt/specs/S-W29-spieleraum.md
