@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Baut kalorien/index.html aus dem Bau des Kalorien-Trackers (S-W29): vollständiges Gerüst, ohne Google-Schriften und
+"""Baut kalorien/index.html aus dem Bau des Kalorien-Trackers (S-W30): vollständiges Gerüst, ohne Google-Schriften und
 Artifact-Hinweis, Symbol, Manifest, Zurück-Link und Hinweis, dass Foto-Erkennung und Tipps nur in der Claude-App gehen.
 Aufruf: python3 werkstatt/bau_kalorien.py <dist/kalorien-tracker.html>"""
 import re, sys

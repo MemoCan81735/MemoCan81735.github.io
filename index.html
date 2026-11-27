@@ -12,7 +12,7 @@
 <style>
   :root {
     --bg: #0f1420; --karte: #1a2233; --rand: #2a3550; --text: #eef2f8; --leise: #9aa7bd;
-    --renn: #ffb020; --brett: #4fc3a1; --strategie: #b78cff; --malen: #e8869f; --basteln: #6fb7e8; --alltag: #8fd3ab;
+    --renn: #ffb020; --brett: #4fc3a1; --strategie: #b78cff; --malen: #e8869f; --basteln: #6fb7e8; --raum: #ffb567; --alltag: #8fd3ab;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
@@ -23,10 +23,10 @@
   nav { display: flex; gap: 8px; margin: 22px 0 8px; flex-wrap: wrap; }
   nav a { text-decoration: none; color: var(--text); border: 1px solid var(--rand);
     padding: 7px 14px; border-radius: 999px; font-size: 14px; }
-  nav a.renn { border-color: var(--renn); } nav a.brett { border-color: var(--brett); } nav a.strategie { border-color: var(--strategie); } nav a.malen { border-color: var(--malen); } nav a.basteln { border-color: var(--basteln); } nav a.alltag { border-color: var(--alltag); }
+  nav a.renn { border-color: var(--renn); } nav a.brett { border-color: var(--brett); } nav a.strategie { border-color: var(--strategie); } nav a.malen { border-color: var(--malen); } nav a.basteln { border-color: var(--basteln); } nav a.raum { border-color: var(--raum); } nav a.alltag { border-color: var(--alltag); }
   h2 { margin: 30px 0 12px; font-size: 20px; display: flex; align-items: center; gap: 10px; }
   h2::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--farbe); }
-  section { --farbe: var(--renn); } section.brett { --farbe: var(--brett); } section.strategie { --farbe: var(--strategie); } section.malen { --farbe: var(--malen); } section.basteln { --farbe: var(--basteln); } section.alltag { --farbe: var(--alltag); }
+  section { --farbe: var(--renn); } section.brett { --farbe: var(--brett); } section.strategie { --farbe: var(--strategie); } section.malen { --farbe: var(--malen); } section.basteln { --farbe: var(--basteln); } section.raum { --farbe: var(--raum); } section.alltag { --farbe: var(--alltag); }
   .raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
   a.karte { display: block; text-decoration: none; color: inherit; background: var(--karte);
     border: 1px solid var(--rand); border-radius: 14px; overflow: hidden; transition: transform .15s, border-color .15s; }
@@ -47,6 +47,7 @@
     <p>Direkt im Browser spielen, am Handy oder am Rechner. Keine Anmeldung, kein Download.</p>
   </header>
   <nav>
+    <a class="raum" href="#spieleraum">Spieleraum</a>
     <a class="renn" href="#rennspiele">Rennspiele</a>
     <a class="brett" href="#brettspiele">Brettspiele</a>
     <a class="strategie" href="#strategie">Strategie</a>
@@ -54,6 +55,20 @@
     <a class="basteln" href="#basteln">Basteln</a>
     <a class="alltag" href="#alltag">Alltag</a>
   </nav>
+
+  <section id="spieleraum" class="raum">
+    <h2>Spieleraum</h2>
+    <div class="raster">
+      <a class="karte" href="raum/">
+        <img src="bilder/raum.jpg" alt="Wohnzimmer im Abendlicht mit Sofa, Fernseher, Staffelei und Esstisch mit Schachbrett" loading="lazy">
+        <div class="inhalt">
+          <h3>Spieleraum</h3>
+          <p>Ein Wohnzimmer zum Herumlaufen: Rennspiele an der Konsole, Brettspiele am Esstisch, Malen an der Staffelei. Hingehen und loslegen.</p>
+          <span class="knopf">Eintreten</span>
+        </div>
+      </a>
+    </div>
+  </section>
 
   <section id="rennspiele">
     <h2>Rennspiele</h2>

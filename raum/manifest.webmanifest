@@ -1,0 +1,13 @@
+{
+ "name": "Spieleraum",
+ "short_name": "Spieleraum",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#15110e",
+ "theme_color": "#15110e",
+ "icons": [
+  {"src": "../bilder/symbole/raum-192.png", "sizes": "192x192", "type": "image/png"},
+  {"src": "../bilder/symbole/raum-512.png", "sizes": "512x512", "type": "image/png"}
+ ]
+}
