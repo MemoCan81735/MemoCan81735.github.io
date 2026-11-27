@@ -79,6 +79,13 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
 .ng-zurueck { position: fixed; left: max(8px, env(safe-area-inset-left, 0px)); top: calc(8px + env(safe-area-inset-top, 0px)); z-index: 4;
   display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px; padding: 0 12px;
   color: var(--text); background: var(--karte); border: 1px solid var(--linie); border-radius: 999px; text-decoration: none; font-size: 0.9rem; gap: 6px; }
+/* Spiel auf dem Fernseher im Raum: Raum bleibt sichtbar, das Spiel liegt genau auf der Bildfläche */
+#spielfenster.tv { background: transparent; display: block; }
+#spielfenster.tv .leiste { position: absolute; left: 0; right: 0; top: 0; background: rgba(29, 21, 15, 0.82); }
+#spielfenster.tv #spielrahmen { position: absolute; flex: none; border-radius: 2px; }
+#spielfenster.tv.unterwegs #spielrahmen { visibility: hidden; }
+#spielgross[hidden] { display: none; }
+body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display: none; }
 @media (max-height: 480px) { .karte p:first-of-type { display: none; } #tafel ul { max-height: 52vh; } }
 @media (prefers-reduced-motion: reduce) { .marke { transition: none; } }
 </style>
@@ -104,7 +111,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
   <ul id="tafelliste"></ul>
 </section>
 <div id="spielfenster" hidden role="dialog" aria-modal="true" aria-labelledby="spielname">
-  <div class="leiste"><button id="spielzu">← Zurück in den Raum</button><span id="spielname"></span></div>
+  <div class="leiste"><button id="spielzu">← Zurück in den Raum</button><button id="spielgross" hidden>Groß spielen</button><span id="spielname"></span></div>
   <iframe id="spielrahmen" title="Spiel" allow="fullscreen; autoplay; gamepad"></iframe>
 </div>
 
@@ -389,6 +396,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
   station({
     id: 'konsole', name: 'Konsole', text: 'Rennspiele am Fernseher',
     anker: welt(1.45, 1.0, 0.3), stand: welt(0.1, AUGE_START, 0.3),
+    // Bildfläche des Fernsehers (Scheibe vorne bei x 1.4375, blickt in den Wohnbereich)
+    fernseher: { mitte: welt(1.4375, 1.2, 0.3), breite: 1.04, hoehe: 0.58 },
     spiele: [
       { name: 'Driftpokal', url: '../driftpokal/', text: 'Kart-Cup mit 14 Strecken, Geist und Garage.' },
       { name: 'Driftpokal v2', url: '../driftpokal-v2/', text: 'Neues Rennen mit sechs Karts.' },
@@ -553,7 +562,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
     kamera.fov = w < h ? 75 : 60;
     kamera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', groesse);
+  window.addEventListener('resize', () => { groesse(); if (tv && fenster.classList.contains('tv')) vorDenFernseher(true); });
   groesse();
 
   const knopfAbend = document.getElementById('abend');
@@ -670,18 +679,78 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
   const fenster = document.getElementById('spielfenster');
   const rahmen = document.getElementById('spielrahmen');
   let pausiert = false, letzterKnopf = null;
+  const knopfGross = document.getElementById('spielgross');
+  let tv = null; // { s, wartet } solange ein Spiel auf dem Fernseher läuft
   function oeffneSpiel(sp) {
     letzterKnopf = document.activeElement;
     document.getElementById('spielname').textContent = sp.name;
     rahmen.title = sp.name;
     rahmen.src = sp.url;
-    fenster.hidden = false; pausiert = true; tasten.clear();
+    fenster.hidden = false; tasten.clear();
+    if (aktiv && aktiv.fernseher) {
+      tv = { s: aktiv, wartet: true };
+      fenster.classList.add('tv', 'unterwegs');
+      document.body.classList.add('tvmodus');
+      tafel.hidden = true;
+      knopfGross.hidden = false; knopfGross.textContent = 'Groß spielen';
+      vorDenFernseher(false);
+    } else pausiert = true;
     document.getElementById('spielzu').focus();
   }
+  // Kamera gerade vor die Bildfläche stellen, so dass sie unter der Leiste ganz ins Bild passt
+  function vorDenFernseher(sofort) {
+    const f = tv.s.fernseher;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const L = fenster.querySelector('.leiste').offsetHeight || 56;
+    const t = Math.tan(kamera.fov * DEG / 2);
+    const freiH = Math.max(80, (H - 2 * (L + 10)) * 0.84);
+    const d = Math.max(f.hoehe / 2 / t * H / freiH, f.breite / 2 / (t * kamera.aspect * (W < H ? 0.94 : 0.8)));
+    const stand = f.mitte.clone().add(new THREE.Vector3(-d, 0, 0));
+    stand.x = Math.max(-grenzeX, stand.x);
+    if (sofort) {
+      rundgangStarten(); fahrt = null;
+      kamera.position.copy(stand); yaw = winkel(1, 0); pitch = 0; blick();
+    } else {
+      fahrt = null;
+      schaueZu(f.mitte, stand);
+    }
+    tv.wartet = true; pausiert = false;
+    fenster.classList.add('unterwegs');
+  }
+  // Rahmen genau auf die Bildfläche legen (Kamera blickt gerade drauf, also ein Rechteck)
+  function rahmenAufBild() {
+    const f = tv.s.fernseher;
+    kamera.updateMatrixWorld();
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const dz of [-1, 1]) for (const dy of [-1, 1]) {
+      const v = f.mitte.clone().add(new THREE.Vector3(0, dy * f.hoehe / 2, dz * f.breite / 2)).project(kamera);
+      const px = (v.x + 1) / 2 * W, py = (1 - v.y) / 2 * H;
+      x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+    }
+    Object.assign(rahmen.style, { left: x0.toFixed(1) + 'px', top: y0.toFixed(1) + 'px', width: (x1 - x0).toFixed(1) + 'px', height: (y1 - y0).toFixed(1) + 'px' });
+  }
+  function tvStil(aus) {
+    ['left', 'top', 'width', 'height'].forEach(k => { rahmen.style[k] = ''; });
+    fenster.classList.toggle('tv', !aus);
+  }
+  knopfGross.addEventListener('click', () => {
+    if (!tv) return;
+    if (fenster.classList.contains('tv')) { tvStil(true); knopfGross.textContent = 'Auf dem Fernseher'; }
+    else { fenster.classList.add('tv'); knopfGross.textContent = 'Groß spielen'; vorDenFernseher(true); }
+    try { rahmen.contentWindow.focus(); } catch (e) { /* egal */ }
+  });
   function schliesseSpiel() {
     if (fenster.hidden) return;
     fenster.hidden = true; pausiert = false;
     rahmen.src = 'about:blank';
+    if (tv) {
+      const s = tv.s; tv = null;
+      tvStil(true); fenster.classList.remove('unterwegs');
+      document.body.classList.remove('tvmodus');
+      knopfGross.hidden = true;
+      if (aktiv === s) { tafel.hidden = false; karte.hidden = true; }
+    }
     uhr.getDelta();
     if (letzterKnopf && letzterKnopf.focus) letzterKnopf.focus();
   }
@@ -843,6 +912,14 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
     leuchten(zeit || 0);
     schilder();
     if (composer) composer.render(); else renderer.render(scene, kamera);
+    // Spiel auf dem Fernseher: sobald die Kamera steht, Rahmen auflegen und den Raum anhalten
+    if (tv && tv.wartet && !fahrt && fenster.classList.contains('tv')) {
+      tv.wartet = false;
+      rahmenAufBild();
+      fenster.classList.remove('unterwegs');
+      pausiert = true;
+      try { rahmen.contentWindow.focus(); } catch (e) { /* egal */ }
+    }
   }
   bild();
 })();

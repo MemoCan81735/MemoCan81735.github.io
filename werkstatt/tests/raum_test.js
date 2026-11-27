@@ -62,6 +62,18 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 1, 'Inselmodell': 1, 'Staffelei': 
       ok('raum_taste: Escape schließt das Spielfenster', await p.evaluate(() => document.getElementById('spielfenster').hidden));
       await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       ok('raum_taste: Escape schließt die Tafel', await p.evaluate(() => document.getElementById('tafel').hidden && !document.getElementById('karte').hidden));
+      // AK-6: an der Konsole läuft das Spiel auf dem Fernseher im Raum, "Groß spielen" wechselt zur Vollansicht
+      await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Konsole').click());
+      await p.waitForTimeout(300);
+      await p.click('#tafelliste .spielen');
+      let tv = null; try { await p.waitForFunction(() => { const f = document.getElementById('spielfenster'); return f.classList.contains('tv') && !f.classList.contains('unterwegs'); }, null, { timeout: 15000 }); tv = await p.evaluate(() => { const r = document.getElementById('spielrahmen').getBoundingClientRect(), l = document.querySelector('.leiste').getBoundingClientRect(); return { x: r.left, y: r.top, b: r.width, h: r.height, unter: l.bottom, vw: innerWidth, vh: innerHeight }; }); } catch (e) { /* nicht angekommen */ }
+      ok('raum_fernseher: Spiel liegt auf dem Fernseher, ganz im Bild unter der Leiste', !!tv && tv.x >= 0 && tv.x + tv.b <= tv.vw + 1 && tv.y >= tv.unter && tv.y + tv.h <= tv.vh && tv.b < tv.vw && tv.b > 200 && Math.abs(tv.b / tv.h - 1.04 / 0.58) < 0.1, JSON.stringify(tv));
+      await p.click('#spielgross'); await p.waitForTimeout(300);
+      const gross = await p.evaluate(() => { const r = document.getElementById('spielrahmen').getBoundingClientRect(); return { tv: document.getElementById('spielfenster').classList.contains('tv'), b: r.width, vw: innerWidth }; });
+      ok('raum_fernseher: "Groß spielen" zeigt das Spiel über die ganze Breite', !gross.tv && Math.abs(gross.b - gross.vw) < 2, JSON.stringify(gross));
+      await p.click('#spielzu'); await p.waitForTimeout(300);
+      ok('raum_fernseher: Zurück schließt das Spiel, Tafel der Konsole wieder da', await p.evaluate(() => document.getElementById('spielfenster').hidden && !document.getElementById('tafel').hidden && !document.body.classList.contains('tvmodus')));
+      await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       await p.screenshot({ path: process.env.BILD || '/tmp/raum-seite.png' });
       await p.click('a.ng-zurueck'); await p.waitForTimeout(500);
       ok('raum_zurueck: Zurück-Link führt zur Startseite', new URL(p.url()).pathname === '/');
