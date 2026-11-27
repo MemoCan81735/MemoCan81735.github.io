@@ -434,18 +434,26 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
     });
   });
 
-  // 3. Inselmodell im Regal: Neon Ada
+  // 3. Inselmodell auf einem Sockel in der Raummitte: Neon Ada (Wasser oben auf 0.82 m)
+  const iX = 0, iY = 0.82, iZ = -1.1;
   station({
-    id: 'insel', name: 'Inselmodell', text: 'Strategie im Regal',
-    anker: welt(rx, 0.72, rz + 0.5), stand: welt(rx - 1.25, AUGE_START - 0.1, rz + 0.5),
+    id: 'insel', name: 'Inselmodell', text: 'Strategie in der Raummitte',
+    anker: welt(iX, iY + 0.1, iZ), stand: welt(iX + 0.5, AUGE_START - 0.05, iZ + 1.75),
     spiele: [{ name: 'Neon Ada', url: '../neon-ada/', text: 'Götterspiel: Land formen, Pixelinge lenken, 13 Inseln.' }]
   }, () => {
-    zyl([rx, 0.575, rz + 0.5], 0.42, 0.04, mat('#1d5fa8', 0.8, 0, '#123a7a', 0.6));
+    const stein = mat('#e9e2d6', 0.55);
+    zyl([iX, 0.03, iZ], 0.36, 0.06, stein);
+    zyl([iX, 0.41, iZ], 0.22, 0.72, stein);
+    zyl([iX, 0.785, iZ], 0.5, 0.05, stein);
+    zyl([iX, iY, iZ], 0.46, 0.035, mat('#1d5fa8', 0.8, 0, '#123a7a', 0.6));
     const gruen = mat('#4caf50', 0.2), sand = mat('#e3c27a', 0.2), neon = mat('#ff4fd8', 0.3, 0, '#ff4fd8', 1.8);
-    [[0, 0, 0.12, sand], [0.06, 0.04, 0.16, gruen], [-0.06, 0.03, 0.1, gruen], [0.02, -0.07, 0.08, gruen], [-0.03, -0.02, 0.2, gruen]].forEach(([dx, dz, h, mm]) =>
-      box([rx + dx, 0.595 + h / 2, rz + 0.5 + dz], [0.07, h, 0.07], mm));
-    box([rx - 0.03, 0.82, rz + 0.48], [0.03, 0.03, 0.03], neon, false);
+    [[0, 0, 0.12, sand], [0.08, 0.05, 0.18, gruen], [-0.08, 0.04, 0.11, gruen], [0.03, -0.09, 0.09, gruen], [-0.04, -0.03, 0.22, gruen],
+     [0.2, -0.15, 0.06, sand], [-0.22, 0.14, 0.05, sand]].forEach(([dx, dz, h, mm]) =>
+      box([iX + dx, iY + 0.018 + h / 2, iZ + dz], [0.09, h, 0.09], mm));
+    box([iX - 0.04, iY + 0.27, iZ - 0.03], [0.035, 0.035, 0.035], neon, false);
   });
+  // Lücke im Regal, wo das Inselmodell stand: ein paar liegende Bücher
+  [0, 1, 2].forEach(i => box([rx, 0.57 + i * 0.035, rz + 0.5], [0.24, 0.03, 0.32 - i * 0.03], M.buecher[i % M.buecher.length]));
 
   // 4. Staffelei am zweiten Fenster: Ebru
   station({
