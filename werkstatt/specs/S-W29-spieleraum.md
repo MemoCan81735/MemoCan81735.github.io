@@ -15,7 +15,7 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 
 ## Umfang
 - Neuer Ordner `raum/` mit `index.html`, `three.min.js` und `three-zusatz.js` (three.js 0.147, lokal, MIT) und `manifest.webmanifest`; Symbole `bilder/symbole/raum-192.png` und `-512.png`, Kartenbild `bilder/raum.jpg` (400×300), neue Rubrik Spieleraum oben auf der Startseite.
-- Plätze und Spiele: Konsole am Fernseher (Driftpokal, Driftpokal v2, Luftdrift 3D, Kleine Rundfahrt, Ula Çarpsana!), Spieltisch (Brettspiele), Inselmodell im Regal (Neon Ada), Staffelei am Fenster (Ebru, Ebru klassisch), Perlenkästchen auf dem Couchtisch (Perlenwerkstatt).
+- Plätze und Spiele: Konsole am Fernseher (Driftpokal, Driftpokal v2, Luftdrift 3D, Kleine Rundfahrt, Ula Çarpsana!), Spieltisch am Couchtisch (Brettspiele), Inselmodell im Regal (Neon Ada), Staffelei am Fenster (Ebru, Ebru klassisch), Perlenkästchen auf dem Esstisch (Perlenwerkstatt). Am 27.11.2026 auf Wunsch des Betreibers getauscht (vorher Brettspiele am Esstisch, Perlen am Couchtisch).
 - Nicht drin: Spiele, die nur als Android-Datei oder privat vorliegen (Driftpokal-App, Luftrennen-App, Tanzschule, Kalorien-Tracker); sie liegen nicht auf der Seite.
 - Laufen wie bisher in der Vorschau: Doppelklick oder Doppeltippen geht hin, Ziehen sieht sich um, W A S D und Pfeile laufen, "Überblick" zurück zur Ecke, Abendsonne oder nur Lampen.
 - Escape schließt Spielfenster oder Tafel, solange der Fokus im Raum liegt; im Spiel gehört Escape dem Spiel.

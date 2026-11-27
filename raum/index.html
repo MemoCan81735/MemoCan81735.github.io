@@ -239,7 +239,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
   // Couchtisch
   weich([-1.2, 0.42, -0.2], [0.6, 0.05, 1.1], M.holz, 0.02);
   for (const dz of [-0.47, 0.47]) for (const dx of [-0.22, 0.22]) zyl([-1.2 + dx, 0.2, -0.2 + dz], 0.035, 0.4, M.holz);
-  zyl([-1.38, 0.49, -0.5], 0.08, 0.09, M.kissen2);
+  zyl([-1.4, 0.49, -0.65], 0.08, 0.09, M.kissen2);
   dreh(box([-1.25, 0.46, 0.05], [0.22, 0.03, 0.3], M.buecher[0]), 0, 15, 0);
   // Stehlampe
   zyl([-2.55, 0.015, 1.75], 0.3, 0.03, M.metall);
@@ -404,10 +404,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
     farben.forEach((f, i) => box([lx, 0.585, -0.35 + i * 0.065], [0.17, 0.24, 0.025], mat(f, 0.45)));
   });
 
-  // 2. Esstisch: Brettspiele
+  // 2. Couchtisch: Brettspiele (Platte oben auf 0.445 m)
+  const bX = -2.65, bY = 0.445, bZ = 0.1;
   station({
-    id: 'spieltisch', name: 'Spieltisch', text: 'Brettspiele am Esstisch',
-    anker: welt(eX, 0.8, eZ - 0.3), stand: welt(eX, AUGE_START, eZ - 1.75),
+    id: 'spieltisch', name: 'Spieltisch', text: 'Brettspiele am Couchtisch',
+    anker: welt(bX, bY + 0.05, bZ), stand: welt(-1.3, AUGE_START - 0.1, -0.9),
     spiele: [{ name: 'Brettspiele', url: '../brettspiele/', text: 'Tic Tac Toe, Vier gewinnt, Reversi, Mühle, Schach und Mangala.' }]
   }, () => {
     const brett = leinwand(256, 256, (g, b) => {
@@ -416,11 +417,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
       for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { g.fillStyle = (x + y) % 2 ? '#3d2a1c' : '#ecd9b6'; g.fillRect(16 + x * f, 16 + y * f, f, f); }
     });
     const m = new THREE.MeshStandardMaterial({ map: brett, roughness: 0.5 });
-    weich([eX, 0.79, eZ - 0.3], [0.44, 0.03, 0.44], m, 0.01);
+    weich([bX, bY + 0.015, bZ], [0.38, 0.03, 0.38], m, 0.01);
     const hell = mat('#f3ecdf', 0.5), dunkel = mat('#2b211b', 0.5);
-    [[-0.13, -0.15, hell], [0.03, -0.15, hell], [-0.08, 0.14, dunkel], [0.13, 0.09, dunkel]].forEach(([dx, dz, mm]) => {
-      zyl([eX + dx, 0.835, eZ - 0.3 + dz], 0.035, 0.06, mm);
-      kugel([eX + dx, 0.875, eZ - 0.3 + dz], 0.035, mm);
+    [[-0.11, -0.13, hell], [0.03, -0.13, hell], [-0.07, 0.12, dunkel], [0.11, 0.08, dunkel]].forEach(([dx, dz, mm]) => {
+      zyl([bX + dx, bY + 0.06, bZ + dz], 0.032, 0.06, mm);
+      kugel([bX + dx, bY + 0.1, bZ + dz], 0.032, mm);
     });
   });
 
@@ -470,17 +471,18 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
     dreh(box([1.95, 1.2, 2.31], [0.66, 0.5, 0.025], bild), -6, 0, 0);
   });
 
-  // 5. Perlenkästchen auf dem Couchtisch: Perlenwerkstatt
+  // 5. Perlenkästchen auf dem Esstisch: Perlenwerkstatt (Platte oben auf 0.775 m)
+  const pX = eX, pY = 0.775, pZ = eZ - 0.3;
   station({
-    id: 'perlen', name: 'Perlenkästchen', text: 'Basteln am Couchtisch',
-    anker: welt(-2.55, 0.5, -0.12), stand: welt(-1.3, AUGE_START - 0.1, -1.0),
+    id: 'perlen', name: 'Perlenkästchen', text: 'Basteln am Esstisch',
+    anker: welt(pX, pY + 0.03, pZ), stand: welt(eX, AUGE_START, eZ - 1.75),
     spiele: [{ name: 'Perlenwerkstatt', url: '../perlen/', text: 'Perlenarmbänder planen, mit Vorschau und Einkaufsliste.' }]
   }, () => {
-    weich([-2.55, 0.465, -0.12], [0.24, 0.035, 0.18], mat('#f1e6d4', 0.4), 0.01);
+    weich([pX, pY + 0.02, pZ], [0.24, 0.035, 0.18], mat('#f1e6d4', 0.4), 0.01);
     const farben = ['#1d4fa0', '#d4af37', '#ffffff', '#1d4fa0', '#e8869f', '#3fae6a'];
     for (let i = 0; i < 18; i++) {
-      const fx = -2.55 - 0.09 + (i % 6) * 0.036, fz = -0.12 - 0.05 + Math.floor(i / 6) * 0.05;
-      kugel([fx, 0.492, fz], 0.022, mat(farben[(i * 5) % farben.length], 0.7));
+      const fx = pX - 0.09 + (i % 6) * 0.036, fz = pZ - 0.05 + Math.floor(i / 6) * 0.05;
+      kugel([fx, pY + 0.047, fz], 0.022, mat(farben[(i * 5) % farben.length], 0.7));
     }
   });
 
