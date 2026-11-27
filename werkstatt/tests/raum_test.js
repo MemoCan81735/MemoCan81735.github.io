@@ -6,7 +6,7 @@ const typen = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/p
 const srv = http.createServer((q, r) => { let p = path.join(wurzel, decodeURIComponent(q.url.split('?')[0])); if (p.endsWith('/')) p += 'index.html';
   fs.readFile(p, (e, d) => { if (e) { r.writeHead(404); r.end(); } else { r.writeHead(200, { 'content-type': typen[path.extname(p)] || 'text/plain' }); r.end(d); } }); });
 let fehler = 0; const ok = (n, b, m = '') => { console.log((b ? 'OK     ' : 'FEHLER ') + n + (b ? '' : ' ' + m)); if (!b) fehler++; };
-const PLAETZE = { 'Konsole': 5, 'Spieltisch': 1, 'Inselmodell': 1, 'Staffelei': 2, 'Perlenkästchen': 1 };
+const PLAETZE = { 'Konsole': 5, 'Spieltisch': 2, 'Inselmodell': 1, 'Staffelei': 2, 'Perlenkästchen': 1 };
 (async () => {
   await new Promise(r => srv.listen(0, r)); const port = srv.address().port;
   const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
@@ -41,7 +41,7 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 1, 'Inselmodell': 1, 'Staffelei': 
       // U-3: Spiel öffnet im Raum, U-4: zurück über die Leiste
       await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Spieltisch').click());
       await p.waitForTimeout(300);
-      await p.click('#tafelliste .spielen');
+      await p.click('[aria-label="Brettspiele spielen"]');
       let geladen = false; try { await p.waitForFunction(() => { const f = document.getElementById('spielrahmen'); try { return !document.getElementById('spielfenster').hidden && f.contentWindow.location.pathname === '/brettspiele/' && f.contentDocument.readyState === 'complete'; } catch (e) { return false; } }, null, { timeout: 8000 }); geladen = true; } catch (e) { /* nicht geladen */ }
       ok('raum_spiel: Brettspiele öffnen im Spielfenster', geladen);
       const leiste = await p.locator('#spielzu').boundingBox();
@@ -49,7 +49,7 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 1, 'Inselmodell': 1, 'Staffelei': 
       await p.click('#spielzu'); await p.waitForTimeout(300);
       ok('raum_spiel: Leiste schließt das Spiel, Raum bleibt', await p.evaluate(() => document.getElementById('spielfenster').hidden && document.getElementById('spielrahmen').getAttribute('src') === 'about:blank') && new URL(p.url()).pathname === '/raum/');
       // U-4: Zurück-Link des Spiels führt zurück in den Raum, nicht zur Startseite
-      await p.click('#tafelliste .spielen');
+      await p.click('[aria-label="Brettspiele spielen"]');
       try { await p.waitForFunction(() => { try { return document.getElementById('spielrahmen').contentDocument.querySelector('a.ng-zurueck') && document.getElementById('spielrahmen').contentDocument.readyState === 'complete'; } catch (e) { return false; } }, null, { timeout: 8000 }); } catch (e) { /* fehlt */ }
       await p.evaluate(() => document.getElementById('spielrahmen').contentDocument.querySelector('a.ng-zurueck').click());
       await p.waitForTimeout(800);
@@ -57,7 +57,7 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 1, 'Inselmodell': 1, 'Staffelei': 
       ok('raum_spiel_zurueck: Zurück-Link im Spiel führt in den Raum', nach.zu && nach.innen !== '/' && new URL(p.url()).pathname === '/raum/', JSON.stringify(nach));
       // Escape schließt Spiel und Tafel
       // Escape gehört im Spiel dem Spiel; auf der Leiste des Raums schließt es das Spielfenster
-      await p.click('#tafelliste .spielen'); await p.waitForTimeout(1500);
+      await p.click('[aria-label="Brettspiele spielen"]'); await p.waitForTimeout(1500);
       await p.focus('#spielzu'); await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       ok('raum_taste: Escape schließt das Spielfenster', await p.evaluate(() => document.getElementById('spielfenster').hidden));
       await p.keyboard.press('Escape'); await p.waitForTimeout(200);
@@ -78,12 +78,26 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 1, 'Inselmodell': 1, 'Staffelei': 
       for (const name of ['Spieltisch', 'Inselmodell', 'Staffelei', 'Perlenkästchen']) {
         await p.evaluate(n => [...document.querySelectorAll('.marke')].find(m => m.textContent === n).click(), name);
         await p.waitForTimeout(300);
-        await p.click('#tafelliste .spielen');
+        await p.click(name === 'Spieltisch' ? '[aria-label="Brettspiele spielen"]' : '#tafelliste .spielen');
         let r = null; try { await p.waitForFunction(() => { const f = document.getElementById('spielfenster'); return f.classList.contains('tv') && !f.classList.contains('unterwegs'); }, null, { timeout: 15000 }); r = await p.evaluate(() => { const b = document.getElementById('spielrahmen').getBoundingClientRect(), l = document.querySelector('.leiste').getBoundingClientRect(); return { x: Math.round(b.left), y: Math.round(b.top), b: Math.round(b.width), h: Math.round(b.height), unter: l.bottom, vw: innerWidth, vh: innerHeight }; }); } catch (e) { /* nicht angekommen */ }
         ok(`raum_flaeche: ${name} zeigt das Spiel auf seiner Fläche, ganz im Bild`, !!r && r.x >= 0 && r.x + r.b <= r.vw + 1 && r.y >= r.unter && r.y + r.h <= r.vh && r.b > 200 && r.h > 120, JSON.stringify(r));
         await p.click('#spielzu'); await p.waitForTimeout(300);
         await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       }
+      // AK-8: Schach in 3D auf dem Couchtisch: Bauer e2-e4 antippen, der Computer antwortet, Figuren stehen richtig
+      await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Spieltisch').click());
+      await p.waitForTimeout(300);
+      await p.click('[aria-label="Schach in 3D spielen"]'); await p.waitForTimeout(2500);
+      const tippe = async f => { const q = await p.evaluate(f => window.raumSchach.feldAufBild(f), f); await p.mouse.click(q.x, q.y); await p.waitForTimeout(400); };
+      await tippe('e2'); await tippe('e4');
+      let antwort = false; try { await p.waitForFunction(() => window.raumSchach.zuege().length === 2 && window.raumSchach.ruhig(), null, { timeout: 30000 }); antwort = true; } catch (e) { /* keine Antwort */ }
+      const st = await p.evaluate(() => ({ zuege: window.raumSchach.zuege(), e4: window.raumSchach.figurAuf('e4'), e2: window.raumSchach.figurAuf('e2'), text: document.getElementById('schachstatus').textContent }));
+      ok('raum_schach: Zug e2-e4 per Antippen, der Computer antwortet', antwort && st.zuege[0] === 'e4' && st.e4 === 'wp' && !st.e2 && st.text === 'Du bist dran (Weiß)', JSON.stringify(st));
+      const sl = await p.locator('#schachzu').boundingBox();
+      ok('raum_schach: Taste "Zurück in den Raum" mindestens 44 px', sl && sl.height >= 44 && sl.y >= 0, JSON.stringify(sl));
+      await p.click('#schachzu'); await p.waitForTimeout(300);
+      ok('raum_schach: Zurück bringt die Tafel des Spieltischs, Stellung bleibt stehen', await p.evaluate(() => !document.getElementById('tafel').hidden && document.getElementById('schachleiste').hidden && window.raumSchach.figurAuf('e4') === 'wp'));
+      await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       await p.screenshot({ path: process.env.BILD || '/tmp/raum-seite.png' });
       await p.click('a.ng-zurueck'); await p.waitForTimeout(500);
       ok('raum_zurueck: Zurück-Link führt zur Startseite', new URL(p.url()).pathname === '/');
