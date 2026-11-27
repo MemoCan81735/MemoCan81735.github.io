@@ -11,12 +11,16 @@ FEHLER = [
     ('Leiste schließt das Spiel nicht', 'raum/index.html', "document.getElementById('spielzu').addEventListener('click', schliesseSpiel);", '', 'raum_spiel'),
     ('Spiel-Adresse falsch', 'raum/index.html', "url: '../perlen/'", "url: '../perle/'", 'raum_adressen'),
     ('Ein Spiel fehlt an der Konsole', 'raum/index.html', "      { name: 'Ula Çarpsana!', url: '../ula/', text: 'Autoscooter-Crash im Feuerring.' }\n", '', 'raum_platz'),
+    ('Spiel liegt nicht auf dem Fernseher', 'raum/index.html', '      rahmenAufBild();\n', '', 'raum_fernseher'),
     ('Karte fehlt auf der Startseite', 'index.html', '<a class="karte" href="raum/">', '<a class="karte" href="raum/index.html">', 'raum_karte'),
 ]
 env = dict(os.environ)
 env.setdefault('NODE_PATH', subprocess.run(['npm', 'root', '-g'], capture_output=True, text=True).stdout.strip())
 fehler = 0
+nur = os.environ.get('NUR')
 for name, datei, alt, neu, test in FEHLER:
+    if nur and nur not in name:
+        continue
     with tempfile.TemporaryDirectory() as tmp:
         kopie = os.path.join(tmp, 's')
         shutil.copytree(WURZEL, kopie, ignore=shutil.ignore_patterns('.git'))
