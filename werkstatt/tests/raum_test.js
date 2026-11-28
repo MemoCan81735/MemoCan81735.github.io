@@ -6,7 +6,7 @@ const typen = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/p
 const srv = http.createServer((q, r) => { let p = path.join(wurzel, decodeURIComponent(q.url.split('?')[0])); if (p.endsWith('/')) p += 'index.html';
   fs.readFile(p, (e, d) => { if (e) { r.writeHead(404); r.end(); } else { r.writeHead(200, { 'content-type': typen[path.extname(p)] || 'text/plain' }); r.end(d); } }); });
 let fehler = 0; const ok = (n, b, m = '') => { console.log((b ? 'OK     ' : 'FEHLER ') + n + (b ? '' : ' ' + m)); if (!b) fehler++; };
-const PLAETZE = { 'Konsole': 5, 'Spieltisch': 5, 'Inselmodell': 1, 'Staffelei': 2, 'Perlenkästchen': 1 };
+const PLAETZE = { 'Konsole': 5, 'Spieltisch': 9, 'Inselmodell': 1, 'Staffelei': 2, 'Perlenkästchen': 1 };
 (async () => {
   await new Promise(r => srv.listen(0, r)); const port = srv.address().port;
   const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
@@ -108,6 +108,42 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 5, 'Inselmodell': 1, 'Staffelei': 
         let ant = false; try { await p.waitForFunction(() => window.raumTisch.ruhig() && window.raumTisch.zustand().dran === 0 && window.raumTisch.zustand().c.filter(x => x === 1).length >= 1, null, { timeout: 30000 }); ant = true; } catch (e) { /* keine Antwort */ }
         const zs = await p.evaluate(() => ({ ...window.raumTisch.zustand(), text: document.getElementById('schachstatus').textContent, steine: window.raumTisch.steine() }));
         ok(`raum_tischspiel: ${name}: eigener Stein liegt, der Computer antwortet`, ant && zs.c[erwartet] === 0 && zs.steine === zs.c.filter(x => x !== null).length && zs.text.startsWith('Du bist dran'), JSON.stringify({ c: zs.c.map(x => x === null ? '.' : x).join(''), text: zs.text }));
+        await p.click('#schachzu'); await p.waitForTimeout(300);
+        await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+      }
+      // AK-10: Dame, Mühle und Mangala in 3D: ein Zug per Antippen (Dame: Stein wählen, dann Ziel), der Computer antwortet
+      const tippeT = async f => { const q = await p.evaluate(i => window.raumTisch.feldAufBild(i), f); await p.mouse.click(q.x, q.y); await p.waitForTimeout(400); };
+      for (const [name, felder, pruefe] of [['Dame in 3D', [44, 36], c => c[36] === 0 && c[44] === null], ['Mühle in 3D', [0], c => c[0] === 0 && c.filter(x => x === 1).length === 1], ['Mangala in 3D', [5], c => c[5] === 0 && c[6] >= 1]]) {
+        await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Spieltisch').click());
+        await p.waitForTimeout(300);
+        await p.click(`[aria-label="${name} spielen"]`); await p.waitForTimeout(2500);
+        for (const f of felder) await tippeT(f);
+        let ant = false; try { await p.waitForFunction(() => window.raumTisch.ruhig() && window.raumTisch.zustand().dran === 0 && window.raumTisch.zahl() >= 2, null, { timeout: 60000 }); ant = true; } catch (e) { /* keine Antwort */ }
+        const zs = await p.evaluate(() => ({ ...window.raumTisch.zustand(), text: document.getElementById('schachstatus').textContent }));
+        ok(`raum_tischspiel: ${name}: eigener Zug steht, der Computer antwortet`, ant && pruefe(zs.c) && zs.text.startsWith('Du bist dran'), JSON.stringify({ c: zs.c.map(x => x === null ? '.' : x).join(','), text: zs.text }));
+        await p.click('#schachzu'); await p.waitForTimeout(300);
+        await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+      }
+      // AK-11: Tavla in 3D: Tippen würfelt, Steine ziehen per Antippen, der Computer würfelt und zieht selbst
+      {
+        await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Spieltisch').click());
+        await p.waitForTimeout(300);
+        await p.click('[aria-label="Tavla in 3D spielen"]'); await p.waitForTimeout(2500);
+        await tippeT(12);
+        await p.waitForFunction(() => window.raumTisch.ruhig(), null, { timeout: 10000 });
+        const gewuerfelt = await p.evaluate(() => document.getElementById('schachstatus').textContent);
+        for (let k = 0; k < 4; k++) {
+          await p.waitForFunction(() => window.raumTisch.ruhig() || window.raumTisch.zustand().dran === 1, null, { timeout: 10000 });
+          const zg = await p.evaluate(() => window.raumTisch.zustand().dran === 0 && window.raumTisch.zuege());
+          if (!zg || !zg.length || zg[0].id === 'wurf') break;
+          await tippeT(zg[0].von); await tippeT(zg[0].id);
+          await p.waitForFunction(() => window.raumTisch.ruhig() || window.raumTisch.zustand().dran === 1, null, { timeout: 10000 });
+        }
+        let ant = false; try { await p.waitForFunction(() => window.raumTisch.ruhig() && window.raumTisch.zustand().dran === 0 && window.raumTisch.zahl() >= 3, null, { timeout: 60000 }); ant = true; } catch (e) { /* keine Antwort */ }
+        const zs = await p.evaluate(() => ({ ...window.raumTisch.zustand(), text: document.getElementById('schachstatus').textContent, steine: window.raumTisch.steine() }));
+        const weiss = zs.c.slice(0, 24).filter(x => x > 0).reduce((a, b) => a + b, 0) + zs.c[24] + zs.c[26], rot = -zs.c.slice(0, 24).filter(x => x < 0).reduce((a, b) => a + b, 0) + zs.c[25] + zs.c[27];
+        ok('raum_tavla: Tippen würfelt, dein Zug und der des Computers stehen, 15 : 15 Steine', ant && /Würfel \d/.test(gewuerfelt) && zs.text.startsWith('Du bist dran') && zs.text.includes('Tippen zum Würfeln') && weiss === 15 && rot === 15 && zs.steine === 32,
+          JSON.stringify({ gewuerfelt, text: zs.text, c: zs.c.join(','), steine: zs.steine }));
         await p.click('#schachzu'); await p.waitForTimeout(300);
         await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       }
