@@ -439,12 +439,15 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     // ganze Platte des Couchtischs, schräg von vorn
     flaeche: { ecken: [[-2.97, 0.448, -0.22], [-2.43, 0.448, -0.22], [-2.43, 0.448, 0.82], [-2.97, 0.448, 0.82]], schraeg: 58, von: [1, 0] },
     spiele: [
-      { name: 'Schach in 3D', schach: true, text: 'Echte Figuren auf dem Couchtisch, gegen den Computer oder zu zweit.' },
+      { name: 'Schach in 3D', tisch: 'schach', text: 'Echte Figuren auf dem Couchtisch, gegen den Computer oder zu zweit.' },
+      { name: 'Vier gewinnt in 3D', tisch: 'vier', text: 'Rahmen auf dem Tisch, die Steine fallen hinein.' },
+      { name: 'Tic Tac Toe in 3D', tisch: 'ttt', text: 'Kreuz und Kreis auf dem Holzbrett.' },
+      { name: 'Reversi in 3D', tisch: 'reversi', text: 'Steine setzen und umdrehen, Schwarz beginnt.' },
       { name: 'Brettspiele', url: '../brettspiele/', text: 'Tic Tac Toe, Vier gewinnt, Reversi, Mühle, Schach und Mangala.' }
     ]
   }, () => {
     // Brett aus 64 Feldern mit Rahmen; Feld a1 ist dunkel und liegt vorne links vom Sofa aus gesehen
-    weich([SCH.x, bY + 0.008, SCH.z], [SCH.f * 8 + 0.04, 0.016, SCH.f * 8 + 0.04], mat('#6b4226', 0.4), 0.006);
+    weich([SCH.x, bY + 0.008, SCH.z], [SCH.f * 8 + 0.04, 0.016, SCH.f * 8 + 0.04], mat('#6b4226', 0.4), 0.006).userData.schachBrett = true;
     const hellF = mat('#ecd9b6', 0.45), dunkelF = mat('#5a3b26', 0.45);
     for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
       const [x, z] = feldRaum(f, r);
@@ -597,7 +600,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     kamera.fov = w < h ? 75 : 60;
     kamera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', () => { groesse(); if (tv && fenster.classList.contains('tv')) vorDieFlaeche(true); if (schach.aktiv) schach.blick(true); });
+  window.addEventListener('resize', () => { groesse(); if (tv && fenster.classList.contains('tv')) vorDieFlaeche(true); if (tisch3d.aktiv) tisch3d.blick(true); });
   groesse();
 
   const knopfAbend = document.getElementById('abend');
@@ -718,7 +721,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   let tv = null; // { s, wartet } solange ein Spiel auf dem Fernseher läuft
   function oeffneSpiel(sp) {
     letzterKnopf = document.activeElement;
-    if (sp.schach) { schach.starten(); return; }
+    if (sp.tisch) { tisch3d.starten(sp.tisch); return; }
     document.getElementById('spielname').textContent = sp.name;
     rahmen.title = sp.name;
     rahmen.src = sp.url;
@@ -863,7 +866,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   });
   window.addEventListener('keydown', ev => {
     if (ev.key !== 'Escape') return;
-    if (schach.aktiv) schach.beenden(); else if (!fenster.hidden) schliesseSpiel(); else if (!tafel.hidden) schliesseTafel();
+    if (tisch3d.aktiv) tisch3d.beenden(); else if (!fenster.hidden) schliesseSpiel(); else if (!tafel.hidden) schliesseTafel();
   });
 
   // ---------- Schach in 3D auf dem Couchtisch ----------
@@ -874,7 +877,8 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     const knopfGegner = document.getElementById('schachgegner');
     const F = SCH.f, brettY = bY + 0.0195;
     const spiel = window.Chess ? new window.Chess() : null;
-    const ich = { aktiv: false, takt() {}, klick() {}, starten() {}, beenden() {}, blick() {} };
+    const ich = { aktiv: false, takt() {}, klick() {}, starten() {}, beenden() {}, blick() {}, zeigen() {} };
+    let sichtbar = true;
     if (!spiel) return ich;
     // Umrisse (Radius, Höhe) in Feldgrößen, gedreht zu Figuren
     const UMRISS = {
@@ -912,6 +916,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       }
       teile.forEach(t => { t.castShadow = true; t.receiveShadow = true; t.userData.figur = g; t.userData.leuchtBasis = m.emissive.clone(); g.add(t); tisch.meshes.push(t); stationVon.set(t, tisch); });
       g.userData = { feld, typ, farbe, mat: m };
+      if (!sichtbar) g.traverse(t => t.layers.set(1));
       g.position.copy(feldPos(feld));
       raum.add(g); figuren.set(feld, g);
       return g;
@@ -1056,6 +1061,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       document.body.classList.add('schachmodus');
       leiste.hidden = false; statusEl.hidden = false;
       tasten.clear(); ring.visible = false;
+      knopfGegner.textContent = gegner === 'computer' ? 'Gegner: Computer' : 'Gegner: zu zweit';
       ich.blick(false); zeigeStatus(); computerWennDran();
       document.getElementById('schachzu').focus();
     };
@@ -1068,20 +1074,26 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     };
     document.getElementById('schachzu').addEventListener('click', ich.beenden);
     knopfGegner.addEventListener('click', () => {
+      if (!ich.aktiv) return;
       gegner = gegner === 'computer' ? 'zwei' : 'computer';
       knopfGegner.textContent = gegner === 'computer' ? 'Gegner: Computer' : 'Gegner: zu zweit';
       markenWeg(); zeigeStatus(); computerWennDran();
     });
     document.getElementById('schachzurueck').addEventListener('click', () => {
-      if (anim.length || denkt) return;
+      if (!ich.aktiv || anim.length || denkt) return;
       spiel.undo();
       if (gegner === 'computer' && spiel.turn() === 'b') spiel.undo();
       markenWeg(); aufbauen(); zeigeStatus();
     });
     document.getElementById('schachneu').addEventListener('click', () => {
-      if (anim.length || denkt) return;
+      if (!ich.aktiv || anim.length || denkt) return;
       spiel.reset(); markenWeg(); aufbauen(); zeigeStatus();
     });
+    // Brett und Figuren weglegen, wenn ein anderes Spiel auf dem Tisch liegt (Ebene 1 wird nicht gezeichnet und nicht getroffen)
+    ich.zeigen = an => {
+      sichtbar = an;
+      tisch.meshes.filter(m => m.userData.feld || m.userData.schachBrett || m.userData.figur).forEach(m => m.layers.set(an ? 0 : 1));
+    };
     aufbauen();
     // Für die Prüfungen: wo ein Feld im Bild liegt, und der Spielstand
     window.raumSchach = {
@@ -1092,6 +1104,359 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     };
     return ich;
   })();
+
+  // ---------- Weitere Brettspiele in 3D auf dem Couchtisch ----------
+  // Je Spiel: Regeln als reine Funktionen auf einem Zustand (dran 0 = du, 1 = Computer oder zweiter Spieler),
+  // dazu Brett und Steine aus einfachen Körpern. Der Rahmen kümmert sich um Antippen, Bewegung, Computer und Zug zurück.
+  const tischspiele = (function () {
+    const tisch = stationen.find(s => s.id === 'spieltisch');
+    const leiste = document.getElementById('schachleiste'), statusEl = document.getElementById('schachstatus');
+    const knopfGegner = document.getElementById('schachgegner');
+    // Lage auf dem Tisch: u nach rechts, y nach oben, v vom Spieler weg; die Gruppe sitzt in der Brettmitte auf der Tischplatte
+    const lok = (u, y, v) => new THREE.Vector3(-v, y, u);
+    const ich = { aktiv: false, spiel: null };
+    let spiel = null, z = null, verlauf = [], gruppe = null, steine = new Map(), marken = [];
+    let anim = [], fertig = null, denkt = false, gegner = 'computer';
+    const zufall = a => a[Math.floor(Math.random() * a.length)];
+
+    // ---- Spiele ----
+    const SPIELE = {};
+
+    // Tic Tac Toe: 3 × 3, Kreuz (du) gegen Kreis
+    SPIELE.ttt = (function () {
+      const C = 0.11, LINIEN = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+      const holz = mat('#a87b45', 0.25), rille = mat('#4a2f18', 0.2), rot = mat('#b8261a', 0.35), blau = mat('#123a8c', 0.35);
+      const ende = c => { for (const [a, b, d] of LINIEN) if (c[a] !== null && c[a] === c[b] && c[a] === c[d]) return c[a]; return c.every(x => x !== null) ? 'remis' : null; };
+      return {
+        name: 'Tic Tac Toe', farben: ['Kreuz', 'Kreis'], tiefe: 9, winkel: 58, halb: { u: 0.19, v: 0.19, h: 0.04 }, ebene: 0.016,
+        start: () => ({ c: Array(9).fill(null), dran: 0, ende: false, sieger: null }),
+        zuege: s => s.ende ? [] : s.c.map((x, i) => x === null ? { id: i } : null).filter(Boolean),
+        ziehe(s, m) {
+          const c = s.c.slice(); c[m.id] = s.dran;
+          const e = ende(c);
+          return { s: { c, dran: 1 - s.dran, ende: e !== null, sieger: e === 'remis' ? null : e }, effekte: [{ art: 'fallen', id: m.id }] };
+        },
+        bewerte: () => 0,
+        feldAus: (u, y, v) => { const sp = Math.floor(u / C + 1.5), re = Math.floor(v / C + 1.5); return sp >= 0 && sp < 3 && re >= 0 && re < 3 ? re * 3 + sp : null; },
+        pos: i => lok((i % 3 - 1) * C, 0.016, (Math.floor(i / 3) - 1) * C),
+        steine: s => s.c.map((x, i) => x === null ? null : { id: i, farbe: x }).filter(Boolean),
+        brett(g, teil) {
+          teil(new THREE.Mesh(geoBox, holz), lok(0, 0.008, 0), [0.36, 0.016, 0.36]);
+          for (const k of [-0.5, 0.5]) {
+            teil(new THREE.Mesh(geoBox, rille), lok(k * C, 0.0165, 0), [0.006, 0.002, 0.32]);
+            teil(new THREE.Mesh(geoBox, rille), lok(0, 0.0165, k * C), [0.32, 0.002, 0.006]);
+          }
+        },
+        stein(farbe) {
+          const g = new THREE.Group();
+          if (farbe === 0) {
+            for (const w of [45, -45]) { const b = new THREE.Mesh(geoBox, rot); b.scale.set(0.085, 0.018, 0.02); b.position.y = 0.009; b.rotation.y = w * DEG; g.add(b); }
+          } else {
+            const t = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.009, 12, 32), blau); t.rotation.x = Math.PI / 2; t.position.y = 0.009; g.add(t);
+          }
+          return g;
+        }
+      };
+    })();
+
+    // Vier gewinnt: senkrechter Rahmen 7 × 6, Rot (du) gegen Gelb; die Steine fallen nach unten
+    SPIELE.vier = (function () {
+      const C = 0.05, SP = 7, RE = 6, UNTEN = 0.035;
+      const blau = mat('#123a8c', 0.25), rot = mat('#b8261a', 0.35), gelb = mat('#e0a800', 0.35);
+      const zelle = (r, c) => r * SP + c;
+      function sieger(c) {
+        for (let r = 0; r < RE; r++) for (let s = 0; s < SP; s++) {
+          const x = c[zelle(r, s)]; if (x === null) continue;
+          for (const [dr, ds] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+            let k = 1; while (k < 4) { const rr = r + dr * k, ss = s + ds * k; if (rr >= RE || ss < 0 || ss >= SP || c[zelle(rr, ss)] !== x) break; k++; }
+            if (k === 4) return x;
+          }
+        }
+        return c.every(x => x !== null) ? 'remis' : null;
+      }
+      function fensterWert(c, spieler) { // Viererfenster bewerten, aus Sicht von Spieler 0
+        let w = 0;
+        const zaehle = zellen => { let a = 0, b = 0; for (const i of zellen) { if (c[i] === 0) a++; else if (c[i] === 1) b++; } if (a && b) return 0; return a === 3 ? 50 : a === 2 ? 8 : b === 3 ? -60 : b === 2 ? -8 : 0; };
+        for (let r = 0; r < RE; r++) for (let s = 0; s < SP; s++) for (const [dr, ds] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+          const rr = r + dr * 3, ss = s + ds * 3; if (rr >= RE || ss < 0 || ss >= SP) continue;
+          w += zaehle([0, 1, 2, 3].map(k => zelle(r + dr * k, s + ds * k)));
+        }
+        for (let r = 0; r < RE; r++) { const x = c[zelle(r, 3)]; if (x === 0) w += 6; else if (x === 1) w -= 6; }
+        return w;
+      }
+      return {
+        name: 'Vier gewinnt', farben: ['Rot', 'Gelb'], tiefe: 5, winkel: 16, halb: { u: 0.2, v: 0.04, h: 0.34 }, wand: true,
+        start: () => ({ c: Array(SP * RE).fill(null), dran: 0, ende: false, sieger: null }),
+        zuege(s) {
+          if (s.ende) return [];
+          const z = [];
+          for (const sp of [3, 2, 4, 1, 5, 0, 6]) for (let r = 0; r < RE; r++) if (s.c[zelle(r, sp)] === null) { z.push({ id: sp, zelle: zelle(r, sp) }); break; }
+          return z;
+        },
+        ziehe(s, m) {
+          const c = s.c.slice(); c[m.zelle] = s.dran;
+          const e = sieger(c);
+          return { s: { c, dran: 1 - s.dran, ende: e !== null, sieger: e === 'remis' ? null : e }, effekte: [{ art: 'fallen', id: m.zelle, hoehe: UNTEN + RE * C + 0.04 - (Math.floor(m.zelle / SP) + 0.5) * C - UNTEN }] };
+        },
+        bewerte: s => fensterWert(s.c),
+        feldAus: (u, y) => { const sp = Math.floor(u / C + 3.5); return sp >= 0 && sp < SP && y > 0 && y < UNTEN + RE * C + 0.06 ? sp : null; },
+        pos: i => lok((i % SP - 3) * C, UNTEN + (Math.floor(i / SP) + 0.5) * C, 0),
+        steine: s => s.c.map((x, i) => x === null ? null : { id: i, farbe: x }).filter(Boolean),
+        brett(g, teil) {
+          // Rahmen mit 42 Löchern, als ausgestanzte Platte
+          const B = SP * C + 0.024, H = RE * C + 0.024;
+          const form = new THREE.Shape([[-B / 2, 0], [B / 2, 0], [B / 2, H], [-B / 2, H]].map(([x, y]) => new THREE.Vector2(x, y)));
+          for (let r = 0; r < RE; r++) for (let s = 0; s < SP; s++) {
+            const loch = new THREE.Path(); loch.absarc((s - 3) * C, 0.012 + (r + 0.5) * C, 0.42 * C, 0, Math.PI * 2, true); form.holes.push(loch);
+          }
+          const rahmen = new THREE.Mesh(new THREE.ExtrudeGeometry(form, { depth: 0.014, bevelEnabled: false, curveSegments: 16 }), blau);
+          rahmen.rotation.y = -Math.PI / 2; // Platte steht quer zum Blick
+          teil(rahmen, lok(0, UNTEN - 0.012, -0.007));
+          for (const k of [-1, 1]) teil(new THREE.Mesh(geoBox, blau), lok(k * (B / 2 - 0.01), 0.012, 0), [0.025, 0.024, 0.1]);
+        },
+        stein(farbe) {
+          const m = new THREE.Mesh(new THREE.CylinderGeometry(0.4 * C, 0.4 * C, 0.011, 28), farbe === 0 ? rot : gelb);
+          m.rotation.z = Math.PI / 2; // Scheibe steht im Rahmen
+          const g = new THREE.Group(); g.add(m); return g;
+        }
+      };
+    })();
+
+    // Reversi: 8 × 8, Schwarz (du) beginnt, eingeschlossene Steine werden umgedreht
+    SPIELE.reversi = (function () {
+      const C = 0.05, RICHT = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+      const filz = mat('#0f4a26', 0.1), linie = mat('#082a15', 0.1), schwarz = mat('#0c0c0c', 0.4), weiss = mat('#f2efe8', 0.4);
+      const GEWICHT = [100, -20, 10, 5, 5, 10, -20, 100, -20, -40, -2, -2, -2, -2, -40, -20, 10, -2, 1, 1, 1, 1, -2, 10, 5, -2, 1, 0, 0, 1, -2, 5,
+        5, -2, 1, 0, 0, 1, -2, 5, 10, -2, 1, 1, 1, 1, -2, 10, -20, -40, -2, -2, -2, -2, -40, -20, 100, -20, 10, 5, 5, 10, -20, 100];
+      function dreht(c, i, sp) {
+        if (c[i] !== null) return [];
+        const r0 = Math.floor(i / 8), s0 = i % 8, alle = [];
+        for (const [dr, ds] of RICHT) {
+          const reihe = []; let r = r0 + dr, s = s0 + ds;
+          while (r >= 0 && r < 8 && s >= 0 && s < 8 && c[r * 8 + s] === 1 - sp) { reihe.push(r * 8 + s); r += dr; s += ds; }
+          if (reihe.length && r >= 0 && r < 8 && s >= 0 && s < 8 && c[r * 8 + s] === sp) alle.push(...reihe);
+        }
+        return alle;
+      }
+      const moeglich = (c, sp) => c.map((x, i) => { const d = dreht(c, i, sp); return d.length ? { id: i, dreht: d } : null; }).filter(Boolean);
+      const zaehlen = c => [c.filter(x => x === 0).length, c.filter(x => x === 1).length];
+      return {
+        name: 'Reversi', farben: ['Schwarz', 'Weiß'], tiefe: 4, winkel: 58, halb: { u: 0.22, v: 0.22, h: 0.02 }, ebene: 0.014, marken: true,
+        start() { const c = Array(64).fill(null); c[27] = 1; c[28] = 0; c[35] = 0; c[36] = 1; return { c, dran: 0, ende: false, sieger: null }; },
+        zuege(s) {
+          if (s.ende) return [];
+          const z = moeglich(s.c, s.dran);
+          return z.length ? z : [{ id: 'aussetzen', aussetzen: true }];
+        },
+        ziehe(s, m) {
+          const c = s.c.slice(); let effekte = [];
+          if (!m.aussetzen) { c[m.id] = s.dran; m.dreht.forEach(i => { c[i] = s.dran; }); effekte = [{ art: 'fallen', id: m.id }, ...m.dreht.map(i => ({ art: 'drehen', id: i }))]; }
+          const dran = 1 - s.dran;
+          const fertig = !moeglich(c, dran).length && !moeglich(c, s.dran).length;
+          const [a, b] = zaehlen(c);
+          return { s: { c, dran, ende: fertig, sieger: fertig ? (a > b ? 0 : b > a ? 1 : null) : null }, effekte };
+        },
+        bewerte: s => s.c.reduce((w, x, i) => w + (x === 0 ? GEWICHT[i] : x === 1 ? -GEWICHT[i] : 0), 0) + (moeglich(s.c, 0).length - moeglich(s.c, 1).length) * 3,
+        feldAus: (u, y, v) => { const sp = Math.floor(u / C + 4), re = Math.floor(v / C + 4); return sp >= 0 && sp < 8 && re >= 0 && re < 8 ? re * 8 + sp : null; },
+        pos: i => lok((i % 8 - 3.5) * C, 0.014, (Math.floor(i / 8) - 3.5) * C),
+        steine: s => s.c.map((x, i) => x === null ? null : { id: i, farbe: x }).filter(Boolean),
+        zusatz: s => { const [a, b] = zaehlen(s.c); return ` · Schwarz ${a} : ${b} Weiß`; },
+        brett(g, teil) {
+          teil(new THREE.Mesh(geoBox, mat('#5a3b26', 0.4)), lok(0, 0.006, 0), [0.44, 0.012, 0.44]);
+          teil(new THREE.Mesh(geoBox, filz), lok(0, 0.0125, 0), [0.4, 0.002, 0.4]);
+          for (let k = -4; k <= 4; k++) {
+            teil(new THREE.Mesh(geoBox, linie), lok(k * C, 0.0137, 0), [0.0025, 0.0006, 0.4]);
+            teil(new THREE.Mesh(geoBox, linie), lok(0, 0.0137, k * C), [0.4, 0.0006, 0.0025]);
+          }
+        },
+        stein(farbe) {
+          const g = new THREE.Group(), geo = new THREE.CylinderGeometry(0.4 * C, 0.4 * C, 0.004, 28);
+          const oben = new THREE.Mesh(geo, farbe === 0 ? schwarz : weiss), unten = new THREE.Mesh(geo, farbe === 0 ? weiss : schwarz);
+          oben.position.y = 0.006; unten.position.y = 0.002; g.add(oben, unten);
+          return g;
+        }
+      };
+    })();
+
+    // ---- Rahmen ----
+    function suche(s, tiefe, a, b) {
+      if (s.ende) return s.sieger === 0 ? 1e6 + tiefe : s.sieger === 1 ? -1e6 - tiefe : 0;
+      if (tiefe === 0) return spiel.bewerte(s);
+      const max = s.dran === 0;
+      let best = max ? -Infinity : Infinity;
+      for (const m of spiel.zuege(s)) {
+        const v = suche(spiel.ziehe(s, m).s, tiefe - 1, a, b);
+        if (max) { if (v > best) best = v; if (v > a) a = v; } else { if (v < best) best = v; if (v < b) b = v; }
+        if (b <= a) break;
+      }
+      return best;
+    }
+    function besterZug(s) {
+      const max = s.dran === 0; let best = [], wert = max ? -Infinity : Infinity;
+      for (const m of spiel.zuege(s)) {
+        const v = suche(spiel.ziehe(s, m).s, spiel.tiefe - 1, -Infinity, Infinity);
+        if (max ? v > wert : v < wert) { wert = v; best = [m]; } else if (v === wert) best.push(m);
+      }
+      return zufall(best);
+    }
+    function registriere(o) { o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.userData.leuchtBasis = m.material.emissive.clone(); tisch.meshes.push(m); stationVon.set(m, tisch); } }); }
+    function abmelden(o) { o.traverse(m => { if (m.isMesh) { stationVon.delete(m); const i = tisch.meshes.indexOf(m); if (i >= 0) tisch.meshes.splice(i, 1); } }); }
+    function aufbauen(neuesSpiel) {
+      if (gruppe) { abmelden(gruppe); raum.remove(gruppe); }
+      spiel = neuesSpiel; steine.clear();
+      gruppe = new THREE.Group(); gruppe.position.set(SCH.x, bY, SCH.z); raum.add(gruppe);
+      spiel.brett(gruppe, (m, p, groesse) => { m.position.copy(p); if (groesse) m.scale.set(groesse[2], groesse[1], groesse[0]); gruppe.add(m); });
+      registriere(gruppe);
+    }
+    // Größen sind als (u, y, v) angegeben; in der Gruppe liegt u auf z und v auf x
+    function steineZeigen() {
+      steine.forEach(st => { abmelden(st); gruppe.remove(st); }); steine.clear();
+      spiel.steine(z).forEach(({ id, farbe }) => { const st = spiel.stein(farbe); st.position.copy(spiel.pos(id)); gruppe.add(st); registriere(st); steine.set(id, st); });
+    }
+    function markenZeigen() {
+      marken.forEach(m => gruppe.remove(m)); marken = [];
+      if (!spiel.marken || z.ende || (gegner === 'computer' && z.dran === 1)) return;
+      spiel.zuege(z).filter(m => !m.aussetzen).forEach(m => {
+        const k = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.002, 16), mat('#9ff0b8', 0.3, 0, '#6fe09a', 1.2));
+        k.position.copy(spiel.pos(m.id)); k.position.y += 0.001; gruppe.add(k); marken.push(k);
+      });
+    }
+    function ausfuehren(m) {
+      verlauf.push(z);
+      const { s, effekte } = spiel.ziehe(z, m);
+      z = s; steineZeigen(); markenZeigen();
+      effekte.forEach(e => {
+        const st = steine.get(e.id); if (!st) return;
+        if (e.art === 'fallen') { const nach = st.position.clone(); const von = nach.clone(); von.y += e.hoehe || 0.08; st.position.copy(von); anim.push({ st, von, nach, t: 0, dauer: 0.35 }); }
+        if (e.art === 'drehen') { st.rotation.x = Math.PI; anim.push({ st, dreh: true, t: 0, dauer: 0.45, nach: st.position.clone() }); }
+      });
+      zeigeStatus();
+      fertig = () => weiter();
+      if (!anim.length) { const f = fertig; fertig = null; f(); }
+    }
+    function weiter() {
+      if (!ich.aktiv || z.ende) { zeigeStatus(); return; }
+      const nur = spiel.zuege(z);
+      const computer = gegner === 'computer' && z.dran === 1;
+      if (computer) {
+        denkt = true; zeigeStatus();
+        setTimeout(() => { if (!ich.aktiv) { denkt = false; return; } const m = besterZug(z); denkt = false; ausfuehren(m); }, 380);
+      } else if (nur.length === 1 && nur[0].aussetzen) {
+        statusEl.textContent = (gegner === 'computer' ? 'Du kannst nicht setzen und musst aussetzen' : spiel.farben[z.dran] + ' muss aussetzen');
+        denkt = true; setTimeout(() => { denkt = false; if (ich.aktiv) ausfuehren(nur[0]); }, 1300);
+      } else zeigeStatus();
+    }
+    function zeigeStatus() {
+      const f = spiel.farben, zus = spiel.zusatz ? spiel.zusatz(z) : '';
+      let t;
+      if (z.ende) t = z.sieger === null ? 'Unentschieden.' : gegner === 'computer' ? (z.sieger === 0 ? 'Du gewinnst!' : 'Der Computer gewinnt.') : f[z.sieger] + ' gewinnt!';
+      else if (denkt && gegner === 'computer') t = 'Computer denkt …';
+      else t = gegner === 'computer' ? `Du bist dran (${f[0]})` : f[z.dran] + ' ist dran';
+      statusEl.textContent = t + zus;
+    }
+    ich.klick = ev => {
+      if (anim.length || denkt || z.ende || (gegner === 'computer' && z.dran === 1)) return;
+      const r = canvas.getBoundingClientRect();
+      zeiger.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+      strahl.setFromCamera(zeiger, kamera);
+      // Ebene des Spiels: liegend auf Höhe spiel.ebene oder als Wand quer zum Blick (v = 0)
+      gruppe.updateMatrixWorld(true);
+      const n = spiel.wand ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+      const punkt = spiel.wand ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(0, spiel.ebene, 0);
+      const ebene = new THREE.Plane().setFromNormalAndCoplanarPoint(n.transformDirection(gruppe.matrixWorld), gruppe.localToWorld(punkt));
+      const p = new THREE.Vector3();
+      if (!strahl.ray.intersectPlane(ebene, p)) return;
+      gruppe.worldToLocal(p);
+      const id = spiel.feldAus(p.z, p.y, -p.x);
+      const m = spiel.zuege(z).find(m => m.id === id);
+      if (m && !m.aussetzen) ausfuehren(m);
+    };
+    ich.takt = roh => {
+      if (!anim.length) return;
+      const dt = Math.min(0.05, roh);
+      anim.forEach(a => {
+        a.t = Math.min(1, a.t + dt / a.dauer); const k = glatt(a.t);
+        if (a.dreh) { a.st.rotation.x = Math.PI * (1 - k); a.st.position.y = a.nach.y + Math.sin(Math.PI * k) * 0.03; }
+        else a.st.position.lerpVectors(a.von, a.nach, a.t * a.t);
+      });
+      anim = anim.filter(a => a.t < 1);
+      if (!anim.length && fertig) { const f = fertig; fertig = null; f(); }
+    };
+    ich.blick = sofort => {
+      const h = spiel.halb, ecken = [];
+      gruppe.updateMatrixWorld(true);
+      for (const u of [-h.u, h.u]) for (const v of [-h.v, h.v]) for (const y of [0, h.h]) ecken.push(gruppe.localToWorld(lok(u, y, v)));
+      const mitte = gruppe.localToWorld(lok(0, h.h / 2, 0));
+      const a = spiel.winkel * DEG, richtung = new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
+      kameraAuf(ecken, mitte, richtung, leiste.offsetHeight || 56, (statusEl.offsetHeight || 40) + 14, sofort);
+    };
+    // Spiel auf den Tisch legen (ohne zu starten), z. B. damit im Raum das zuletzt gespielte Brett liegt
+    ich.hinlegen = id => {
+      if (ich.spiel === id && gruppe) return;
+      ich.spiel = id; aufbauen(SPIELE[id]); z = spiel.start(); verlauf = []; anim = []; fertig = null; steineZeigen();
+    };
+    ich.wegraeumen = () => { if (gruppe) { abmelden(gruppe); raum.remove(gruppe); gruppe = null; ich.spiel = null; } };
+    ich.starten = id => {
+      ich.hinlegen(id);
+      ich.aktiv = true;
+      tafel.hidden = true; karte.hidden = true;
+      document.body.classList.add('schachmodus');
+      leiste.hidden = false; statusEl.hidden = false;
+      knopfGegner.textContent = gegner === 'computer' ? 'Gegner: Computer' : 'Gegner: zu zweit';
+      tasten.clear(); ring.visible = false;
+      ich.blick(false); markenZeigen(); weiter();
+      document.getElementById('schachzu').focus();
+    };
+    ich.beenden = () => {
+      if (!ich.aktiv) return;
+      ich.aktiv = false; denkt = false;
+      marken.forEach(m => gruppe.remove(m)); marken = [];
+      leiste.hidden = true; statusEl.hidden = true;
+      document.body.classList.remove('schachmodus');
+      zeigeStation(tisch, false);
+    };
+    knopfGegner.addEventListener('click', () => {
+      if (!ich.aktiv) return;
+      gegner = gegner === 'computer' ? 'zwei' : 'computer';
+      knopfGegner.textContent = gegner === 'computer' ? 'Gegner: Computer' : 'Gegner: zu zweit';
+      markenZeigen(); weiter();
+    });
+    document.getElementById('schachzurueck').addEventListener('click', () => {
+      if (!ich.aktiv || anim.length || denkt || !verlauf.length) return;
+      z = verlauf.pop();
+      while (gegner === 'computer' && z.dran === 1 && verlauf.length) z = verlauf.pop();
+      steineZeigen(); markenZeigen(); zeigeStatus();
+    });
+    document.getElementById('schachneu').addEventListener('click', () => {
+      if (!ich.aktiv || anim.length || denkt) return;
+      z = spiel.start(); verlauf = []; steineZeigen(); markenZeigen(); zeigeStatus();
+    });
+    document.getElementById('schachzu').addEventListener('click', ich.beenden);
+    // Für die Prüfungen
+    window.raumTisch = {
+      feldAufBild(id) { gruppe.updateMatrixWorld(true); const p = gruppe.localToWorld(spiel.pos(id)); return aufBild(p, canvas.clientWidth, canvas.clientHeight); },
+      zustand: () => z && { c: z.c.slice(), dran: z.dran, ende: z.ende, sieger: z.sieger },
+      ruhig: () => !anim.length && !denkt && !fertig,
+      spiel: () => ich.spiel,
+      steine: () => steine.size
+    };
+    return ich;
+  })();
+
+  // Ein gemeinsamer Zugang für Eingaben, Bild und Leiste, egal welches Spiel auf dem Tisch liegt
+  const tisch3d = {
+    get aktiv() { return schach.aktiv || tischspiele.aktiv; },
+    klick(ev) { (schach.aktiv ? schach : tischspiele).klick(ev); },
+    beenden() { if (schach.aktiv) schach.beenden(); else tischspiele.beenden(); },
+    blick(s) { (schach.aktiv ? schach : tischspiele).blick(s); },
+    takt(roh) { schach.takt(roh); tischspiele.takt(roh); },
+    starten(id) {
+      // Das Leuchten des Platzes abschalten, sonst wirken die Farben auf dem Brett blass
+      stationen.find(s => s.id === 'spieltisch').meshes.forEach(m => { if (m.userData.leuchtBasis) m.material.emissive.copy(m.userData.leuchtBasis); });
+      if (id === 'schach') { tischspiele.wegraeumen(); schach.zeigen(true); schach.starten(); }
+      else { schach.zeigen(false); tischspiele.starten(id); }
+    }
+  };
 
   // Schilder über den Plätzen
   const marken = document.getElementById('marken');
@@ -1133,7 +1498,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   let ueber = null;
 
   // Maus: Doppelklick geht hin
-  canvas.addEventListener('dblclick', ev => { ev.preventDefault(); if (schach.aktiv) return; const t = treffer(ev); if (t && stationVon.get(t.object)) return; gehe(ev); });
+  canvas.addEventListener('dblclick', ev => { ev.preventDefault(); if (tisch3d.aktiv) return; const t = treffer(ev); if (t && stationVon.get(t.object)) return; gehe(ev); });
   // Finger: Doppeltippen geht hin
   let letzterTipp = null;
   // Umsehen durch Ziehen im Rundgang
@@ -1142,13 +1507,13 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     ziehen = { x: ev.clientX, y: ev.clientY, x0: ev.clientX, y0: ev.clientY, zeit: ev.timeStamp };
   });
   window.addEventListener('pointermove', ev => {
-    if (ziehen && modus === 'rundgang' && !fahrt && !schach.aktiv) {
+    if (ziehen && modus === 'rundgang' && !fahrt && !tisch3d.aktiv) {
       const k = 0.0045;
       yaw += (ev.clientX - ziehen.x) * k;
       pitch = Math.max(-1.2, Math.min(1.2, pitch + (ev.clientY - ziehen.y) * k));
     }
     if (ziehen) { ziehen.x = ev.clientX; ziehen.y = ev.clientY; }
-    if (ev.target === canvas && ev.pointerType === 'mouse' && !ziehen && !schach.aktiv) {
+    if (ev.target === canvas && ev.pointerType === 'mouse' && !ziehen && !tisch3d.aktiv) {
       const t = treffer(ev);
       ueber = t ? stationVon.get(t.object) || null : null;
       canvas.style.cursor = ueber ? 'pointer' : '';
@@ -1161,9 +1526,8 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     // Zeitstempel der Ereignisse, damit ein voller Bildaufbau ein Tippen nicht zum langen Drücken macht
     const dauer = ev.timeStamp - ziehen.zeit, weit = Math.hypot(ev.clientX - ziehen.x0, ev.clientY - ziehen.y0);
     const kurz = dauer < 300 && weit < 10;
-    if (schach.aktiv && dauer < 700 && weit < 14 && ev.target === canvas) { ziehen = null; schach.klick(ev); return; }
+    if (tisch3d.aktiv && dauer < 700 && weit < 14 && ev.target === canvas) { ziehen = null; tisch3d.klick(ev); return; }
     ziehen = null;
-    if (kurz && ev.target === canvas && schach.aktiv) { schach.klick(ev); return; }
     if (kurz && ev.target === canvas) {
       const t = treffer(ev);
       const s = t && stationVon.get(t.object);
@@ -1181,7 +1545,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   // Tasten: W/S oder Pfeil hoch/runter laufen, A/D seitlich, Pfeil links/rechts drehen
   const laufTasten = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
   window.addEventListener('keydown', ev => {
-    if (!laufTasten.includes(ev.code) || !fenster.hidden || schach.aktiv) return;
+    if (!laufTasten.includes(ev.code) || !fenster.hidden || tisch3d.aktiv) return;
     ev.preventDefault();
     rundgangStarten();
     fahrt = null;
@@ -1232,8 +1596,8 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       steuerung.update();
       grenze.clampPoint(kamera.position, kamera.position);
     }
-    schach.takt(roh);
-    if (!schach.aktiv) leuchten(zeit || 0);
+    tisch3d.takt(roh);
+    if (!tisch3d.aktiv) leuchten(zeit || 0);
     schilder();
     if (composer) composer.render(); else renderer.render(scene, kamera);
     // Spiel auf dem Fernseher: sobald die Kamera steht, Rahmen auflegen und den Raum anhalten

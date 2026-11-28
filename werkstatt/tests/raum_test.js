@@ -6,7 +6,7 @@ const typen = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/p
 const srv = http.createServer((q, r) => { let p = path.join(wurzel, decodeURIComponent(q.url.split('?')[0])); if (p.endsWith('/')) p += 'index.html';
   fs.readFile(p, (e, d) => { if (e) { r.writeHead(404); r.end(); } else { r.writeHead(200, { 'content-type': typen[path.extname(p)] || 'text/plain' }); r.end(d); } }); });
 let fehler = 0; const ok = (n, b, m = '') => { console.log((b ? 'OK     ' : 'FEHLER ') + n + (b ? '' : ' ' + m)); if (!b) fehler++; };
-const PLAETZE = { 'Konsole': 5, 'Spieltisch': 2, 'Inselmodell': 1, 'Staffelei': 2, 'Perlenkästchen': 1 };
+const PLAETZE = { 'Konsole': 5, 'Spieltisch': 5, 'Inselmodell': 1, 'Staffelei': 2, 'Perlenkästchen': 1 };
 (async () => {
   await new Promise(r => srv.listen(0, r)); const port = srv.address().port;
   const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
@@ -98,6 +98,19 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 2, 'Inselmodell': 1, 'Staffelei': 
       await p.click('#schachzu'); await p.waitForTimeout(300);
       ok('raum_schach: Zurück bringt die Tafel des Spieltischs, Stellung bleibt stehen', await p.evaluate(() => !document.getElementById('tafel').hidden && document.getElementById('schachleiste').hidden && window.raumSchach.figurAuf('e4') === 'wp'));
       await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+      // AK-9: Vier gewinnt, Tic Tac Toe und Reversi in 3D: ein Zug per Antippen, der Computer antwortet
+      for (const [name, feld, erwartet] of [['Vier gewinnt in 3D', 24, 3], ['Tic Tac Toe in 3D', 4, 4], ['Reversi in 3D', 19, 19]]) {
+        await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Spieltisch').click());
+        await p.waitForTimeout(300);
+        await p.click(`[aria-label="${name} spielen"]`); await p.waitForTimeout(2500);
+        const q = await p.evaluate(f => window.raumTisch.feldAufBild(f), feld);
+        await p.mouse.click(q.x, q.y);
+        let ant = false; try { await p.waitForFunction(() => window.raumTisch.ruhig() && window.raumTisch.zustand().dran === 0 && window.raumTisch.zustand().c.filter(x => x === 1).length >= 1, null, { timeout: 30000 }); ant = true; } catch (e) { /* keine Antwort */ }
+        const zs = await p.evaluate(() => ({ ...window.raumTisch.zustand(), text: document.getElementById('schachstatus').textContent, steine: window.raumTisch.steine() }));
+        ok(`raum_tischspiel: ${name}: eigener Stein liegt, der Computer antwortet`, ant && zs.c[erwartet] === 0 && zs.steine === zs.c.filter(x => x !== null).length && zs.text.startsWith('Du bist dran'), JSON.stringify({ c: zs.c.map(x => x === null ? '.' : x).join(''), text: zs.text }));
+        await p.click('#schachzu'); await p.waitForTimeout(300);
+        await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+      }
       await p.screenshot({ path: process.env.BILD || '/tmp/raum-seite.png' });
       await p.click('a.ng-zurueck'); await p.waitForTimeout(500);
       ok('raum_zurueck: Zurück-Link führt zur Startseite', new URL(p.url()).pathname === '/');
