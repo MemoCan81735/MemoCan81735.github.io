@@ -85,6 +85,10 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
 #spielfenster.tv #spielrahmen { position: absolute; flex: none; border-radius: 2px; }
 #spielfenster.tv.unterwegs #spielrahmen { visibility: hidden; }
 #spielgross[hidden] { display: none; }
+/* Neon Ada als Modell im Raum: Spielfenster durchsichtig über dem ganzen Bild, nur Knöpfe und Anzeigen des Spiels sind zu sehen */
+#spielfenster.modell { background: transparent; display: block; }
+#spielfenster.modell .leiste { position: absolute; left: 0; right: 0; top: 0; z-index: 1; background: rgba(29, 21, 15, 0.82); }
+#spielfenster.modell #spielrahmen { position: absolute; inset: 0; height: 100%; background: transparent; color-scheme: normal; }
 body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display: none; }
 /* Schach in 3D auf dem Couchtisch */
 #schachleiste { position: fixed; left: 0; right: 0; top: 0; z-index: 9; flex-wrap: wrap; background: rgba(29, 21, 15, 0.85); }
@@ -469,7 +473,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     anker: welt(iX, iY + 0.1, iZ), stand: welt(iX + 0.5, AUGE_START - 0.05, iZ + 1.75),
     // Feld auf dem Sockel über dem Inselmodell
     flaeche: { ecken: [[iX - 0.3, iY + 0.02, iZ - 0.3], [iX + 0.3, iY + 0.02, iZ - 0.3], [iX + 0.3, iY + 0.02, iZ + 0.3], [iX - 0.3, iY + 0.02, iZ + 0.3]], schraeg: 62, von: [0, -1] },
-    spiele: [{ name: 'Neon Ada', url: '../neon-ada/', text: 'Götterspiel: Land formen, Pixelinge lenken, 13 Inseln.' }]
+    spiele: [{ name: 'Neon Ada', url: '../neon-ada/', modell: true, text: 'Götterspiel: die Insel steht auf dem Sockel, Land formen, Pixelinge lenken, 13 Inseln.' }]
   }, () => {
     const stein = mat('#e9e2d6', 0.55);
     zyl([iX, 0.03, iZ], 0.36, 0.06, stein);
@@ -728,6 +732,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   function oeffneSpiel(sp) {
     letzterKnopf = document.activeElement;
     if (sp.tisch) { tisch3d.starten(sp.tisch); return; }
+    if (sp.modell) { modellStarten(sp); return; }
     document.getElementById('spielname').textContent = sp.name;
     rahmen.title = sp.name;
     rahmen.src = sp.url;
@@ -845,6 +850,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     if (fenster.hidden) return;
     fenster.hidden = true; pausiert = false;
     rahmen.src = 'about:blank';
+    modellEnde();
     if (tv) {
       const s = tv.s; (tv.versteckt || []).forEach(m => { m.visible = true; }); tv = null;
       tvStil(true); fenster.classList.remove('unterwegs');
@@ -874,6 +880,55 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     if (ev.key !== 'Escape') return;
     if (tisch3d.aktiv) tisch3d.beenden(); else if (!fenster.hidden) schliesseSpiel(); else if (!tafel.hidden) schliesseTafel();
   });
+
+  // ---------- Neon Ada als Modell auf dem Sockel ----------
+  // Das Spiel läuft unsichtbar im Spielfenster über dem Raum (nur Knöpfe und Anzeigen sind zu sehen);
+  // seine Insel hängt es über window.raumModell hier ein, Bild und Antippen laufen über die Raumkamera
+  const MODELL_MASS = 0.022, MODELL_FELDER = 24;
+  const modellHalter = new THREE.Group();
+  modellHalter.position.set(iX, 0.81, -iZ); modellHalter.scale.setScalar(MODELL_MASS); scene.add(modellHalter); // auf der Deckplatte des Sockels
+  let modell = null;
+  window.raumModell = {
+    THREE, halter: modellHalter,
+    einsetzen(g) {
+      modellHalter.clear(); modellHalter.add(g);
+      g.traverse(m => { if (m.isMesh || m.isPoints) { m.frustumCulled = false; m.castShadow = !!m.isMesh; m.receiveShadow = !!m.isMesh; } });
+    },
+    // Weltpunkt -> Pixel im Spielfenster; Pixel im Spielfenster -> Strahl der Raumkamera
+    aufBild(v) { const r = rahmen.getBoundingClientRect(), q = aufBild(v, canvas.clientWidth, canvas.clientHeight); return { x: q.x - r.left, y: q.y - r.top }; },
+    strahl(ray, px, py) { const r = rahmen.getBoundingClientRect(); kamera.updateMatrixWorld(); ray.setFromCamera({ x: ((px + r.left) / canvas.clientWidth) * 2 - 1, y: -((py + r.top) / canvas.clientHeight) * 2 + 1 }, kamera); }
+  };
+  function modellStarten(sp) {
+    document.getElementById('spielname').textContent = sp.name;
+    rahmen.title = sp.name;
+    modell = { s: aktiv };
+    // Das Schmuckmodell auf dem Sockel macht dem Spiel Platz
+    const kiste = new THREE.Box3();
+    modell.versteckt = aktiv.meshes.filter(m => m.visible && kiste.setFromObject(m).min.y >= modellHalter.position.y - 0.01);
+    modell.versteckt.forEach(m => { m.visible = false; });
+    fenster.classList.add('modell'); document.body.classList.add('tvmodus');
+    tafel.hidden = true; karte.hidden = true;
+    rahmen.src = sp.url + '#raum';
+    fenster.hidden = false; tasten.clear(); ring.visible = false;
+    modellBlick(false);
+    document.getElementById('spielzu').focus();
+  }
+  // Kamera schräg von vorn auf den Sockel; oben Leisten, unten die Knöpfe des Spiels frei lassen
+  function modellBlick(sofort) {
+    const p = modellHalter.position, k = MODELL_MASS * MODELL_FELDER / 2 * Math.SQRT2, ecken = [];
+    for (const [dx, dz] of [[k, 0], [-k, 0], [0, k], [0, -k]]) for (const y of [0, 0.08]) ecken.push(new THREE.Vector3(p.x + dx, p.y + y, p.z + dz));
+    const a = 50 * DEG, richtung = new THREE.Vector3(0, Math.sin(a), -Math.cos(a));
+    const H = canvas.clientHeight, W = canvas.clientWidth;
+    kameraAuf(ecken, p.clone().add(new THREE.Vector3(0, 0.03, 0)), richtung, 150, W < H ? 200 : 140, sofort);
+  }
+  function modellEnde() {
+    if (!modell) return;
+    modell.versteckt.forEach(m => { m.visible = true; });
+    modellHalter.clear();
+    fenster.classList.remove('modell'); document.body.classList.remove('tvmodus');
+    if (aktiv === modell.s) { tafel.hidden = false; karte.hidden = true; }
+    modell = null;
+  }
 
   // ---------- Schach in 3D auf dem Couchtisch ----------
   // Regeln aus chess.js (wie im Spiel Brettspiele); einfacher Computer mit drei Halbzügen Vorausschau
@@ -1888,7 +1943,9 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     }
     tisch3d.takt(roh);
     // Beim Spielen am Tisch die tief stehende Sonne dämpfen, damit dunkle Steine dunkel bleiben
-    sonne.intensity += ((tisch3d.aktiv ? 1.6 : 3.4) - sonne.intensity) * Math.min(1, roh * 4);
+    sonne.intensity += ((tisch3d.aktiv || modell ? 1.6 : 3.4) - sonne.intensity) * Math.min(1, roh * 4);
+    // Farben je Feld legt das Spiel erst nach dem ersten Bild an: dann die Darstellung einmal neu aufbauen
+    if (modell) modellHalter.traverse(m => { if (m.isInstancedMesh && m.instanceColor && !m.userData.mitFarbe) { m.userData.mitFarbe = true; m.material.needsUpdate = true; } });
     if (!tisch3d.aktiv) leuchten(zeit || 0);
     schilder();
     if (composer) composer.render(); else renderer.render(scene, kamera);
