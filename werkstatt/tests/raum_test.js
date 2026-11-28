@@ -121,7 +121,7 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 9, 'Inselmodell': 1, 'Staffelei': 
         const t = await p.evaluate(() => {
           const A = window.raumAusstattung, z = new THREE.Vector3(); A.tuerBlatt.getWorldPosition(z);
           const ray = new THREE.Raycaster(new THREE.Vector3(z.x + 0.5, 1.0, z.z), new THREE.Vector3(-1, 0, 0));
-          const treffer = ray.intersectObjects(A.tuerBlatt.parent.children, true);
+          const treffer = ray.intersectObjects(A.raum.children, true);
           const d = new Date(), s = d.getSeconds(), m = d.getMinutes() + s / 60, h = (d.getHours() % 12) + m / 60, u = A.uhr();
           const ab = (x, y) => Math.abs(((x - y) % 360 + 540) % 360 - 180);
           return { tuer: treffer.length > 0 && treffer[0].object === A.tuerBlatt, wandDahinter: treffer.some(x => x.object.material === A.wand && x.distance < 0.8), std: +ab(u.std, h * 30).toFixed(1), min: +ab(u.min, m * 6).toFixed(1), sek: +ab(u.sek, s * 6).toFixed(1) };
@@ -133,6 +133,16 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 9, 'Inselmodell': 1, 'Staffelei': 
       await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Spieltisch').click());
       await p.waitForTimeout(300);
       await p.click('[aria-label="Schach in 3D spielen"]'); await p.waitForTimeout(2500);
+      // AK-15: schwarze Figuren wirken schwarz (nicht hellbraun), das Brett steht im Hochformat steil und groß im Bild
+      const hell = await p.evaluate(async () => {
+        const c = document.getElementById('buehne'), img = new Image(); img.src = c.toDataURL(); await img.decode();
+        const k = document.createElement('canvas'); k.width = c.width; k.height = c.height; const x = k.getContext('2d'); x.drawImage(img, 0, 0);
+        const f = c.width / c.clientWidth, mittel = felder => Math.round(felder.reduce((s, n) => { const q = window.raumSchach.feldAufBild(n), d = x.getImageData(Math.round(q.x * f), Math.round((q.y - 6) * f), 1, 1).data; return s + 0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2]; }, 0) / felder.length);
+        const r = [...'abcdefgh'], a8 = window.raumSchach.feldAufBild('a8'), h8 = window.raumSchach.feldAufBild('h8'), a1 = window.raumSchach.feldAufBild('a1'), h1 = window.raumSchach.feldAufBild('h1');
+        return { schwarz: mittel(r.map(b => b + '7')), weiss: mittel(r.map(b => b + '2')), hinten: Math.round(h8.x - a8.x), vorn: Math.round(h1.x - a1.x), breite: innerWidth };
+      });
+      ok('raum_farben: schwarze Figuren wirken schwarz, weiße hell', hell.schwarz < 45 && hell.weiss > 170, JSON.stringify(hell));
+      ok('raum_farben: Brett im Hochformat steil und groß, hintere Kante fast so breit wie die vordere', hell.hinten / hell.vorn > 0.8 && hell.vorn * 8 / 7 > 0.75 * hell.breite, JSON.stringify(hell));
       const tippe = async f => { const q = await p.evaluate(f => window.raumSchach.feldAufBild(f), f); await p.mouse.click(q.x, q.y); await p.waitForTimeout(400); };
       await tippe('e2'); await tippe('e4');
       let antwort = false; try { await p.waitForFunction(() => window.raumSchach.zuege().length === 2 && window.raumSchach.ruhig(), null, { timeout: 30000 }); antwort = true; } catch (e) { /* keine Antwort */ }
@@ -192,9 +202,22 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 9, 'Inselmodell': 1, 'Staffelei': 
         await p.click('#schachzu'); await p.waitForTimeout(300);
         await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       }
+      // AK-14: Kanten ohne Punktlinien: der Leuchteffekt rendert mit 4-fach Kantenglättung
+      ok('raum_kanten: Bild mit Kantenglättung trotz Leuchteffekt', await p.evaluate(() => window.raumAusstattung.kantenglaettung() === 4));
       await p.screenshot({ path: process.env.BILD || '/tmp/raum-seite.png' });
       await p.click('a.ng-zurueck'); await p.waitForTimeout(500);
       ok('raum_zurueck: Zurück-Link führt zur Startseite', new URL(p.url()).pathname === '/');
+    }
+    if (fname === 'quer') {
+      // AK-14: Tür antippen öffnet sie, danach geht es zur Startseite
+      await p.evaluate(() => { window.raumAusstattung.weiter = () => { window.__weiter = true; }; });
+      const q = await p.evaluate(() => window.raumAusstattung.tuerAufBild());
+      await p.mouse.click(q.x, q.y);
+      let auf = false; try { await p.waitForFunction(() => window.raumAusstattung.tuerAuf() === 1 && window.__weiter, null, { timeout: 8000 }); auf = true; } catch (e) { /* bleibt zu */ }
+      const dreh = await p.evaluate(() => { const v = new THREE.Vector3(); window.raumAusstattung.tuerBlatt.getWorldPosition(v); return { grad: Math.round(window.raumAusstattung.tuerBlatt.parent.rotation.y * 180 / Math.PI), x: +v.x.toFixed(2) }; });
+      ok('raum_tuer: Tür antippen öffnet sie und führt zur Startseite', auf && dreh.grad >= 70 && dreh.grad <= 80, JSON.stringify({ q, dreh }));
+      await p.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
+      ok('raum_tuer: im Verlauf zurück steht die Tür wieder zu', await p.evaluate(() => window.raumAusstattung.tuerAuf() === 0 && window.raumAusstattung.tuerBlatt.parent.rotation.y === 0));
     }
     ok(`raum_laden ${fname}: kein fremder Host`, hosts.size === 0, [...hosts].join());
     ok(`raum_laden ${fname}: keine Seitenfehler`, fe.length === 0, fe.join(' | '));

@@ -18,7 +18,11 @@ FEHLER = [
     ('Tavla: Computer würfelt nicht', 'raum/index.html', "if (j.phase === 'wuerfeln') { plan = []; return { id: 'wurf', ueberall: true }; }", "if (j.phase === 'wuerfeln') { plan = []; return null; }", 'raum_tavla'),
     ('Neon Ada: Insel kommt nicht in den Raum', 'neon-ada/index.html', '    if (this.raum) this.raum.einsetzen(this.gruppe);\n', '\n', 'raum_modell'),
     ('Armband kommt nicht auf den Esstisch', 'raum/index.html', '    armbandBauen(geo, farben);\n', '\n', 'raum_armband'),
-    ('Wand ohne Türöffnung', 'raum/index.html', 'box([wl, (TUER.h + H) / 2, TUER.z], [W, H - TUER.h, TUER.b], M.wand);', 'box([wl, H / 2, TUER.z], [W, H, TUER.b], M.wand);', 'raum_tuer'),
+    ('Wand ohne Türöffnung', 'raum/index.html', 'box([wl, (TUER.h + H) / 2, TUER.z], [W, H - TUER.h, TUER.b + 2 * U], M.wand);', 'box([wl, H / 2, TUER.z], [W, H, TUER.b], M.wand);', 'raum_tuer'),
+    ('Tür lässt sich nicht öffnen', 'raum/index.html', '      if (t && t.object.userData.tuer) { tuerOeffnen(); letzterTipp = null; return; }\n', '', 'raum_tuer'),
+    ('Leuchteffekt ohne Kantenglättung', 'raum/index.html', 'samples: renderer.capabilities.isWebGL2 ? 4 : 0', 'samples: 0', 'raum_kanten'),
+    ('Schwarze Figuren wieder hellbraun', 'raum/index.html', [("b: ['#060504', 0.5]", "b: ['#1d1512', 0.6]"), ("(farbe === 'b' ? dunkelMat : mat)", 'mat')], None, 'raum_farben'),
+    ('Brett im Hochformat flach wie quer', 'raum/index.html', '(steil() ? 66 : 52)', '52', 'raum_farben'),
     ('Karte fehlt auf der Startseite', 'index.html', '<a class="karte" href="raum/">', '<a class="karte" href="raum/index.html">', 'raum_karte'),
 ]
 env = dict(os.environ)

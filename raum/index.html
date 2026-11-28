@@ -170,6 +170,8 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   let saat = 7;
   const zufall = () => { saat = (saat * 16807) % 2147483647; return (saat - 1) / 2147483646; };
 
+  // Dunkle Spielsteine: wenig Spiegelung, sonst färbt das warme Licht sie hellbraun
+  const dunkelMat = (farbe, glanz) => new THREE.MeshPhysicalMaterial({ color: farbe, roughness: 1 - glanz, specularIntensity: 0.3, emissive: new THREE.Color(0) });
   const mat = (farbe, glanz, metall = 0, leucht = null, staerke = 0) => new THREE.MeshStandardMaterial({
     color: farbe, roughness: 1 - glanz, metalness: metall,
     emissive: leucht ? new THREE.Color(leucht) : new THREE.Color(0), emissiveIntensity: staerke
@@ -222,17 +224,18 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   const db = 0.2, n = Math.round(B / db);
   for (let i = 0; i < n; i++) {
     const x = -B / 2 + db * (i + 0.5);
-    box([x, -0.01, 0], [db - 0.004, 0.02, T], M.dielen[Math.floor(zufall() * 3)]);
+    box([x, -0.01, 0], [db, 0.02, T], M.dielen[Math.floor(zufall() * 3)]);   // Dielen stoßen dicht an: Fugen als Spalt flimmerten als Punktlinien
   }
-  // Wände: hinten zwei Fenster (Wohnen links, Essen rechts)
+  // Wände: hinten zwei Fenster (Wohnen links, Essen rechts). Stücke überlappen um 1 cm (U), sonst blitzt an den Stößen Licht als Punktlinie durch
+  const U = 0.01;
   const zh = T / 2 + W / 2;
   const fensterX = [-1.5, 2.5], fb = 2, unten = 0.9, oben = 2.2;
   let xa = -B / 2 - W;
   for (const fx of fensterX) {
     const xl = fx - fb / 2;
     box([(xa + xl) / 2, H / 2, zh], [xl - xa, H, W], M.wand);
-    box([fx, unten / 2, zh], [fb, unten, W], M.wand);
-    box([fx, (oben + H) / 2, zh], [fb, H - oben, W], M.wand);
+    box([fx, unten / 2, zh], [fb + 2 * U, unten, W], M.wand);
+    box([fx, (oben + H) / 2, zh], [fb + 2 * U, H - oben, W], M.wand);
     xa = fx + fb / 2;
   }
   box([(xa + B / 2 + W) / 2, H / 2, zh], [B / 2 + W - xa, H, W], M.wand);
@@ -240,11 +243,11 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   // Linke Wand mit Tür (vorn links, neben dem Sofa)
   const TUER = { z: -2.05, b: 0.9, h: 2.1 };
   const wl = -B / 2 - W / 2, tz0 = TUER.z - TUER.b / 2, tz1 = TUER.z + TUER.b / 2;
-  box([wl, H / 2, (-T / 2 + tz0) / 2], [W, H, tz0 + T / 2], M.wand);
-  box([wl, H / 2, (tz1 + T / 2) / 2], [W, H, T / 2 - tz1], M.wand);
-  box([wl, (TUER.h + H) / 2, TUER.z], [W, H - TUER.h, TUER.b], M.wand);
-  box([B / 2 + W / 2, H / 2, 0], [W, H, T], M.wand);
-  box([0, H + W / 2, 0], [B + W * 2, W, T + W * 2], M.decke);
+  box([wl, H / 2, (-T / 2 - W / 2 + tz0) / 2], [W, H, tz0 + T / 2 + W / 2], M.wand);
+  box([wl, H / 2, (tz1 + T / 2 + W / 2) / 2], [W, H, T / 2 + W / 2 - tz1], M.wand);
+  box([wl, (TUER.h + H) / 2, TUER.z], [W, H - TUER.h, TUER.b + 2 * U], M.wand);
+  box([B / 2 + W / 2, H / 2, 0], [W, H, T + W], M.wand);
+  box([0, H + W / 2 - U, 0], [B + W * 2, W, T + W * 2], M.decke);
   box([0, 0.04, T / 2 - 0.01], [B, 0.08, 0.02], M.leiste);
   box([0, 0.04, -T / 2 + 0.01], [B, 0.08, 0.02], M.leiste);
   box([-B / 2 + 0.01, 0.04, 0], [0.02, 0.08, T], M.leiste);
@@ -397,17 +400,30 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   weich([eX, 0.006, eZ], [2.4, 0.012, 3.0], mat('#6E7F6A', 0.05), 0.005);
 
   // Tür: weiße Zarge, Türblatt aus Holz, Klinke und Schild auf der Raumseite
-  let tuerBlatt = null;
+  let tuerBlatt = null, tuerFluegel = null;
+  const tuer = { auf: 0, ziel: 0 };   // 0 zu, 1 offen (76°)
   {
     const weiss = mat('#F4F0E8', 0.35), blatt = mat('#C9A67A', 0.3), x = -B / 2 + 0.005;
     box([x + 0.01, TUER.h + 0.035, TUER.z], [0.05, 0.07, TUER.b + 0.14], weiss);
     for (const k of [-1, 1]) box([x + 0.01, TUER.h / 2, TUER.z + k * (TUER.b / 2 + 0.035)], [0.05, TUER.h, 0.07], weiss);
+    // Türblatt, Füllungen und Klinke hängen an einem Scharnier (vorn an der Zarge); Antippen öffnet die Tür
+    tuerFluegel = new THREE.Group(); tuerFluegel.position.set(x, 0, tz0 + 0.005); raum.add(tuerFluegel);
+    ziel = tuerFluegel;
     tuerBlatt = box([x - 0.02, TUER.h / 2, TUER.z], [0.04, TUER.h - 0.01, TUER.b - 0.01], blatt);
     for (const [y, h] of [[0.55, 0.7], [1.5, 0.8]]) box([x + 0.002, y, TUER.z], [0.006, h, TUER.b - 0.24], mat('#BE9A6C', 0.3));
     const kz = TUER.z + TUER.b / 2 - 0.08;
     box([x + 0.012, 1.05, kz], [0.008, 0.16, 0.04], M.metall);
     zyl([x + 0.03, 1.08, kz], 0.016, 0.04, M.metall).rotation.z = Math.PI / 2;
     box([x + 0.06, 1.08, kz - 0.05], [0.016, 0.016, 0.12], M.metall);
+    ziel = raum;
+    tuerFluegel.children.forEach(o => { o.position.sub(tuerFluegel.position); o.userData.tuer = true; });
+    // Flur hinter der Tür: heller Boden, Wände und eine Lampe, damit die offene Tür nicht ins Dunkle führt
+    const fx = -B / 2 - W, flur = mat('#EDE6DA', 0.1);
+    box([fx - 0.8, -0.01, TUER.z], [1.6, 0.02, 1.6], M.dielen[0]);
+    box([fx - 1.65, 1.3, TUER.z], [0.1, 2.6, 1.6], flur);
+    for (const k of [-1, 1]) box([fx - 0.8, 1.3, TUER.z + k * 0.85], [1.6, 2.6, 0.1], flur);
+    box([fx - 0.8, 2.65, TUER.z], [1.6, 0.1, 1.6], flur);
+    const flurLicht = new THREE.PointLight('#FFE2B8', 0.9, 3, 1.6); flurLicht.position.set(fx - 0.8, 2.3, TUER.z); raum.add(flurLicht);
     // Fußleiste bis zur Zarge
     box([-B / 2 + 0.01, 0.04, (-T / 2 + tz0 - 0.07) / 2], [0.02, 0.08, tz0 - 0.07 + T / 2], M.leiste);
     box([-B / 2 + 0.01, 0.04, (tz1 + 0.07 + T / 2) / 2], [0.02, 0.08, T / 2 - tz1 - 0.07], M.leiste);
@@ -459,7 +475,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   }
   stelleUhr();
   // Für die Tests: Türblatt und Zeigerwinkel (Grad im Uhrzeigersinn ab 12)
-  window.raumAusstattung = { tuer: TUER, tuerBlatt, wand: M.wand, uhr: () => Object.fromEntries(Object.entries(uhrZeiger).map(([k, g]) => [k, ((-g.rotation.z / DEG) % 360 + 360) % 360])) };
+  window.raumAusstattung = { kantenglaettung: () => composer ? composer.renderTarget1.samples : 0, weiter: () => { location.href = '../'; }, tuer: TUER, tuerBlatt, raum, wand: M.wand, tuerAuf: () => tuer.auf, tuerAufBild: () => { tuerFluegel.updateMatrixWorld(true); const v = tuerBlatt.getWorldPosition(new THREE.Vector3()); v.y = 1.2; return aufBild(v, canvas.clientWidth, canvas.clientHeight); }, uhr: () => Object.fromEntries(Object.entries(uhrZeiger).map(([k, g]) => [k, ((-g.rotation.z / DEG) % 360 + 360) % 360])) };
 
 
   // ---------- Spiel-Plätze im Raum ----------
@@ -669,7 +685,10 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   // Bloom wie in Unity: helle Stellen (Schirme, Fenster) strahlen weich über
   let composer = null, bloom = null;
   if (THREE.EffectComposer && THREE.UnrealBloomPass) {
-    composer = new THREE.EffectComposer(renderer);
+    // Eigenes Ziel mit 4-fach Kantenglättung: das antialias des Renderers wirkt hinter dem Composer nicht,
+    // sonst flimmern dünne Kanten (Dielen, Kabel, Wandstöße) als Punktlinien
+    const msZiel = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: renderer.capabilities.isWebGL2 ? 4 : 0 });
+    composer = new THREE.EffectComposer(renderer, msZiel);
     composer.addPass(new THREE.RenderPass(scene, kamera));
     bloom = new THREE.UnrealBloomPass(new THREE.Vector2(1, 1), 0.32, 0.5, 0.9);
     composer.addPass(bloom);
@@ -729,6 +748,20 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     yaw = winkel(d.x, d.z);
     pitch = Math.asin(Math.max(-1, Math.min(1, d.y)));
   }
+  // Tür antippen: sie schwingt auf, danach geht es zur Startseite (wie "Alle Spiele")
+  function tuerOeffnen() {
+    if (tuer.ziel) return;
+    tuer.ziel = 1;
+  }
+  function tuerTakt(roh) {
+    if (tuer.auf === tuer.ziel) return;
+    tuer.auf = Math.min(tuer.ziel, tuer.auf + roh / 0.9);
+    const k = tuer.auf < 0.5 ? 2 * tuer.auf * tuer.auf : 1 - Math.pow(-2 * tuer.auf + 2, 2) / 2;
+    tuerFluegel.rotation.y = k * 76 * DEG;
+    if (tuer.auf === 1) setTimeout(() => window.raumAusstattung.weiter(), 250);
+  }
+  // Zurück aus der Startseite (Verlauf): Tür wieder zu
+  window.addEventListener('pageshow', () => { tuer.auf = tuer.ziel = 0; if (tuerFluegel) tuerFluegel.rotation.y = 0; });
   function treffer(ev) {
     const r = canvas.getBoundingClientRect();
     zeiger.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
@@ -854,6 +887,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   }
   // Kamera auf der Linie mitte + richtung * d so nah wie möglich, dass alle Ecken frei im Bild liegen
   // xFrei: freier Bereich [links, rechts] in Pixeln, wenn ein Teil des Bildes verdeckt ist
+  const steil = () => canvas.clientWidth < canvas.clientHeight;
   function kameraAuf(ecken, mitte, richtung, obenFrei, untenFrei, sofort, xFrei) {
     const W = canvas.clientWidth, H = canvas.clientHeight;
     const rand = W < H ? 0.03 * W : 0.1 * W, oben = obenFrei + 10 + 0.06 * H, unten = H - untenFrei - 0.06 * H;
@@ -1168,7 +1202,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     const pferd = new THREE.Shape([[0.24, 0.36], [0.27, 0.78], [0.22, 1.02], [0.12, 1.18], [0.04, 1.3], [-0.02, 1.2], [-0.1, 1.19], [-0.3, 1.02], [-0.4, 0.88], [-0.36, 0.79], [-0.22, 0.8], [-0.1, 0.84], [-0.06, 0.72], [-0.2, 0.48], [-0.24, 0.36]].map(([x, y]) => new THREE.Vector2(x * F, y * F)));
     const kopf = new THREE.ExtrudeGeometry(pferd, { depth: 0.26 * F, bevelEnabled: true, bevelThickness: 0.03 * F, bevelSize: 0.03 * F, bevelSegments: 2 });
     kopf.translate(0, 0, -0.13 * F);
-    const FARBE = { w: ['#f1e6cf', 0.55], b: ['#1d1512', 0.6] };
+    const FARBE = { w: ['#f1e6cf', 0.55], b: ['#060504', 0.5] };   // fast schwarz: in Sonne und Lampenlicht wirkte #1d1512 hellbraun
     const figuren = new Map(); // Feld -> Gruppe
     let auswahl = null, ziele = [], anim = [], fertig = null, denkt = false, gegner = 'computer';
     const marken = [];
@@ -1178,7 +1212,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     const fr = feld => ['abcdefgh'.indexOf(feld[0]), +feld[1] - 1];
     function feldPos(feld) { const [f, r] = fr(feld); const [x, z] = feldRaum(f, r); return new THREE.Vector3(x, brettY, z); }
     function figur(typ, farbe, feld) {
-      const g = new THREE.Group(), m = mat(...FARBE[farbe]);
+      const g = new THREE.Group(), m = (farbe === 'b' ? dunkelMat : mat)(...FARBE[farbe]);
       const teile = [new THREE.Mesh(geo[typ], m)];
       if (typ === 'k') { const a = new THREE.Mesh(kreuzA, m); a.position.y = 1.55 * F; const b = new THREE.Mesh(kreuzB, m); b.position.y = 1.56 * F; teile.push(a, b); }
       if (typ === 'n') {
@@ -1323,7 +1357,8 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       const mitte = raum.localToWorld(new THREE.Vector3(SCH.x, brettY, SCH.z));
       const h = 4.2 * F, ecken = [];
       for (const dx of [-h, h]) for (const dz of [-h, h]) for (const y of [0, 1.5 * F]) ecken.push(raum.localToWorld(new THREE.Vector3(SCH.x + dx, brettY + y, SCH.z + dz)));
-      const a = 52 * DEG, richtung = new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
+      // Hochformat: steiler von oben, dann ist die hintere Brettkante fast so breit wie die vordere und das Brett größer
+      const a = (steil() ? 66 : 52) * DEG, richtung = new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
       kameraAuf(ecken, mitte, richtung, leiste.offsetHeight || 56, (statusEl.offsetHeight || 40) + 14, sofort);
     };
     ich.starten = () => {
@@ -1496,7 +1531,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     // Reversi: 8 × 8, Schwarz (du) beginnt, eingeschlossene Steine werden umgedreht
     SPIELE.reversi = (function () {
       const C = 0.05, RICHT = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
-      const filz = mat('#0f4a26', 0.1), linie = mat('#082a15', 0.1), schwarz = mat('#0c0c0c', 0.4), weiss = mat('#f2efe8', 0.4);
+      const filz = mat('#0f4a26', 0.1), linie = mat('#082a15', 0.1), schwarz = dunkelMat('#040404', 0.4), weiss = mat('#f2efe8', 0.4);
       const GEWICHT = [100, -20, 10, 5, 5, 10, -20, 100, -20, -40, -2, -2, -2, -2, -40, -20, 10, -2, 1, 1, 1, 1, -2, 10, 5, -2, 1, 0, 0, 1, -2, 5,
         5, -2, 1, 0, 0, 1, -2, 5, 10, -2, 1, 1, 1, 1, -2, 10, -20, -40, -2, -2, -2, -2, -40, -20, 100, -20, 10, 5, 5, 10, -20, 100];
       function dreht(c, i, sp) {
@@ -1557,7 +1592,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
 
     // Dame (türkische Regeln): Weiß (du) unten, Steine ziehen gerade, Schlagen ist Pflicht
     if (BR) SPIELE.dame = (function () {
-      const C = 0.05, hell = mat('#e8d3a8', 0.3), dunkel = mat('#9a6b3f', 0.3), weiss = mat('#f2ece0', 0.45), schwarz = mat('#1a1411', 0.45), krone = mat('#d9a520', 0.6, 0.3);
+      const C = 0.05, hell = mat('#e8d3a8', 0.3), dunkel = mat('#9a6b3f', 0.3), weiss = mat('#f2ece0', 0.45), schwarz = dunkelMat('#060504', 0.45), krone = mat('#d9a520', 0.6, 0.3);
       const pack = j => ({ j, c: j.cells.map(x => x === null ? null : x[0] === 'W' ? 0 : 1), dran: j.currentPlayer === 'W' ? 0 : 1, ende: j.finished,
         sieger: j.finished ? (j.winner === 'W' ? 0 : j.winner === 'B' ? 1 : null) : null });
       const zug = z => ({ von: z.von, id: z.pfad[z.pfad.length - 1], pfad: z.pfad });
@@ -1585,7 +1620,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
 
     // Mühle: Weiß (du) beginnt; Setzen, Ziehen, Springen; bei einer Mühle einen Stein wegnehmen
     if (BR) SPIELE.muehle = (function () {
-      const C = 0.062, P = BR.MuehleEntity.POSITIONS, weiss = mat('#f2ece0', 0.45), schwarz = mat('#1a1411', 0.45), punkt = mat('#2b1a0e', 0.2);
+      const C = 0.062, P = BR.MuehleEntity.POSITIONS, weiss = mat('#f2ece0', 0.45), schwarz = dunkelMat('#060504', 0.45), punkt = mat('#2b1a0e', 0.2);
       const pack = j => ({ j, c: j.cells.map(x => x === null ? null : x === 'W' ? 0 : 1), dran: j.currentPlayer === 'W' ? 0 : 1, ende: j.finished,
         sieger: j.finished ? (j.winner === 'W' ? 0 : j.winner === 'B' ? 1 : null) : null });
       const lade = j => { const e = new BR.MuehleEntity(); e.loadFromJSON(j); return e; };
@@ -1940,7 +1975,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       gruppe.updateMatrixWorld(true);
       for (const u of [-h.u, h.u]) for (const v of [-h.v, h.v]) for (const y of [0, h.h]) ecken.push(gruppe.localToWorld(lok(u, y, v)));
       const mitte = gruppe.localToWorld(lok(0, h.h / 2, 0));
-      const a = spiel.winkel * DEG, richtung = new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
+      const a = (spiel.wand || !steil() ? spiel.winkel : Math.min(74, spiel.winkel + 14)) * DEG, richtung = new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
       kameraAuf(ecken, mitte, richtung, leiste.offsetHeight || 56, (statusEl.offsetHeight || 40) + 14, sofort);
     };
     // Spiel auf den Tisch legen (ohne zu starten), z. B. damit im Raum das zuletzt gespielte Brett liegt
@@ -2071,7 +2106,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     if (ev.target === canvas && ev.pointerType === 'mouse' && !ziehen && !tisch3d.aktiv) {
       const t = treffer(ev);
       ueber = t ? stationVon.get(t.object) || null : null;
-      canvas.style.cursor = ueber ? 'pointer' : '';
+      canvas.style.cursor = ueber || (t && t.object.userData.tuer) ? 'pointer' : '';
       ring.visible = !ueber && !!(t && t.point.y < 0.05);
       if (ring.visible) ring.position.set(t.point.x, 0.015, t.point.z);
     } else if (ziehen) ring.visible = false;
@@ -2085,6 +2120,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     ziehen = null;
     if (kurz && ev.target === canvas) {
       const t = treffer(ev);
+      if (t && t.object.userData.tuer) { tuerOeffnen(); letzterTipp = null; return; }
       const s = t && stationVon.get(t.object);
       if (s) { zeigeStation(s); letzterTipp = null; return; }
     }
@@ -2155,6 +2191,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     // Beim Spielen am Tisch die tief stehende Sonne dämpfen, damit dunkle Steine dunkel bleiben
     sonne.intensity += ((tisch3d.aktiv || modell || armband ? 1.6 : 3.4) - sonne.intensity) * Math.min(1, roh * 4);
     stelleUhr();
+    tuerTakt(roh);
     if (armband) armbandNachfuehren();
     // Farben je Feld legt das Spiel erst nach dem ersten Bild an: dann die Darstellung einmal neu aufbauen
     if (modell) modellHalter.traverse(m => { if (m.isInstancedMesh && m.instanceColor && !m.userData.mitFarbe) { m.userData.mitFarbe = true; m.material.needsUpdate = true; } });
