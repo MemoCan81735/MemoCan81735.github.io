@@ -144,7 +144,7 @@
     box-shadow: 0 4px 14px rgba(52,199,89,0.4);
   }
 
-  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols, #tacontrols) { margin-top: 24px; display: flex; gap: 12px; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols, #tacontrols, #aycontrols) { margin-top: 24px; display: flex; gap: 12px; }
   button.action {
     background: var(--ios-blue);
     color: white;
@@ -168,7 +168,7 @@
   button.action:disabled { opacity: 0.4; cursor: default; }
 
   /* iOS-Segmented-Control-Optik statt Radiobuttons */
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode, #aymode) {
     margin-top: 18px;
     display: flex;
     background: var(--segment-bg);
@@ -177,7 +177,7 @@
     position: relative;
     font-size: 0.85rem;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) label {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode, #aymode) label {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -189,21 +189,21 @@
     color: var(--ios-label);
     transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) input {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode, #aymode) input {
     position: absolute;
     opacity: 0;
     pointer-events: none;
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) label:has(input:checked),
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) label.active {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode, #aymode) label:has(input:checked),
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode, #aymode) label.active {
     background: var(--surface);
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
   }
-  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode) label:has(input:not(:checked)):not(.active) {
+  :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode, #aymode) label:has(input:not(:checked)):not(.active) {
     color: var(--ios-secondary-label);
   }
 
-  :is(#stats, #c4stats, #otstats, #mustats, #chstats, #mastats, #dastats, #tastats) {
+  :is(#stats, #c4stats, #otstats, #mustats, #chstats, #mastats, #dastats, #tastats, #aystats) {
     margin-top: 20px;
     display: flex;
     gap: 10px;
@@ -669,7 +669,7 @@
     min-height: 16px;
   }
 
-  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode),
+  /* Schwierigkeitsgrad: gleiche Segmented-Control-Optik wie :is(#mode, #c4mode, #otmode, #mumode, #chmode, #mamode, #damode, #tamode, #aymode),
      aber nur sichtbar, wenn gegen den Computer gespielt wird. */
   #chdiff {
     display: none;
@@ -755,7 +755,7 @@
   .tab-content > h1 { display: none; }   /* S-W25: der Name steht in der Kopfzeile */
   .ton-schalter { justify-self: end; min-width: 44px; min-height: 44px; border: none; border-radius: 999px; background: var(--segment-bg); font-size: 1rem; cursor: pointer; }
   .ton-schalter[aria-pressed="false"] { opacity: 0.55; }
-  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols, #tacontrols) { justify-content: center; }
+  :is(#controls, #c4controls, #otcontrols, #mucontrols, #chcontrols, #macontrols, #dacontrols, #tacontrols, #aycontrols) { justify-content: center; }
   button.action.klein { padding: 10px 16px; font-size: 0.9rem; }
   .stufen { display: none; margin-top: 10px; background: var(--segment-bg); padding: 3px; border-radius: 10px; font-size: 0.8rem; }
   .stufen.active { display: flex; }
@@ -837,6 +837,7 @@
     body[data-ansicht="auswahl"] #tabs { max-width: none; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
     .brett3d { width: min(400px, calc(var(--qh) / 0.95)); }
     .brett3d.chess, .brett3d.dame { width: min(400px, calc(var(--qh) / 0.92)); }
+    .brett3d.ayo { width: min(400px, calc(var(--qh) / 0.9)); }
     .tab-content.active:not(#schule-view):not(#mangala-view) { display: grid; grid-template-columns: auto minmax(280px, 1fr); column-gap: 20px; align-items: start; justify-items: center; width: 100%; max-width: 900px; }
     .tab-content.active:not(#schule-view):not(#mangala-view) > * { grid-column: 2; }
     .tab-content.active:not(#schule-view):not(#mangala-view) > [data-abschnitt="brett"] { grid-column: 1; grid-row: 1 / span 40; }
@@ -898,6 +899,33 @@
   .ta-punkt.rechts .ta-blase { left: auto; right: 52%; }
   #tavla-view button.action, #tavla-view .ta-hilfe-knopf, #tavla-view .lernen-knopf { min-height: 44px; min-width: 44px; }
   .brett3d.tavla { aspect-ratio: 1 / 1.36; }
+  /* --- S-W30: Ayo --- */
+  #ayo-view button.action, #ayo-view .ay-hilfe-knopf, #ayo-view .lernen-knopf { min-height: 44px; min-width: 44px; }
+  #aystatus { font-size: 0.95rem; font-weight: 500; margin-bottom: 12px; min-height: 20px; color: var(--ios-secondary-label); max-width: min(372px, 92vw); text-align: center; }
+  #ayboard { --ay-b: min(60px, calc((100vw - 76px) / 6)); display: grid; grid-template-columns: repeat(6, var(--ay-b)); grid-template-rows: 44px 68px 68px 44px; gap: 4px; padding: 8px;
+    border-radius: 24px; background: linear-gradient(160deg, #8a5a34, #6b4423); box-shadow: 0 8px 24px rgba(107,68,35,0.35), inset 0 0 0 1px rgba(255,255,255,0.15); }
+  .ay-sammel { grid-column: 1 / span 6; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; border-radius: 22px; background: #4a2814; color: #f0e2c8;
+    font: 700 0.85rem system-ui, sans-serif; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
+  .ay-sammel.nord { grid-row: 1; } .ay-sammel.sued { grid-row: 4; }
+  .ay-sammel-zahl { font-size: 1.25rem; min-width: 2ch; text-align: center; }
+  .ay-mulde { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 44px; min-height: 44px; padding: 0; border: none; border-radius: 22px;
+    background: #e8d4b8; color: #4a3018; cursor: pointer; box-shadow: inset 0 2px 4px rgba(0,0,0,0.25); font: inherit; box-sizing: border-box; }
+  .ay-mulde:active { transform: scale(0.94); }
+  .ay-zahl { font-weight: 800; font-size: 1.05rem; line-height: 1; pointer-events: none; }
+  .ay-samen { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 2px; max-width: 78%; min-height: 12px; pointer-events: none; }
+  .ay-samen i { width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c7cfb9, #6f7b63); }
+  .ay-mehr { font-size: 0.65rem; font-weight: 700; margin-left: 2px; }
+  .ay-mulde.leer { opacity: 0.6; }
+  .ay-mulde.valid { opacity: 1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 0 0 3px var(--ios-green); }
+  .ay-mulde.schlag { background: #ffd9a0; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 0 0 3px #ff9500; }
+  .ay-mulde.gefahr { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 0 0 3px #ff3b30; }
+  .ay-mulde.valid.gefahr { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 0 0 3px var(--ios-green), 0 0 0 6px #ff3b30; }
+  .ay-warn { position: absolute; top: 2px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: #ff3b30; color: #fff; font: 700 13px/18px system-ui, sans-serif; text-align: center; pointer-events: none; }
+  .ay-schlagzahl { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); background: #ff9500; color: #fff; border-radius: 9px; padding: 0 6px; font: 800 0.75rem/16px system-ui, sans-serif; pointer-events: none; }
+  .ay-mulde.neu, .ay-sammel.neu { animation: ploppen 0.28s cubic-bezier(.3,1.6,.5,1); }
+  .ay-blase { top: 2px; left: 50%; transform: translate(-50%, -100%); z-index: 6; }
+  .brett3d.ayo { aspect-ratio: 1 / 0.9; }
+  @media (prefers-reduced-motion: reduce) { .ay-mulde.neu, .ay-sammel.neu { animation: none !important; } }
   @media (prefers-reduced-motion: reduce) { .ta-wuerfel.wirft, .ta-punkt.neu .ta-stein { animation: none !important; } }
 </style>
 </head>
@@ -919,6 +947,7 @@
   <button class="tabBtn" type="button" data-tab="tictactoe"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#ffffff" stroke="#d8d8de"/><path d="M18 9v30M30 9v30M9 18h30M9 30h30" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"/><path d="M10 10l6 6M16 10l-6 6M32 32l6 6M38 32l-6 6" stroke="#007aff" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="24" r="3.6" fill="none" stroke="#ff3b30" stroke-width="2.6"/></svg><span class="kachel-name">Tic Tac Toe</span><span class="kachel-weiter">Weiterspielen</span></button>
   <button class="tabBtn" type="button" data-tab="dame"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#9a7f52"/><path d="M10 14h28M10 24h28M10 34h28M14 10v28M24 10v28M34 10v28" stroke="#5e4829" stroke-width="1.4"/><circle cx="14" cy="34" r="6" fill="#f4f1e8" stroke="#5c5c61" stroke-width="1.5"/><circle cx="34" cy="14" r="6" fill="#1f1f22" stroke="#000" stroke-width="1.5"/><circle cx="24" cy="24" r="6" fill="#f4f1e8" stroke="#5c5c61" stroke-width="1.5"/><path d="M19.500 26.500l-1-6 3.200 2.300 2.300-3.800 2.300 3.800 3.200-2.300-1 6z" fill="#ffcc00" stroke="#5a4300" stroke-width="1" stroke-linejoin="round"/></svg><span class="kachel-name">Dame</span><span class="kachel-weiter">Weiterspielen</span></button>
   <button class="tabBtn" type="button" data-tab="tavla"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#9a6a3c"/><g fill="#e8d4b8"><path d="M8 8l5 16-5 0zM16 8l5 16-5 0zM24 8l5 16-5 0z"/></g><g fill="#4f2e14"><path d="M13 40l5-16 5 16zM21 40l5-16 5 16zM29 40l5-16 5 16z"/></g><circle cx="38" cy="14" r="3.6" fill="#fff"/><circle cx="38" cy="34" r="3.6" fill="#111"/></svg><span class="kachel-name">Tavla</span><span class="kachel-weiter">Weiterspielen</span></button>
+  <button class="tabBtn" type="button" data-tab="ayo"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="4" width="40" height="40" rx="9" fill="#7a4a26"/><g fill="#e8d4b8"><circle cx="14" cy="16" r="4.4"/><circle cx="24" cy="16" r="4.4"/><circle cx="34" cy="16" r="4.4"/><circle cx="14" cy="32" r="4.4"/><circle cx="24" cy="32" r="4.4"/><circle cx="34" cy="32" r="4.4"/></g><g fill="#8c9a82" stroke="#3a2a14" stroke-width=".6"><circle cx="13" cy="15" r="1.7"/><circle cx="16" cy="17" r="1.7"/><circle cx="23" cy="15" r="1.7"/><circle cx="25.500" cy="17.500" r="1.7"/><circle cx="34" cy="15" r="1.7"/><circle cx="13" cy="31" r="1.7"/><circle cx="24" cy="32" r="1.7"/><circle cx="34" cy="33" r="1.7"/><circle cx="36" cy="31" r="1.7"/></g></svg><span class="kachel-name">Ayo</span><span class="kachel-weiter">Weiterspielen</span></button>
 </div>
 
 <div id="tictactoe-view" class="tab-content">
@@ -1214,6 +1243,38 @@
   </div>
   <button class="linkBtn" id="taresetStatsBtn">Statistik zurücksetzen</button>
   <div id="tahilfe" class="mu-hilfe" hidden role="dialog" aria-label="Tavla-Regeln"></div>
+</div>
+
+<div id="ayo-view" class="tab-content">
+  <div id="ayuebung" class="mu-uebung" hidden>
+    <span class="mu-uebung-titel"></span>
+    <button type="button" class="action secondary klein mu-ueberspringen">Überspringen</button>
+    <button type="button" class="action klein mu-los" hidden>Los geht's</button>
+  </div>
+  <div id="aystatus" data-abschnitt="status">Süd ist am Zug: tippe eine Mulde mit Ring.</div>
+  <div id="aybrett" data-abschnitt="brett"><div id="ayboard"></div></div>
+
+  <div class="gruppe">Aktionen</div>
+  <div id="aycontrols" data-abschnitt="aktionen">
+    <button class="action neu-knopf" id="ayresetBtn">Neu starten</button>
+  </div>
+
+  <div class="gruppe">Spielmodus</div>
+  <div id="aymode" data-abschnitt="modus">
+    <label class="active"><input type="radio" name="aymode" value="pvp" checked><span>2 Spieler</span></label>
+    <label><input type="radio" name="aymode" value="ai"><span>Gegen Computer</span></label>
+  </div>
+
+  <div class="gruppe gruppe-optionen" hidden>Optionen</div>
+  <div class="optionen" data-abschnitt="optionen" hidden></div>
+
+  <div id="aystats" data-abschnitt="statistik">
+    <div class="stat"><span class="stat-value" id="aystatA">0</span><span class="stat-label">Siege Süd</span></div>
+    <div class="stat"><span class="stat-value" id="aystatB">0</span><span class="stat-label">Siege Nord</span></div>
+    <div class="stat"><span class="stat-value" id="aystatDraw">0</span><span class="stat-label">Unentschieden</span></div>
+  </div>
+  <button class="linkBtn" id="ayresetStatsBtn">Statistik zurücksetzen</button>
+  <div id="ayhilfe" class="mu-hilfe" hidden role="dialog" aria-label="Ayo-Regeln"></div>
 </div>
 
 <div id="layerNote"><span class="datenschutz">Statistik bleibt nur auf diesem Gerät, kein Server, keine Weitergabe.</span><span class="lizenz-schach"><br>Schach-Computer: Stockfish (GPL v3), <a href="lib/STOCKFISH-LICENSE-GPL.txt">Lizenz</a> und <a href="https://github.com/nmrugg/stockfish.js/tree/v10.0.2">Quelltext</a>. Schachregeln: chess.js (<a href="lib/CHESSJS-LICENSE.txt">Lizenz</a>).</span></div>
@@ -2388,6 +2449,7 @@ class AIStrategy {
       // Funktionen hier direkt in ein Objekt-Literal eingebettet.
       const src = `
         ${tavlaRegelwerk.toString()}
+        ${ayoRegelwerk.toString()}
         const AIEngines = {
           ${AIEngines.tictactoe.toString()},
           ${AIEngines.connect4.toString()},
@@ -2397,7 +2459,8 @@ class AIStrategy {
           ${AIEngines.dameZuege.toString()},
           ${AIEngines.dameSetze.toString()},
           ${AIEngines.dame.toString()},
-          tavla: ${AIEngines.tavla.toString()}
+          tavla: ${AIEngines.tavla.toString()},
+          ayo: ${AIEngines.ayo.toString()}
         };
         self.onmessage = (e) => {
           const { id, engine, args } = e.data;
@@ -6236,6 +6299,784 @@ class MangalaUI extends GameUI {
   }
 }
 
+/* ============================================================
+   AYO (S-W30): Ayò Ọlọ́pọ́n, Mancala der Yoruba (Südwest-Nigeria).
+   Regeln nach dem Spielhandbuch des Betreibers (Abapa-Regeln, Einzel-Runden-Variante).
+   Mulden 0 bis 5 gehören Süd (A, Mensch), 6 bis 11 Nord (B, Computer); gesät wird gegen den Uhrzeigersinn
+   (Index + 1). cells[12] und cells[13] sind die Sammelmulden von A und B (werden nie besät).
+   Entity -> Boundary -> Control -> UI wie bei den anderen Spielen; das Regelwerk ist eine reine Funktion
+   und läuft unverändert auch im Worker des Computers.
+   ============================================================ */
+function ayoRegelwerk() {
+  const SEITE = { A: [0, 1, 2, 3, 4, 5], B: [6, 7, 8, 9, 10, 11] };
+  const gegner = p => (p === 'A' ? 'B' : 'A');
+  const sammel = p => (p === 'A' ? 12 : 13);
+  const start = () => { const c = Array(14).fill(4); c[12] = 0; c[13] = 0; return c; };
+
+  // Aussaat: Startmulde wird bei 12 und mehr Samen übersprungen
+  function saeen(cells, von) {
+    const c = cells.slice(); let k = c[von], i = von; c[von] = 0; const gesaet = [];
+    while (k > 0) { i = (i + 1) % 12; if (i === von) continue; c[i]++; gesaet.push(i); k--; }
+    return { cells: c, letzte: i, gesaet };
+  }
+  // Mulden, die geschlagen würden: nur Gegnerseite, 2 oder 3 Samen, rückwärts, bis die Kette abbricht
+  function schlaege(c, p, letzte) {
+    const opp = SEITE[gegner(p)], out = [];
+    if (!opp.includes(letzte)) return out;
+    let i = letzte;
+    while (opp.includes(i) && (c[i] === 2 || c[i] === 3)) { out.push(i); i = (i + 11) % 12; }
+    return out;
+  }
+  function roh(cells, p, von) {
+    const s = saeen(cells, von), geschlagen = schlaege(s.cells, p, s.letzte), opp = SEITE[gegner(p)];
+    const rest = opp.reduce((a, i) => a + (geschlagen.includes(i) ? 0 : s.cells[i]), 0);
+    return { cells: s.cells, letzte: s.letzte, gesaet: s.gesaet, geschlagen, grandSlam: geschlagen.length > 0 && rest === 0 };
+  }
+  // Erlaubte Züge: erst Füttern (Gegner leer), dann Grand Slam (nur verboten, wenn es einen anderen Zug gibt)
+  function zuege(cells, p) {
+    const opp = SEITE[gegner(p)];
+    let m = SEITE[p].filter(i => cells[i] > 0);
+    if (opp.every(i => cells[i] === 0)) m = m.filter(i => saeen(cells, i).gesaet.some(j => opp.includes(j)));
+    const ohne = m.filter(i => !roh(cells, p, i).grandSlam);
+    return ohne.length ? ohne : m;
+  }
+  function zug(cells, p, von) {
+    if (!zuege(cells, p).includes(von)) return null;
+    const r = roh(cells, p, von), c = r.cells, s = sammel(p);
+    let summe = 0;
+    if (!r.grandSlam) for (const i of r.geschlagen) { summe += c[i]; c[s] += c[i]; c[i] = 0; }
+    return { cells: c, gesaet: r.gesaet, geschlagen: r.grandSlam ? [] : r.geschlagen, summe, verfallen: r.grandSlam, von };
+  }
+  // Endabrechnung: jeder bekommt die Samen auf seiner Seite
+  function endstand(cells) {
+    const c = cells.slice();
+    for (const p of ['A', 'B']) for (const i of SEITE[p]) { c[sammel(p)] += c[i]; c[i] = 0; }
+    return { cells: c, winner: c[12] === c[13] ? 'Draw' : (c[12] > c[13] ? 'A' : 'B') };
+  }
+  // Ende nach einem Zug: 25 und mehr, oder der Spieler am Zug hat keinen erlaubten Zug (Gegner leer und nicht fütterbar)
+  function nachZug(cells, naechster) {
+    if (cells[12] >= 25) return { grund: 'sieg', winner: 'A', cells };
+    if (cells[13] >= 25) return { grund: 'sieg', winner: 'B', cells };
+    if (!zuege(cells, naechster).length) { const e = endstand(cells); return { grund: 'nichtfuettern', winner: e.winner, cells: e.cells }; }
+    return null;
+  }
+  return { SEITE, gegner, sammel, start, saeen, schlaege, zuege, zug, endstand, nachZug };
+}
+
+/* --- ENTITY: Spielregeln und Zustand, kein Zufall, keine Zeit --- */
+class AyoEntity {
+  static FORMAT = 1;
+  static GRUENDE = ['sieg', 'nichtfuettern', 'wiederholung', 'halbzuege'];
+  constructor() { this.R = ayoRegelwerk(); this.reset(); }
+
+  reset() {
+    this.cells = this.R.start();
+    this.currentPlayer = 'A';   // Süd (Mensch) beginnt
+    this.finished = false; this.winner = null; this.grund = null;
+    this.halbzuege = 0;         // Züge seit dem letzten Schlag
+    this.historie = [this._schluessel()];   // Stellungen seit dem letzten Schlag (mit Spieler am Zug)
+    this.letzter = null;        // letzter Zug für die Anzeige, wird nicht gespeichert
+  }
+  _schluessel() { return this.cells.join(',') + ':' + this.currentPlayer; }
+
+  getValidMoves(p = this.currentPlayer) { return this.finished ? [] : this.R.zuege(this.cells, p); }
+  isValidMove(i) { return !this.finished && this.getValidMoves().includes(i); }
+
+  // Führt den Zug aus. Liefert null oder { winner, grund } bei Ende der Partie.
+  applyMove(i) {
+    if (!this.isValidMove(i)) throw new Error(`Ungültiger Zug auf Mulde ${i}`);
+    const p = this.currentPlayer, z = this.R.zug(this.cells, p, i);
+    this.cells = z.cells;
+    this.letzter = { von: i, spieler: p, gesaet: z.gesaet, geschlagen: z.geschlagen, verfallen: z.verfallen, summe: z.summe };
+    if (z.geschlagen.length) { this.halbzuege = 0; this.historie = []; } else this.halbzuege++;
+    this.currentPlayer = this.R.gegner(p);
+    const key = this._schluessel();
+    this.historie.push(key);
+    let ende = this.R.nachZug(this.cells, this.currentPlayer);
+    if (!ende && this.historie.filter(k => k === key).length >= 3) ende = { grund: 'wiederholung' };
+    if (!ende && this.halbzuege >= 60) ende = { grund: 'halbzuege' };
+    if (!ende) return null;
+    if (ende.grund === 'wiederholung' || ende.grund === 'halbzuege') { const e = this.R.endstand(this.cells); ende = { grund: ende.grund, winner: e.winner, cells: e.cells }; }
+    this.cells = ende.cells; this.finished = true; this.winner = ende.winner; this.grund = ende.grund;
+    return { winner: ende.winner, grund: ende.grund };
+  }
+
+  toJSON() {
+    return { formatversion: AyoEntity.FORMAT, cells: [...this.cells], currentPlayer: this.currentPlayer, finished: this.finished, winner: this.winner,
+      halbzuege: this.halbzuege, historie: [...this.historie], grund: this.grund };
+  }
+  // Prüft alles vor dem Laden; bei Fehlern beginnt eine neue Partie (false)
+  loadFromJSON(d) {
+    if (!AyoEntity._gueltig(d, this.R)) { this.reset(); return false; }
+    this.cells = [...d.cells]; this.currentPlayer = d.currentPlayer; this.finished = d.finished; this.winner = d.winner; this.grund = d.grund;
+    this.halbzuege = d.halbzuege; this.historie = [...d.historie]; this.letzter = null;
+    return true;
+  }
+  static _gueltig(d, R) {
+    const ganz = (x, lo, hi) => Number.isInteger(x) && x >= lo && x <= hi;
+    if (!d || typeof d !== 'object' || Array.isArray(d) || d.formatversion !== AyoEntity.FORMAT) return false;
+    if (!Array.isArray(d.cells) || d.cells.length !== 14 || !d.cells.every(v => ganz(v, 0, 48)) || d.cells.reduce((a, b) => a + b, 0) !== 48) return false;
+    if (d.currentPlayer !== 'A' && d.currentPlayer !== 'B') return false;
+    if (typeof d.finished !== 'boolean' || !ganz(d.halbzuege, 0, 60)) return false;
+    if (d.finished && d.grund === 'halbzuege' && d.halbzuege !== 60) return false;
+    if (!Array.isArray(d.historie) || d.historie.length > 62 || !d.historie.every(k => typeof k === 'string' && /^\d{1,2}(,\d{1,2}){13}:[AB]$/.test(k))) return false;
+    if (d.winner !== null && d.winner !== 'A' && d.winner !== 'B' && d.winner !== 'Draw') return false;
+    if (d.grund !== null && !AyoEntity.GRUENDE.includes(d.grund)) return false;
+    if (!d.finished && (d.historie.length < 1 || d.historie.length > d.halbzuege + 1 || d.historie[d.historie.length - 1] !== d.cells.join(',') + ':' + d.currentPlayer)) return false;
+    if (!d.finished) return d.winner === null && d.grund === null && d.cells[12] <= 24 && d.cells[13] <= 24 && d.halbzuege < 60 && R.zuege(d.cells, d.currentPlayer).length > 0;
+    if (d.winner === null || d.grund === null) return false;
+    if (d.grund === 'sieg') return (d.cells[12] >= 25) === (d.winner === 'A') && (d.cells[13] >= 25) === (d.winner === 'B') && d.winner !== 'Draw';
+    const seiten = [...R.SEITE.A, ...R.SEITE.B].every(i => d.cells[i] === 0);
+    return seiten && d.winner === (d.cells[12] === d.cells[13] ? 'Draw' : d.cells[12] > d.cells[13] ? 'A' : 'B');
+  }
+}
+
+/* --- BOUNDARY: nur die spielspezifischen Zugriffe --- */
+class AyoBoundary extends GameBoundary {
+  getValidMoves(p) { return this._entity.getValidMoves(p); }
+  canMove(i) { return this._entity.isValidMove(i); }
+  makeMove(i) { return this._entity.applyMove(i); }
+  getLetzter() { const l = this._entity.letzter; return l ? { ...l, gesaet: [...l.gesaet], geschlagen: [...l.geschlagen] } : null; }
+  getInfo() { const e = this._entity; return { grund: e.grund, winner: e.winner, halbzuege: e.halbzuege }; }
+  restoreEntity(data) { return this._entity.loadFromJSON(data); }
+  // Mulden von p, deren Zug schlägt, mit der Zahl der Samen
+  getSchlagzahlen(p) {
+    const e = this._entity, out = {};
+    for (const v of e.getValidMoves(p)) { const z = e.R.zug(e.cells, p, v); if (z.summe > 0) out[v] = z.summe; }
+    return out;
+  }
+  // Mulden von p, die der Gegner mit einem erlaubten Zug schlagen könnte
+  getGefaehrdet(p) {
+    const e = this._entity, o = e.R.gegner(p), bad = new Set();
+    for (const v of e.R.zuege(e.cells, o)) e.R.zug(e.cells, o, v).geschlagen.forEach(i => bad.add(i));
+    return [...bad].sort((a, b) => a - b);
+  }
+}
+
+/* --- CONTROL: Ablauf und Computer (Zufall von außen) --- */
+class AyoControl extends GameControl {
+  static STUFEN = {
+    leicht: { tiefe: 2, fehler: 0.25 },
+    mittel: { tiefe: 5, fehler: 0.05 },
+    stark:  { tiefe: 8, fehler: 0 }
+  };
+
+  constructor(boundary, aiStrategy = null) {
+    super(boundary, 'B', aiStrategy);   // Süd (Mensch) beginnt, der Computer spielt Nord
+    this._pause = false;
+    this.setDifficulty('mittel');
+  }
+  setPause(an) { this._pause = !!an; }
+  getValidMoves(p = this.getCurrentPlayer()) { return this.boundary.getValidMoves(p); }
+
+  async restoreGame() {
+    const data = await this.boundary.loadGame();
+    if (!data || !data.entity) return false;
+    if (!this.boundary.restoreEntity(data.entity)) return false;
+    this._verlauf = [];
+    this.vsAI = !!data.vsAI;
+    return true;
+  }
+
+  playerMove(i) {
+    return this._executeMove(() => this.boundary.canMove(i), () => this.boundary.makeMove(i));
+  }
+
+  _rechne(spieler, tiefe) {
+    const args = [this.boundary.getBoardState(), spieler, tiefe];
+    return this.aiStrategy ? this.aiStrategy.chooseMove('ayo', args) : Promise.resolve(AIEngines.ayo(...args));
+  }
+  async computeAiMove() {
+    if (this._entscheideFehler()) return this._zufallsZug(this.getValidMoves(this.aiPlayer));
+    return this._rechne(this.aiPlayer, this.searchDepth);
+  }
+  _tippFuer(spieler) { return this._rechne(spieler, 4); }
+
+  // Ansicht für die UI: was ist spielbar, was schlägt, was ist gefährdet
+  ansicht(lernen) {
+    const b = this.boundary, p = b.getCurrentPlayer(), mensch = !b.isGameOver() && !this.isAiTurn();
+    const v = { cells: b.getBoardState(), spieler: p, mensch, zuege: [], schlag: {}, gefahr: [] };
+    if (!mensch) return v;
+    v.zuege = b.getValidMoves(p);
+    if (lernen) { v.schlag = b.getSchlagzahlen(p); v.gefahr = b.getGefaehrdet(p); }
+    return v;
+  }
+}
+
+/* KI-Engine Ayo: Alpha-Beta mit wachsender Tiefe und fester Knotengrenze (reproduzierbar, keine Uhr, kein Zufall).
+   Bewertung: Sammelmulden-Unterschied, dazu ein wenig Beweglichkeit. Liefert die Mulde. */
+AIEngines.ayo = function ayo(cells, spieler, tiefe) {
+  const R = ayoRegelwerk(), GRENZE = 30000, HART = 150000;
+  let knoten = 0, abbruch = false;
+  const sm = p => (p === 'A' ? 12 : 13);
+  const suche = (c, p, d, a, b) => {
+    knoten++;
+    if (knoten > HART) { abbruch = true; return 0; }
+    const o = R.gegner(p), z = R.zuege(c, p);
+    if (!z.length) { const e = R.endstand(c), w = e.winner; return w === p ? 1000 : w === 'Draw' ? 0 : -1000; }
+    if (d === 0) return (c[sm(p)] - c[sm(o)]) * 10 + (z.length - R.zuege(c, o).length);
+    const kinder = z.map(v => R.zug(c, p, v)).sort((x, y) => y.summe - x.summe);
+    let best = -Infinity;
+    for (const r of kinder) {
+      const w = r.cells[sm(p)] >= 25 ? 1000 + d : -suche(r.cells, o, d - 1, -b, -a);
+      if (w > best) best = w;
+      if (best > a) a = best;
+      if (a >= b || abbruch) break;
+    }
+    return best;
+  };
+  const wurzel = R.zuege(cells, spieler);
+  if (wurzel.length <= 1) return wurzel[0];
+  let beste = wurzel[0];
+  for (let d = 1; d <= tiefe; d++) {
+    let besterWert = -Infinity, zug = wurzel[0];
+    const kinder = wurzel.map(v => R.zug(cells, spieler, v)).sort((x, y) => y.summe - x.summe);
+    for (const r of kinder) {
+      const w = r.cells[sm(spieler)] >= 25 ? 1000 + d : -suche(r.cells, R.gegner(spieler), d - 1, -Infinity, Infinity);
+      if (abbruch) break;
+      if (w > besterWert) { besterWert = w; zug = r.von; }
+    }
+    if (abbruch) break;
+    beste = zug;
+    if (knoten > GRENZE || besterWert >= 1000) break;
+  }
+  return beste;
+};
+
+/* Übung beim ersten Start (S-W30): fünf feste Stellungen mit je einem Tippziel (läuft auf einer eigenen Entity). */
+class AyoUebungControl {
+  static SCHRITTE = [
+    { titel: 'Säen', text: 'Du spielst unten. Tippe die leuchtende Mulde: ihre Samen werden einzeln gegen den Uhrzeigersinn verteilt.',
+      m: null, ziel: 2, gut: 'Gesät! Ein Samen je Mulde, auch in die Mulden des Gegners.' },
+    { titel: 'Schlagen', text: 'Liegen beim Gegner nach deinem letzten Samen 2 oder 3 Samen, gehören sie dir. Tippe die leuchtende Mulde.',
+      m: { 0: 4, 1: 4, 2: 4, 3: 4, 4: 4, 5: 2, 6: 4, 7: 1, 8: 4, 9: 4, 10: 4, 11: 4 }, A: 2, B: 3, ziel: 5, gut: 'Geschlagen! Die 2 Samen liegen jetzt in deiner Sammelmulde.' },
+    { titel: 'Kettenschlag', text: 'Davor liegende Gegnermulden mit 2 oder 3 Samen schlägst du mit. Tippe die leuchtende Mulde mit 5 Samen.',
+      m: { 0: 1, 2: 3, 5: 5, 6: 4, 8: 2, 9: 1, 10: 2 }, A: 10, B: 20, ziel: 5, gut: 'Dreimal geschlagen: 3 + 2 + 3 = 8 Samen!' },
+    { titel: 'Füttern', text: 'Der Gegner hat keine Samen mehr. Du musst ihm welche geben: nur Mulden, die weit genug reichen, leuchten.',
+      m: { 0: 3, 1: 2, 3: 1, 5: 2 }, A: 20, B: 20, ziel: 5, gut: 'Gefüttert! Jetzt kann der Gegner wieder ziehen.' },
+    { titel: 'Kroo', text: 'Eine Mulde mit 12 oder mehr Samen ist ein Kroo: beim Umlauf wird sie selbst übersprungen. Tippe sie an.',
+      m: { 0: 12, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2 }, A: 7, B: 7, ziel: 0, gut: 'Die Startmulde bleibt leer, der letzte Samen landet in Mulde B.' }
+  ];
+
+  constructor(boundary) { this.boundary = boundary; this.nr = -1; this.geloest = false; }
+  starte() { this.nr = 0; this._lade(); }
+  beende() { this.nr = -1; }
+  aktiv() { return this.nr >= 0 && this.nr < AyoUebungControl.SCHRITTE.length; }
+  fertig() { return this.nr >= AyoUebungControl.SCHRITTE.length; }
+  anzahl() { return AyoUebungControl.SCHRITTE.length; }
+  schritt() { return this.aktiv() ? { nr: this.nr + 1, ...AyoUebungControl.SCHRITTE[this.nr] } : null; }
+  istGeloest() { return this.geloest; }
+  alleZiele() { return AyoUebungControl.SCHRITTE.map(s => s.ziel); }
+  getBoardState() { return this.boundary.getBoardState(); }
+
+  _lade() {
+    const s = AyoUebungControl.SCHRITTE[this.nr], c = Array(14).fill(0);
+    if (s.m) { for (const [i, v] of Object.entries(s.m)) c[+i] = v; c[12] = s.A; c[13] = s.B; } else { c.fill(4, 0, 12); }
+    let rest = 48 - c.reduce((a, b) => a + b, 0);
+    if (rest > 0) { const a = Math.min(rest, 24 - c[12]); c[12] += a; rest -= a; c[13] += rest; }
+    this.boundary.restoreEntity({ formatversion: 1, cells: c, currentPlayer: 'A', finished: false, winner: null, halbzuege: 0, historie: [c.join(',') + ':A'], grund: null });
+    this.geloest = false;
+  }
+  // Nur das Ziel zählt; alles andere ist ein Hinweis ohne Wirkung.
+  tippe(i) {
+    if (!this.aktiv() || this.geloest) return { invalid: true };
+    if (i !== AyoUebungControl.SCHRITTE[this.nr].ziel) return { invalid: true, hinweis: true };
+    this.boundary.makeMove(i);
+    this.geloest = true;
+    return { invalid: false };
+  }
+  weiter() {
+    if (!this.aktiv()) return this.fertig();
+    this.nr++;
+    if (this.aktiv()) this._lade();
+    return this.fertig();
+  }
+  ansicht() {
+    const s = AyoUebungControl.SCHRITTE[this.nr], b = this.boundary;
+    const v = { cells: b.getBoardState(), spieler: 'A', mensch: true, zuege: [], schlag: {}, gefahr: [] };
+    if (s && !this.geloest) { v.zuege = [s.ziel]; if (s.titel === 'Schlagen' || s.titel === 'Kettenschlag') v.schlag = { [s.ziel]: s.titel === 'Schlagen' ? 2 : 8 }; }
+    return v;
+  }
+}
+
+/* --- Ayo: "Übung gesehen" (eigener Schlüssel; Speicher gesperrt = null) --- */
+class AyoEinfuehrung {
+  static SCHLUESSEL = 'brettspiele.ayo';
+  static FORMAT = 1;
+  constructor(speicher) { this._speicher = speicher; }
+  gesehen() {
+    try {
+      const d = JSON.parse(this._speicher.getItem(AyoEinfuehrung.SCHLUESSEL));
+      return !!d && d.formatversion === AyoEinfuehrung.FORMAT && d.einfuehrung === true;
+    } catch (e) { return false; }
+  }
+  markiere() {
+    try { this._speicher.setItem(AyoEinfuehrung.SCHLUESSEL, JSON.stringify({ formatversion: AyoEinfuehrung.FORMAT, einfuehrung: true })); } catch (e) { /* gilt dann nur bis zum Neuladen */ }
+  }
+}
+
+/* --- AyoUI: Brett quer vor dem Spieler (Süd unten, Nord oben), je Mulde Zahl und Samen, Sammelmulden oben und unten --- */
+class AyoUI extends GameUI {
+  static SUED = 'ABCDEF';
+  static NORD = 'abcdef';
+  static GRUND = { nichtfuettern: 'Kein Zug kann füttern', wiederholung: 'Dieselbe Stellung zum dritten Mal', halbzuege: '60 Züge ohne Schlag' };
+
+  constructor(control) {
+    super(control, {
+      statusId: 'aystatus',
+      resetBtnId: 'ayresetBtn',
+      modeName: 'aymode',
+      resetStatsBtnId: 'ayresetStatsBtn',
+      statEls: { A: 'aystatA', B: 'aystatB', draws: 'aystatDraw' },
+      aiDelayMs: 600
+    });
+    this.boardEl = document.getElementById('ayboard');
+    this.uebungEl = document.getElementById('ayuebung');
+    this.hilfeEl = document.getElementById('ayhilfe');
+    this.uebung = AyoUI.neueUebung ? AyoUI.neueUebung() : null;
+    this._v = null; this._sperre = false;
+    this._baueAyoKnoepfe();
+    this._baueHilfe();
+    this.uebungEl.querySelector('.mu-ueberspringen').addEventListener('click', () => this._uebungUeberspringen());
+    this.uebungEl.querySelector('.mu-los').addEventListener('click', () => this._uebungLos());
+    if (this.uebung && !(AyoUI.einfuehrung && AyoUI.einfuehrung.gesehen())) this._starteUebung();
+    this.init();
+  }
+
+  // ---------- Knöpfe, Lernhilfe, Regelkarten ----------
+  _baueAyoKnoepfe() {
+    this.hilfeBtn = document.createElement('button');
+    this.hilfeBtn.type = 'button'; this.hilfeBtn.className = 'action secondary klein ay-hilfe-knopf hilfe-knopf';
+    this.hilfeBtn.textContent = '?'; this.hilfeBtn.setAttribute('aria-label', 'Regeln');
+    this.hilfeBtn.addEventListener('click', () => this._hilfeOeffnen());
+    this.optionenEl.appendChild(this.hilfeBtn);
+    this.lernenBtn = document.createElement('button');
+    this.lernenBtn.type = 'button'; this.lernenBtn.className = 'action secondary klein lernen-knopf';
+    this.lernenBtn.addEventListener('click', () => this.setzeLernen(!this._lernen()));
+    this.optionenEl.appendChild(this.lernenBtn);
+    this._lernenKnopf();
+  }
+  _lernen() { return GameUI.einst ? GameUI.einst.lernen(this.spiel) : true; }
+  setzeLernen(an) { if (GameUI.einst) GameUI.einst.setzeLernen(this.spiel, an); this._lernenKnopf(); this.render(); }
+  _lernenKnopf() { this.lernenBtn.textContent = this._lernen() ? 'Lernhilfe an' : 'Lernhilfe aus'; }
+
+  // Mini-Brett für die Regelkarten: zwei Reihen à 6 Mulden mit Zahlen
+  static miniBrett({ sued = [4, 4, 4, 4, 4, 4], nord = [4, 4, 4, 4, 4, 4], hell = [], pfeil = null }) {
+    let s = '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="2" y="22" width="96" height="56" rx="10" fill="#8a5a34"/>';
+    const feld = (n, x, y, i) => `<circle cx="${x}" cy="${y}" r="6.6" fill="${hell.includes(i) ? '#ffd9a0' : '#e8d4b8'}" stroke="${hell.includes(i) ? '#ff9500' : '#4a3018'}" stroke-width="1.4"/><text x="${x}" y="${y + 2.6}" text-anchor="middle" font-size="7.5" font-weight="700" font-family="system-ui,sans-serif" fill="#4a3018">${n}</text>`;
+    nord.forEach((n, k) => { s += feld(n, 91 - k * 16.4, 38, 6 + k); });
+    sued.forEach((n, k) => { s += feld(n, 9 + k * 16.4, 62, k); });
+    if (pfeil) s += `<path d="M${pfeil[0]} ${pfeil[1]} L${pfeil[2]} ${pfeil[3]}" stroke="#0a84ff" stroke-width="2.4" stroke-linecap="round" fill="none"/>`;
+    return s + '</svg>';
+  }
+  _baueHilfe() {
+    const karte = (titel, text, brett) => `<div class="mu-karte">${AyoUI.miniBrett(brett)}<div><h3>${titel}</h3><p>${text}</p></div></div>`;
+    this.hilfeEl.innerHTML = '<div class="mu-hilfe-inhalt"><h2>So geht Ayo</h2>'
+      + karte('1. Ziel und Säen', 'Du spielst die untere Reihe, der Computer die obere. Tippe eine Mulde: alle Samen werden einzeln gegen den Uhrzeigersinn verteilt, auch in die Mulden des Gegners. Hat die Mulde 12 oder mehr Samen, wird sie beim Umlauf übersprungen. Ziel: 25 der 48 Samen erobern.',
+        { hell: [2], pfeil: [34, 70, 62, 70] })
+      + karte('2. Schlagen und Kette', 'Landet dein letzter Samen beim Gegner und liegen dort danach genau 2 oder 3 Samen, gehören sie dir. Davor liegende Gegnermulden mit 2 oder 3 Samen schlägst du gleich mit, bis die Kette abbricht. Auf deiner Seite wird nie geschlagen.',
+        { sued: [1, 0, 3, 0, 0, 5], nord: [4, 0, 2, 1, 2, 5], hell: [8, 9, 10] })
+      + karte('3. Füttern und Ende', 'Hat der Gegner keine Samen, musst du ihn füttern. Geht das nicht, endet die Partie und jeder behält die Samen seiner Seite. Ein Zug, der dem Gegner alle Samen nähme, ist verboten, außer er ist dein einziger: dann verfällt der Schlag. 25 Samen gewinnen, 24 zu 24 ist unentschieden. Dieselbe Stellung zum dritten Mal oder 60 Züge ohne Schlag beenden die Partie.',
+        { sued: [3, 2, 0, 1, 0, 2], nord: [0, 0, 0, 0, 0, 0], hell: [5] })
+      + karte('4. Herkunft und Kultur', 'Ayò Ọlọ́pọ́n, kurz Ayo, stammt von den Yoruba in Südwest-Nigeria und gehört zur Familie der Mancala-Spiele, zu der auch Oware in Ghana gehört. Man spielt auf einem Holzbrett mit 12 Mulden und 48 Samen, traditionell den glatten grauen Samen der Caesalpinia bonduc. Kinder lernen es früh, abends wird oft gespielt. Die Regeln unterscheiden sich je nach Ort; hier gelten die Turnierregeln.',
+        { sued: [4, 4, 4, 4, 4, 4], nord: [4, 4, 4, 4, 4, 4] })
+      + karte('5. Tipps', 'Kroo bauen: lass eine Mulde auf 12 oder mehr Samen wachsen, dann kannst du später einmal ganz ums Brett säen. Eigene 1er und 2er schützen: spiele sie aus, bevor der Gegner dort landet (das Ausrufezeichen der Lernhilfe warnt dich). Tempo: zähle die Zielmulde vorher im Kopf ab.',
+        { sued: [0, 2, 12, 1, 0, 3], nord: [3, 4, 5, 3, 2, 4], hell: [2] })
+      + '<div class="mu-hilfe-knoepfe"><button type="button" class="action secondary klein ay-hilfe-uebung">Übung wiederholen</button>'
+      + '<button type="button" class="action klein mu-hilfe-schliessen">Schließen</button></div></div>';
+    this.hilfeEl.querySelector('.mu-hilfe-schliessen').addEventListener('click', () => this._hilfeSchliessen());
+    this.hilfeEl.querySelector('.ay-hilfe-uebung').addEventListener('click', () => { this.hilfeEl.hidden = true; this._starteUebung(); });
+    this.hilfeEl.addEventListener('click', (e) => { if (e.target === this.hilfeEl) this._hilfeSchliessen(); });
+  }
+  _hilfeOeffnen() { this.hilfeEl.hidden = false; this._pausiert(); }
+  _hilfeSchliessen() { this.hilfeEl.hidden = true; this._weiterNachPause(); }
+
+  // ---------- Übung ----------
+  _starteUebung() {
+    clearTimeout(this._uebungTimer);
+    this._uebungGeschafft = false; this._uebungStatus = null;
+    this.uebung.starte();
+    this._pausiert();
+    this.render();
+  }
+  _speichereEinfuehrung() { if (AyoUI.einfuehrung) AyoUI.einfuehrung.markiere(); }
+  _uebungUeberspringen() {
+    clearTimeout(this._uebungTimer);
+    this.uebung.beende();
+    this._uebungGeschafft = false; this._uebungStatus = null;
+    this._speichereEinfuehrung();
+    this.render();
+    this._weiterNachPause();
+  }
+  _uebungLos() { this._uebungGeschafft = false; this.render(); this._weiterNachPause(); }
+  _uebungTipp(i) {
+    const r = this.uebung.tippe(i);
+    if (r.invalid) {
+      if (r.hinweis) { this._uebungStatus = 'Nicht dort: tippe auf die leuchtende Mulde.'; this.render(); }
+      return;
+    }
+    this._uebungStatus = this.uebung.schritt().gut;
+    this._animieren = true;
+    try { this.render(); } finally { this._animieren = false; }
+    this._rueckmeldung(null, true);
+    clearTimeout(this._uebungTimer);
+    this._uebungTimer = setTimeout(() => this._uebungWeiter(), 1800);
+  }
+  _uebungWeiter() {
+    clearTimeout(this._uebungTimer);
+    this._uebungStatus = null;
+    if (this.uebung.weiter()) {
+      this.uebung.beende();
+      this._uebungGeschafft = true;
+      this._speichereEinfuehrung();
+      if (typeof konfetti === 'function') konfetti();
+    }
+    this.render();
+  }
+  _uebungZeigen() {
+    const aktiv = this.uebung && this.uebung.aktiv();
+    this.uebungEl.hidden = !(aktiv || this._uebungGeschafft);
+    if (this.uebungEl.hidden) return;
+    const titel = this.uebungEl.querySelector('.mu-uebung-titel');
+    if (aktiv) { const s = this.uebung.schritt(); titel.textContent = `Übung ${s.nr} von ${this.uebung.anzahl()}: ${s.titel}`; }
+    else titel.textContent = 'Geschafft! Jetzt eine echte Partie.';
+    this.uebungEl.querySelector('.mu-ueberspringen').hidden = !aktiv;
+    this.uebungEl.querySelector('.mu-los').hidden = aktiv;
+  }
+
+  _pausiert() {
+    const p = !!(this.uebung && this.uebung.aktiv()) || !!this._uebungGeschafft || !this.hilfeEl.hidden;
+    this.control.setPause(p);
+    return p;
+  }
+  _weiterNachPause() { if (!this._pausiert() && this.control.isAiTurn()) setTimeout(() => this.runAiTurn(), this.aiDelayMs); }
+  async runAiTurn() {
+    if (this._pausiert()) return;   // der Computer wartet, bis Übung oder Regelkarten zu sind
+    const outcome = await this.performAiMove();
+    if (outcome.invalid) return;
+    this.afterMove(outcome.result);
+  }
+  async performAiMove() {
+    const move = await this.control.computeAiMove();
+    if (!this.control.isAiTurn() || this._pausiert() || move === null || move === undefined) return { invalid: true };
+    return this.control.playerMove(move);
+  }
+
+  _knoepfeAktualisieren() {
+    super._knoepfeAktualisieren();
+    const aus = (this.uebung && this.uebung.aktiv()) || this._sperre;
+    if (aus) {
+      if (this.undoBtn) this.undoBtn.disabled = true;
+      if (this.tippBtn) this.tippBtn.disabled = true;
+    }
+  }
+
+  // ---------- Eingaben ----------
+  _hinweis(text) {
+    clearTimeout(this._hinweisTimer);
+    this._hinweisText = text;
+    this.render();
+    this._hinweisTimer = setTimeout(() => { this._hinweisText = null; this.render(); }, 1600);
+  }
+  _grund(i) {
+    const c = this.control, p = c.getCurrentPlayer(), cells = c.getBoardState(), eigene = p === 'A' ? i >= 0 && i <= 5 : i >= 6 && i <= 11;
+    if (!eigene) return 'Das ist keine Mulde von dir.';
+    if (cells[i] === 0) return 'Diese Mulde ist leer.';
+    const gegner = p === 'A' ? [6, 7, 8, 9, 10, 11] : [0, 1, 2, 3, 4, 5];
+    if (gegner.every(j => cells[j] === 0)) return 'Du musst füttern: tippe eine Mulde mit Ring.';
+    return 'Dieser Zug schlüge alle Samen des Gegners und ist nicht erlaubt.';
+  }
+  handlePitClick(i) {
+    if (this.uebung && this.uebung.aktiv()) return this._uebungTipp(i);
+    if (this._uebungGeschafft) this._uebungLos();
+    if (this._sperre || this._pausiert() || this.control.isAiTurn() || this.control.isGameOver()) return;
+    this._hinweisText = null;
+    const outcome = this.control.playerMove(i);
+    if (outcome.invalid) { this._hinweis(this._grund(i)); return; }
+    this.afterMove(outcome.result);
+  }
+
+  // Säen Samen für Samen zeigen (bei reduzierter Bewegung sofort); danach das normale Ende des Zugs
+  _reduziert() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  afterMove(result) {
+    const l = this.control.boundary.getLetzter(), alt = this._basis;
+    if (!l || !alt || this._reduziert() || (this.uebung && this.uebung.aktiv())) return super.afterMove(result);
+    this._sperre = true;
+    const stand = this.control.boundary.getBoardState().join(',');
+    this._animiereSaeen(l, alt).catch(() => {}).then(() => {
+      this._sperre = false;
+      if (this.control.boundary.getBoardState().join(',') !== stand) return this.render();   // Partie wurde inzwischen neu gestartet oder zurückgenommen
+      super.afterMove(result);
+    });
+  }
+  async _animiereSaeen(l, alt) {
+    const zahlen = alt.slice(), pit = i => this.boardEl.querySelector(`.ay-mulde[data-i="${i}"]`);
+    const dauer = Math.min(120, 1500 / Math.max(1, l.gesaet.length));
+    zahlen[l.von] = 0;
+    const el0 = pit(l.von); if (el0) el0.innerHTML = AyoUI.inhalt(0);
+    for (const i of l.gesaet) {
+      await new Promise(r => setTimeout(r, dauer));
+      zahlen[i]++;
+      const el = pit(i);
+      if (el) { el.innerHTML = AyoUI.inhalt(zahlen[i]); el.classList.remove('neu'); void el.offsetWidth; el.classList.add('neu'); }
+      if (GameUI.einst && GameUI.einst.istTonAn()) GameUI.klang.spiele('zug');
+    }
+  }
+
+  // ---------- Darstellung ----------
+  static inhalt(n) {
+    let s = `<span class="ay-zahl">${n}</span><span class="ay-samen">`;
+    for (let k = 0; k < Math.min(n, 8); k++) s += '<i></i>';
+    if (n > 8) s += `<b class="ay-mehr">+${n - 8}</b>`;
+    return s + '</span>';
+  }
+  static name(i) { return i < 6 ? AyoUI.SUED[i] : AyoUI.NORD[i - 6]; }
+
+  render() {
+    const ueb = !!(this.uebung && this.uebung.aktiv());
+    const v = ueb ? this.uebung.ansicht() : this.control.ansicht(this._lernen());
+    this._v = v;
+    const zuege = new Set(v.zuege), gefahr = new Set(v.gefahr);
+    const { neu } = this._aenderungen(v.cells);
+    this.boardEl.innerHTML = '';
+    const sammel = (i, id, text) => {
+      const d = document.createElement('div');
+      d.className = 'ay-sammel ' + (i === 12 ? 'sued' : 'nord') + (neu.has(i) ? ' neu' : ''); d.id = id;
+      d.setAttribute('role', 'img'); d.setAttribute('aria-label', `Sammelmulde ${text}: ${v.cells[i]} Samen`);
+      d.innerHTML = `<span class="ay-sammel-name">${text}</span><span class="ay-sammel-zahl">${v.cells[i]}</span>`;
+      this.boardEl.appendChild(d);
+    };
+    sammel(13, 'aystore-b', 'Nord');
+    for (let i = 0; i < 12; i++) {
+      const n = v.cells[i], b = document.createElement('button');
+      let cls = 'ay-mulde ' + (i < 6 ? 'sued' : 'nord') + (n === 0 ? ' leer' : '');
+      if (zuege.has(i) && v.mensch) cls += ' valid';
+      if (v.schlag[i]) cls += ' schlag';
+      if (gefahr.has(i)) cls += ' gefahr';
+      if (neu.has(i) && n) cls += ' neu';
+      b.type = 'button'; b.className = cls; b.dataset.i = i;
+      b.style.gridRow = i < 6 ? 3 : 2; b.style.gridColumn = i < 6 ? i + 1 : 12 - i;
+      b.setAttribute('aria-label', `Mulde ${AyoUI.name(i)}, ${i < 6 ? 'Süd' : 'Nord'}, ${n} ${n === 1 ? 'Samen' : 'Samen'}`
+        + (zuege.has(i) && v.mensch ? ', spielbar' : '') + (v.schlag[i] ? `, schlägt ${v.schlag[i]}` : '') + (gefahr.has(i) ? ', gefährdet' : ''));
+      b.innerHTML = AyoUI.inhalt(n) + (gefahr.has(i) ? '<span class="ay-warn">!</span>' : '') + (v.schlag[i] ? `<span class="ay-schlagzahl">${v.schlag[i]}</span>` : '');
+      b.addEventListener('click', () => this.handlePitClick(i));
+      this.boardEl.appendChild(b);
+    }
+    sammel(12, 'aystore-a', 'Süd');
+    // Sprechblase an das Ziel der Übung
+    if (ueb && !this.uebung.istGeloest()) {
+      const el = this.boardEl.querySelector(`.ay-mulde[data-i="${this.uebung.schritt().ziel}"]`);
+      if (el) { const bl = document.createElement('span'); bl.className = 'mu-blase ay-blase'; bl.textContent = 'Hier tippen'; el.appendChild(bl); }
+    }
+    this.statusEl.textContent = ueb ? (this._uebungStatus || this.uebung.schritt().text) : (this.control.isGameOver() ? this.statusEl.textContent : this._statusText(v));
+    this._uebungZeigen();
+  }
+
+  _statusText(v) {
+    if (this._hinweisText) return this._hinweisText;
+    const c = this.control, p = v.spieler, info = c.boundary.getLetzter();
+    if (c.isAiTurn()) return 'Der Computer (Nord) denkt nach …';
+    const du = c.vsAI && p !== c.aiPlayer, wer = du ? 'Du bist' : (p === 'A' ? 'Süd ist' : 'Nord ist');
+    const kopf = info && info.summe > 0 ? `Geschlagen: ${info.summe}. ` : (info && info.verfallen ? 'Schlag verfällt, sonst wären alle Samen weg. ' : '');
+    const gegner = p === 'A' ? [6, 7, 8, 9, 10, 11] : [0, 1, 2, 3, 4, 5];
+    if (gegner.every(j => v.cells[j] === 0)) return `${kopf}${wer} am Zug und muss füttern: tippe eine Mulde mit Ring.`;
+    return `${kopf}${wer} am Zug: tippe eine Mulde mit Ring.`;
+  }
+
+  renderGameOver(result) {
+    this.render();
+    const c = this.control, cells = c.getBoardState(), a = cells[12], b = cells[13], grund = AyoUI.GRUND[result.grund];
+    const stand = `${a} zu ${b}`;
+    let text;
+    if (result.winner === 'Draw') text = `Unentschieden ${stand}.`;
+    else if (c.vsAI) text = result.winner === c.aiPlayer ? `Der Computer gewinnt ${stand}.` : `Du gewinnst ${stand}! 🎉`;
+    else text = `${result.winner === 'A' ? 'Süd' : 'Nord'} gewinnt ${stand}! 🎉`;
+    this.statusEl.textContent = (grund ? grund + ': ' : '') + text;
+    this._v = c.ansicht(this._lernen());
+  }
+
+  // Tipp: Markierung an der Mulde
+  _zeigeTipp(felder) {
+    clearTimeout(this._tippTimer);
+    const alle = () => this.boardEl.querySelectorAll('.tipp');
+    alle().forEach(e => e.classList.remove('tipp'));
+    felder.forEach(i => { const e = this.boardEl.querySelector(`.ay-mulde[data-i="${i}"]`); if (e) e.classList.add('tipp'); });
+    this._tippTimer = setTimeout(() => alle().forEach(e => e.classList.remove('tipp')), 1600);
+    if (this.ansicht3d && this.ansicht3d.aktiv) this.ansicht3d.markiere(felder, 1600);
+  }
+}
+
+/* --- AyoAnsicht3D: Holzbrett mit 12 Mulden, Samen als Kugeln, zwei Sammelmulden; Süd unten --- */
+class AyoAnsicht3D {
+  static SP = 1.2;   // Abstand der Mulden
+  static x(col) { return (col - 2.5) * AyoAnsicht3D.SP; }
+  // Mitte der Mulde i (0 bis 11) und der Sammelmulden (12 Süd, 13 Nord)
+  static pos(i) {
+    const S = AyoAnsicht3D.SP;
+    if (i === 12) return { x: 0, z: 2.5 * S + 0.1 };
+    if (i === 13) return { x: 0, z: -2.5 * S - 0.1 };
+    return i < 6 ? { x: AyoAnsicht3D.x(i), z: 0.62 * S } : { x: AyoAnsicht3D.x(11 - i), z: -0.62 * S };
+  }
+
+  constructor(ui, art) {
+    this.ui = ui; this.art = art; this.aktiv = false; this.marken = []; this.bilder = 0;
+    this.huelle = document.createElement('div');
+    this.huelle.className = 'brett3d ' + art; this.huelle.hidden = true;
+    ui.boardEl.after(this.huelle);
+  }
+
+  async einschalten() {
+    if (!Ansicht3D.webglMoeglich() || !(await Ansicht3D.laden())) return false;
+    if (!this.renderer) { try { this._aufbauen(); } catch (e) { this.renderer = null; return false; } }
+    this.aktiv = true; this.huelle.hidden = false; this.ui.boardEl.classList.add('versteckt3d');
+    this._groesse(); this.aktualisieren(null, true);
+    return true;
+  }
+  ausschalten() { this._markenWeg(); this.aktiv = false; this.huelle.hidden = true; this.ui.boardEl.classList.remove('versteckt3d'); }
+
+  _aufbauen() {
+    const T = THREE, S = AyoAnsicht3D.SP;
+    this.renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    this.huelle.appendChild(this.renderer.domElement);
+    this.szene = new T.Scene();
+    this.kamera = new T.PerspectiveCamera(34, 1, 0.1, 100);
+    this.szene.add(new T.HemisphereLight(0xffffff, 0x606878, 0.65));
+    const sonne = new T.DirectionalLight(0xffffff, 0.85); sonne.position.set(-4, 12, 6); this.szene.add(sonne);
+    this.ray = new T.Raycaster();
+    this.ziele = []; this.samenGruppe = new T.Group(); this.markGruppe = new T.Group(); this.szene.add(this.samenGruppe, this.markGruppe);
+    const holz = (seed, farbe) => {
+      const { werte, groesse: n } = Ansicht3D.holzFaktor(seed), c = document.createElement('canvas'); c.width = c.height = n;
+      const g = c.getContext('2d'), bild = g.createImageData(n, n);
+      for (let i = 0; i < werte.length; i++) { const v = Math.round(255 * werte[i]); bild.data.set([v, v, v, 255], i * 4); }
+      g.putImageData(bild, 0, 0);
+      return new T.MeshStandardMaterial({ color: farbe, map: new T.CanvasTexture(c), roughness: 0.7 });
+    };
+    // Brett: Rahmen mit abgerundeten Enden wie auf dem Foto, darin die Mulden
+    const breite = 6 * S + 0.9, tiefe = 5 * S + 2.0;
+    const brett = new T.Mesh(new T.BoxGeometry(breite, 0.4, tiefe), holz(31, 0x6a3e22)); brett.position.set(0, -0.22, 0); this.szene.add(brett);
+    const dunkel = new T.MeshStandardMaterial({ color: 0x2c160a, roughness: 0.9 }), innen = new T.MeshStandardMaterial({ color: 0x4a2814, roughness: 0.85 });
+    const napf = new T.CircleGeometry(0.56, 32);
+    for (let i = 0; i < 12; i++) {
+      const p = AyoAnsicht3D.pos(i);
+      const m = new T.Mesh(napf, dunkel); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.005, p.z); this.szene.add(m);
+      const r = new T.Mesh(new T.RingGeometry(0.5, 0.6, 32), innen); r.rotation.x = -Math.PI / 2; r.position.set(p.x, 0.012, p.z); this.szene.add(r);
+      this._tippFlaeche(i, p.x, p.z, S * 0.96, S * 0.96);
+    }
+    // Sammelmulden: lange Schalen an den Enden
+    for (const i of [12, 13]) {
+      const p = AyoAnsicht3D.pos(i), m = new T.Mesh(new T.PlaneGeometry(4.4, 0.95), dunkel); m.rotation.x = -Math.PI / 2; m.position.set(0, 0.006, p.z); this.szene.add(m);
+    }
+    this.samenGeo = new T.SphereGeometry(0.15, 10, 8);
+    this.samenMat = [0x9aa58c, 0x8c9a82, 0xa7ad9a, 0x7f8c76].map(c => new T.MeshStandardMaterial({ color: c, roughness: 0.55 }));
+    this.markMat = {
+      quelle: new T.MeshBasicMaterial({ color: 0x34c759, transparent: true, opacity: 0.85 }), schlag: new T.MeshBasicMaterial({ color: 0xff9f0a, transparent: true, opacity: 0.9 }),
+      gefahr: new T.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.85 }), tipp: new T.MeshBasicMaterial({ color: 0x0a84ff, transparent: true, opacity: 0.9 })
+    };
+    this._eingabe();
+    if (window.ResizeObserver) new ResizeObserver(() => { if (this.aktiv) { this._groesse(); this._bild(); } }).observe(this.huelle);
+  }
+  _tippFlaeche(feld, x, z, b, t) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(b, t), new THREE.MeshBasicMaterial({ visible: false }));
+    m.rotation.x = -Math.PI / 2; m.position.set(x, 0.3, z); m.userData.feld = feld;
+    this.szene.add(m); this.ziele.push(m);
+  }
+  _eingabe() {
+    const el = this.renderer.domElement;
+    let start = null;
+    el.addEventListener('pointerdown', e => { start = { x: e.clientX, y: e.clientY }; try { el.setPointerCapture(e.pointerId); } catch (x) { } });
+    el.addEventListener('pointerup', e => {
+      if (!start) return;
+      const s = start; start = null;
+      if (Math.hypot(e.clientX - s.x, e.clientY - s.y) <= Ansicht3D.ZIEH_SCHWELLE) this.tippen(e.clientX, e.clientY);
+    });
+    el.addEventListener('pointercancel', () => { start = null; });
+  }
+  _groesse() {
+    const b = this.huelle.clientWidth, h = this.huelle.clientHeight;
+    if (!b || !h) return;
+    this.renderer.setSize(b, h, false);
+    this.kamera.aspect = b / h;
+    const k = this.kamera; k.position.set(0, 13.5, 6.5); k.lookAt(0, 0, 0.1);
+    k.updateProjectionMatrix(); k.updateMatrixWorld();
+  }
+  feldBei(cx, cy) {
+    if (!this.renderer) return null;
+    const r = this.renderer.domElement.getBoundingClientRect();
+    this.ray.setFromCamera(new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1), this.kamera);
+    const treffer = this.ray.intersectObjects(this.ziele, false);
+    return treffer.length ? treffer[0].object.userData.feld : null;
+  }
+  tippen(cx, cy) {
+    const f = this.feldBei(cx, cy);
+    if (f !== null && f !== undefined) this.ui.handlePitClick(f);
+  }
+  bildschirmPunkt(feld) {
+    const q = AyoAnsicht3D.pos(feld), p = new THREE.Vector3(q.x, 0.3, q.z);
+    p.project(this.kamera);
+    const r = this.renderer.domElement.getBoundingClientRect();
+    return { x: r.left + (p.x + 1) / 2 * r.width, y: r.top + (1 - p.y) / 2 * r.height };
+  }
+
+  // Samen einer Mulde: Spirale, ab 14 Samen in einer zweiten Lage
+  _lege(i, n) {
+    const q = AyoAnsicht3D.pos(i);
+    for (let k = 0; k < n; k++) {
+      const lage = Math.floor(k / 14), j = k % 14, r = i >= 12 ? 0 : 0.1 + 0.11 * Math.sqrt(j + 1), w = j * 2.4;
+      const m = new THREE.Mesh(this.samenGeo, this.samenMat[k % 4]);
+      if (i >= 12) m.position.set(-1.9 + (k % 14) * 0.29, 0.14 + Math.floor(k / 14) * 0.26, q.z + ((k % 2) ? 0.16 : -0.16));
+      else m.position.set(q.x + Math.cos(w) * r, 0.13 + lage * 0.24, q.z + Math.sin(w) * r);
+      m.userData.feld = i < 12 ? i : undefined; m.raycast = () => { };
+      this.samenGruppe.add(m);
+    }
+  }
+  aktualisieren(linie, sofort) {
+    if (!this.aktiv) return;
+    const v = this.ui._v;
+    if (!v) return;
+    this._markenWeg();
+    while (this.samenGruppe.children.length) this.samenGruppe.remove(this.samenGruppe.children[0]);
+    for (let i = 0; i < 14; i++) this._lege(i, v.cells[i]);
+    const ring = (i, mat, a, b) => {
+      const q = AyoAnsicht3D.pos(i), m = new THREE.Mesh(new THREE.RingGeometry(a, b, 32), mat);
+      m.rotation.x = -Math.PI / 2; m.position.set(q.x, 0.04, q.z); m.raycast = () => { }; this.markGruppe.add(m);
+    };
+    if (v.mensch) for (const i of v.zuege) ring(i, v.schlag[i] ? this.markMat.schlag : this.markMat.quelle, 0.6, 0.72);
+    for (const i of v.gefahr) ring(i, this.markMat.gefahr, 0.74, 0.84);
+    this._bild();
+  }
+  _markenWeg() {
+    if (!this.markGruppe) return;
+    while (this.markGruppe.children.length) this.markGruppe.remove(this.markGruppe.children[0]);
+    this.marken.forEach(m => { if (m.mesh.parent) m.mesh.parent.remove(m.mesh); });
+    this.marken = [];
+  }
+  markiere(felder, ms) {
+    if (!this.aktiv) return;
+    const bis = performance.now() + ms;
+    for (const f of felder) {
+      const q = AyoAnsicht3D.pos(f), m = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.8, 32), this.markMat.tipp);
+      m.rotation.x = -Math.PI / 2; m.position.set(q.x, 0.08, q.z); m.raycast = () => { };
+      this.szene.add(m); this.marken.push({ mesh: m, bis });
+    }
+    this._bild();
+  }
+  // Zahl der Samen in der Szene (für Tests)
+  zaehle() { return { samen: this.samenGruppe.children.length }; }
+
+  _bild() {
+    if (!this.aktiv || !this.renderer) return;
+    if (this._raf) return;
+    this._raf = requestAnimationFrame(() => { this._raf = 0; this._schritt(); });
+  }
+  _schritt() {
+    const jetzt = performance.now();
+    this.marken = this.marken.filter(m => { if (jetzt >= m.bis) { if (m.mesh.parent) m.mesh.parent.remove(m.mesh); return false; } m.mesh.visible = Math.floor(jetzt / 200) % 2 === 0; return true; });
+    this.renderer.render(this.szene, this.kamera); this.bilder++;
+    if (this.marken.length) this._bild();
+  }
+}
+
 /* --- Tavla: "Übung gesehen" (eigener Schlüssel, getrennt von den Einstellungen; Speicher gesperrt = null) --- */
 class TavlaEinfuehrung {
   static SCHLUESSEL = 'brettspiele.tavla';
@@ -8023,6 +8864,19 @@ wireGame({
   dbName: 'tavlaDB',
   EntityCls: TavlaEntity, BoundaryCls: TavlaBoundary,
   ControlCls: TavlaControl, UICls: TavlaUI,
+  controlExtraArgs: [aiStrategy]
+});
+
+// S-W30: Ayo. Übung auf eigener Entity, "Übung gesehen" in eigenem Schlüssel, eigene 3D-Klasse.
+GameUI.NAMEN.ayo = 'Ayo';
+GameUI.ANSICHT_3D.push('ayo');
+GameUI.ANSICHT_KLASSEN = Object.assign(GameUI.ANSICHT_KLASSEN || {}, { ayo: AyoAnsicht3D });
+AyoUI.neueUebung = () => new AyoUebungControl(new AyoBoundary(new AyoEntity(), new StatsEntity(), null));
+AyoUI.einfuehrung = new AyoEinfuehrung(speicher);
+wireGame({
+  dbName: 'ayoDB',
+  EntityCls: AyoEntity, BoundaryCls: AyoBoundary,
+  ControlCls: AyoControl, UICls: AyoUI,
   controlExtraArgs: [aiStrategy]
 });
 

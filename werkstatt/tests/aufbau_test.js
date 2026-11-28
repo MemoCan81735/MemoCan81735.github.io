@@ -10,7 +10,7 @@ const PORT = 8000 + Math.floor(Math.random() * 900);
 const URL_ = `http://127.0.0.1:${PORT}/brettspiele/`;
 const SCHLUESSEL = 'brettspiele.einstellungen';
 const HOCH = { width: 412, height: 915 }, QUER = { width: 915, height: 412 };
-const BRETTER = ['chess', 'muehle', 'connect4', 'othello', 'mangala', 'tictactoe', 'dame', 'tavla'];   // Spiele mit Brett und Abschnitten
+const BRETTER = ['chess', 'muehle', 'connect4', 'othello', 'mangala', 'tictactoe', 'dame', 'tavla', 'ayo'];   // Spiele mit Brett und Abschnitten
 const ALLE = [...BRETTER, 'schule'];
 
 let browser;
@@ -85,9 +85,9 @@ test('au_auswahl', async () => {
   }
   if (a.hoehe > 915) out.push(`Auswahl braucht Scrollen (${a.hoehe} px)`);
   const folge = a.kacheln.slice().sort((x, y) => x.m.t - y.m.t || x.m.l - y.m.l).map(k => k.spiel).join();   // so, wie der Spieler sie sieht
-  if (folge !== 'chess,schule,muehle,connect4,othello,mangala,tictactoe,dame,tavla') out.push(`Reihenfolge der Kacheln: ${folge}`);
+  if (folge !== 'chess,schule,muehle,connect4,othello,mangala,tictactoe,dame,tavla,ayo') out.push(`Reihenfolge der Kacheln: ${folge}`);
   // PS-1: jede Kachel öffnet ihr Spiel, Kopfzeile nennt es
-  const NAMEN = { chess: 'Schach', muehle: 'Mühle', connect4: 'Vier gewinnt', othello: 'Reversi', mangala: 'Mangala', tictactoe: 'Tic Tac Toe', schule: 'Schachschule', dame: 'Dame', tavla: 'Tavla' };
+  const NAMEN = { chess: 'Schach', muehle: 'Mühle', connect4: 'Vier gewinnt', othello: 'Reversi', mangala: 'Mangala', tictactoe: 'Tic Tac Toe', schule: 'Schachschule', dame: 'Dame', tavla: 'Tavla', ayo: 'Ayo' };
   for (const s of ALLE) {
     const x = await p.evaluate(async (s) => {
       window.__brett.tabs.zeigeAuswahl();
@@ -305,7 +305,7 @@ test('au_anordnung', async () => {
     await oeffne(p, s); await warte3d(p, s);
     const x = await pruefeSpiel(s);
     // PS-10: Spiele ohne Optionen zeigen keinen Abschnitt, Spiele mit 3D oder Lernhilfe schon
-    const erwartet = { chess: ['2D', 'Lernhilfe an'], connect4: ['2D'], muehle: ['?', 'Lernhilfe an'], othello: [], mangala: [], tictactoe: [], dame: ['2D', '?', 'Lernhilfe an'], tavla: ['2D', '?', 'Lernhilfe an'] }[s];
+    const erwartet = { chess: ['2D', 'Lernhilfe an'], connect4: ['2D'], muehle: ['?', 'Lernhilfe an'], othello: [], mangala: [], tictactoe: [], dame: ['2D', '?', 'Lernhilfe an'], tavla: ['2D', '?', 'Lernhilfe an'], ayo: ['2D', '?', 'Lernhilfe an'] }[s];
     if (x.optionen.map(k => k.text).sort().join('|') !== erwartet.slice().sort().join('|')) out.push(`${s}: Optionen sind ${x.optionen.map(k => k.text).join('|')}`);
     // gegen den Computer: Stufen erscheinen, Reihenfolge bleibt
     await p.evaluate(() => { const v = document.querySelector('.tab-content.active'); v.querySelector('[data-abschnitt="modus"] input[value=ai]').click(); });
