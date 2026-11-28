@@ -15,7 +15,7 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 - U-6: Der Besucher tippt "Spielen"; die Kamera stellt sich vor die Fläche des Platzes (Fernseher, Tisch, Sockel, Leinwand), das Spiel läuft darauf im Raum. "Groß spielen" zeigt es über den ganzen Schirm, derselbe Knopf bringt es zurück auf den Fernseher.
 - U-8: Am Inselmodell tippt der Besucher bei "Neon Ada" auf "Spielen"; die Insel des Spiels steht als 3D-Modell auf dem Sockel, er formt sie durch Antippen direkt im Raum, Knöpfe und Anzeigen des Spiels liegen darüber.
 - U-9: Am Perlenkästchen tippt der Besucher bei "Perlenwerkstatt" auf "Spielen"; das geplante Armband liegt als 3D-Perlenkette auf dem Esstisch, die Planung der Werkstatt steht daneben (quer) oder darunter (hoch), jede Änderung zeigt sich sofort an der Kette.
-- U-10: Der Besucher sieht sich im Raum um und findet, was ein Wohnzimmer hat: Tür, Heizkörper unter den Fenstern, Lichtschalter, Steckdosen und eine Wanduhr mit der echten Uhrzeit.
+- U-10: Der Besucher sieht sich im Raum um und findet, was ein Wohnzimmer hat: Tür, Heizkörper unter den Fenstern, Lichtschalter, Steckdosen und eine Wanduhr mit der echten Uhrzeit. Tippt er auf die Tür, schwingt sie auf, dahinter liegt ein heller Flur, und er kommt zur Startseite.
 - U-7: Am Spieltisch tippt der Besucher bei "Schach in 3D" (oder Vier gewinnt, Tic Tac Toe, Reversi, Dame, Mühle, Mangala, Tavla in 3D) auf "Spielen"; die Kamera blickt von der weißen Seite aufs Brett, er zieht durch Antippen von Figur und Feld, der Computer antwortet.
 
 ## Umfang
@@ -31,6 +31,7 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 - Flache Spiele auf dem Handy: das Spiel bekommt mindestens 640 × 400 Pixel und wird per Perspektive verkleinert, damit es seine Bedienung nicht zusammenquetscht.
 - Perlen als 3D-Armband (28.11.2026 auf Wunsch des Betreibers): Die Perlenwerkstatt öffnet unverändert im Spielfenster, rechts (quer) oder unten (hoch). Der Raum liest ihr Armband aus der Vorschau (`Perlen.ui.app.messung.geo` und `Perlen.entity.FARBEN`) und baut jede Perle in echter Größe in mm als 3D-Körper (rund, Rondelle, Tropfen, Herz, Buchstabenwürfel, Delica) auf dem Esstisch nach, dazu Band, Makramee-Knoten, Tesbih-Quaste und Anhänger. Die Kamera blickt im freien Bildteil auf die Kette (`setViewOffset`). Die Werkstatt selbst bleibt unverändert.
 - Ausstattung (28.11.2026 auf Wunsch des Betreibers): Tür mit Zarge, Türblatt und Klinke in der linken Wand; Lichtschalter neben der Tür; Steckdosen an allen Wänden; Heizkörper unter beiden Fenstern; Wanduhr zwischen den Fenstern mit der Uhrzeit des Geräts. Stühle am Esstisch gab es schon (fünf).
+- Feinschliff (28.11.2026 auf Wunsch des Betreibers): Punktlinien an Dielen und Wandstößen kamen vom Leuchteffekt, der ohne Kantenglättung rechnete; er rendert jetzt in ein Ziel mit 4-fach Kantenglättung (WebGL2), Wandstücke überlappen 1 cm, Dielen stoßen dicht an. Schwarze Spielsteine bekommen fast schwarze Farbe und wenig Spiegelung (das warme Licht färbte sie hellbraun). Im Hochformat blickt die Kamera 14° steiler auf flache Bretter (Vier gewinnt bleibt). Die Tür öffnet beim Antippen und führt wie "Alle Spiele" zur Startseite; sie ist ein Zusatzweg, per Tastatur bleibt "← Alle Spiele" der Weg hinaus. Ohne WebGL2 bleibt das Bild wie bisher ohne Kantenglättung (kein Fehler). Messwerte im Testbrowser (412×915): schwarze Bauern Helligkeit vorher 108 bis 132, nachher 11; Brett hintere zu vordere Kante vorher etwa 0,75, nachher 0,84.
 - Escape schließt Spielfenster oder Tafel, solange der Fokus im Raum liegt; im Spiel gehört Escape dem Spiel.
 
 ## Akzeptanzkriterien
@@ -48,7 +49,8 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | AK-10 | Aus U-7: Dame, Mühle und Mangala in 3D: eigener Zug nach Antippen steht (Dame: Stein, dann Ziel), der Computer antwortet; Regelkopie passt zu Brettspiele | `raum_test.js`, `regeln_raum.py --pruefen` |
 | AK-12 | Aus U-8: Neon Ada: Insel steht als Modell auf dem Sockel (Spielseite im Raummodus), Antippen hebt dort Land; Zurück räumt sie weg, Tafel wieder da | `raum_test.js` |
 | AK-13 | Aus U-9: Perlenwerkstatt: Perlen der 3D-Kette = Perlen der Vorschau der Werkstatt, Kette im freien Bildteil über dem Planungsfeld, Feld ganz im Bild; Zurück räumt die Kette weg | `raum_test.js` |
-| AK-14 | Aus U-10: Tür mit Türblatt in einer Öffnung der linken Wand; Wanduhr zeigt die Uhrzeit des Geräts (Stunde und Minute auf 1°) | `raum_test.js` |
+| AK-14 | Aus U-10: Tür mit Türblatt in einer Öffnung der linken Wand; Tür antippen öffnet sie und führt zur Startseite; Wanduhr zeigt die Uhrzeit des Geräts (Stunde und Minute auf 1°); Bild mit 4-fach Kantenglättung trotz Leuchteffekt | `raum_test.js` |
+| AK-15 | Aus U-7: schwarze Figuren wirken schwarz (Helligkeit unter 45 von 255), weiße hell; im Hochformat schaut die Kamera steiler aufs Brett (hintere Kante mindestens 80 % der vorderen, Brett mindestens 75 % der Breite) | `raum_test.js` |
 | AK-11 | Aus U-7: Tavla in 3D: Tippen würfelt, eigene Züge per Antippen, der Computer würfelt und zieht, je 15 Steine, Steine und Würfel im Bild = Spielstand | `raum_test.js` |
 
 ## Prüfszenarien
@@ -67,16 +69,21 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | PS-12 | Grenzwert | Hochformat 412×915: Insel ganz im Bild zwischen Anzeige oben und Knöpfen unten, Antippen trifft das Feld unter dem Ring | AK-12 |
 | PS-13 | Grenzwert | Hochformat 412×915: Planung unten 58 % der Höhe, Kette im Streifen darüber; Querformat: Planung rechts, Kette links daneben | AK-13 |
 | PS-14 | Normal | Uhr zu jeder Uhrzeit: Zeiger laufen im Uhrzeigersinn, um 3 Uhr steht der Stundenzeiger rechts | AK-14 |
+| PS-15 | Grenzwert | Hochformat 412×915: Schach von vorn, schwarze Figuren in der Sonne, Brett füllt die Breite | AK-15 |
+| PS-16 | Normal | Querformat: Tür antippen, sie schwingt auf, danach Startseite; im Verlauf zurück steht die Tür wieder zu | AK-14 |
 | PS-11 | Normal | Tavla: nach dem Würfeln zwei Steine ziehen, der Computer ist dran, würfelt und zieht ohne Zutun | AK-11 |
 
 ## Gegenproben
-`python3 werkstatt/tests/gegenproben_raum.py`: Zurück im Spiel führt zur Startseite, Leiste schließt nicht, falsche Spiel-Adresse, fehlendes Spiel an der Konsole, Karte auf der Startseite falsch verlinkt, Spiel liegt nicht auf dem Fernseher, Esstisch ohne Spielfläche, Computer antwortet im 3D-Schach nicht, Vier gewinnt: Stein fällt nicht nach unten, Tavla: Computer würfelt nicht, Neon Ada: Insel kommt nicht in den Raum, Armband kommt nicht auf den Esstisch, Wand ohne Türöffnung; alle dreizehn machen `raum_test.js` rot (28.11.2026). Veraltete Regelkopie: `regeln_raum.py --pruefen` wird rot. Einzeln: `NUR=Fernseher python3 werkstatt/tests/gegenproben_raum.py`. Fremde Server und Zurück-Link deckt `seite_pruefen.py --gegenproben` ab.
+`python3 werkstatt/tests/gegenproben_raum.py`: Zurück im Spiel führt zur Startseite, Leiste schließt nicht, falsche Spiel-Adresse, fehlendes Spiel an der Konsole, Karte auf der Startseite falsch verlinkt, Spiel liegt nicht auf dem Fernseher, Esstisch ohne Spielfläche, Computer antwortet im 3D-Schach nicht, Vier gewinnt: Stein fällt nicht nach unten, Tavla: Computer würfelt nicht, Neon Ada: Insel kommt nicht in den Raum, Armband kommt nicht auf den Esstisch, Wand ohne Türöffnung, Tür lässt sich nicht öffnen, Leuchteffekt ohne Kantenglättung, schwarze Figuren wieder hellbraun, Brett im Hochformat flach wie quer; alle siebzehn machen `raum_test.js` rot (28.11.2026). Veraltete Regelkopie: `regeln_raum.py --pruefen` wird rot. Einzeln: `NUR=Fernseher python3 werkstatt/tests/gegenproben_raum.py`. Fremde Server und Zurück-Link deckt `seite_pruefen.py --gegenproben` ab.
 
 ## Technisches Design
 - Schnittstellen: keine neuen; der Raum lädt Spiele per `<iframe>` von derselben Seite und hängt sich an deren Zurück-Link (`a.ng-zurueck`). Lädt das Fenster trotzdem die Startseite, schließt der Raum es.
 - Datenformat: keine gespeicherten Daten; Plätze und Spiele stehen als Liste im Skript (Name, Adresse, kurzer Text).
 - Alternativen: (a) Spiele im neuen Tab öffnen (verworfen: Raum geht verloren); (b) Spiele als Artifact einbetten (verworfen: fremde Seiten dort gesperrt); (c) Spielfenster auf derselben Seite (gewählt).
 - Entscheidung: (c).
+- **Spur:** normal, weil sichtbare Änderungen ohne Sicherheit, Daten, Geld oder neue Architektur (Feinschliff 28.11.2026, rund 100 Zeilen Code).
+- Phasenplan: 28.11.2026, dem Betreiber gemeldet, nicht anwendbar: Phase 5 (Review vor dem Bau) wurde für Neon Ada, Armband, Ausstattung und Feinschliff nicht vorab gemacht, Ersatz: Zweitprüfung durch `gegenleser` nach dem Bau, Befunde vor dem PR eingearbeitet; Phase 6 (Test rot vor Code) nur nachträglich, Ersatz: Gegenproben zeigen, dass jeder neue Test rot wird; Phase 13 (Abnahme am Handy) wartet auf den Betreiber, dort auch Leistung der Kantenglättung und Licht des Flurs prüfen.
+- Zweitprüfung: 28.11.2026, `gegenleser`, keine Muss-Befunde; eingearbeitet: Tür-Test prüft die Drehung, Test für "im Verlauf zurück", fehlende E2E-Zeilen, Clean-Code-Zahlen, Messwerte; bewusst offen: Tür nur per Zeiger (Zusatzweg), Farbmessung nur bei Schach (Dame, Mühle, Reversi nutzen dasselbe Material). Früheste Stufen: Bildfehler und Farben im Test (`raum_kanten`, `raum_farben` mit Pixelmessung), Tür im Test, Abnahme am Handy.
 - Design-Review: Eigenprüfung gegen Spec und Regeln der Seite (fremde Server, Zurück-Link, Anonymität, Tippflächen, Handyformat). Keine unabhängige Prüfung durch einen zweiten Agenten in diesem Thread; nachholen, falls der Betreiber es wünscht.
 
 ## Querschnitt
@@ -93,7 +100,7 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 - PS-8: Schach im Hochformat antippen
 
 ## Clean Code
-- Clean Code: Prüfergebnis: Raum als eine HTML-Datei wie die anderen Spiele (etwa 850 Zeilen, Plätze als Daten mit einer Bau-Funktion je Platz); Test unter 100 Zeilen, Gegenproben unter 45 Zeilen.
+- Clean Code: Prüfergebnis: Raum als eine HTML-Datei wie die anderen Spiele (Stand 28.11.2026: 2214 Zeilen, Plätze als Daten mit einer Bau-Funktion je Platz, Brettspiele, Armband und Neon-Ada-Brücke als eigene Blöcke); Test 229 Zeilen, Gegenproben 50 Zeilen. Test-Haken stehen gesammelt in `window.raumAusstattung`, `raumArmband`, `raumModell`, `raumSchach`.
 
 ## E2E
 | Schritt | Test |
@@ -113,6 +120,11 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | U-9 | Perlenwerkstatt legt das geplante Armband als 3D-Kette auf den Esstisch |
 | U-10 | Tür mit Türblatt in einer Öffnung der linken Wand |
 | U-10 | Wanduhr zeigt die Uhrzeit des Geräts |
+| U-10 | Tür antippen öffnet sie und führt zur Startseite |
+| U-10 | im Verlauf zurück steht die Tür wieder zu |
+| U-10 | Bild mit Kantenglättung trotz Leuchteffekt |
+| U-7 | Brett im Hochformat steil und groß, hintere Kante fast so breit wie die vordere |
+| U-7 | schwarze Figuren wirken schwarz, weiße hell |
 
 ## Dokumentation
 - Aktualisiert: werkstatt/specs/S-W29-spieleraum.md
