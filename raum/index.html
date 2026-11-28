@@ -86,6 +86,12 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
 #spielfenster.tv.unterwegs #spielrahmen { visibility: hidden; }
 #spielgross[hidden] { display: none; }
 body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display: none; }
+/* Schach in 3D auf dem Couchtisch */
+#schachleiste { position: fixed; left: 0; right: 0; top: 0; z-index: 9; flex-wrap: wrap; background: rgba(29, 21, 15, 0.85); }
+#schachleiste[hidden], #schachstatus[hidden] { display: none; }
+#schachstatus { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 9;
+  background: var(--karte); border: 1px solid var(--linie); border-radius: 999px; padding: 10px 18px; font-size: 0.95rem; white-space: nowrap; }
+body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurueck, body.schachmodus #karte { display: none; }
 @media (max-height: 480px) { .karte p:first-of-type { display: none; } #tafel ul { max-height: 52vh; } }
 @media (prefers-reduced-motion: reduce) { .marke { transition: none; } }
 </style>
@@ -110,6 +116,13 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
   <p id="tafeltext"></p>
   <ul id="tafelliste"></ul>
 </section>
+<div id="schachleiste" class="leiste" hidden>
+  <button id="schachzu">← Zurück in den Raum</button>
+  <button id="schachgegner">Gegner: Computer</button>
+  <button id="schachzurueck">Zug zurück</button>
+  <button id="schachneu">Neu</button>
+</div>
+<p id="schachstatus" hidden aria-live="polite"></p>
 <div id="spielfenster" hidden role="dialog" aria-modal="true" aria-labelledby="spielname">
   <div class="leiste"><button id="spielzu">← Zurück in den Raum</button><button id="spielgross" hidden>Groß spielen</button><span id="spielname"></span></div>
   <iframe id="spielrahmen" title="Spiel" allow="fullscreen; autoplay; gamepad"></iframe>
@@ -117,6 +130,7 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
 
 <script src="three.min.js"></script>
 <script src="three-zusatz.js"></script>
+<script src="../brettspiele/lib/chess.js"></script>
 <script>
 (function () {
   if (!window.THREE) {
@@ -415,25 +429,28 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
 
   // 2. Couchtisch: Brettspiele (Platte oben auf 0.445 m)
   const bX = -2.65, bY = 0.445, bZ = 0.1;
+  // Schachbrett auf dem Couchtisch: Mitte (Raum-Koordinaten), Feldgröße
+  const SCH = { x: -2.7, z: 0.16, f: 0.05 };
+  // Feld (Linie f 0..7 = a..h, Reihe r 0..7 = 1..8) in Raum-Koordinaten; Weiß sitzt auf der Seite zum Fernseher (+x)
+  const feldRaum = (f, r) => [SCH.x + (3.5 - r) * SCH.f, SCH.z - (3.5 - f) * SCH.f];
   station({
     id: 'spieltisch', name: 'Spieltisch', text: 'Brettspiele am Couchtisch',
     anker: welt(bX, bY + 0.05, bZ), stand: welt(-1.3, AUGE_START - 0.1, -0.9),
     // ganze Platte des Couchtischs, schräg von vorn
     flaeche: { ecken: [[-2.97, 0.448, -0.22], [-2.43, 0.448, -0.22], [-2.43, 0.448, 0.82], [-2.97, 0.448, 0.82]], schraeg: 58, von: [1, 0] },
-    spiele: [{ name: 'Brettspiele', url: '../brettspiele/', text: 'Tic Tac Toe, Vier gewinnt, Reversi, Mühle, Schach und Mangala.' }]
+    spiele: [
+      { name: 'Schach in 3D', schach: true, text: 'Echte Figuren auf dem Couchtisch, gegen den Computer oder zu zweit.' },
+      { name: 'Brettspiele', url: '../brettspiele/', text: 'Tic Tac Toe, Vier gewinnt, Reversi, Mühle, Schach und Mangala.' }
+    ]
   }, () => {
-    const brett = leinwand(256, 256, (g, b) => {
-      g.fillStyle = '#6b4226'; g.fillRect(0, 0, b, b);
-      const f = (b - 32) / 8;
-      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { g.fillStyle = (x + y) % 2 ? '#3d2a1c' : '#ecd9b6'; g.fillRect(16 + x * f, 16 + y * f, f, f); }
-    });
-    const m = new THREE.MeshStandardMaterial({ map: brett, roughness: 0.5 });
-    weich([bX, bY + 0.015, bZ], [0.38, 0.03, 0.38], m, 0.01);
-    const hell = mat('#f3ecdf', 0.5), dunkel = mat('#2b211b', 0.5);
-    [[-0.11, -0.13, hell], [0.03, -0.13, hell], [-0.07, 0.12, dunkel], [0.11, 0.08, dunkel]].forEach(([dx, dz, mm]) => {
-      zyl([bX + dx, bY + 0.06, bZ + dz], 0.032, 0.06, mm);
-      kugel([bX + dx, bY + 0.1, bZ + dz], 0.032, mm);
-    });
+    // Brett aus 64 Feldern mit Rahmen; Feld a1 ist dunkel und liegt vorne links vom Sofa aus gesehen
+    weich([SCH.x, bY + 0.008, SCH.z], [SCH.f * 8 + 0.04, 0.016, SCH.f * 8 + 0.04], mat('#6b4226', 0.4), 0.006);
+    const hellF = mat('#ecd9b6', 0.45), dunkelF = mat('#5a3b26', 0.45);
+    for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
+      const [x, z] = feldRaum(f, r);
+      const feld = box([x, bY + 0.0175, z], [SCH.f, 0.004, SCH.f], (f + r) % 2 ? hellF : dunkelF, false);
+      feld.userData.feld = 'abcdefgh'[f] + (r + 1);
+    }
   });
 
   // 3. Inselmodell auf einem Sockel in der Raummitte: Neon Ada (Wasser oben auf 0.82 m)
@@ -580,7 +597,7 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
     kamera.fov = w < h ? 75 : 60;
     kamera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', () => { groesse(); if (tv && fenster.classList.contains('tv')) vorDieFlaeche(true); });
+  window.addEventListener('resize', () => { groesse(); if (tv && fenster.classList.contains('tv')) vorDieFlaeche(true); if (schach.aktiv) schach.blick(true); });
   groesse();
 
   const knopfAbend = document.getElementById('abend');
@@ -701,6 +718,7 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
   let tv = null; // { s, wartet } solange ein Spiel auf dem Fernseher läuft
   function oeffneSpiel(sp) {
     letzterKnopf = document.activeElement;
+    if (sp.schach) { schach.starten(); return; }
     document.getElementById('spielname').textContent = sp.name;
     rahmen.title = sp.name;
     rahmen.src = sp.url;
@@ -740,9 +758,15 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
       const waag = (f.von ? new THREE.Vector3(f.von[0], 0, f.von[1]) : new THREE.Vector3(zumStand.x, 0, zumStand.z)).normalize(); // von: Blickseite in Weltkoordinaten
       richtung = waag.multiplyScalar(Math.cos(f.schraeg * DEG)).add(new THREE.Vector3(0, Math.sin(f.schraeg * DEG), 0)).normalize();
     }
-    const W = canvas.clientWidth, H = canvas.clientHeight;
     const L = fenster.querySelector('.leiste').offsetHeight || 56;
-    const rand = W < H ? 0.03 * W : 0.1 * W, oben = L + 10 + 0.06 * H, unten = H - 0.06 * H;
+    kameraAuf(ecken, mitte, richtung, L, 0, sofort);
+    tv.wartet = true; pausiert = false;
+    fenster.classList.add('unterwegs');
+  }
+  // Kamera auf der Linie mitte + richtung * d so nah wie möglich, dass alle Ecken frei im Bild liegen
+  function kameraAuf(ecken, mitte, richtung, obenFrei, untenFrei, sofort) {
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const rand = W < H ? 0.03 * W : 0.1 * W, oben = obenFrei + 10 + 0.06 * H, unten = H - untenFrei - 0.06 * H;
     const blickYaw = winkel(-richtung.x, -richtung.z), blickPitch = Math.asin(-richtung.y);
     const alt = { p: kamera.position.clone(), yaw, pitch };
     const passt = d => {
@@ -763,8 +787,6 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
       const dauer = Math.min(1.4, 0.45 + kamera.position.distanceTo(stand) * 0.18);
       fahrt = { von: kamera.position.clone(), nach: stand, yaw0: yaw, yaw1: yaw + dy, pitch0: pitch, pitch1: blickPitch, t: 0, dauer };
     }
-    tv.wartet = true; pausiert = false;
-    fenster.classList.add('unterwegs');
   }
   // Homographie: bildet das Rechteck des Spiels auf das Viereck der Fläche im Bild ab (CSS matrix3d)
   function homographie(von, nach) {
@@ -793,8 +815,10 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
     const [ul, ur] = q[2].x < q[3].x ? [q[2], q[3]] : [q[3], q[2]];
     const seite = (a, c) => ecken[a.i].distanceTo(ecken[c.i]);
     const verh = (seite(ol, or) + seite(ul, ur)) / (seite(ol, ul) + seite(or, ur));
-    const b0 = Math.round(Math.max(Math.hypot(or.x - ol.x, or.y - ol.y), Math.hypot(ur.x - ul.x, ur.y - ul.y)));
-    const h0 = Math.round(b0 / verh);
+    let b0 = Math.max(Math.hypot(or.x - ol.x, or.y - ol.y), Math.hypot(ur.x - ul.x, ur.y - ul.y)), h0 = b0 / verh;
+    // Mindestgröße, damit das Spiel seine Bedienung wie auf einem Tablet anordnet; die Perspektive verkleinert es danach
+    const k = Math.max(1, 640 / Math.max(b0, h0), 400 / Math.min(b0, h0));
+    b0 = Math.round(b0 * k); h0 = Math.round(h0 * k);
     const m = homographie([[0, 0], [b0, 0], [b0, h0], [0, h0]], [[ol.x, ol.y], [or.x, or.y], [ur.x, ur.y], [ul.x, ul.y]]);
     Object.assign(rahmen.style, { left: '0px', top: '0px', width: b0 + 'px', height: h0 + 'px', transformOrigin: '0 0', transform: 'matrix3d(' + m.map(z => +z.toFixed(10)).join(',') + ')' });
   }
@@ -839,8 +863,235 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
   });
   window.addEventListener('keydown', ev => {
     if (ev.key !== 'Escape') return;
-    if (!fenster.hidden) schliesseSpiel(); else if (!tafel.hidden) schliesseTafel();
+    if (schach.aktiv) schach.beenden(); else if (!fenster.hidden) schliesseSpiel(); else if (!tafel.hidden) schliesseTafel();
   });
+
+  // ---------- Schach in 3D auf dem Couchtisch ----------
+  // Regeln aus chess.js (wie im Spiel Brettspiele); einfacher Computer mit drei Halbzügen Vorausschau
+  const schach = (function () {
+    const tisch = stationen.find(s => s.id === 'spieltisch');
+    const leiste = document.getElementById('schachleiste'), statusEl = document.getElementById('schachstatus');
+    const knopfGegner = document.getElementById('schachgegner');
+    const F = SCH.f, brettY = bY + 0.0195;
+    const spiel = window.Chess ? new window.Chess() : null;
+    const ich = { aktiv: false, takt() {}, klick() {}, starten() {}, beenden() {}, blick() {} };
+    if (!spiel) return ich;
+    // Umrisse (Radius, Höhe) in Feldgrößen, gedreht zu Figuren
+    const UMRISS = {
+      p: [[0, 0], [0.36, 0], [0.36, 0.07], [0.27, 0.13], [0.15, 0.22], [0.11, 0.48], [0.2, 0.54], [0.12, 0.59], [0.19, 0.66], [0.21, 0.76], [0.17, 0.86], [0.08, 0.92], [0, 0.94]],
+      r: [[0, 0], [0.4, 0], [0.4, 0.09], [0.31, 0.15], [0.25, 0.3], [0.23, 0.76], [0.31, 0.82], [0.31, 1.06], [0.22, 1.06], [0.22, 0.98], [0, 0.98]],
+      n: [[0, 0], [0.4, 0], [0.4, 0.09], [0.3, 0.15], [0.24, 0.28], [0.22, 0.42], [0, 0.42]],
+      b: [[0, 0], [0.38, 0], [0.38, 0.08], [0.29, 0.14], [0.19, 0.26], [0.13, 0.7], [0.22, 0.76], [0.14, 0.82], [0.2, 0.94], [0.21, 1.06], [0.15, 1.2], [0.06, 1.28], [0.07, 1.33], [0, 1.37]],
+      q: [[0, 0], [0.42, 0], [0.42, 0.09], [0.32, 0.16], [0.21, 0.3], [0.14, 0.86], [0.25, 0.92], [0.16, 0.98], [0.22, 1.08], [0.29, 1.3], [0.2, 1.32], [0.12, 1.38], [0.08, 1.44], [0, 1.46]],
+      k: [[0, 0], [0.43, 0], [0.43, 0.09], [0.33, 0.16], [0.22, 0.3], [0.15, 0.92], [0.26, 0.98], [0.17, 1.04], [0.23, 1.14], [0.27, 1.32], [0.12, 1.38], [0, 1.4]]
+    };
+    const geo = {};
+    for (const [t, u] of Object.entries(UMRISS)) geo[t] = new THREE.LatheGeometry(u.map(([r, h]) => new THREE.Vector2(r * F, h * F)), 28);
+    const teil = (x, y, z) => new THREE.BoxGeometry(x * F, y * F, z * F);
+    const kreuzA = teil(0.08, 0.32, 0.08), kreuzB = teil(0.24, 0.08, 0.08);
+    // Pferdekopf als ausgeschnittener Umriss
+    const pferd = new THREE.Shape([[0.24, 0.36], [0.27, 0.78], [0.22, 1.02], [0.12, 1.18], [0.04, 1.3], [-0.02, 1.2], [-0.1, 1.19], [-0.3, 1.02], [-0.4, 0.88], [-0.36, 0.79], [-0.22, 0.8], [-0.1, 0.84], [-0.06, 0.72], [-0.2, 0.48], [-0.24, 0.36]].map(([x, y]) => new THREE.Vector2(x * F, y * F)));
+    const kopf = new THREE.ExtrudeGeometry(pferd, { depth: 0.26 * F, bevelEnabled: true, bevelThickness: 0.03 * F, bevelSize: 0.03 * F, bevelSegments: 2 });
+    kopf.translate(0, 0, -0.13 * F);
+    const FARBE = { w: ['#f1e6cf', 0.55], b: ['#1d1512', 0.6] };
+    const figuren = new Map(); // Feld -> Gruppe
+    let auswahl = null, ziele = [], anim = [], fertig = null, denkt = false, gegner = 'computer';
+    const marken = [];
+    const markeGeo = new THREE.CylinderGeometry(0.17 * F, 0.17 * F, 0.004, 24), schlagGeo = new THREE.CylinderGeometry(0.47 * F, 0.47 * F, 0.003, 32);
+    const markeMat = mat('#8ff0b0', 0.3, 0, '#5fe08f', 1.6), schlagMat = mat('#ff9a7a', 0.3, 0, '#ff6a4a', 1.4);
+
+    const fr = feld => ['abcdefgh'.indexOf(feld[0]), +feld[1] - 1];
+    function feldPos(feld) { const [f, r] = fr(feld); const [x, z] = feldRaum(f, r); return new THREE.Vector3(x, brettY, z); }
+    function figur(typ, farbe, feld) {
+      const g = new THREE.Group(), m = mat(...FARBE[farbe]);
+      const teile = [new THREE.Mesh(geo[typ], m)];
+      if (typ === 'k') { const a = new THREE.Mesh(kreuzA, m); a.position.y = 1.55 * F; const b = new THREE.Mesh(kreuzB, m); b.position.y = 1.56 * F; teile.push(a, b); }
+      if (typ === 'n') {
+        teile.push(new THREE.Mesh(kopf, m));
+        g.rotation.y = farbe === 'w' ? Math.PI / 2 : -Math.PI / 2; // Springer im Profil, wie bei echten Sätzen
+      }
+      teile.forEach(t => { t.castShadow = true; t.receiveShadow = true; t.userData.figur = g; t.userData.leuchtBasis = m.emissive.clone(); g.add(t); tisch.meshes.push(t); stationVon.set(t, tisch); });
+      g.userData = { feld, typ, farbe, mat: m };
+      g.position.copy(feldPos(feld));
+      raum.add(g); figuren.set(feld, g);
+      return g;
+    }
+    function weg(g) {
+      raum.remove(g);
+      g.children.forEach(t => { stationVon.delete(t); const i = tisch.meshes.indexOf(t); if (i >= 0) tisch.meshes.splice(i, 1); });
+    }
+    function aufbauen() {
+      figuren.forEach(weg); figuren.clear();
+      spiel.board().forEach((reihe, i) => reihe.forEach((x, j) => { if (x) figur(x.type, x.color, 'abcdefgh'[j] + (8 - i)); }));
+    }
+    function markenWeg() { marken.forEach(m => raum.remove(m)); marken.length = 0; ziele = []; if (auswahl) auswahl.userData.mat.emissive.setRGB(0, 0, 0); auswahl = null; }
+    function waehle(g) {
+      markenWeg();
+      auswahl = g; g.userData.mat.emissive.set('#a8641e');
+      ziele = spiel.moves({ square: g.userData.feld, verbose: true });
+      ziele.forEach(z => {
+        const m = new THREE.Mesh(z.captured ? schlagGeo : markeGeo, z.captured ? schlagMat : markeMat);
+        m.position.copy(feldPos(z.to)); m.position.y += 0.002; m.userData.feld = z.to;
+        raum.add(m); marken.push(m);
+      });
+    }
+    function ziehe(z) {
+      markenWeg();
+      const zug = spiel.move({ from: z.from, to: z.to, promotion: 'q' });
+      if (!zug) return;
+      const g = figuren.get(zug.from);
+      const geschlagen = zug.flags.includes('e') ? zug.to[0] + zug.from[1] : (zug.captured ? zug.to : null);
+      if (geschlagen && figuren.get(geschlagen)) anim.push({ g: figuren.get(geschlagen), weg: true, t: 0, dauer: 0.25 });
+      anim.push({ g, von: g.position.clone(), nach: feldPos(zug.to), t: 0, dauer: 0.4, hoch: zug.piece === 'n' ? 0.05 : 0.025 });
+      if (zug.flags.includes('k') || zug.flags.includes('q')) {
+        const r = zug.from[1], [rv, rn] = zug.flags.includes('k') ? ['h' + r, 'f' + r] : ['a' + r, 'd' + r];
+        const turm = figuren.get(rv);
+        if (turm) anim.push({ g: turm, von: turm.position.clone(), nach: feldPos(rn), t: 0, dauer: 0.4, hoch: 0.03 });
+      }
+      fertig = () => { aufbauen(); zeigeStatus(); computerWennDran(); };
+    }
+    // ---- Computer ----
+    const WERT = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
+    function bewerten(g) { // aus Sicht von Weiß
+      let w = 0;
+      g.board().forEach((reihe, i) => reihe.forEach((x, j) => {
+        if (!x) return;
+        let v = WERT[x.type];
+        if (x.type !== 'k') v += (3.5 - Math.abs(3.5 - j)) * 3 + (3.5 - Math.abs(3.5 - i)) * 3;
+        if (x.type === 'p') v += (x.color === 'w' ? 6 - i : i - 1) * 5;
+        w += x.color === 'w' ? v : -v;
+      }));
+      return w;
+    }
+    function suche(g, tiefe, alpha, beta) {
+      if (tiefe === 0) return bewerten(g);
+      const zuege = g.moves({ verbose: true });
+      if (!zuege.length) return g.in_check() ? (g.turn() === 'w' ? -100000 - tiefe : 100000 + tiefe) : 0;
+      zuege.sort((a, c) => (c.captured ? WERT[c.captured] : 0) - (a.captured ? WERT[a.captured] : 0));
+      const max = g.turn() === 'w';
+      let best = max ? -Infinity : Infinity;
+      for (const z of zuege) {
+        g.move(z); const v = suche(g, tiefe - 1, alpha, beta); g.undo();
+        if (max) { if (v > best) best = v; if (v > alpha) alpha = v; } else { if (v < best) best = v; if (v < beta) beta = v; }
+        if (beta <= alpha) break;
+      }
+      return best;
+    }
+    function besterZug() {
+      const g = new window.Chess(spiel.fen()), max = g.turn() === 'w';
+      let best = null, wert = max ? -Infinity : Infinity;
+      for (const z of g.moves({ verbose: true })) {
+        g.move(z); const v = suche(g, 2, -Infinity, Infinity) + Math.random() * 10 - 5; g.undo();
+        if (max ? v > wert : v < wert) { wert = v; best = z; }
+      }
+      return best;
+    }
+    function computerWennDran() {
+      if (!ich.aktiv || gegner !== 'computer' || spiel.turn() !== 'b' || spiel.game_over()) return;
+      denkt = true; zeigeStatus();
+      setTimeout(() => {
+        const z = besterZug(); denkt = false;
+        if (z && ich.aktiv && spiel.turn() === 'b') ziehe(z); else zeigeStatus();
+      }, 350);
+    }
+    function zeigeStatus() {
+      let t;
+      const amZug = spiel.turn() === 'w' ? 'Weiß' : 'Schwarz';
+      if (spiel.in_checkmate()) t = gegner === 'computer' ? (spiel.turn() === 'w' ? 'Schachmatt. Der Computer gewinnt.' : 'Schachmatt. Du gewinnst!') : `Schachmatt. ${spiel.turn() === 'w' ? 'Schwarz' : 'Weiß'} gewinnt.`;
+      else if (spiel.game_over()) t = 'Remis.';
+      else if (denkt) t = 'Computer denkt …';
+      else t = (gegner === 'computer' ? 'Du bist dran (Weiß)' : amZug + ' ist dran') + (spiel.in_check() ? '. Schach!' : '');
+      statusEl.textContent = t;
+    }
+    function trefferSchach(ev) {
+      const r = canvas.getBoundingClientRect();
+      zeiger.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+      strahl.setFromCamera(zeiger, kamera);
+      // Feld unter dem Strahl auf der Brettebene und die erste getroffene Figur (hohe Figuren verdecken Felder dahinter)
+      const ebene = new THREE.Plane(new THREE.Vector3(0, 1, 0), -brettY), p = new THREE.Vector3();
+      let boden = null;
+      if (strahl.ray.intersectPlane(ebene, p)) {
+        raum.worldToLocal(p);
+        const f = Math.round(3.5 + (p.z - SCH.z) / F), r = Math.round(3.5 - (p.x - SCH.x) / F);
+        if (f >= 0 && f < 8 && r >= 0 && r < 8) boden = 'abcdefgh'[f] + (r + 1);
+      }
+      const t = strahl.intersectObjects([...figuren.values()], true)[0];
+      return { boden, figur: t ? t.object.userData.figur.userData.feld : null };
+    }
+    ich.klick = ev => {
+      if (anim.length || denkt || spiel.game_over()) return;
+      if (gegner === 'computer' && spiel.turn() !== 'w') return;
+      const { boden, figur } = trefferSchach(ev);
+      const z = auswahl && (ziele.find(z => z.to === boden) || ziele.find(z => z.to === figur));
+      if (z) { ziehe(z); return; }
+      const eigen = f => f && figuren.get(f) && figuren.get(f).userData.farbe === spiel.turn() ? figuren.get(f) : null;
+      // Beide Kandidaten: die Figur, deren Mitte im Bild näher am Finger liegt
+      const kand = [eigen(figur), eigen(boden)].filter(Boolean);
+      const abstand = g => { const m = raum.localToWorld(feldPos(g.userData.feld).add(new THREE.Vector3(0, 0.45 * F, 0))); const q = aufBild(m, canvas.clientWidth, canvas.clientHeight); return Math.hypot(q.x - ev.clientX, q.y - ev.clientY); };
+      const g = kand.sort((a, c) => abstand(a) - abstand(c))[0];
+      if (g) waehle(g); else markenWeg();
+    };
+    ich.takt = roh => {
+      if (!anim.length) return;
+      const dt = Math.min(0.05, roh);
+      anim.forEach(a => {
+        a.t = Math.min(1, a.t + dt / a.dauer);
+        const k = glatt(a.t);
+        if (a.weg) a.g.scale.setScalar(1 - k);
+        else { a.g.position.lerpVectors(a.von, a.nach, k); a.g.position.y += Math.sin(Math.PI * k) * a.hoch; }
+      });
+      anim = anim.filter(a => a.t < 1);
+      if (!anim.length && fertig) { const f = fertig; fertig = null; f(); }
+    };
+    ich.blick = sofort => {
+      const mitte = raum.localToWorld(new THREE.Vector3(SCH.x, brettY, SCH.z));
+      const h = 4.2 * F, ecken = [];
+      for (const dx of [-h, h]) for (const dz of [-h, h]) for (const y of [0, 1.5 * F]) ecken.push(raum.localToWorld(new THREE.Vector3(SCH.x + dx, brettY + y, SCH.z + dz)));
+      const a = 52 * DEG, richtung = new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
+      kameraAuf(ecken, mitte, richtung, leiste.offsetHeight || 56, (statusEl.offsetHeight || 40) + 14, sofort);
+    };
+    ich.starten = () => {
+      ich.aktiv = true;
+      tafel.hidden = true; karte.hidden = true;
+      document.body.classList.add('schachmodus');
+      leiste.hidden = false; statusEl.hidden = false;
+      tasten.clear(); ring.visible = false;
+      ich.blick(false); zeigeStatus(); computerWennDran();
+      document.getElementById('schachzu').focus();
+    };
+    ich.beenden = () => {
+      if (!ich.aktiv) return;
+      ich.aktiv = false; markenWeg();
+      leiste.hidden = true; statusEl.hidden = true;
+      document.body.classList.remove('schachmodus');
+      zeigeStation(tisch, false);
+    };
+    document.getElementById('schachzu').addEventListener('click', ich.beenden);
+    knopfGegner.addEventListener('click', () => {
+      gegner = gegner === 'computer' ? 'zwei' : 'computer';
+      knopfGegner.textContent = gegner === 'computer' ? 'Gegner: Computer' : 'Gegner: zu zweit';
+      markenWeg(); zeigeStatus(); computerWennDran();
+    });
+    document.getElementById('schachzurueck').addEventListener('click', () => {
+      if (anim.length || denkt) return;
+      spiel.undo();
+      if (gegner === 'computer' && spiel.turn() === 'b') spiel.undo();
+      markenWeg(); aufbauen(); zeigeStatus();
+    });
+    document.getElementById('schachneu').addEventListener('click', () => {
+      if (anim.length || denkt) return;
+      spiel.reset(); markenWeg(); aufbauen(); zeigeStatus();
+    });
+    aufbauen();
+    // Für die Prüfungen: wo ein Feld im Bild liegt, und der Spielstand
+    window.raumSchach = {
+      feldAufBild: feld => { kamera.updateMatrixWorld(); const p = raum.localToWorld(feldPos(feld)); return aufBild(p, canvas.clientWidth, canvas.clientHeight); },
+      zuege: () => spiel.history(),
+      ruhig: () => !anim.length && !denkt && !fertig,
+      figurAuf: feld => { const g = figuren.get(feld); return g ? g.userData.farbe + g.userData.typ : null; }
+    };
+    return ich;
+  })();
 
   // Schilder über den Plätzen
   const marken = document.getElementById('marken');
@@ -882,22 +1133,22 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
   let ueber = null;
 
   // Maus: Doppelklick geht hin
-  canvas.addEventListener('dblclick', ev => { ev.preventDefault(); const t = treffer(ev); if (t && stationVon.get(t.object)) return; gehe(ev); });
+  canvas.addEventListener('dblclick', ev => { ev.preventDefault(); if (schach.aktiv) return; const t = treffer(ev); if (t && stationVon.get(t.object)) return; gehe(ev); });
   // Finger: Doppeltippen geht hin
   let letzterTipp = null;
   // Umsehen durch Ziehen im Rundgang
   let ziehen = null;
   canvas.addEventListener('pointerdown', ev => {
-    ziehen = { x: ev.clientX, y: ev.clientY, x0: ev.clientX, y0: ev.clientY, zeit: performance.now() };
+    ziehen = { x: ev.clientX, y: ev.clientY, x0: ev.clientX, y0: ev.clientY, zeit: ev.timeStamp };
   });
   window.addEventListener('pointermove', ev => {
-    if (ziehen && modus === 'rundgang' && !fahrt) {
+    if (ziehen && modus === 'rundgang' && !fahrt && !schach.aktiv) {
       const k = 0.0045;
       yaw += (ev.clientX - ziehen.x) * k;
       pitch = Math.max(-1.2, Math.min(1.2, pitch + (ev.clientY - ziehen.y) * k));
     }
     if (ziehen) { ziehen.x = ev.clientX; ziehen.y = ev.clientY; }
-    if (ev.target === canvas && ev.pointerType === 'mouse' && !ziehen) {
+    if (ev.target === canvas && ev.pointerType === 'mouse' && !ziehen && !schach.aktiv) {
       const t = treffer(ev);
       ueber = t ? stationVon.get(t.object) || null : null;
       canvas.style.cursor = ueber ? 'pointer' : '';
@@ -907,8 +1158,12 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
   });
   window.addEventListener('pointerup', ev => {
     if (!ziehen) return;
-    const kurz = performance.now() - ziehen.zeit < 300 && Math.hypot(ev.clientX - ziehen.x0, ev.clientY - ziehen.y0) < 10;
+    // Zeitstempel der Ereignisse, damit ein voller Bildaufbau ein Tippen nicht zum langen Drücken macht
+    const dauer = ev.timeStamp - ziehen.zeit, weit = Math.hypot(ev.clientX - ziehen.x0, ev.clientY - ziehen.y0);
+    const kurz = dauer < 300 && weit < 10;
+    if (schach.aktiv && dauer < 700 && weit < 14 && ev.target === canvas) { ziehen = null; schach.klick(ev); return; }
     ziehen = null;
+    if (kurz && ev.target === canvas && schach.aktiv) { schach.klick(ev); return; }
     if (kurz && ev.target === canvas) {
       const t = treffer(ev);
       const s = t && stationVon.get(t.object);
@@ -926,7 +1181,7 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
   // Tasten: W/S oder Pfeil hoch/runter laufen, A/D seitlich, Pfeil links/rechts drehen
   const laufTasten = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
   window.addEventListener('keydown', ev => {
-    if (!laufTasten.includes(ev.code) || !fenster.hidden) return;
+    if (!laufTasten.includes(ev.code) || !fenster.hidden || schach.aktiv) return;
     ev.preventDefault();
     rundgangStarten();
     fahrt = null;
@@ -977,7 +1232,8 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
       steuerung.update();
       grenze.clampPoint(kamera.position, kamera.position);
     }
-    leuchten(zeit || 0);
+    schach.takt(roh);
+    if (!schach.aktiv) leuchten(zeit || 0);
     schilder();
     if (composer) composer.render(); else renderer.render(scene, kamera);
     // Spiel auf dem Fernseher: sobald die Kamera steht, Rahmen auflegen und den Raum anhalten

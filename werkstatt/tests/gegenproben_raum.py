@@ -13,6 +13,7 @@ FEHLER = [
     ('Ein Spiel fehlt an der Konsole', 'raum/index.html', "      { name: 'Ula Çarpsana!', url: '../ula/', text: 'Autoscooter-Crash im Feuerring.' }\n", '', 'raum_platz'),
     ('Spiel liegt nicht auf dem Fernseher', 'raum/index.html', '      rahmenAufBild();\n', '', 'raum_fernseher'),
     ('Esstisch ohne Spielfläche', 'raum/index.html', "flaeche: { ecken: [[eX - 0.45", "flaecheAus: { ecken: [[eX - 0.45", 'raum_flaeche'),
+    ('Computer antwortet im 3D-Schach nicht', 'raum/index.html', 'fertig = () => { aufbauen(); zeigeStatus(); computerWennDran(); };', 'fertig = () => { aufbauen(); zeigeStatus(); };', 'raum_schach'),
     ('Karte fehlt auf der Startseite', 'index.html', '<a class="karte" href="raum/">', '<a class="karte" href="raum/index.html">', 'raum_karte'),
 ]
 env = dict(os.environ)
