@@ -17,6 +17,8 @@ FEHLER = [
     ('Vier gewinnt: Stein fällt nicht nach unten', 'raum/index.html', 'for (let r = 0; r < RE; r++) if (s.c[zelle(r, sp)] === null) { z.push({ id: sp, zelle: zelle(r, sp) }); break; }', 'for (let r = RE - 1; r >= 0; r--) if (s.c[zelle(r, sp)] === null) { z.push({ id: sp, zelle: zelle(r, sp) }); break; }', 'raum_tischspiel'),
     ('Tavla: Computer würfelt nicht', 'raum/index.html', "if (j.phase === 'wuerfeln') { plan = []; return { id: 'wurf', ueberall: true }; }", "if (j.phase === 'wuerfeln') { plan = []; return null; }", 'raum_tavla'),
     ('Neon Ada: Insel kommt nicht in den Raum', 'neon-ada/index.html', '    if (this.raum) this.raum.einsetzen(this.gruppe);\n', '\n', 'raum_modell'),
+    ('Armband kommt nicht auf den Esstisch', 'raum/index.html', '    armbandBauen(geo, farben);\n', '\n', 'raum_armband'),
+    ('Wand ohne Türöffnung', 'raum/index.html', 'box([wl, (TUER.h + H) / 2, TUER.z], [W, H - TUER.h, TUER.b], M.wand);', 'box([wl, H / 2, TUER.z], [W, H, TUER.b], M.wand);', 'raum_tuer'),
     ('Karte fehlt auf der Startseite', 'index.html', '<a class="karte" href="raum/">', '<a class="karte" href="raum/index.html">', 'raum_karte'),
 ]
 env = dict(os.environ)

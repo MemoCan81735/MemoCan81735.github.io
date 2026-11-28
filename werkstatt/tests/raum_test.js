@@ -75,7 +75,7 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 9, 'Inselmodell': 1, 'Staffelei': 
       ok('raum_fernseher: Zurück schließt das Spiel, Tafel der Konsole wieder da', await p.evaluate(() => document.getElementById('spielfenster').hidden && !document.getElementById('tafel').hidden && !document.body.classList.contains('tvmodus')));
       await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       // AK-7: auch die anderen Plätze zeigen ihr Spiel auf ihrer Fläche im Raum (Tisch, Sockel, Leinwand)
-      for (const name of ['Spieltisch', 'Staffelei', 'Perlenkästchen']) {
+      for (const name of ['Spieltisch', 'Staffelei']) {
         await p.evaluate(n => [...document.querySelectorAll('.marke')].find(m => m.textContent === n).click(), name);
         await p.waitForTimeout(300);
         await p.click(name === 'Spieltisch' ? '[aria-label="Brettspiele spielen"]' : '#tafelliste .spielen');
@@ -101,6 +101,33 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 9, 'Inselmodell': 1, 'Staffelei': 
         await p.click('#spielzu'); await p.waitForTimeout(300);
         ok('raum_modell: Zurück räumt die Insel weg, das Schmuckmodell steht wieder', await p.evaluate(() => !window.raumModell.halter.children.length && document.getElementById('spielfenster').hidden && !document.getElementById('tafel').hidden));
         await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+      }
+      // AK-13: Perlenwerkstatt: das geplante Armband liegt als 3D-Perlenkette auf dem Esstisch, Planung im Feld darunter
+      {
+        await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Perlenkästchen').click());
+        await p.waitForTimeout(300);
+        await p.click('[aria-label="Perlenwerkstatt spielen"]');
+        let da = false; try { await p.waitForFunction(() => window.raumArmband.perlen() > 0 && window.raumArmband.perlen() === window.raumArmband.vorschau(), null, { timeout: 20000 }); da = true; } catch (e) { /* kein Armband */ }
+        await p.waitForTimeout(2500);
+        const a = await p.evaluate(() => { const r = document.getElementById('spielrahmen').getBoundingClientRect(), l = document.querySelector('.leiste').getBoundingClientRect(), m = window.raumArmband.aufBild(); return { perlen: window.raumArmband.perlen(), vorschau: window.raumArmband.vorschau(), x: Math.round(m.x), y: Math.round(m.y), leiste: l.bottom, feld: Math.round(r.top), feldH: Math.round(r.height), vw: innerWidth, vh: innerHeight }; });
+        ok('raum_armband: Perlenwerkstatt legt das geplante Armband als 3D-Kette auf den Esstisch', da && a.perlen === a.vorschau && a.perlen > 0, JSON.stringify(a));
+        ok('raum_armband: Armband sichtbar über dem Planungsfeld, Feld ganz im Bild', a.x > 0 && a.x < a.vw && a.y > a.leiste && a.y < a.feld && a.feld + a.feldH <= a.vh + 1 && a.feldH > 300, JSON.stringify(a));
+        await p.click('#spielzu'); await p.waitForTimeout(300);
+        ok('raum_armband: Zurück räumt das Armband weg', await p.evaluate(() => window.raumArmband.perlen() === 0 && document.getElementById('spielfenster').hidden));
+        await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+      }
+      // AK-14: Tür in der linken Wand, Wanduhr zeigt die Uhrzeit des Geräts
+      {
+        const t = await p.evaluate(() => {
+          const A = window.raumAusstattung, z = new THREE.Vector3(); A.tuerBlatt.getWorldPosition(z);
+          const ray = new THREE.Raycaster(new THREE.Vector3(z.x + 0.5, 1.0, z.z), new THREE.Vector3(-1, 0, 0));
+          const treffer = ray.intersectObjects(A.tuerBlatt.parent.children, true);
+          const d = new Date(), s = d.getSeconds(), m = d.getMinutes() + s / 60, h = (d.getHours() % 12) + m / 60, u = A.uhr();
+          const ab = (x, y) => Math.abs(((x - y) % 360 + 540) % 360 - 180);
+          return { tuer: treffer.length > 0 && treffer[0].object === A.tuerBlatt, wandDahinter: treffer.some(x => x.object.material === A.wand && x.distance < 0.8), std: +ab(u.std, h * 30).toFixed(1), min: +ab(u.min, m * 6).toFixed(1), sek: +ab(u.sek, s * 6).toFixed(1) };
+        });
+        ok('raum_tuer: Tür mit Türblatt in einer Öffnung der linken Wand', t.tuer && !t.wandDahinter, JSON.stringify(t));
+        ok('raum_uhr: Wanduhr zeigt die Uhrzeit des Geräts', t.std < 1 && t.min < 1 && t.sek < 7, JSON.stringify(t));
       }
       // AK-8: Schach in 3D auf dem Couchtisch: Bauer e2-e4 antippen, der Computer antwortet, Figuren stehen richtig
       await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Spieltisch').click());
