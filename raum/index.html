@@ -88,6 +88,10 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--akzent); outlin
 /* Neon Ada als Modell im Raum: Spielfenster durchsichtig über dem ganzen Bild, nur Knöpfe und Anzeigen des Spiels sind zu sehen */
 #spielfenster.modell { background: transparent; display: block; }
 #spielfenster.modell .leiste { position: absolute; left: 0; right: 0; top: 0; z-index: 1; background: rgba(29, 21, 15, 0.82); }
+/* Perlenwerkstatt: Planung als Leiste rechts (quer) oder unten (hoch), das Armband liegt im freien Teil auf dem Esstisch */
+#spielfenster.armband { background: transparent; display: block; }
+#spielfenster.armband .leiste { position: absolute; left: 0; right: 0; top: 0; z-index: 1; background: rgba(29, 21, 15, 0.82); }
+#spielfenster.armband #spielrahmen { position: absolute; flex: none; background: #fff; box-shadow: 0 0 24px rgba(0, 0, 0, 0.35); }
 #spielfenster.modell #spielrahmen { position: absolute; inset: 0; height: 100%; background: transparent; color-scheme: normal; }
 body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display: none; }
 /* Schach in 3D auf dem Couchtisch */
@@ -233,7 +237,12 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   }
   box([(xa + B / 2 + W) / 2, H / 2, zh], [B / 2 + W - xa, H, W], M.wand);
   box([0, H / 2, -zh], [B + W * 2, H, W], M.wand);
-  box([-B / 2 - W / 2, H / 2, 0], [W, H, T], M.wand);
+  // Linke Wand mit Tür (vorn links, neben dem Sofa)
+  const TUER = { z: -2.05, b: 0.9, h: 2.1 };
+  const wl = -B / 2 - W / 2, tz0 = TUER.z - TUER.b / 2, tz1 = TUER.z + TUER.b / 2;
+  box([wl, H / 2, (-T / 2 + tz0) / 2], [W, H, tz0 + T / 2], M.wand);
+  box([wl, H / 2, (tz1 + T / 2) / 2], [W, H, T / 2 - tz1], M.wand);
+  box([wl, (TUER.h + H) / 2, TUER.z], [W, H - TUER.h, TUER.b], M.wand);
   box([B / 2 + W / 2, H / 2, 0], [W, H, T], M.wand);
   box([0, H + W / 2, 0], [B + W * 2, W, T + W * 2], M.decke);
   box([0, 0.04, T / 2 - 0.01], [B, 0.08, 0.02], M.leiste);
@@ -387,6 +396,71 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
   // Teppich unter dem Esstisch
   weich([eX, 0.006, eZ], [2.4, 0.012, 3.0], mat('#6E7F6A', 0.05), 0.005);
 
+  // Tür: weiße Zarge, Türblatt aus Holz, Klinke und Schild auf der Raumseite
+  let tuerBlatt = null;
+  {
+    const weiss = mat('#F4F0E8', 0.35), blatt = mat('#C9A67A', 0.3), x = -B / 2 + 0.005;
+    box([x + 0.01, TUER.h + 0.035, TUER.z], [0.05, 0.07, TUER.b + 0.14], weiss);
+    for (const k of [-1, 1]) box([x + 0.01, TUER.h / 2, TUER.z + k * (TUER.b / 2 + 0.035)], [0.05, TUER.h, 0.07], weiss);
+    tuerBlatt = box([x - 0.02, TUER.h / 2, TUER.z], [0.04, TUER.h - 0.01, TUER.b - 0.01], blatt);
+    for (const [y, h] of [[0.55, 0.7], [1.5, 0.8]]) box([x + 0.002, y, TUER.z], [0.006, h, TUER.b - 0.24], mat('#BE9A6C', 0.3));
+    const kz = TUER.z + TUER.b / 2 - 0.08;
+    box([x + 0.012, 1.05, kz], [0.008, 0.16, 0.04], M.metall);
+    zyl([x + 0.03, 1.08, kz], 0.016, 0.04, M.metall).rotation.z = Math.PI / 2;
+    box([x + 0.06, 1.08, kz - 0.05], [0.016, 0.016, 0.12], M.metall);
+    // Fußleiste bis zur Zarge
+    box([-B / 2 + 0.01, 0.04, (-T / 2 + tz0 - 0.07) / 2], [0.02, 0.08, tz0 - 0.07 + T / 2], M.leiste);
+    box([-B / 2 + 0.01, 0.04, (tz1 + 0.07 + T / 2) / 2], [0.02, 0.08, T / 2 - tz1 - 0.07], M.leiste);
+  }
+  // Lichtschalter neben der Tür, Steckdosen an den Wänden
+  const schalterWeiss = mat('#FBFAF6', 0.4);
+  function dose(p, quer, schalter) {
+    const g = quer ? [0.08, 0.08, 0.012] : [0.012, 0.08, 0.08];
+    box(p, g, schalterWeiss);
+    if (schalter) { const q = quer ? [0.05, 0.05, 0.006] : [0.006, 0.05, 0.05]; box([p[0] + (quer ? 0 : 0.008), p[1], p[2] + (quer ? -0.008 : 0)], q, mat('#ECE8E0', 0.4)); }
+    else for (const d of [-0.012, 0.012]) { const r = quer ? [p[0] + d, p[1], p[2] - 0.007] : [p[0] + 0.007, p[1], p[2] + d]; zyl(r, 0.008, 0.004, M.metall).rotation[quer ? 'x' : 'z'] = Math.PI / 2; }
+  }
+  dose([-B / 2 + 0.006, 1.05, TUER.z + TUER.b / 2 + 0.2], false, true);
+  dose([-B / 2 + 0.006, 1.05, TUER.z + TUER.b / 2 + 0.29], false, true);
+  dose([-B / 2 + 0.006, 0.3, -1.0], false);          // neben dem Sofa
+  dose([-B / 2 + 0.006, 0.3, 2.55], false);          // hinter der Stehlampe
+  dose([0.9, 0.3, T / 2 - 0.006], true);             // unter der Uhr
+  dose([B / 2 - 0.006, 0.3, -0.6], false);           // rechts beim Esstisch
+  dose([-0.6, 0.3, -T / 2 + 0.006], true);           // vorne
+  dose([-0.6, 1.05, -T / 2 + 0.006], true, true);
+  // Heizkörper unter beiden Fenstern
+  const heiz = mat('#F2EFEA', 0.45);
+  for (const fx of fensterX) {
+    const hx = fx === 2.5 ? 2.85 : fx;
+    box([hx, 0.46, T / 2 - 0.09], [1.1, 0.56, 0.05], heiz);
+    for (let i = 0; i < 18; i++) box([hx - 0.51 + i * 0.06, 0.46, T / 2 - 0.12], [0.035, 0.54, 0.02], heiz);
+    zyl([hx + 0.6, 0.62, T / 2 - 0.1], 0.04, 0.08, heiz);
+    for (const dx of [-0.42, 0.42]) box([hx + dx, 0.15, T / 2 - 0.07], [0.03, 0.08, 0.05], M.metall);
+  }
+  // Wanduhr zwischen den Fenstern, zeigt die Uhrzeit des Geräts
+  const uhrMitte = [0.5, 2.0, T / 2 - 0.02];
+  const ziffer = zyl(uhrMitte, 0.36, 0.03, mat('#FBF8F1', 0.3)); ziffer.rotation.x = Math.PI / 2;
+  zyl([uhrMitte[0], uhrMitte[1], uhrMitte[2] + 0.008], 0.39, 0.02, M.metall).rotation.x = Math.PI / 2;
+  for (let i = 0; i < 12; i++) {
+    const w = i * 30 * DEG, l = i % 3 ? 0.018 : 0.035;
+    const st = box([uhrMitte[0] + Math.sin(w) * 0.145, uhrMitte[1] + Math.cos(w) * 0.145, uhrMitte[2] - 0.017], [0.008, l, 0.004], M.metall);
+    st.rotation.z = -w;
+  }
+  const zeigerTeil = (l, b, z) => {
+    const g = new THREE.Group(); g.position.set(uhrMitte[0], uhrMitte[1], uhrMitte[2] - z); raum.add(g);
+    const m = new THREE.Mesh(geoBox, M.metall); m.scale.set(b, l, 0.004); m.position.y = l / 2 - 0.015; g.add(m);
+    return g;
+  };
+  const uhrZeiger = { std: zeigerTeil(0.1, 0.012, 0.02), min: zeigerTeil(0.15, 0.008, 0.024), sek: zeigerTeil(0.16, 0.003, 0.028) };
+  function stelleUhr() {
+    const d = new Date(), s = d.getSeconds(), m = d.getMinutes() + s / 60, h = (d.getHours() % 12) + m / 60;
+    // Blick vom Raum auf die Wand: x nach rechts, y nach oben; im Uhrzeigersinn heißt also negative Drehung um z
+    uhrZeiger.std.rotation.z = -h * 30 * DEG; uhrZeiger.min.rotation.z = -m * 6 * DEG; uhrZeiger.sek.rotation.z = -s * 6 * DEG;
+  }
+  stelleUhr();
+  // Für die Tests: Türblatt und Zeigerwinkel (Grad im Uhrzeigersinn ab 12)
+  window.raumAusstattung = { tuer: TUER, tuerBlatt, wand: M.wand, uhr: () => Object.fromEntries(Object.entries(uhrZeiger).map(([k, g]) => [k, ((-g.rotation.z / DEG) % 360 + 360) % 360])) };
+
 
   // ---------- Spiel-Plätze im Raum ----------
   // Koordinaten wie im Unity-Skript (raum-Gruppe); Welt = (x, y, -z)
@@ -533,7 +607,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     anker: welt(pX, pY + 0.03, pZ), stand: welt(eX, AUGE_START, eZ - 1.75),
     // Platte des Esstischs, schräg vom Tischende
     flaeche: { ecken: [[eX - 0.45, 0.777, eZ - 0.87], [eX + 0.45, 0.777, eZ - 0.87], [eX + 0.45, 0.777, eZ + 0.87], [eX - 0.45, 0.777, eZ + 0.87]], schraeg: 60, von: [0, 1] },
-    spiele: [{ name: 'Perlenwerkstatt', url: '../perlen/', text: 'Perlenarmbänder planen, mit Vorschau und Einkaufsliste.' }]
+    spiele: [{ name: 'Perlenwerkstatt', url: '../perlen/', armband: true, text: 'Perlenarmbänder planen; dein Armband liegt dabei echt auf dem Esstisch.' }]
   }, () => {
     weich([pX, pY + 0.02, pZ], [0.24, 0.035, 0.18], mat('#f1e6d4', 0.4), 0.01);
     const farben = ['#1d4fa0', '#d4af37', '#ffffff', '#1d4fa0', '#e8869f', '#3fae6a'];
@@ -610,7 +684,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     kamera.fov = w < h ? 75 : 60;
     kamera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', () => { groesse(); if (tv && fenster.classList.contains('tv')) vorDieFlaeche(true); if (tisch3d.aktiv) tisch3d.blick(true); });
+  window.addEventListener('resize', () => { groesse(); if (armband) armbandBlick(true); if (tv && fenster.classList.contains('tv')) vorDieFlaeche(true); if (tisch3d.aktiv) tisch3d.blick(true); });
   groesse();
 
   const knopfAbend = document.getElementById('abend');
@@ -733,6 +807,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     letzterKnopf = document.activeElement;
     if (sp.tisch) { tisch3d.starten(sp.tisch); return; }
     if (sp.modell) { modellStarten(sp); return; }
+    if (sp.armband) { armbandStarten(sp); return; }
     document.getElementById('spielname').textContent = sp.name;
     rahmen.title = sp.name;
     rahmen.src = sp.url;
@@ -778,17 +853,19 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     fenster.classList.add('unterwegs');
   }
   // Kamera auf der Linie mitte + richtung * d so nah wie möglich, dass alle Ecken frei im Bild liegen
-  function kameraAuf(ecken, mitte, richtung, obenFrei, untenFrei, sofort) {
+  // xFrei: freier Bereich [links, rechts] in Pixeln, wenn ein Teil des Bildes verdeckt ist
+  function kameraAuf(ecken, mitte, richtung, obenFrei, untenFrei, sofort, xFrei) {
     const W = canvas.clientWidth, H = canvas.clientHeight;
     const rand = W < H ? 0.03 * W : 0.1 * W, oben = obenFrei + 10 + 0.06 * H, unten = H - untenFrei - 0.06 * H;
+    const links = xFrei ? xFrei[0] + 12 : rand, rechts = xFrei ? xFrei[1] - 12 : W - rand;
     const blickYaw = winkel(-richtung.x, -richtung.z), blickPitch = Math.asin(-richtung.y);
     const alt = { p: kamera.position.clone(), yaw, pitch };
     const passt = d => {
       kamera.position.copy(mitte).addScaledVector(richtung, d);
       yaw = blickYaw; pitch = blickPitch; blick(); kamera.updateMatrixWorld();
-      return ecken.every(e => { const q = aufBild(e, W, H); return q.z < 1 && q.x >= rand && q.x <= W - rand && q.y >= oben && q.y <= unten; });
+      return ecken.every(e => { const q = aufBild(e, W, H); return q.z < 1 && q.x >= links && q.x <= rechts && q.y >= oben && q.y <= unten; });
     };
-    let lo = 0.2, hi = 6;
+    let lo = 0.08, hi = 6;
     for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (passt(m)) hi = m; else lo = m; }
     const stand = mitte.clone().addScaledVector(richtung, hi);
     kamera.position.copy(alt.p); yaw = alt.yaw; pitch = alt.pitch;
@@ -850,7 +927,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     if (fenster.hidden) return;
     fenster.hidden = true; pausiert = false;
     rahmen.src = 'about:blank';
-    modellEnde();
+    modellEnde(); armbandEnde();
     if (tv) {
       const s = tv.s; (tv.versteckt || []).forEach(m => { m.visible = true; }); tv = null;
       tvStil(true); fenster.classList.remove('unterwegs');
@@ -928,6 +1005,139 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     fenster.classList.remove('modell'); document.body.classList.remove('tvmodus');
     if (aktiv === modell.s) { tafel.hidden = false; karte.hidden = true; }
     modell = null;
+  }
+
+  // ---------- Perlenarmband in 3D auf dem Esstisch ----------
+  // Die Perlenwerkstatt läuft als Leiste; ihre Vorschau (Perlen mit Farbe, Größe, Form und Lage) wird hier
+  // in echter Größe (Millimeter) als Kette auf den Tisch gelegt und bei jeder Änderung neu gebaut. Die App selbst bleibt unverändert.
+  const armbandGruppe = new THREE.Group();
+  // neben dem Perlenkästchen, vor der Obstschale
+  armbandGruppe.position.copy(welt(eX + 0.28, 0.777, eZ - 0.4)); armbandGruppe.scale.setScalar(0.001); scene.add(armbandGruppe);
+  let armband = null;
+  // Für die Prüfungen: Perlen im Raum, Perlen in der Vorschau der App, Lage im Bild
+  window.raumArmband = {
+    perlen: () => armbandGruppe.children.filter(h => h.isGroup).length,
+    vorschau: () => { try { return rahmen.contentWindow.Perlen.ui.app.messung.geo.perlen.length; } catch (e) { return null; } },
+    aufBild: () => { const k = new THREE.Box3().setFromObject(armbandGruppe), a = aufBild(k.min, canvas.clientWidth, canvas.clientHeight), b = aufBild(k.max, canvas.clientWidth, canvas.clientHeight); return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, kamera: kamera.position.toArray().map(v => +v.toFixed(2)) }; }
+  };
+  const perlGeo = { kugel: new THREE.SphereGeometry(1, 20, 14), rohr: new THREE.CylinderGeometry(1, 1, 1, 14), wuerfel: new THREE.BoxGeometry(1, 1, 1) };
+  const perlMat = new Map();
+  const perlFarbe = (hex, glanz = 0.75) => { const k = hex + glanz; if (!perlMat.has(k)) perlMat.set(k, mat(hex, glanz, 0.05)); return perlMat.get(k); };
+  const GARN_HEX = { Schwarz: '#1c1c1c', Braun: '#6b4527', Weiß: '#f2efe8', Rot: '#b8261a', Nazarblau: '#1d4fa8', Türkis: '#1fb5b0' };
+  const ANHAENGER_HEX = { nazar: '#1d4fa8', herz: '#d62839', stern: '#d4af37', mond: '#c9ccd2', klee: '#3fa34d' };
+  const buchstabenMat = new Map();
+  function buchstabe(b) {
+    if (!buchstabenMat.has(b)) {
+      const c = document.createElement('canvas'); c.width = c.height = 64;
+      const x = c.getContext('2d'); x.fillStyle = '#fbfaf6'; x.fillRect(0, 0, 64, 64); x.fillStyle = '#1b1b1b'; x.font = 'bold 46px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(b, 32, 35);
+      const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+      buchstabenMat.set(b, new THREE.MeshStandardMaterial({ map: t, roughness: 0.5 }));
+    }
+    return buchstabenMat.get(b);
+  }
+  function armbandStarten(sp) {
+    document.getElementById('spielname').textContent = sp.name;
+    rahmen.title = sp.name;
+    armband = { s: aktiv, geo: null, groesse: 0 };
+    fenster.classList.add('armband'); document.body.classList.add('tvmodus');
+    tafel.hidden = true; karte.hidden = true;
+    rahmen.src = sp.url;
+    fenster.hidden = false; tasten.clear(); ring.visible = false;
+    armbandBlick(false);
+    document.getElementById('spielzu').focus();
+  }
+  // Leiste der App rechts (quer) oder unten (hoch); die Kamera schaut im freien Teil aufs Armband
+  function armbandBlick(sofort) {
+    const W = canvas.clientWidth, H = canvas.clientHeight, L = fenster.querySelector('.leiste').offsetHeight || 56, quer = W > H;
+    const lb = quer ? Math.min(Math.max(380, W * 0.46), W - 260) : W, lh = quer ? H - L : Math.round((H - L) * 0.58);
+    Object.assign(rahmen.style, { left: (W - lb) + 'px', top: (H - lh) + 'px', width: lb + 'px', height: lh + 'px' });
+    const frei = quer ? { l: 0, r: W - lb, o: L, u: H } : { l: 0, r: W, o: L, u: H - lh };
+    kamera.setViewOffset(W, H, W / 2 - (frei.l + frei.r) / 2, H / 2 - (frei.o + frei.u) / 2, W, H);
+    armbandGruppe.updateMatrixWorld(true);
+    const kiste = armbandGruppe.children.length ? new THREE.Box3().setFromObject(armbandGruppe) : new THREE.Box3().setFromCenterAndSize(armbandGruppe.position.clone(), new THREE.Vector3(0.07, 0.02, 0.07));
+    kiste.expandByScalar(0.035);   // etwas Tisch drumherum, damit man sieht, wo das Armband liegt
+    const ecken = [];
+    for (const x of [kiste.min.x, kiste.max.x]) for (const y of [kiste.min.y, kiste.max.y]) for (const z of [kiste.min.z, kiste.max.z]) ecken.push(new THREE.Vector3(x, y, z));
+    const a = 60 * DEG, richtung = new THREE.Vector3(0, Math.sin(a), Math.cos(a));
+    // Freien Teil wie ein eigenes Bild behandeln: oben/unten und links/rechts in Pixeln des ganzen Bildes
+    kameraAuf(ecken, kiste.getCenter(new THREE.Vector3()), richtung, frei.o - 10 - 0.06 * H + 8, H - frei.u - 0.06 * H + 8, sofort, [frei.l, frei.r]);
+    armband.groesse = kiste.getSize(new THREE.Vector3()).length();
+  }
+  function armbandEnde() {
+    if (!armband) return;
+    kamera.clearViewOffset(); groesse();
+    armbandGruppe.clear();
+    ['left', 'top', 'width', 'height'].forEach(k => { rahmen.style[k] = ''; });
+    fenster.classList.remove('armband'); document.body.classList.remove('tvmodus');
+    if (aktiv === armband.s) { tafel.hidden = false; karte.hidden = true; }
+    armband = null;
+  }
+  function armbandNachfuehren() {
+    let geo = null, farben = null;
+    try { const P = rahmen.contentWindow.Perlen; geo = P.ui.app.messung && P.ui.app.messung.geo; farben = P.entity.FARBEN; } catch (e) { return; }
+    if (!geo || geo === armband.geo || !farben) return;
+    armband.geo = geo;
+    armbandBauen(geo, farben);
+    armbandGruppe.updateMatrixWorld(true);
+    const g = new THREE.Box3().setFromObject(armbandGruppe).getSize(new THREE.Vector3()).length();
+    if (!fahrt && Math.abs(g - armband.groesse) > armband.groesse * 0.2) armbandBlick(false);
+  }
+  // Perlen aus der Vorschau der App: Ringe (aufgefädelt, Makramee, gewebt) liegen als Kreis, Tesbih und Ohrringe flach wie gezeichnet
+  function armbandBauen(geo, farben) {
+    armbandGruppe.clear();
+    const s = geo.mmPx, ring = geo.ring, flach = geo.art === 'tesbih' || geo.art === 'ohrringe';
+    const k = t => 0.86 + 0.14 * (t + 1) / 2;   // Tiefenmaßstab der App herausrechnen
+    const R = ring.rx / s;
+    const lage = p => {
+      if (flach) return { x: (p.x - ring.cx) / s, z: (p.y - ring.cy) / s, v: 0, w: p.winkel || 0, rad: p.r / s, len: p.laenge / s };
+      const kk = k(p.tiefe);
+      return { x: R * Math.cos(p.winkel), z: R * Math.sin(p.winkel), v: (p.y - (ring.cy + ring.ry * Math.sin(p.winkel))) / s, w: p.winkel, rad: p.r / (s * kk), len: p.laenge / (s * kk) };
+    };
+    const alle = geo.perlen.map(p => Object.assign(lage(p), { p }));
+    const vMax = alle.reduce((m, q) => Math.max(m, q.v), -Infinity), radMax = alle.reduce((m, q) => Math.max(m, q.rad), 0);
+    for (const q of alle) {
+      const p = q.p, hex = (farben[p.farbe] || farben[0]).hex, y = flach ? q.rad : radMax + (vMax - q.v);
+      let m;
+      if (p.form === 'wuerfel') { m = new THREE.Mesh(perlGeo.wuerfel, p.buchstabe ? [perlFarbe('#fbfaf6', 0.5), perlFarbe('#fbfaf6', 0.5), perlFarbe('#fbfaf6', 0.5), perlFarbe('#fbfaf6', 0.5), buchstabe(p.buchstabe), perlFarbe('#fbfaf6', 0.5)] : perlFarbe(hex, 0.5)); m.scale.set(q.rad * 1.8, q.rad * 1.8, q.rad * 1.8); }
+      else if (p.form === 'delica') { m = new THREE.Mesh(perlGeo.rohr, perlFarbe(hex, 0.6)); m.scale.set(q.rad, q.len * 0.95, q.rad); m.rotation.z = Math.PI / 2; }
+      else {
+        m = new THREE.Mesh(perlGeo.kugel, perlFarbe(hex, p.form === 'durak' || p.form === 'imame' ? 0.45 : 0.8));
+        const lang = p.form === 'rondelle' ? 0.6 : p.form === 'tropfen' || p.form === 'imame' ? 1.5 : p.form === 'herz' ? 0.8 : 1;
+        m.scale.set(q.rad, q.rad, q.rad * lang);
+      }
+      const halter = new THREE.Group(); halter.position.set(q.x, y, q.z);
+      // entlang des Fadens ausrichten: am Ring tangential, flach in Zeichenrichtung
+      halter.rotation.y = flach ? -(q.w + Math.PI / 2) : -q.w;
+      if (p.form === 'delica') m.rotation.set(0, 0, 0), m.rotation.x = Math.PI / 2;
+      halter.add(m); armbandGruppe.add(halter);
+    }
+    if (!flach) {
+      // Faden oder Gummi als dünner Ring durch die Perlen; Makramee: Knoten aus Garn
+      if (!geo.bandHoehe) {
+        const faden = new THREE.Mesh(new THREE.TorusGeometry(R, 0.35, 8, 96), perlFarbe('#3a3a3a', 0.4)); faden.rotation.x = Math.PI / 2; faden.position.y = radMax; armbandGruppe.add(faden);
+      }
+      for (const kn of geo.knoten || []) {
+        const hex = GARN_HEX[kn.farbe] || (typeof kn.farbe === 'number' && farben[kn.farbe] ? farben[kn.farbe].hex : '#3b2a1e');
+        const m = new THREE.Mesh(perlGeo.kugel, perlFarbe(hex, 0.2)); const kk = k(kn.tiefe);
+        m.scale.set(kn.r / (s * kk), kn.r / (s * kk), kn.laenge / (s * kk) / 2);
+        m.position.set(R * Math.cos(kn.winkel), radMax, R * Math.sin(kn.winkel)); m.rotation.y = -kn.winkel;
+        armbandGruppe.add(m);
+      }
+    } else if (geo.kordel) {
+      const pkt = geo.kordel.map(q => new THREE.Vector3((q.x - ring.cx) / s, radMax, (q.y - ring.cy) / s));
+      armbandGruppe.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pkt), 200, 0.5, 6), perlFarbe('#2b2018', 0.3)));
+      if (geo.pueskuel) {
+        const q = geo.pueskuel, quaste = new THREE.Mesh(new THREE.ConeGeometry(q.breite / s / 2, q.laenge / s, 16), perlFarbe((farben[q.farbe] || { hex: '#6b4527' }).hex, 0.2));
+        quaste.rotation.x = Math.PI / 2; quaste.position.set((q.x - ring.cx) / s, radMax * 0.6, (q.y + q.laenge / 2 - ring.cy) / s); armbandGruppe.add(quaste);
+      }
+    }
+    if (geo.anhaenger && !flach) {
+      const a = geo.anhaenger, d = a.r * 2 / s, hex = ANHAENGER_HEX[a.art] || '#d4af37';
+      const scheibe = new THREE.Mesh(perlGeo.rohr, perlFarbe(hex, 0.7)); scheibe.scale.set(d / 2, 1.2, d / 2);
+      scheibe.position.set(0, 0.6, R + d * 0.75); armbandGruppe.add(scheibe);
+      if (a.art === 'nazar') for (const [r, c] of [[0.62, '#fbfaf6'], [0.38, '#5aa9e6'], [0.18, '#111111']]) { const z = new THREE.Mesh(perlGeo.rohr, perlFarbe(c, 0.7)); z.scale.set(d / 2 * r, 1.3, d / 2 * r); z.position.copy(scheibe.position); z.position.y += 0.1; armbandGruppe.add(z); }
+    }
+    armbandGruppe.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
   }
 
   // ---------- Schach in 3D auf dem Couchtisch ----------
@@ -1943,7 +2153,9 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     }
     tisch3d.takt(roh);
     // Beim Spielen am Tisch die tief stehende Sonne dämpfen, damit dunkle Steine dunkel bleiben
-    sonne.intensity += ((tisch3d.aktiv || modell ? 1.6 : 3.4) - sonne.intensity) * Math.min(1, roh * 4);
+    sonne.intensity += ((tisch3d.aktiv || modell || armband ? 1.6 : 3.4) - sonne.intensity) * Math.min(1, roh * 4);
+    stelleUhr();
+    if (armband) armbandNachfuehren();
     // Farben je Feld legt das Spiel erst nach dem ersten Bild an: dann die Darstellung einmal neu aufbauen
     if (modell) modellHalter.traverse(m => { if (m.isInstancedMesh && m.instanceColor && !m.userData.mitFarbe) { m.userData.mitFarbe = true; m.material.needsUpdate = true; } });
     if (!tisch3d.aktiv) leuchten(zeit || 0);

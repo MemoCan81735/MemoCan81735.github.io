@@ -14,6 +14,8 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 - U-5: Der Besucher tippt "← Alle Spiele" und kommt zur Startseite.
 - U-6: Der Besucher tippt "Spielen"; die Kamera stellt sich vor die Fläche des Platzes (Fernseher, Tisch, Sockel, Leinwand), das Spiel läuft darauf im Raum. "Groß spielen" zeigt es über den ganzen Schirm, derselbe Knopf bringt es zurück auf den Fernseher.
 - U-8: Am Inselmodell tippt der Besucher bei "Neon Ada" auf "Spielen"; die Insel des Spiels steht als 3D-Modell auf dem Sockel, er formt sie durch Antippen direkt im Raum, Knöpfe und Anzeigen des Spiels liegen darüber.
+- U-9: Am Perlenkästchen tippt der Besucher bei "Perlenwerkstatt" auf "Spielen"; das geplante Armband liegt als 3D-Perlenkette auf dem Esstisch, die Planung der Werkstatt steht daneben (quer) oder darunter (hoch), jede Änderung zeigt sich sofort an der Kette.
+- U-10: Der Besucher sieht sich im Raum um und findet, was ein Wohnzimmer hat: Tür, Heizkörper unter den Fenstern, Lichtschalter, Steckdosen und eine Wanduhr mit der echten Uhrzeit.
 - U-7: Am Spieltisch tippt der Besucher bei "Schach in 3D" (oder Vier gewinnt, Tic Tac Toe, Reversi, Dame, Mühle, Mangala, Tavla in 3D) auf "Spielen"; die Kamera blickt von der weißen Seite aufs Brett, er zieht durch Antippen von Figur und Feld, der Computer antwortet.
 
 ## Umfang
@@ -27,6 +29,8 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 - Dame, Mühle, Mangala und Tavla in 3D (28.11.2026, zweite Gruppe): Regeln und Computer sind wörtlich dieselben wie im Spiel Brettspiele. `werkstatt/regeln_raum.py` kopiert die Klassen (DameEntity, MuehleEntity, MangalaEntity, TavlaEntity, tavlaRegelwerk, AIEngines) unverändert nach `raum/brettregeln.js`; `--pruefen` meldet, wenn die Kopie veraltet ist. Dame: Stein antippen, Ziele leuchten grün, Schlagen ist Pflicht. Mühle: setzen, ziehen, springen; nach einer Mühle leuchten die Steine rot, die man nehmen darf. Mangala: Mulde antippen, die Glaskugeln liegen in den Mulden. Tavla: Tippen aufs Brett würfelt, Steine mit Zügen sind gelb markiert, Stein antippen, dann Ziel (Bar und Ablage rechts inklusive); der Computer würfelt und zieht selbst. Was auf der Tischplatte unter dem Brett liegt (Buch, Becher, Streuer), wird ausgeblendet, solange das Brett liegt; beim Spielen am Tisch wird die Abendsonne gedämpft.
 - Neon Ada im Raum (28.11.2026 auf Wunsch des Betreibers): Das Spiel läuft mit `#raum` unsichtbar im Spielfenster über dem ganzen Bild; nur seine Knöpfe und Anzeigen sind zu sehen. Seine Insel (dieselben three.js-Körper, mit dem three.js des Raums gebaut) hängt es über `window.raumModell` auf der Deckplatte des Sockels ein; Antippen und die Lernmarke rechnen über die Raumkamera. Regeln, Speicher und Bedienung des Spiels bleiben unverändert. `werkstatt/bau_neon_ada.py` setzt die Änderung bei jedem Bau wieder ein. Das Schmuckmodell auf dem Sockel macht solange Platz. Geprüft und verworfen für die Rennspiele (eigene große Welten, bleiben auf dem Fernseher) und vorerst Ebru (liegt schon passend auf der Leinwand).
 - Flache Spiele auf dem Handy: das Spiel bekommt mindestens 640 × 400 Pixel und wird per Perspektive verkleinert, damit es seine Bedienung nicht zusammenquetscht.
+- Perlen als 3D-Armband (28.11.2026 auf Wunsch des Betreibers): Die Perlenwerkstatt öffnet unverändert im Spielfenster, rechts (quer) oder unten (hoch). Der Raum liest ihr Armband aus der Vorschau (`Perlen.ui.app.messung.geo` und `Perlen.entity.FARBEN`) und baut jede Perle in echter Größe in mm als 3D-Körper (rund, Rondelle, Tropfen, Herz, Buchstabenwürfel, Delica) auf dem Esstisch nach, dazu Band, Makramee-Knoten, Tesbih-Quaste und Anhänger. Die Kamera blickt im freien Bildteil auf die Kette (`setViewOffset`). Die Werkstatt selbst bleibt unverändert.
+- Ausstattung (28.11.2026 auf Wunsch des Betreibers): Tür mit Zarge, Türblatt und Klinke in der linken Wand; Lichtschalter neben der Tür; Steckdosen an allen Wänden; Heizkörper unter beiden Fenstern; Wanduhr zwischen den Fenstern mit der Uhrzeit des Geräts. Stühle am Esstisch gab es schon (fünf).
 - Escape schließt Spielfenster oder Tafel, solange der Fokus im Raum liegt; im Spiel gehört Escape dem Spiel.
 
 ## Akzeptanzkriterien
@@ -38,11 +42,13 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | AK-4 | Aus U-3, U-4: Spiel öffnet im Spielfenster; Leiste und Zurück-Link im Spiel schließen es, die Adresse bleibt `/raum/` | `raum_test.js` |
 | AK-5 | Aus U-1: Startseite verlinkt `raum/` mit Bild und Text in der Rubrik Spieleraum; alle 10 Spiel-Adressen gibt es | `raum_test.js` |
 | AK-6 | Aus U-6: an der Konsole liegt das Spiel auf dem Fernseher (Seitenverhältnis der Bildfläche, ganz im Bild unter der Leiste); "Groß spielen" zeigt es über die ganze Breite; Zurück bringt die Tafel wieder | `raum_test.js` |
-| AK-7 | Aus U-6: Spieltisch, Staffelei und Perlenkästchen zeigen ihr Spiel auf ihrer Fläche, ganz im Bild unter der Leiste | `raum_test.js` |
+| AK-7 | Aus U-6: Spieltisch und Staffelei zeigen ihr Spiel auf ihrer Fläche, ganz im Bild unter der Leiste | `raum_test.js` |
 | AK-8 | Aus U-7: Schach in 3D: e2-e4 per Antippen, der Computer antwortet, Figuren stehen auf den richtigen Feldern; Zurück bringt die Tafel, die Stellung bleibt | `raum_test.js` |
 | AK-9 | Aus U-7: Vier gewinnt, Tic Tac Toe und Reversi in 3D: eigener Stein liegt nach Antippen auf dem richtigen Feld, der Computer antwortet, Steine im Bild = Steine im Spielstand | `raum_test.js` |
 | AK-10 | Aus U-7: Dame, Mühle und Mangala in 3D: eigener Zug nach Antippen steht (Dame: Stein, dann Ziel), der Computer antwortet; Regelkopie passt zu Brettspiele | `raum_test.js`, `regeln_raum.py --pruefen` |
 | AK-12 | Aus U-8: Neon Ada: Insel steht als Modell auf dem Sockel (Spielseite im Raummodus), Antippen hebt dort Land; Zurück räumt sie weg, Tafel wieder da | `raum_test.js` |
+| AK-13 | Aus U-9: Perlenwerkstatt: Perlen der 3D-Kette = Perlen der Vorschau der Werkstatt, Kette im freien Bildteil über dem Planungsfeld, Feld ganz im Bild; Zurück räumt die Kette weg | `raum_test.js` |
+| AK-14 | Aus U-10: Tür mit Türblatt in einer Öffnung der linken Wand; Wanduhr zeigt die Uhrzeit des Geräts (Stunde und Minute auf 1°) | `raum_test.js` |
 | AK-11 | Aus U-7: Tavla in 3D: Tippen würfelt, eigene Züge per Antippen, der Computer würfelt und zieht, je 15 Steine, Steine und Würfel im Bild = Spielstand | `raum_test.js` |
 
 ## Prüfszenarien
@@ -59,10 +65,12 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | PS-9 | Normal | Vier gewinnt: Antippen weit oben in einer Spalte, der Stein fällt ganz nach unten | AK-9 |
 | PS-10 | Fehlerfall | Regel in Brettspiele geändert, Kopie im Raum nicht neu erzeugt: Prüfung rot | AK-10 |
 | PS-12 | Grenzwert | Hochformat 412×915: Insel ganz im Bild zwischen Anzeige oben und Knöpfen unten, Antippen trifft das Feld unter dem Ring | AK-12 |
+| PS-13 | Grenzwert | Hochformat 412×915: Planung unten 58 % der Höhe, Kette im Streifen darüber; Querformat: Planung rechts, Kette links daneben | AK-13 |
+| PS-14 | Normal | Uhr zu jeder Uhrzeit: Zeiger laufen im Uhrzeigersinn, um 3 Uhr steht der Stundenzeiger rechts | AK-14 |
 | PS-11 | Normal | Tavla: nach dem Würfeln zwei Steine ziehen, der Computer ist dran, würfelt und zieht ohne Zutun | AK-11 |
 
 ## Gegenproben
-`python3 werkstatt/tests/gegenproben_raum.py`: Zurück im Spiel führt zur Startseite, Leiste schließt nicht, falsche Spiel-Adresse, fehlendes Spiel an der Konsole, Karte auf der Startseite falsch verlinkt, Spiel liegt nicht auf dem Fernseher, Esstisch ohne Spielfläche, Computer antwortet im 3D-Schach nicht, Vier gewinnt: Stein fällt nicht nach unten, Tavla: Computer würfelt nicht, Neon Ada: Insel kommt nicht in den Raum; alle elf machen `raum_test.js` rot (28.11.2026). Veraltete Regelkopie: `regeln_raum.py --pruefen` wird rot. Einzeln: `NUR=Fernseher python3 werkstatt/tests/gegenproben_raum.py`. Fremde Server und Zurück-Link deckt `seite_pruefen.py --gegenproben` ab.
+`python3 werkstatt/tests/gegenproben_raum.py`: Zurück im Spiel führt zur Startseite, Leiste schließt nicht, falsche Spiel-Adresse, fehlendes Spiel an der Konsole, Karte auf der Startseite falsch verlinkt, Spiel liegt nicht auf dem Fernseher, Esstisch ohne Spielfläche, Computer antwortet im 3D-Schach nicht, Vier gewinnt: Stein fällt nicht nach unten, Tavla: Computer würfelt nicht, Neon Ada: Insel kommt nicht in den Raum, Armband kommt nicht auf den Esstisch, Wand ohne Türöffnung; alle dreizehn machen `raum_test.js` rot (28.11.2026). Veraltete Regelkopie: `regeln_raum.py --pruefen` wird rot. Einzeln: `NUR=Fernseher python3 werkstatt/tests/gegenproben_raum.py`. Fremde Server und Zurück-Link deckt `seite_pruefen.py --gegenproben` ab.
 
 ## Technisches Design
 - Schnittstellen: keine neuen; der Raum lädt Spiele per `<iframe>` von derselben Seite und hängt sich an deren Zurück-Link (`a.ng-zurueck`). Lädt das Fenster trotzdem die Startseite, schließt der Raum es.
@@ -102,6 +110,9 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | U-7 | eigener Zug steht, der Computer antwortet |
 | U-7 | Tippen würfelt, dein Zug und der des Computers stehen |
 | U-8 | Neon Ada steht als Insel auf dem Sockel, Antippen hebt dort Land |
+| U-9 | Perlenwerkstatt legt das geplante Armband als 3D-Kette auf den Esstisch |
+| U-10 | Tür mit Türblatt in einer Öffnung der linken Wand |
+| U-10 | Wanduhr zeigt die Uhrzeit des Geräts |
 
 ## Dokumentation
 - Aktualisiert: werkstatt/specs/S-W29-spieleraum.md
@@ -110,6 +121,7 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 - Neu: werkstatt/regeln_raum.py, raum/brettregeln.js
 - Aktualisiert: werkstatt/bau_neon_ada.py
 - Aktualisiert: neon-ada/index.html
+- Aktualisiert: raum/index.html
 - Aktualisiert: werkstatt/README.md
 - Aktualisiert: index.html
 
