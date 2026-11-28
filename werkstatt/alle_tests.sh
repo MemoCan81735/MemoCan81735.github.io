@@ -7,6 +7,7 @@ export NODE_PATH="${NODE_PATH:-$(npm root -g)}"
 set -e
 python3 werkstatt/seite_pruefen.py --gegenproben
 python3 werkstatt/phasen_pruefen.py
+python3 werkstatt/regeln_raum.py --pruefen
 python3 werkstatt/tests/gegenproben_phasen.py
 node werkstatt/seite_handy.js
 python3 werkstatt/tests/strecken_test.py

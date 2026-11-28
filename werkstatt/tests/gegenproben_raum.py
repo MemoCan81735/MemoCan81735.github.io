@@ -11,12 +11,20 @@ FEHLER = [
     ('Leiste schließt das Spiel nicht', 'raum/index.html', "document.getElementById('spielzu').addEventListener('click', schliesseSpiel);", '', 'raum_spiel'),
     ('Spiel-Adresse falsch', 'raum/index.html', "url: '../perlen/'", "url: '../perle/'", 'raum_adressen'),
     ('Ein Spiel fehlt an der Konsole', 'raum/index.html', "      { name: 'Ula Çarpsana!', url: '../ula/', text: 'Autoscooter-Crash im Feuerring.' }\n", '', 'raum_platz'),
+    ('Spiel liegt nicht auf dem Fernseher', 'raum/index.html', '      rahmenAufBild();\n', '', 'raum_fernseher'),
+    ('Esstisch ohne Spielfläche', 'raum/index.html', "flaeche: { ecken: [[eX - 0.45", "flaecheAus: { ecken: [[eX - 0.45", 'raum_flaeche'),
+    ('Computer antwortet im 3D-Schach nicht', 'raum/index.html', 'fertig = () => { aufbauen(); zeigeStatus(); computerWennDran(); };', 'fertig = () => { aufbauen(); zeigeStatus(); };', 'raum_schach'),
+    ('Vier gewinnt: Stein fällt nicht nach unten', 'raum/index.html', 'for (let r = 0; r < RE; r++) if (s.c[zelle(r, sp)] === null) { z.push({ id: sp, zelle: zelle(r, sp) }); break; }', 'for (let r = RE - 1; r >= 0; r--) if (s.c[zelle(r, sp)] === null) { z.push({ id: sp, zelle: zelle(r, sp) }); break; }', 'raum_tischspiel'),
+    ('Tavla: Computer würfelt nicht', 'raum/index.html', "if (j.phase === 'wuerfeln') { plan = []; return { id: 'wurf', ueberall: true }; }", "if (j.phase === 'wuerfeln') { plan = []; return null; }", 'raum_tavla'),
     ('Karte fehlt auf der Startseite', 'index.html', '<a class="karte" href="raum/">', '<a class="karte" href="raum/index.html">', 'raum_karte'),
 ]
 env = dict(os.environ)
 env.setdefault('NODE_PATH', subprocess.run(['npm', 'root', '-g'], capture_output=True, text=True).stdout.strip())
 fehler = 0
+nur = os.environ.get('NUR')
 for name, datei, alt, neu, test in FEHLER:
+    if nur and nur not in name:
+        continue
     with tempfile.TemporaryDirectory() as tmp:
         kopie = os.path.join(tmp, 's')
         shutil.copytree(WURZEL, kopie, ignore=shutil.ignore_patterns('.git'))
