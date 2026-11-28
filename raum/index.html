@@ -91,6 +91,7 @@ body.tvmodus #marken, body.tvmodus .vignette, body.tvmodus .ng-zurueck { display
 #schachleiste[hidden], #schachstatus[hidden] { display: none; }
 #schachstatus { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 9;
   background: var(--karte); border: 1px solid var(--linie); border-radius: 999px; padding: 10px 18px; font-size: 0.95rem; white-space: nowrap; }
+@media (max-width: 600px) { #schachstatus { white-space: normal; text-align: center; width: max-content; max-width: calc(100vw - 32px); border-radius: 18px; } }
 body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurueck, body.schachmodus #karte { display: none; }
 @media (max-height: 480px) { .karte p:first-of-type { display: none; } #tafel ul { max-height: 52vh; } }
 @media (prefers-reduced-motion: reduce) { .marke { transition: none; } }
@@ -131,6 +132,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
 <script src="three.min.js"></script>
 <script src="three-zusatz.js"></script>
 <script src="../brettspiele/lib/chess.js"></script>
+<script src="brettregeln.js"></script>
 <script>
 (function () {
   if (!window.THREE) {
@@ -443,6 +445,10 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       { name: 'Vier gewinnt in 3D', tisch: 'vier', text: 'Rahmen auf dem Tisch, die Steine fallen hinein.' },
       { name: 'Tic Tac Toe in 3D', tisch: 'ttt', text: 'Kreuz und Kreis auf dem Holzbrett.' },
       { name: 'Reversi in 3D', tisch: 'reversi', text: 'Steine setzen und umdrehen, Schwarz beginnt.' },
+      { name: 'Dame in 3D', tisch: 'dame', text: 'Türkische Dame: gerade ziehen, Schlagen ist Pflicht.' },
+      { name: 'Mühle in 3D', tisch: 'muehle', text: 'Setzen, ziehen, Mühlen bilden und Steine wegnehmen.' },
+      { name: 'Mangala in 3D', tisch: 'mangala', text: 'Bunte Steine in die Mulden säen und den Schatz füllen.' },
+      { name: 'Tavla in 3D', tisch: 'tavla', text: 'Würfeln, Steine ziehen und als Erster alle abtragen.' },
       { name: 'Brettspiele', url: '../brettspiele/', text: 'Tic Tac Toe, Vier gewinnt, Reversi, Mühle, Schach und Mangala.' }
     ]
   }, () => {
@@ -1115,7 +1121,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     // Lage auf dem Tisch: u nach rechts, y nach oben, v vom Spieler weg; die Gruppe sitzt in der Brettmitte auf der Tischplatte
     const lok = (u, y, v) => new THREE.Vector3(-v, y, u);
     const ich = { aktiv: false, spiel: null };
-    let spiel = null, z = null, verlauf = [], gruppe = null, steine = new Map(), marken = [];
+    let spiel = null, z = null, verlauf = [], gruppe = null, steine = new Map(), marken = [], auswahl = null;
     let anim = [], fertig = null, denkt = false, gegner = 'computer';
     const zufall = a => a[Math.floor(Math.random() * a.length)];
 
@@ -1278,6 +1284,252 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       };
     })();
 
+
+    // Ab hier: Regeln und Computer wörtlich aus den Brettspielen (raum/brettregeln.js)
+    const BR = window.Brettregeln;
+    const holzBrett = mat('#b8874f', 0.25), holzDunkel = mat('#5a3b26', 0.3), linieMat = mat('#2b1a0e', 0.1);
+    const scheibe = (r, h, m) => new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 28), m);
+
+    // Dame (türkische Regeln): Weiß (du) unten, Steine ziehen gerade, Schlagen ist Pflicht
+    if (BR) SPIELE.dame = (function () {
+      const C = 0.05, hell = mat('#e8d3a8', 0.3), dunkel = mat('#9a6b3f', 0.3), weiss = mat('#f2ece0', 0.45), schwarz = mat('#1a1411', 0.45), krone = mat('#d9a520', 0.6, 0.3);
+      const pack = j => ({ j, c: j.cells.map(x => x === null ? null : x[0] === 'W' ? 0 : 1), dran: j.currentPlayer === 'W' ? 0 : 1, ende: j.finished,
+        sieger: j.finished ? (j.winner === 'W' ? 0 : j.winner === 'B' ? 1 : null) : null });
+      const zug = z => ({ von: z.von, id: z.pfad[z.pfad.length - 1], pfad: z.pfad });
+      return {
+        name: 'Dame', farben: ['Weiß', 'Schwarz'], winkel: 58, halb: { u: 0.22, v: 0.22, h: 0.02 }, ebene: 0.014,
+        start: () => pack(new BR.DameEntity().toJSON()),
+        zuege: s => s.ende ? [] : BR.DameEntity.dameZuege(s.j.cells, s.j.currentPlayer).map(zug),
+        ziehe(s, m) { const e = new BR.DameEntity(); e.loadFromJSON(s.j); e.zieh(m.von, m.pfad); return { s: pack(e.toJSON()), effekte: [{ art: 'ziehen', id: m.id, von: m.von }] }; },
+        computer: s => { const z = BR.AIEngines.dame({ cells: s.j.cells.slice() }, s.j.currentPlayer, 4, 20000); return z ? zug(z) : null; },
+        feldAus: (u, y, v) => { const sp = Math.floor(u / C + 4), re = Math.floor(4 - v / C); return sp >= 0 && sp < 8 && re >= 0 && re < 8 ? re * 8 + sp : null; },
+        pos: i => lok((i % 8 - 3.5) * C, 0.014, (3.5 - Math.floor(i / 8)) * C),
+        steine: s => s.j.cells.map((x, i) => x === null ? null : { id: i, farbe: x[0] === 'W' ? 0 : 1, dame: x.length === 2 }).filter(Boolean),
+        brett(g, teil) {
+          teil(new THREE.Mesh(geoBox, holzDunkel), lok(0, 0.006, 0), [0.44, 0.012, 0.44]);
+          for (let r = 0; r < 8; r++) for (let s = 0; s < 8; s++) teil(new THREE.Mesh(geoBox, (r + s) % 2 ? dunkel : hell), lok((s - 3.5) * C, 0.0125, (3.5 - r) * C), [C, 0.002, C]);
+        },
+        stein(farbe, e) {
+          const g = new THREE.Group(), m = farbe === 0 ? weiss : schwarz;
+          const a = scheibe(0.42 * C, 0.009, m); a.position.y = 0.0045; g.add(a);
+          if (e.dame) { const b = scheibe(0.42 * C, 0.009, m); b.position.y = 0.0135; const k = scheibe(0.15 * C, 0.002, krone); k.position.y = 0.019; g.add(b, k); }
+          return g;
+        }
+      };
+    })();
+
+    // Mühle: Weiß (du) beginnt; Setzen, Ziehen, Springen; bei einer Mühle einen Stein wegnehmen
+    if (BR) SPIELE.muehle = (function () {
+      const C = 0.062, P = BR.MuehleEntity.POSITIONS, weiss = mat('#f2ece0', 0.45), schwarz = mat('#1a1411', 0.45), punkt = mat('#2b1a0e', 0.2);
+      const pack = j => ({ j, c: j.cells.map(x => x === null ? null : x === 'W' ? 0 : 1), dran: j.currentPlayer === 'W' ? 0 : 1, ende: j.finished,
+        sieger: j.finished ? (j.winner === 'W' ? 0 : j.winner === 'B' ? 1 : null) : null });
+      const lade = j => { const e = new BR.MuehleEntity(); e.loadFromJSON(j); return e; };
+      return {
+        name: 'Mühle', farben: ['Weiß', 'Schwarz'], winkel: 58, halb: { u: 0.22, v: 0.22, h: 0.02 }, ebene: 0.013, marken: true,
+        start: () => pack(new BR.MuehleEntity().toJSON()),
+        zuege(s) {
+          if (s.ende) return [];
+          const e = lade(s.j);
+          if (s.j.pendingRemoval) { const geg = s.j.currentPlayer === 'W' ? 'B' : 'W'; return s.j.cells.map((x, i) => x === geg && e.canRemove(i) ? { id: i, nehmen: true } : null).filter(Boolean); }
+          if (s.j.phase === 'placing') return e.getValidPlacements().map(i => ({ id: i }));
+          return e.getValidMovePairs().map(([von, nach]) => ({ von, id: nach }));
+        },
+        ziehe(s, m) {
+          const e = lade(s.j); let effekte = [];
+          if (m.nehmen) e.removePiece(m.id);
+          else if (m.von !== undefined) { e.move(m.von, m.id); effekte = [{ art: 'ziehen', id: m.id, von: m.von }]; }
+          else { e.place(m.id); effekte = [{ art: 'fallen', id: m.id }]; }
+          return { s: pack(e.toJSON()), effekte };
+        },
+        computer(s) {
+          const z = BR.AIEngines.muehle(s.j, s.j.currentPlayer, 3, 60000);
+          if (!z) return null;
+          if (s.j.pendingRemoval) return { id: z.entfernen, nehmen: true };
+          return z.setzen !== undefined ? { id: z.setzen } : { von: z.von, id: z.nach };
+        },
+        feldAus(u, y, v) { let best = null, d = 0.45 * C; P.forEach(([x, yy], i) => { const a = Math.hypot(u - (x - 3) * C, v - (3 - yy) * C); if (a < d) { d = a; best = i; } }); return best; },
+        pos: i => lok((P[i][0] - 3) * C, 0.013, (3 - P[i][1]) * C),
+        steine: s => s.j.cells.map((x, i) => x === null ? null : { id: i, farbe: x === 'W' ? 0 : 1 }).filter(Boolean),
+        zusatz(s, gegner) {
+          const j = s.j, wer = gegner === 'computer' ? (j.currentPlayer === 'W' ? 'Du' : '') : '';
+          if (s.ende) return '';
+          if (j.pendingRemoval) return wer === 'Du' ? '. Mühle! Tippe einen schwarzen Stein zum Wegnehmen' : '. Mühle!';
+          if (j.phase === 'placing') return ` · noch ${j.piecesToPlace[j.currentPlayer]} zu setzen`;
+          return '';
+        },
+        brett(g, teil) {
+          teil(new THREE.Mesh(geoBox, holzBrett), lok(0, 0.006, 0), [0.44, 0.012, 0.44]);
+          const strich = (u1, v1, u2, v2) => { const lu = Math.abs(u2 - u1), lv = Math.abs(v2 - v1); teil(new THREE.Mesh(geoBox, linieMat), lok((u1 + u2) / 2, 0.0122, (v1 + v2) / 2), [lu + 0.004, 0.0006, lv + 0.004]); };
+          for (let r = 0; r < 3; r++) { const a = (r - 3) * C, b = (3 - r) * C; strich(a, a, b, a); strich(a, b, b, b); strich(a, a, a, b); strich(b, a, b, b); }
+          strich(-3 * C, 0, -C, 0); strich(C, 0, 3 * C, 0); strich(0, -3 * C, 0, -C); strich(0, C, 0, 3 * C);
+          P.forEach(([x, y]) => teil(scheibe(0.012, 0.001, punkt), lok((x - 3) * C, 0.0125, (3 - y) * C)));
+        },
+        stein(farbe) { const g = new THREE.Group(), a = scheibe(0.36 * C, 0.009, farbe === 0 ? weiss : schwarz); a.position.y = 0.0045; g.add(a); return g; }
+      };
+    })();
+
+    // Mangala: je sechs Mulden und ein Schatz; du hast die vordere Reihe und den Schatz rechts
+    if (BR) SPIELE.mangala = (function () {
+      const M = 0.068, glas = ['#3f8fd6', '#e05a4f', '#f0c240', '#5cbf6a', '#b46fd0', '#f08a3c'].map(f => mat(f, 0.7)), mulde = mat('#4a2f1a', 0.2);
+      const pack = j => { const a = j.cells[6], b = j.cells[13]; return { j, c: j.cells.slice(), dran: j.currentPlayer === 'A' ? 0 : 1, ende: j.finished, sieger: j.finished ? (a > b ? 0 : b > a ? 1 : null) : null }; };
+      const mitte = i => i === 6 ? [3.55 * M, 0] : i === 13 ? [-3.55 * M, 0] : i < 6 ? [(i - 2.5) * M, -0.055] : [(12 - i - 2.5) * M, 0.055];
+      return {
+        name: 'Mangala', farben: ['Vorne', 'Hinten'], winkel: 55, halb: { u: 0.3, v: 0.12, h: 0.03 }, ebene: 0.02, marken: true,
+        start: () => pack(new BR.MangalaEntity().toJSON()),
+        zuege: s => s.ende ? [] : [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12].filter(i => (s.dran === 0 ? i < 6 : i > 6) && s.j.cells[i] > 0).map(i => ({ id: i })),
+        ziehe(s, m) { const e = new BR.MangalaEntity(); e.loadFromJSON(s.j); e.applyMove(m.id); return { s: pack(e.toJSON()), effekte: [] }; },
+        computer: s => { const p = BR.AIEngines.mangala(s.j.cells.slice(), s.j.currentPlayer, 5); return p === null || p === undefined ? null : { id: p }; },
+        feldAus(u, y, v) { let best = null, d = 0.45 * M; for (let i = 0; i < 14; i++) { const [mu, mv] = mitte(i); const a = Math.hypot(u - mu, v - mv); if (a < d) { d = a; best = i; } } return best; },
+        pos: i => { const [u, v] = mitte(i); return lok(u, 0.02, v); },
+        steine: s => s.j.cells.map((n, i) => n ? { id: i, farbe: 0, n } : null).filter(Boolean),
+        zusatz: s => ` · Schatz ${s.j.cells[6]} : ${s.j.cells[13]}` + (s.j.lastExtraTurn && !s.ende ? ' · noch einmal' : ''),
+        brett(g, teil) {
+          teil(new THREE.Mesh(geoBox, holzBrett), lok(0, 0.01, 0), [0.6, 0.02, 0.2]);
+          for (let i = 0; i < 14; i++) { const [u, v] = mitte(i); const r = i % 7 === 6 ? [0.05, 0.13] : [0.027, 0.027]; teil(new THREE.Mesh(geoBox, mulde), lok(u, 0.0202, v), [r[0] * 2 * (i % 7 === 6 ? 0.6 : 1), 0.001, r[1] * 2 * (i % 7 === 6 ? 0.6 : 1)]); }
+        },
+        stein(farbe, e) {
+          const g = new THREE.Group(), gross = e.id % 7 === 6, kugel = new THREE.SphereGeometry(0.0075, 12, 8);
+          for (let k = 0; k < e.n; k++) {
+            const w = k * 2.4, r = Math.min(gross ? 0.024 : 0.02, 0.004 * Math.sqrt(k) * 2.2), lage = Math.floor(k / (gross ? 18 : 9));
+            const m = new THREE.Mesh(kugel, glas[(e.id * 7 + k) % glas.length]);
+            m.position.set(Math.cos(w) * r * (gross ? 0.8 : 1), 0.0075 + lage * 0.011, Math.sin(w) * r * (gross ? 2.2 : 1));
+            g.add(m);
+          }
+          return g;
+        }
+      };
+    })();
+
+    // Tavla (türkisches Backgammon): Weiß (du) zieht von hinten rechts über links nach vorne rechts und trägt rechts ab
+    if (BR) SPIELE.tavla = (function () {
+      const W = 0.034, BAR = 0.03, KANTE = 0.17, LANG = 0.14, R = 0.0152, H = 0.007, Y = 0.0172, RAND = 6 * W + BAR / 2;
+      const weiss = mat('#f2ece0', 0.45), rot = mat('#8c1f15', 0.45), filz = mat('#2f5a3a', 0.1), ablage = mat('#3a2414', 0.2);
+      const spitze = [mat('#e3cf9f', 0.3), mat('#6b3a1f', 0.3)].map(m => { m.side = THREE.DoubleSide; return m; });
+      const wuerfelMat = [mat('#fbfaf5', 0.5), mat('#c62a1c', 0.4)], wuerfelAus = mat('#8d8a84', 0.4), auge = [mat('#151515', 0.2), mat('#fbfaf5', 0.3)];
+      const spalte = i => i < 12 ? 11 - i : i - 12;
+      const uVon = sp => sp < 6 ? -BAR / 2 - (5.5 - sp) * W : BAR / 2 + (sp - 5.5) * W;
+      const nr = x => x === 'bar' ? 24 : x === 'ab' ? 25 : x;
+      const lade = j => { const e = new BR.TavlaEntity(); e.loadFromJSON(j); return e; };
+      const pack = j => ({ j, c: [...j.cells, j.bar.A, j.bar.B, j.ab.A, j.ab.B], dran: j.currentPlayer === 'A' ? 0 : 1, ende: j.finished,
+        sieger: j.finished ? (j.winner === 'A' ? 0 : 1) : null });
+      // Platz des k-ten Steins eines Stapels: Spitze (p0…p23), Bar oder Ablage je Spieler
+      function platz(schl, k) {
+        const reihe = k % 5, lage = Math.floor(k / 5);
+        if (schl[0] === 'p') { const i = +schl.slice(1), s = i < 12 ? -1 : 1; return lok(uVon(spalte(i)), Y + lage * H, s * (KANTE - R - reihe * 2 * R)); }
+        const s = schl.endsWith('A') ? -1 : 1;
+        if (schl.startsWith('bar')) return lok(0, Y + lage * H, s * (0.03 + R + reihe * 2 * R));
+        return lok(RAND + 0.033, Y + R, s * (0.03 + k * 0.0088));
+      }
+      let letzt = null, plan = [];
+      const wer = () => letzt && letzt.j.currentPlayer;
+      const T = {
+        name: 'Tavla', farben: ['Weiß', 'Rot'], winkel: 60, halb: { u: 0.29, v: 0.2, h: 0.03 }, ebene: Y, quellen: true,
+        start: () => pack(new BR.TavlaEntity().toJSON()),
+        zuege(s) {
+          if (s.ende) return [];
+          if (s.j.phase === 'wuerfeln') return [{ id: 'wurf', ueberall: true }];
+          const gesehen = new Set();
+          return lade(s.j).getValidMoves().filter(z => { const k = z.von + '>' + z.nach; if (gesehen.has(k)) return false; gesehen.add(k); return true; })
+            .map(z => ({ von: nr(z.von), id: nr(z.nach), roh: z }));
+        },
+        ziehe(s, m) {
+          const e = lade(s.j), p = s.j.currentPlayer;
+          if (m.id === 'wurf') {
+            const [a, b] = m.wurf || [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)];
+            e.setzeWurf(a, b);
+            return { s: pack(e.toJSON()), effekte: [{ art: 'fallen', id: 'w0', hoehe: 0.07 }, { art: 'fallen', id: 'w1', hoehe: 0.09 }] };
+          }
+          const alt = s.j, { von, nach } = m.roh;
+          e.applyMove(von, nach);
+          const j = e.toJSON();
+          const ziel = nach === 'ab' ? `ab${p}:${j.ab[p] - 1}` : `p${nach}:${Math.abs(j.cells[nach]) - 1}`;
+          const quelle = von === 'bar' ? `bar${p}:${alt.bar[p] - 1}` : `p${von}:${Math.abs(alt.cells[von]) - 1}`;
+          return { s: pack(j), effekte: [{ art: 'ziehen', id: ziel, von: quelle }] };
+        },
+        computer(s) {
+          const j = s.j;
+          if (j.phase === 'wuerfeln') { plan = []; return { id: 'wurf', ueberall: true }; }
+          const gueltig = T.zuege(s), passt = z => z && gueltig.find(g => g.roh.von === z.von && g.roh.nach === z.nach);
+          let m = passt(plan.shift());
+          if (!m) {
+            plan = BR.AIEngines.tavla({ pkt: j.cells.slice(), bar: { ...j.bar }, ab: { ...j.ab } }, j.currentPlayer, j.rest.slice(), 2);
+            m = passt(plan.shift());
+          }
+          return m || gueltig[0] || null;
+        },
+        feldAus(u, y, v) {
+          if (Math.abs(u) < BAR / 2) return 24;
+          if (u > RAND + 0.008) return 25;
+          if (u < -RAND || Math.abs(v) > KANTE + 0.01) return null;
+          const sp = Math.max(0, Math.min(11, u < 0 ? Math.floor((u + BAR / 2) / W + 6) : 6 + Math.floor((u - BAR / 2) / W)));
+          return v < 0 ? 11 - sp : 12 + sp;
+        },
+        // Zahlen sind Felder (Spitze, 24 Bar, 25 Ablage) und zeigen auf den nächsten freien Platz; Texte sind einzelne Steine oder Würfel
+        pos(id) {
+          if (typeof id === 'string') {
+            if (id[0] === 'w') return lok(3 * W + BAR / 2 + (id === 'w0' ? -0.02 : 0.02), Y, 0);
+            const [schl, k] = id.split(':'); return platz(schl, +k);
+          }
+          const j = letzt.j, p = wer();
+          if (id === 24) return platz('bar' + p, j.bar[p]);
+          if (id === 25) { const q = platz('ab' + p, j.ab[p]); q.y = Y; return q; }
+          return platz('p' + id, Math.abs(j.cells[id]));
+        },
+        steine(s) {
+          letzt = s; const j = s.j, out = [];
+          j.cells.forEach((x, i) => { for (let k = 0; k < Math.abs(x); k++) out.push({ id: `p${i}:${k}`, farbe: x > 0 ? 0 : 1 }); });
+          for (const p of ['A', 'B']) {
+            for (let k = 0; k < j.bar[p]; k++) out.push({ id: `bar${p}:${k}`, farbe: p === 'A' ? 0 : 1 });
+            for (let k = 0; k < j.ab[p]; k++) out.push({ id: `ab${p}:${k}`, farbe: p === 'A' ? 0 : 1, ab: true });
+          }
+          if (j.wurf.length === 2) {
+            const ziehen = j.phase === 'ziehen', roller = ziehen === (j.currentPlayer === 'A') ? 0 : 1, pasch = j.wurf[0] === j.wurf[1];
+            j.wurf.forEach((w, k) => {
+              const benutzt = ziehen && (pasch ? j.rest.length <= (k === 0 ? 2 : 0) : !j.rest.includes(w) || (k === 0 && j.wurf[1] === w));
+              out.push({ id: 'w' + k, farbe: roller, wert: w, benutzt });
+            });
+          }
+          return out;
+        },
+        zusatz(s, gegner) {
+          const j = s.j, comp = gegner === 'computer';
+          if (s.ende) return j.mars ? ' · Mars, doppelte Punkte' : '';
+          let t = '';
+          if (j.phase === 'wuerfeln') { if (!comp || j.currentPlayer === 'A') t = ' · Tippen zum Würfeln'; }
+          else t = ` · Würfel ${j.rest.join(' ')}`;
+          if (j.ausgesetzt) t += comp ? (j.ausgesetzt === 'A' ? ' · Du konntest nicht ziehen' : ' · Computer konnte nicht ziehen') : ` · ${j.ausgesetzt === 'A' ? 'Weiß' : 'Rot'} konnte nicht ziehen`;
+          if (j.ab.A || j.ab.B) t += ` · draußen ${j.ab.A} : ${j.ab.B}`;
+          return t;
+        },
+        brett(g, teil) {
+          teil(new THREE.Mesh(geoBox, holzDunkel), lok(0.025, 0.008, 0), [0.53, 0.0162, 0.4]);
+          for (const k of [-1, 1]) teil(new THREE.Mesh(geoBox, filz), lok(k * (BAR / 2 + 3 * W), 0.0163, 0), [6 * W, 0.0006, 2 * KANTE + 0.006]);
+          teil(new THREE.Mesh(geoBox, ablage), lok(RAND + 0.033, 0.0163, 0), [0.042, 0.0006, 2 * KANTE]);
+          for (let i = 0; i < 24; i++) {
+            const u = uVon(spalte(i)), s = i < 12 ? -1 : 1;
+            // Dreieck in (x = -v, y = -u); nach dem Drehen liegt es flach auf dem Filz
+            const form = new THREE.Shape([[-s * KANTE, -(u - W / 2)], [-s * KANTE, -(u + W / 2)], [-s * (KANTE - LANG), -u]].map(([a, b]) => new THREE.Vector2(a, b)));
+            const m = new THREE.Mesh(new THREE.ShapeGeometry(form), spitze[i % 2]); m.rotation.x = -Math.PI / 2;
+            teil(m, new THREE.Vector3(0, 0.0169, 0));
+          }
+        },
+        stein(farbe, e) {
+          const g = new THREE.Group();
+          if (e.wert) {
+            const D = 0.022, w = new THREE.Mesh(geoBox, e.benutzt ? wuerfelAus : wuerfelMat[farbe]); w.scale.set(D, D, D); w.position.y = D / 2; g.add(w);
+            const A = 0.0062, L = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
+              5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] }[e.wert];
+            for (const [a, b] of L) { const p = scheibe(0.0021, 0.0008, auge[farbe]); p.position.set(a * A, D + 0.0003, b * A); g.add(p); }
+            return g;
+          }
+          const m = scheibe(R, H, farbe === 0 ? weiss : rot);
+          if (e.ab) m.rotation.z = Math.PI / 2; else m.position.y = H / 2;
+          g.add(m); return g;
+        }
+      };
+      return T;
+    })();
+
     // ---- Rahmen ----
     function suche(s, tiefe, a, b) {
       if (s.ende) return s.sieger === 0 ? 1e6 + tiefe : s.sieger === 1 ? -1e6 - tiefe : 0;
@@ -1301,33 +1553,61 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     }
     function registriere(o) { o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.userData.leuchtBasis = m.material.emissive.clone(); tisch.meshes.push(m); stationVon.set(m, tisch); } }); }
     function abmelden(o) { o.traverse(m => { if (m.isMesh) { stationVon.delete(m); const i = tisch.meshes.indexOf(m); if (i >= 0) tisch.meshes.splice(i, 1); } }); }
+    // Was auf der Tischplatte unter dem Brett liegt (Buch, Becher), solange ein Brett liegt ausblenden
+    let verdeckt = [];
+    function freiraeumen() {
+      verdeckt.forEach(m => { m.visible = true; }); verdeckt = [];
+      if (!gruppe) return;
+      gruppe.updateMatrixWorld(true);
+      const brett = new THREE.Box3().setFromObject(gruppe), k = new THREE.Box3();
+      brett.expandByScalar(0.01);
+      // zweimal: auch was auf dem Ausgeblendeten steht (Streuer auf dem Buch)
+      const flaechen = [brett];
+      for (let runde = 0; runde < 2; runde++) raum.traverse(m => {
+        if (!m.isMesh || !m.visible || verdeckt.includes(m)) return;
+        for (let o = m; o; o = o.parent) if (o === gruppe) return;
+        k.setFromObject(m);
+        if (k.min.y < bY - 0.005 || k.min.y > bY + 0.08) return;
+        if (flaechen.some(f => k.min.x < f.max.x && k.max.x > f.min.x && k.min.z < f.max.z && k.max.z > f.min.z)) { verdeckt.push(m); flaechen.push(k.clone()); }
+      });
+      verdeckt.forEach(m => { m.visible = false; });
+    }
     function aufbauen(neuesSpiel) {
       if (gruppe) { abmelden(gruppe); raum.remove(gruppe); }
       spiel = neuesSpiel; steine.clear();
       gruppe = new THREE.Group(); gruppe.position.set(SCH.x, bY, SCH.z); raum.add(gruppe);
       spiel.brett(gruppe, (m, p, groesse) => { m.position.copy(p); if (groesse) m.scale.set(groesse[2], groesse[1], groesse[0]); gruppe.add(m); });
       registriere(gruppe);
+      freiraeumen();
     }
     // Größen sind als (u, y, v) angegeben; in der Gruppe liegt u auf z und v auf x
     function steineZeigen() {
       steine.forEach(st => { abmelden(st); gruppe.remove(st); }); steine.clear();
-      spiel.steine(z).forEach(({ id, farbe }) => { const st = spiel.stein(farbe); st.position.copy(spiel.pos(id)); gruppe.add(st); registriere(st); steine.set(id, st); });
+      spiel.steine(z).forEach(e => { const { id, farbe } = e; const st = spiel.stein(farbe, e); st.position.copy(spiel.pos(id)); gruppe.add(st); registriere(st); steine.set(id, st); });
     }
     function markenZeigen() {
       marken.forEach(m => gruppe.remove(m)); marken = [];
-      if (!spiel.marken || z.ende || (gegner === 'computer' && z.dran === 1)) return;
-      spiel.zuege(z).filter(m => !m.aussetzen).forEach(m => {
-        const k = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.002, 16), mat('#9ff0b8', 0.3, 0, '#6fe09a', 1.2));
-        k.position.copy(spiel.pos(m.id)); k.position.y += 0.001; gruppe.add(k); marken.push(k);
-      });
+      if (z.ende || (gegner === 'computer' && z.dran === 1)) return;
+      const alle = spiel.zuege(z).filter(m => !m.aussetzen);
+      const punkt = (id, farbe, r = 0.008) => {
+        const k = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.002, 20), mat(farbe, 0.3, 0, farbe, 1.2));
+        k.position.copy(spiel.pos(id)); k.position.y += auswahl !== null || !alle.some(m => m.nehmen) ? 0.001 : 0.012; gruppe.add(k); marken.push(k);
+      };
+      if (auswahl !== null) {
+        punkt(auswahl, '#ffb567', 0.016);
+        alle.filter(m => m.von === auswahl).forEach(m => punkt(m.id, '#6fe09a'));
+      } else if (alle.some(m => m.nehmen)) alle.forEach(m => punkt(m.id, '#ff6a4a', 0.012));
+      else if (spiel.marken) alle.filter(m => m.von === undefined).forEach(m => punkt(m.id, '#6fe09a'));
+      else if (spiel.quellen) [...new Set(alle.map(m => m.von).filter(v => v !== undefined))].forEach(id => punkt(id, '#ffd36a'));
     }
     function ausfuehren(m) {
       verlauf.push(z);
       const { s, effekte } = spiel.ziehe(z, m);
-      z = s; steineZeigen(); markenZeigen();
+      z = s; auswahl = null; steineZeigen(); markenZeigen();
       effekte.forEach(e => {
         const st = steine.get(e.id); if (!st) return;
         if (e.art === 'fallen') { const nach = st.position.clone(); const von = nach.clone(); von.y += e.hoehe || 0.08; st.position.copy(von); anim.push({ st, von, nach, t: 0, dauer: 0.35 }); }
+        if (e.art === 'ziehen') { const nach = st.position.clone(), von = spiel.pos(e.von); st.position.copy(von); anim.push({ st, von, nach, t: 0, dauer: 0.4, bogen: 0.03 }); }
         if (e.art === 'drehen') { st.rotation.x = Math.PI; anim.push({ st, dreh: true, t: 0, dauer: 0.45, nach: st.position.clone() }); }
       });
       zeigeStatus();
@@ -1340,14 +1620,14 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       const computer = gegner === 'computer' && z.dran === 1;
       if (computer) {
         denkt = true; zeigeStatus();
-        setTimeout(() => { if (!ich.aktiv) { denkt = false; return; } const m = besterZug(z); denkt = false; ausfuehren(m); }, 380);
+        setTimeout(() => { if (!ich.aktiv) { denkt = false; return; } const m = spiel.computer ? spiel.computer(z) : besterZug(z); denkt = false; if (m) ausfuehren(m); else zeigeStatus(); }, 380);
       } else if (nur.length === 1 && nur[0].aussetzen) {
         statusEl.textContent = (gegner === 'computer' ? 'Du kannst nicht setzen und musst aussetzen' : spiel.farben[z.dran] + ' muss aussetzen');
         denkt = true; setTimeout(() => { denkt = false; if (ich.aktiv) ausfuehren(nur[0]); }, 1300);
       } else zeigeStatus();
     }
     function zeigeStatus() {
-      const f = spiel.farben, zus = spiel.zusatz ? spiel.zusatz(z) : '';
+      const f = spiel.farben, zus = spiel.zusatz ? spiel.zusatz(z, gegner) : '';
       let t;
       if (z.ende) t = z.sieger === null ? 'Unentschieden.' : gegner === 'computer' ? (z.sieger === 0 ? 'Du gewinnst!' : 'Der Computer gewinnt.') : f[z.sieger] + ' gewinnt!';
       else if (denkt && gegner === 'computer') t = 'Computer denkt …';
@@ -1356,6 +1636,9 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     }
     ich.klick = ev => {
       if (anim.length || denkt || z.ende || (gegner === 'computer' && z.dran === 1)) return;
+      // Züge ohne Feld (z. B. Würfeln) gehen mit jedem Tipp aufs Brett
+      const frei = spiel.zuege(z).find(m => m.ueberall);
+      if (frei) { ausfuehren(frei); return; }
       const r = canvas.getBoundingClientRect();
       zeiger.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
       strahl.setFromCamera(zeiger, kamera);
@@ -1368,8 +1651,12 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       if (!strahl.ray.intersectPlane(ebene, p)) return;
       gruppe.worldToLocal(p);
       const id = spiel.feldAus(p.z, p.y, -p.x);
-      const m = spiel.zuege(z).find(m => m.id === id);
-      if (m && !m.aussetzen) ausfuehren(m);
+      const alle = spiel.zuege(z);
+      const m = auswahl !== null ? alle.find(m => m.von === auswahl && m.id === id) : alle.find(m => m.von === undefined && m.id === id);
+      if (m && !m.aussetzen) { auswahl = null; ausfuehren(m); return; }
+      // Eigenen Stein wählen (Spiele, in denen ein Stein von einem Feld zum anderen zieht)
+      auswahl = alle.some(m => m.von === id) ? id : null;
+      markenZeigen();
     };
     ich.takt = roh => {
       if (!anim.length) return;
@@ -1377,6 +1664,7 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       anim.forEach(a => {
         a.t = Math.min(1, a.t + dt / a.dauer); const k = glatt(a.t);
         if (a.dreh) { a.st.rotation.x = Math.PI * (1 - k); a.st.position.y = a.nach.y + Math.sin(Math.PI * k) * 0.03; }
+        else if (a.bogen) { a.st.position.lerpVectors(a.von, a.nach, k); a.st.position.y += Math.sin(Math.PI * k) * a.bogen; }
         else a.st.position.lerpVectors(a.von, a.nach, a.t * a.t);
       });
       anim = anim.filter(a => a.t < 1);
@@ -1393,9 +1681,9 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
     // Spiel auf den Tisch legen (ohne zu starten), z. B. damit im Raum das zuletzt gespielte Brett liegt
     ich.hinlegen = id => {
       if (ich.spiel === id && gruppe) return;
-      ich.spiel = id; aufbauen(SPIELE[id]); z = spiel.start(); verlauf = []; anim = []; fertig = null; steineZeigen();
+      ich.spiel = id; aufbauen(SPIELE[id]); z = spiel.start(); verlauf = []; auswahl = null; anim = []; fertig = null; steineZeigen();
     };
-    ich.wegraeumen = () => { if (gruppe) { abmelden(gruppe); raum.remove(gruppe); gruppe = null; ich.spiel = null; } };
+    ich.wegraeumen = () => { if (gruppe) { abmelden(gruppe); raum.remove(gruppe); gruppe = null; ich.spiel = null; freiraeumen(); } };
     ich.starten = id => {
       ich.hinlegen(id);
       ich.aktiv = true;
@@ -1425,11 +1713,11 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       if (!ich.aktiv || anim.length || denkt || !verlauf.length) return;
       z = verlauf.pop();
       while (gegner === 'computer' && z.dran === 1 && verlauf.length) z = verlauf.pop();
-      steineZeigen(); markenZeigen(); zeigeStatus();
+      auswahl = null; steineZeigen(); markenZeigen(); zeigeStatus();
     });
     document.getElementById('schachneu').addEventListener('click', () => {
       if (!ich.aktiv || anim.length || denkt) return;
-      z = spiel.start(); verlauf = []; steineZeigen(); markenZeigen(); zeigeStatus();
+      z = spiel.start(); verlauf = []; auswahl = null; steineZeigen(); markenZeigen(); zeigeStatus();
     });
     document.getElementById('schachzu').addEventListener('click', ich.beenden);
     // Für die Prüfungen
@@ -1438,6 +1726,8 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       zustand: () => z && { c: z.c.slice(), dran: z.dran, ende: z.ende, sieger: z.sieger },
       ruhig: () => !anim.length && !denkt && !fertig,
       spiel: () => ich.spiel,
+      zuege: () => spiel.zuege(z).map(m => ({ von: m.von, id: m.id })),
+      zahl: () => verlauf.length,
       steine: () => steine.size
     };
     return ich;
@@ -1597,6 +1887,8 @@ body.schachmodus #marken, body.schachmodus .vignette, body.schachmodus .ng-zurue
       grenze.clampPoint(kamera.position, kamera.position);
     }
     tisch3d.takt(roh);
+    // Beim Spielen am Tisch die tief stehende Sonne dämpfen, damit dunkle Steine dunkel bleiben
+    sonne.intensity += ((tisch3d.aktiv ? 1.6 : 3.4) - sonne.intensity) * Math.min(1, roh * 4);
     if (!tisch3d.aktiv) leuchten(zeit || 0);
     schilder();
     if (composer) composer.render(); else renderer.render(scene, kamera);
