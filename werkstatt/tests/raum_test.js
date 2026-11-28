@@ -75,13 +75,31 @@ const PLAETZE = { 'Konsole': 5, 'Spieltisch': 9, 'Inselmodell': 1, 'Staffelei': 
       ok('raum_fernseher: Zurück schließt das Spiel, Tafel der Konsole wieder da', await p.evaluate(() => document.getElementById('spielfenster').hidden && !document.getElementById('tafel').hidden && !document.body.classList.contains('tvmodus')));
       await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       // AK-7: auch die anderen Plätze zeigen ihr Spiel auf ihrer Fläche im Raum (Tisch, Sockel, Leinwand)
-      for (const name of ['Spieltisch', 'Inselmodell', 'Staffelei', 'Perlenkästchen']) {
+      for (const name of ['Spieltisch', 'Staffelei', 'Perlenkästchen']) {
         await p.evaluate(n => [...document.querySelectorAll('.marke')].find(m => m.textContent === n).click(), name);
         await p.waitForTimeout(300);
         await p.click(name === 'Spieltisch' ? '[aria-label="Brettspiele spielen"]' : '#tafelliste .spielen');
         let r = null; try { await p.waitForFunction(() => { const f = document.getElementById('spielfenster'); return f.classList.contains('tv') && !f.classList.contains('unterwegs'); }, null, { timeout: 15000 }); r = await p.evaluate(() => { const b = document.getElementById('spielrahmen').getBoundingClientRect(), l = document.querySelector('.leiste').getBoundingClientRect(); return { x: Math.round(b.left), y: Math.round(b.top), b: Math.round(b.width), h: Math.round(b.height), unter: l.bottom, vw: innerWidth, vh: innerHeight }; }); } catch (e) { /* nicht angekommen */ }
         ok(`raum_flaeche: ${name} zeigt das Spiel auf seiner Fläche, ganz im Bild`, !!r && r.x >= 0 && r.x + r.b <= r.vw + 1 && r.y >= r.unter && r.y + r.h <= r.vh && r.b > 200 && r.h > 120, JSON.stringify(r));
         await p.click('#spielzu'); await p.waitForTimeout(300);
+        await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+      }
+      // AK-12: Neon Ada: die Insel steht als Modell auf dem Sockel, Antippen hebt dort Land; Zurück räumt sie wieder weg
+      {
+        await p.evaluate(() => [...document.querySelectorAll('.marke')].find(m => m.textContent === 'Inselmodell').click());
+        await p.waitForTimeout(300);
+        await p.click('[aria-label="Neon Ada spielen"]');
+        const hoehen = () => p.evaluate(() => { const g = window.raumModell.halter.children[0]; if (!g) return null; const m = g.children[0], M = new THREE.Matrix4(); let s = 0; for (let i = 0; i < m.count; i++) { m.getMatrixAt(i, M); s += M.elements[5]; } return +s.toFixed(2); });
+        let da = false; try { await p.waitForFunction(() => { const g = window.raumModell.halter.children[0]; return g && g.children[0].instanceColor; }, null, { timeout: 20000 }); da = true; } catch (e) { /* kein Modell */ }
+        await p.waitForTimeout(2500);
+        const vor = await hoehen();
+        const mitte = await p.evaluate(() => { const v = new THREE.Vector3(); window.raumModell.halter.getWorldPosition(v); return window.raumModell.aufBild(v); });
+        const imRaum = await p.evaluate(() => { const d = document.getElementById('spielrahmen').contentDocument; return d.documentElement.classList.contains('imraum') && document.getElementById('spielfenster').classList.contains('modell'); });
+        for (let i = 0; i < 3; i++) { await p.mouse.click(mitte.x, mitte.y + 40); await p.waitForTimeout(500); }
+        const nach = await hoehen();
+        ok('raum_modell: Neon Ada steht als Insel auf dem Sockel, Antippen hebt dort Land', da && imRaum && vor !== null && nach > vor, JSON.stringify({ da, imRaum, vor, nach, mitte }));
+        await p.click('#spielzu'); await p.waitForTimeout(300);
+        ok('raum_modell: Zurück räumt die Insel weg, das Schmuckmodell steht wieder', await p.evaluate(() => !window.raumModell.halter.children.length && document.getElementById('spielfenster').hidden && !document.getElementById('tafel').hidden));
         await p.keyboard.press('Escape'); await p.waitForTimeout(200);
       }
       // AK-8: Schach in 3D auf dem Couchtisch: Bauer e2-e4 antippen, der Computer antwortet, Figuren stehen richtig

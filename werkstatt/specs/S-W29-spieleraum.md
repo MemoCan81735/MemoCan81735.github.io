@@ -13,6 +13,7 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 - U-4: Der Besucher tippt "← Zurück in den Raum" oder den Zurück-Link im Spiel und steht wieder am selben Platz im Raum.
 - U-5: Der Besucher tippt "← Alle Spiele" und kommt zur Startseite.
 - U-6: Der Besucher tippt "Spielen"; die Kamera stellt sich vor die Fläche des Platzes (Fernseher, Tisch, Sockel, Leinwand), das Spiel läuft darauf im Raum. "Groß spielen" zeigt es über den ganzen Schirm, derselbe Knopf bringt es zurück auf den Fernseher.
+- U-8: Am Inselmodell tippt der Besucher bei "Neon Ada" auf "Spielen"; die Insel des Spiels steht als 3D-Modell auf dem Sockel, er formt sie durch Antippen direkt im Raum, Knöpfe und Anzeigen des Spiels liegen darüber.
 - U-7: Am Spieltisch tippt der Besucher bei "Schach in 3D" (oder Vier gewinnt, Tic Tac Toe, Reversi, Dame, Mühle, Mangala, Tavla in 3D) auf "Spielen"; die Kamera blickt von der weißen Seite aufs Brett, er zieht durch Antippen von Figur und Feld, der Computer antwortet.
 
 ## Umfang
@@ -24,6 +25,7 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 - Schach in 3D (27.11.2026 auf Wunsch des Betreibers): echtes Brett mit 32 Figuren auf dem Couchtisch, Figur antippen, erlaubte Felder leuchten, Zielfeld antippen, die Figur zieht sichtbar. Regeln aus `chess.js`, geladen aus `brettspiele/lib/` (dieselbe Datei wie im Spiel Brettspiele, Lizenz dort), Gegner wahlweise ein einfacher Computer (drei Halbzüge Vorausschau, spielt Schwarz) oder zu zweit; Zug zurück, Neu. Die Stellung bleibt im Raum stehen. Umwandlung immer zur Dame.
 - Weitere Brettspiele in 3D (28.11.2026 auf Wunsch des Betreibers): Vier gewinnt (Rahmen steht auf dem Tisch, Steine fallen), Tic Tac Toe (Kreuz und Kreis auf Holz), Reversi (Steine drehen sich um, mögliche Felder sind markiert). Je Spiel Regeln als reine Funktionen und ein Computer mit Vorausschau (Tic Tac Toe vollständig, Vier gewinnt 5, Reversi 4 Halbzüge); gemeinsame Leiste, Zug zurück, Neu, zu zweit. Auf dem Tisch liegt immer das zuletzt gewählte Spiel.
 - Dame, Mühle, Mangala und Tavla in 3D (28.11.2026, zweite Gruppe): Regeln und Computer sind wörtlich dieselben wie im Spiel Brettspiele. `werkstatt/regeln_raum.py` kopiert die Klassen (DameEntity, MuehleEntity, MangalaEntity, TavlaEntity, tavlaRegelwerk, AIEngines) unverändert nach `raum/brettregeln.js`; `--pruefen` meldet, wenn die Kopie veraltet ist. Dame: Stein antippen, Ziele leuchten grün, Schlagen ist Pflicht. Mühle: setzen, ziehen, springen; nach einer Mühle leuchten die Steine rot, die man nehmen darf. Mangala: Mulde antippen, die Glaskugeln liegen in den Mulden. Tavla: Tippen aufs Brett würfelt, Steine mit Zügen sind gelb markiert, Stein antippen, dann Ziel (Bar und Ablage rechts inklusive); der Computer würfelt und zieht selbst. Was auf der Tischplatte unter dem Brett liegt (Buch, Becher, Streuer), wird ausgeblendet, solange das Brett liegt; beim Spielen am Tisch wird die Abendsonne gedämpft.
+- Neon Ada im Raum (28.11.2026 auf Wunsch des Betreibers): Das Spiel läuft mit `#raum` unsichtbar im Spielfenster über dem ganzen Bild; nur seine Knöpfe und Anzeigen sind zu sehen. Seine Insel (dieselben three.js-Körper, mit dem three.js des Raums gebaut) hängt es über `window.raumModell` auf der Deckplatte des Sockels ein; Antippen und die Lernmarke rechnen über die Raumkamera. Regeln, Speicher und Bedienung des Spiels bleiben unverändert. `werkstatt/bau_neon_ada.py` setzt die Änderung bei jedem Bau wieder ein. Das Schmuckmodell auf dem Sockel macht solange Platz. Geprüft und verworfen für die Rennspiele (eigene große Welten, bleiben auf dem Fernseher) und vorerst Ebru (liegt schon passend auf der Leinwand).
 - Flache Spiele auf dem Handy: das Spiel bekommt mindestens 640 × 400 Pixel und wird per Perspektive verkleinert, damit es seine Bedienung nicht zusammenquetscht.
 - Escape schließt Spielfenster oder Tafel, solange der Fokus im Raum liegt; im Spiel gehört Escape dem Spiel.
 
@@ -36,10 +38,11 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | AK-4 | Aus U-3, U-4: Spiel öffnet im Spielfenster; Leiste und Zurück-Link im Spiel schließen es, die Adresse bleibt `/raum/` | `raum_test.js` |
 | AK-5 | Aus U-1: Startseite verlinkt `raum/` mit Bild und Text in der Rubrik Spieleraum; alle 10 Spiel-Adressen gibt es | `raum_test.js` |
 | AK-6 | Aus U-6: an der Konsole liegt das Spiel auf dem Fernseher (Seitenverhältnis der Bildfläche, ganz im Bild unter der Leiste); "Groß spielen" zeigt es über die ganze Breite; Zurück bringt die Tafel wieder | `raum_test.js` |
-| AK-7 | Aus U-6: Spieltisch, Inselmodell, Staffelei und Perlenkästchen zeigen ihr Spiel auf ihrer Fläche, ganz im Bild unter der Leiste | `raum_test.js` |
+| AK-7 | Aus U-6: Spieltisch, Staffelei und Perlenkästchen zeigen ihr Spiel auf ihrer Fläche, ganz im Bild unter der Leiste | `raum_test.js` |
 | AK-8 | Aus U-7: Schach in 3D: e2-e4 per Antippen, der Computer antwortet, Figuren stehen auf den richtigen Feldern; Zurück bringt die Tafel, die Stellung bleibt | `raum_test.js` |
 | AK-9 | Aus U-7: Vier gewinnt, Tic Tac Toe und Reversi in 3D: eigener Stein liegt nach Antippen auf dem richtigen Feld, der Computer antwortet, Steine im Bild = Steine im Spielstand | `raum_test.js` |
 | AK-10 | Aus U-7: Dame, Mühle und Mangala in 3D: eigener Zug nach Antippen steht (Dame: Stein, dann Ziel), der Computer antwortet; Regelkopie passt zu Brettspiele | `raum_test.js`, `regeln_raum.py --pruefen` |
+| AK-12 | Aus U-8: Neon Ada: Insel steht als Modell auf dem Sockel (Spielseite im Raummodus), Antippen hebt dort Land; Zurück räumt sie weg, Tafel wieder da | `raum_test.js` |
 | AK-11 | Aus U-7: Tavla in 3D: Tippen würfelt, eigene Züge per Antippen, der Computer würfelt und zieht, je 15 Steine, Steine und Würfel im Bild = Spielstand | `raum_test.js` |
 
 ## Prüfszenarien
@@ -55,10 +58,11 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | PS-8 | Grenzwert | Hochformat: hohe Figuren der ersten Reihe verdecken Felder dahinter, Antippen trifft trotzdem das gemeinte Feld | AK-8 |
 | PS-9 | Normal | Vier gewinnt: Antippen weit oben in einer Spalte, der Stein fällt ganz nach unten | AK-9 |
 | PS-10 | Fehlerfall | Regel in Brettspiele geändert, Kopie im Raum nicht neu erzeugt: Prüfung rot | AK-10 |
+| PS-12 | Grenzwert | Hochformat 412×915: Insel ganz im Bild zwischen Anzeige oben und Knöpfen unten, Antippen trifft das Feld unter dem Ring | AK-12 |
 | PS-11 | Normal | Tavla: nach dem Würfeln zwei Steine ziehen, der Computer ist dran, würfelt und zieht ohne Zutun | AK-11 |
 
 ## Gegenproben
-`python3 werkstatt/tests/gegenproben_raum.py`: Zurück im Spiel führt zur Startseite, Leiste schließt nicht, falsche Spiel-Adresse, fehlendes Spiel an der Konsole, Karte auf der Startseite falsch verlinkt, Spiel liegt nicht auf dem Fernseher, Esstisch ohne Spielfläche, Computer antwortet im 3D-Schach nicht, Vier gewinnt: Stein fällt nicht nach unten, Tavla: Computer würfelt nicht; alle zehn machen `raum_test.js` rot (28.11.2026). Veraltete Regelkopie: `regeln_raum.py --pruefen` wird rot. Einzeln: `NUR=Fernseher python3 werkstatt/tests/gegenproben_raum.py`. Fremde Server und Zurück-Link deckt `seite_pruefen.py --gegenproben` ab.
+`python3 werkstatt/tests/gegenproben_raum.py`: Zurück im Spiel führt zur Startseite, Leiste schließt nicht, falsche Spiel-Adresse, fehlendes Spiel an der Konsole, Karte auf der Startseite falsch verlinkt, Spiel liegt nicht auf dem Fernseher, Esstisch ohne Spielfläche, Computer antwortet im 3D-Schach nicht, Vier gewinnt: Stein fällt nicht nach unten, Tavla: Computer würfelt nicht, Neon Ada: Insel kommt nicht in den Raum; alle elf machen `raum_test.js` rot (28.11.2026). Veraltete Regelkopie: `regeln_raum.py --pruefen` wird rot. Einzeln: `NUR=Fernseher python3 werkstatt/tests/gegenproben_raum.py`. Fremde Server und Zurück-Link deckt `seite_pruefen.py --gegenproben` ab.
 
 ## Technisches Design
 - Schnittstellen: keine neuen; der Raum lädt Spiele per `<iframe>` von derselben Seite und hängt sich an deren Zurück-Link (`a.ng-zurueck`). Lädt das Fenster trotzdem die Startseite, schließt der Raum es.
@@ -97,12 +101,15 @@ Der Betreiber hat ein begehbares 3D-Wohnzimmer bauen lassen (Vorschau im Projekt
 | U-7 | eigener Stein liegt, der Computer antwortet |
 | U-7 | eigener Zug steht, der Computer antwortet |
 | U-7 | Tippen würfelt, dein Zug und der des Computers stehen |
+| U-8 | Neon Ada steht als Insel auf dem Sockel, Antippen hebt dort Land |
 
 ## Dokumentation
 - Aktualisiert: werkstatt/specs/S-W29-spieleraum.md
 - Aktualisiert: werkstatt/tests/raum_test.js
 - Aktualisiert: werkstatt/tests/gegenproben_raum.py
 - Neu: werkstatt/regeln_raum.py, raum/brettregeln.js
+- Aktualisiert: werkstatt/bau_neon_ada.py
+- Aktualisiert: neon-ada/index.html
 - Aktualisiert: werkstatt/README.md
 - Aktualisiert: index.html
 
